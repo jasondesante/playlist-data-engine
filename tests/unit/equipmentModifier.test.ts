@@ -19,7 +19,7 @@ import type { CharacterSheet } from '../../src/core/types/Character.js';
 import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js';
 import { FeatureQuery } from '../../src/core/features/FeatureQuery.js';
 import { SkillQuery } from '../../src/core/skills/SkillQuery.js';
-import { initializeFeatureDefaults, initializeSkillDefaults } from '../../src/core/extensions/initializeDefaults.js';
+import { initializeAllDefaults } from '../../src/core/extensions/initializeDefaults.js';
 
 describe('EquipmentModifier', () => {
     let featureQuery: FeatureQuery;
@@ -35,13 +35,13 @@ describe('EquipmentModifier', () => {
         skillQuery = SkillQuery.getInstance();
         extensionManager = ExtensionManager.getInstance();
 
-        // Initialize defaults using ExtensionManager initialization functions
-        initializeFeatureDefaults();
-        initializeSkillDefaults();
+        // Reset and re-initialize defaults to avoid duplicate registration across tests
+        extensionManager.resetAll();
+        initializeAllDefaults();
 
         // Register a test piece of equipment
         testBaseEquipment = {
-            name: 'Longsword',
+            name: 'TestSword',
             type: 'weapon',
             rarity: 'common',
             weight: 3,
@@ -63,7 +63,7 @@ describe('EquipmentModifier', () => {
         // Create a test character
         testCharacter = {
             name: 'Test Character',
-            race: 'Human',
+            race: 'Human' as any,
             class: 'Fighter' as any,  // Type assertion for test data
             level: 1,
             ability_scores: {
@@ -133,7 +133,7 @@ describe('EquipmentModifier', () => {
         testEquipment = {
             weapons: [
                 {
-                    name: 'Longsword',
+                    name: 'TestSword',
                     quantity: 1,
                     equipped: true
                 }
@@ -166,7 +166,7 @@ describe('EquipmentModifier', () => {
                 source: 'enchantment'
             };
 
-            const result = EquipmentModifier.enchant(testEquipment, 'Longsword', enchantment);
+            const result = EquipmentModifier.enchant(testEquipment, 'TestSword', enchantment);
 
             expect(result.weapons[0].modifications).toBeDefined();
             expect(result.weapons[0].modifications).toHaveLength(1);
@@ -189,10 +189,10 @@ describe('EquipmentModifier', () => {
                 source: 'enchantment'
             };
 
-            const result = EquipmentModifier.enchant(testEquipment, 'Longsword', enchantment);
+            const result = EquipmentModifier.enchant(testEquipment, 'TestSword', enchantment);
 
             expect(result.weapons[0].instanceId).toBeDefined();
-            expect(result.weapons[0].instanceId).toContain('Longsword');
+            expect(result.weapons[0].instanceId).toContain('TestSword');
         });
 
         it('should enchant equipment with multiple properties', () => {
@@ -217,7 +217,7 @@ describe('EquipmentModifier', () => {
                 source: 'enchantment'
             };
 
-            const result = EquipmentModifier.enchant(testEquipment, 'Longsword', enchantment);
+            const result = EquipmentModifier.enchant(testEquipment, 'TestSword', enchantment);
 
             expect(result.weapons[0].modifications?.[0].properties).toHaveLength(2);
         });
@@ -234,7 +234,7 @@ describe('EquipmentModifier', () => {
                 source: 'enchantment'
             };
 
-            const result = EquipmentModifier.enchant(testEquipment, 'Longsword', enchantment);
+            const result = EquipmentModifier.enchant(testEquipment, 'TestSword', enchantment);
 
             expect(result.weapons[0].modifications?.[0].addsSkills).toHaveLength(1);
             expect(result.weapons[0].modifications?.[0].addsSkills?.[0].skillId).toBe('athletics');
@@ -265,7 +265,7 @@ describe('EquipmentModifier', () => {
                 source: 'enchantment'
             };
 
-            const result = EquipmentModifier.enchant(testEquipment, 'Longsword', enchantment);
+            const result = EquipmentModifier.enchant(testEquipment, 'TestSword', enchantment);
 
             expect(result.weapons[0].modifications?.[0].addsFeatures).toHaveLength(1);
         });
@@ -279,7 +279,7 @@ describe('EquipmentModifier', () => {
                 source: 'test'
             } as any;
 
-            const result = EquipmentModifier.enchant(testEquipment, 'Longsword', invalidModification);
+            const result = EquipmentModifier.enchant(testEquipment, 'TestSword', invalidModification);
 
             expect(result).toEqual(testEquipment);
         });
@@ -329,8 +329,8 @@ describe('EquipmentModifier', () => {
                 source: 'enchantment'
             };
 
-            let result = EquipmentModifier.enchant(testEquipment, 'Longsword', enchantment1);
-            result = EquipmentModifier.enchant(result, 'Longsword', enchantment2);
+            let result = EquipmentModifier.enchant(testEquipment, 'TestSword', enchantment1);
+            result = EquipmentModifier.enchant(result, 'TestSword', enchantment2);
 
             expect(result.weapons[0].modifications).toHaveLength(2);
         });
@@ -353,7 +353,7 @@ describe('EquipmentModifier', () => {
                 source: 'curse'
             };
 
-            const result = EquipmentModifier.curse(testEquipment, 'Longsword', curse);
+            const result = EquipmentModifier.curse(testEquipment, 'TestSword', curse);
 
             expect(result.weapons[0].modifications).toHaveLength(1);
             expect(result.weapons[0].modifications?.[0].source).toBe('curse');
@@ -390,8 +390,8 @@ describe('EquipmentModifier', () => {
                 source: 'curse'
             };
 
-            let result = EquipmentModifier.curse(testEquipment, 'Longsword', curse1);
-            result = EquipmentModifier.curse(result, 'Longsword', curse2);
+            let result = EquipmentModifier.curse(testEquipment, 'TestSword', curse1);
+            result = EquipmentModifier.curse(result, 'TestSword', curse2);
 
             expect(result.weapons[0].modifications).toHaveLength(2);
         });
@@ -414,7 +414,7 @@ describe('EquipmentModifier', () => {
                 source: 'upgrade'
             };
 
-            const result = EquipmentModifier.upgrade(testEquipment, 'Longsword', upgrade);
+            const result = EquipmentModifier.upgrade(testEquipment, 'TestSword', upgrade);
 
             expect(result.weapons[0].modifications).toHaveLength(1);
             expect(result.weapons[0].modifications?.[0].source).toBe('upgrade');
@@ -438,15 +438,15 @@ describe('EquipmentModifier', () => {
                 source: 'enchantment'
             };
 
-            let equipment = EquipmentModifier.enchant(testEquipment, 'Longsword', enchantment);
+            let equipment = EquipmentModifier.enchant(testEquipment, 'TestSword', enchantment);
             expect(equipment.weapons[0].modifications).toHaveLength(1);
 
-            equipment = EquipmentModifier.removeModification(equipment, 'Longsword', 'test_enchant');
+            equipment = EquipmentModifier.removeModification(equipment, 'TestSword', 'test_enchant');
             expect(equipment.weapons[0].modifications).toHaveLength(0);
         });
 
         it('should return unchanged equipment for non-existent modification', () => {
-            const result = EquipmentModifier.removeModification(testEquipment, 'Longsword', 'nonexistent_id');
+            const result = EquipmentModifier.removeModification(testEquipment, 'TestSword', 'nonexistent_id');
             // EquipmentModifier adds modifications array when processing
             // Just verify the modification wasn't added
             expect(result.weapons[0].modifications).toHaveLength(0);
@@ -483,11 +483,11 @@ describe('EquipmentModifier', () => {
                 source: 'enchantment'
             };
 
-            let equipment = EquipmentModifier.enchant(testEquipment, 'Longsword', enchantment1);
-            equipment = EquipmentModifier.enchant(equipment, 'Longsword', enchantment2);
+            let equipment = EquipmentModifier.enchant(testEquipment, 'TestSword', enchantment1);
+            equipment = EquipmentModifier.enchant(equipment, 'TestSword', enchantment2);
             expect(equipment.weapons[0].modifications).toHaveLength(2);
 
-            equipment = EquipmentModifier.removeModification(equipment, 'Longsword', 'enchant_1');
+            equipment = EquipmentModifier.removeModification(equipment, 'TestSword', 'enchant_1');
             expect(equipment.weapons[0].modifications).toHaveLength(1);
             expect(equipment.weapons[0].modifications?.[0].id).toBe('enchant_2');
         });
@@ -495,7 +495,7 @@ describe('EquipmentModifier', () => {
 
     describe('getModificationHistory', () => {
         it('should return empty array for item with no modifications', () => {
-            const history = EquipmentModifier.getModificationHistory(testEquipment, 'Longsword');
+            const history = EquipmentModifier.getModificationHistory(testEquipment, 'TestSword');
             expect(history).toEqual([]);
         });
 
@@ -516,10 +516,10 @@ describe('EquipmentModifier', () => {
                 source: 'enchantment'
             };
 
-            let equipment = EquipmentModifier.enchant(testEquipment, 'Longsword', enchantment1);
-            equipment = EquipmentModifier.enchant(equipment, 'Longsword', enchantment2);
+            let equipment = EquipmentModifier.enchant(testEquipment, 'TestSword', enchantment1);
+            equipment = EquipmentModifier.enchant(equipment, 'TestSword', enchantment2);
 
-            const history = EquipmentModifier.getModificationHistory(equipment, 'Longsword');
+            const history = EquipmentModifier.getModificationHistory(equipment, 'TestSword');
             expect(history).toHaveLength(2);
             expect(history[0].id).toBe('first');
             expect(history[1].id).toBe('second');
@@ -541,22 +541,22 @@ describe('EquipmentModifier', () => {
                 source: 'enchantment'
             };
 
-            const equipment = EquipmentModifier.enchant(testEquipment, 'Longsword', enchantment);
-            const history = EquipmentModifier.getModificationHistory(equipment, 'Longsword');
+            const equipment = EquipmentModifier.enchant(testEquipment, 'TestSword', enchantment);
+            const history = EquipmentModifier.getModificationHistory(equipment, 'TestSword');
 
             // Modify the returned history
             history[0].id = 'modified';
 
             // Original should be unchanged
-            const originalHistory = EquipmentModifier.getModificationHistory(equipment, 'Longsword');
+            const originalHistory = EquipmentModifier.getModificationHistory(equipment, 'TestSword');
             expect(originalHistory[0].id).toBe('test');
         });
     });
 
     describe('getCombinedEffects', () => {
         it('should return base properties for unmodified item', () => {
-            const effects = EquipmentModifier.getCombinedEffects(testEquipment, 'Longsword');
-            // Longsword has no base properties
+            const effects = EquipmentModifier.getCombinedEffects(testEquipment, 'TestSword');
+            // TestSword has no base properties
             expect(effects).toEqual([]);
         });
 
@@ -573,8 +573,8 @@ describe('EquipmentModifier', () => {
                     }
                 ]
             };
-            // Use mode: 'absolute' to replace the existing registration
-            extensionManager.register('equipment', [baseWithProps], { mode: 'absolute' });
+            // Use mode: 'replace' to clear existing items and re-register with properties
+            extensionManager.register('equipment', [baseWithProps], { mode: 'replace' });
 
             const enchantment: EquipmentModification = {
                 id: 'test',
@@ -591,8 +591,8 @@ describe('EquipmentModifier', () => {
                 source: 'enchantment'
             };
 
-            const equipment = EquipmentModifier.enchant(testEquipment, 'Longsword', enchantment);
-            const effects = EquipmentModifier.getCombinedEffects(equipment, 'Longsword');
+            const equipment = EquipmentModifier.enchant(testEquipment, 'TestSword', enchantment);
+            const effects = EquipmentModifier.getCombinedEffects(equipment, 'TestSword');
 
             expect(effects.length).toBeGreaterThan(0);
             expect(effects.some(e => e.target === 'versatile')).toBe(true);
@@ -630,10 +630,10 @@ describe('EquipmentModifier', () => {
                 source: 'enchantment'
             };
 
-            let equipment = EquipmentModifier.enchant(testEquipment, 'Longsword', enchantment1);
-            equipment = EquipmentModifier.enchant(equipment, 'Longsword', enchantment2);
+            let equipment = EquipmentModifier.enchant(testEquipment, 'TestSword', enchantment1);
+            equipment = EquipmentModifier.enchant(equipment, 'TestSword', enchantment2);
 
-            const effects = EquipmentModifier.getCombinedEffects(equipment, 'Longsword');
+            const effects = EquipmentModifier.getCombinedEffects(equipment, 'TestSword');
             expect(effects.some(e => e.target === 'fire')).toBe(true);
             expect(effects.some(e => e.target === 'cold')).toBe(true);
         });
@@ -641,13 +641,13 @@ describe('EquipmentModifier', () => {
 
     describe('hasTemplate', () => {
         it('should return false for item without template', () => {
-            const result = EquipmentModifier.hasTemplate(testEquipment, 'Longsword', 'flaming');
+            const result = EquipmentModifier.hasTemplate(testEquipment, 'TestSword', 'flaming');
             expect(result).toBe(false);
         });
 
         it('should return true when templateId matches', () => {
             testEquipment.weapons[0].templateId = 'flaming';
-            const result = EquipmentModifier.hasTemplate(testEquipment, 'Longsword', 'flaming');
+            const result = EquipmentModifier.hasTemplate(testEquipment, 'TestSword', 'flaming');
             expect(result).toBe(true);
         });
 
@@ -660,16 +660,16 @@ describe('EquipmentModifier', () => {
                 source: 'template'
             };
 
-            const equipment = EquipmentModifier.enchant(testEquipment, 'Longsword', templateMod);
+            const equipment = EquipmentModifier.enchant(testEquipment, 'TestSword', templateMod);
             // hasTemplate checks if modification name includes the templateId (case-sensitive)
-            const result = EquipmentModifier.hasTemplate(equipment, 'Longsword', 'Flaming');
+            const result = EquipmentModifier.hasTemplate(equipment, 'TestSword', 'Flaming');
             expect(result).toBe(true);
         });
     });
 
     describe('removeAllModifications', () => {
         it('should return unchanged equipment for item with no modifications', () => {
-            const result = EquipmentModifier.removeAllModifications(testEquipment, 'Longsword');
+            const result = EquipmentModifier.removeAllModifications(testEquipment, 'TestSword');
             expect(result).toEqual(testEquipment);
         });
 
@@ -690,11 +690,11 @@ describe('EquipmentModifier', () => {
                 source: 'enchantment'
             };
 
-            let equipment = EquipmentModifier.enchant(testEquipment, 'Longsword', enchantment1);
-            equipment = EquipmentModifier.enchant(equipment, 'Longsword', enchantment2);
+            let equipment = EquipmentModifier.enchant(testEquipment, 'TestSword', enchantment1);
+            equipment = EquipmentModifier.enchant(equipment, 'TestSword', enchantment2);
             expect(equipment.weapons[0].modifications).toHaveLength(2);
 
-            equipment = EquipmentModifier.removeAllModifications(equipment, 'Longsword');
+            equipment = EquipmentModifier.removeAllModifications(equipment, 'TestSword');
             expect(equipment.weapons[0].modifications).toHaveLength(0);
         });
     });
@@ -717,11 +717,11 @@ describe('EquipmentModifier', () => {
                 source: 'curse'
             };
 
-            let equipment = EquipmentModifier.enchant(testEquipment, 'Longsword', enchantment);
-            equipment = EquipmentModifier.curse(equipment, 'Longsword', curse);
+            let equipment = EquipmentModifier.enchant(testEquipment, 'TestSword', enchantment);
+            equipment = EquipmentModifier.curse(equipment, 'TestSword', curse);
             expect(equipment.weapons[0].modifications).toHaveLength(2);
 
-            equipment = EquipmentModifier.disenchant(equipment, 'Longsword');
+            equipment = EquipmentModifier.disenchant(equipment, 'TestSword');
             expect(equipment.weapons[0].modifications).toHaveLength(1);
             expect(equipment.weapons[0].modifications?.[0].source).toBe('curse');
         });
@@ -735,10 +735,10 @@ describe('EquipmentModifier', () => {
                 source: 'upgrade'
             };
 
-            let equipment = EquipmentModifier.upgrade(testEquipment, 'Longsword', upgrade);
+            let equipment = EquipmentModifier.upgrade(testEquipment, 'TestSword', upgrade);
             expect(equipment.weapons[0].modifications).toHaveLength(1);
 
-            equipment = EquipmentModifier.disenchant(equipment, 'Longsword');
+            equipment = EquipmentModifier.disenchant(equipment, 'TestSword');
             expect(equipment.weapons[0].modifications).toHaveLength(0);
         });
     });
@@ -761,11 +761,11 @@ describe('EquipmentModifier', () => {
                 source: 'curse'
             };
 
-            let equipment = EquipmentModifier.enchant(testEquipment, 'Longsword', enchantment);
-            equipment = EquipmentModifier.curse(equipment, 'Longsword', curse);
+            let equipment = EquipmentModifier.enchant(testEquipment, 'TestSword', enchantment);
+            equipment = EquipmentModifier.curse(equipment, 'TestSword', curse);
             expect(equipment.weapons[0].modifications).toHaveLength(2);
 
-            equipment = EquipmentModifier.liftCurse(equipment, 'Longsword');
+            equipment = EquipmentModifier.liftCurse(equipment, 'TestSword');
             expect(equipment.weapons[0].modifications).toHaveLength(1);
             expect(equipment.weapons[0].modifications?.[0].source).toBe('enchantment');
         });
@@ -863,7 +863,7 @@ describe('EquipmentModifier', () => {
 
     describe('getModificationSources', () => {
         it('should return empty array for unmodified item', () => {
-            const sources = EquipmentModifier.getModificationSources(testEquipment, 'Longsword');
+            const sources = EquipmentModifier.getModificationSources(testEquipment, 'TestSword');
             expect(sources).toEqual([]);
         });
 
@@ -892,11 +892,11 @@ describe('EquipmentModifier', () => {
                 source: 'curse'
             };
 
-            let equipment = EquipmentModifier.enchant(testEquipment, 'Longsword', enchantment);
-            equipment = EquipmentModifier.enchant(equipment, 'Longsword', enchantment2);
-            equipment = EquipmentModifier.curse(equipment, 'Longsword', curse);
+            let equipment = EquipmentModifier.enchant(testEquipment, 'TestSword', enchantment);
+            equipment = EquipmentModifier.enchant(equipment, 'TestSword', enchantment2);
+            equipment = EquipmentModifier.curse(equipment, 'TestSword', curse);
 
-            const sources = EquipmentModifier.getModificationSources(equipment, 'Longsword');
+            const sources = EquipmentModifier.getModificationSources(equipment, 'TestSword');
             expect(sources).toHaveLength(2);
             expect(sources).toContain('enchantment');
             expect(sources).toContain('curse');
@@ -921,22 +921,22 @@ describe('EquipmentModifier', () => {
                 source: 'enchantment'
             };
 
-            let equipment = EquipmentModifier.enchant(testEquipment, 'Longsword', enchantment1);
-            equipment = EquipmentModifier.enchant(equipment, 'Longsword', enchantment2);
+            let equipment = EquipmentModifier.enchant(testEquipment, 'TestSword', enchantment1);
+            equipment = EquipmentModifier.enchant(equipment, 'TestSword', enchantment2);
 
-            const count = EquipmentModifier.countModificationsForSource(equipment, 'Longsword', 'enchantment');
+            const count = EquipmentModifier.countModificationsForSource(equipment, 'TestSword', 'enchantment');
             expect(count).toBe(2);
         });
 
         it('should return 0 for non-existent source', () => {
-            const count = EquipmentModifier.countModificationsForSource(testEquipment, 'Longsword', 'curse');
+            const count = EquipmentModifier.countModificationsForSource(testEquipment, 'TestSword', 'curse');
             expect(count).toBe(0);
         });
     });
 
     describe('isCursed', () => {
         it('should return false for uncursed item', () => {
-            const result = EquipmentModifier.isCursed(testEquipment, 'Longsword');
+            const result = EquipmentModifier.isCursed(testEquipment, 'TestSword');
             expect(result).toBe(false);
         });
 
@@ -949,8 +949,8 @@ describe('EquipmentModifier', () => {
                 source: 'curse'
             };
 
-            const equipment = EquipmentModifier.curse(testEquipment, 'Longsword', curse);
-            const result = EquipmentModifier.isCursed(equipment, 'Longsword');
+            const equipment = EquipmentModifier.curse(testEquipment, 'TestSword', curse);
+            const result = EquipmentModifier.isCursed(equipment, 'TestSword');
             expect(result).toBe(true);
         });
 
@@ -963,15 +963,15 @@ describe('EquipmentModifier', () => {
                 source: 'enchantment'
             };
 
-            const equipment = EquipmentModifier.enchant(testEquipment, 'Longsword', enchantment);
-            const result = EquipmentModifier.isCursed(equipment, 'Longsword');
+            const equipment = EquipmentModifier.enchant(testEquipment, 'TestSword', enchantment);
+            const result = EquipmentModifier.isCursed(equipment, 'TestSword');
             expect(result).toBe(false);
         });
     });
 
     describe('isEnchanted', () => {
         it('should return false for unenchanted item', () => {
-            const result = EquipmentModifier.isEnchanted(testEquipment, 'Longsword');
+            const result = EquipmentModifier.isEnchanted(testEquipment, 'TestSword');
             expect(result).toBe(false);
         });
 
@@ -984,8 +984,8 @@ describe('EquipmentModifier', () => {
                 source: 'enchantment'
             };
 
-            const equipment = EquipmentModifier.enchant(testEquipment, 'Longsword', enchantment);
-            const result = EquipmentModifier.isEnchanted(equipment, 'Longsword');
+            const equipment = EquipmentModifier.enchant(testEquipment, 'TestSword', enchantment);
+            const result = EquipmentModifier.isEnchanted(equipment, 'TestSword');
             expect(result).toBe(true);
         });
 
@@ -998,21 +998,21 @@ describe('EquipmentModifier', () => {
                 source: 'upgrade'
             };
 
-            const equipment = EquipmentModifier.upgrade(testEquipment, 'Longsword', upgrade);
-            const result = EquipmentModifier.isEnchanted(equipment, 'Longsword');
+            const equipment = EquipmentModifier.upgrade(testEquipment, 'TestSword', upgrade);
+            const result = EquipmentModifier.isEnchanted(equipment, 'TestSword');
             expect(result).toBe(true);
         });
     });
 
     describe('getAppliedTemplates', () => {
         it('should return empty array for item with no templates', () => {
-            const templates = EquipmentModifier.getAppliedTemplates(testEquipment, 'Longsword');
+            const templates = EquipmentModifier.getAppliedTemplates(testEquipment, 'TestSword');
             expect(templates).toEqual([]);
         });
 
         it('should return templateId when set', () => {
             testEquipment.weapons[0].templateId = 'flaming';
-            const templates = EquipmentModifier.getAppliedTemplates(testEquipment, 'Longsword');
+            const templates = EquipmentModifier.getAppliedTemplates(testEquipment, 'TestSword');
             expect(templates).toContain('flaming');
         });
     });
@@ -1024,10 +1024,10 @@ describe('EquipmentModifier', () => {
         });
 
         it('should return summary for basic item', () => {
-            const summary = EquipmentModifier.getItemSummary(testEquipment, 'Longsword');
+            const summary = EquipmentModifier.getItemSummary(testEquipment, 'TestSword');
 
             expect(summary).not.toBeNull();
-            expect(summary?.name).toBe('Longsword');
+            expect(summary?.name).toBe('TestSword');
             expect(summary?.quantity).toBe(1);
             expect(summary?.equipped).toBe(true);
             expect(summary?.modificationCount).toBe(0);
@@ -1051,8 +1051,8 @@ describe('EquipmentModifier', () => {
                 source: 'enchantment'
             };
 
-            const equipment = EquipmentModifier.enchant(testEquipment, 'Longsword', enchantment);
-            const summary = EquipmentModifier.getItemSummary(equipment, 'Longsword');
+            const equipment = EquipmentModifier.enchant(testEquipment, 'TestSword', enchantment);
+            const summary = EquipmentModifier.getItemSummary(equipment, 'TestSword');
 
             expect(summary?.modificationCount).toBe(1);
             expect(summary?.isEnchanted).toBe(true);
@@ -1078,7 +1078,7 @@ describe('EquipmentModifier', () => {
                     }
                 ]
             };
-            extensionManager.register('equipment', [longswordWithProps], { mode: 'absolute' });
+            extensionManager.register('equipment', [longswordWithProps], { mode: 'replace' });
 
             const enchantment: EquipmentModification = {
                 id: 'str_boost',
@@ -1098,14 +1098,14 @@ describe('EquipmentModifier', () => {
             // Enchant with character - should apply enchantment effects
             // Note: The current implementation may not re-apply effects correctly due to
             // duplicate equipment prevention in EquipmentEffectApplier
-            const equipment = EquipmentModifier.enchant(testEquipment, 'Longsword', enchantment, testCharacter);
+            const equipment = EquipmentModifier.enchant(testEquipment, 'TestSword', enchantment, testCharacter);
 
             // Verify modification was added
             expect(equipment.weapons[0].modifications).toHaveLength(1);
             expect(equipment.weapons[0].modifications?.[0].id).toBe('str_boost');
 
             // Remove modification with character
-            const updatedEquipment = EquipmentModifier.removeModification(equipment, 'Longsword', 'str_boost', testCharacter);
+            const updatedEquipment = EquipmentModifier.removeModification(equipment, 'TestSword', 'str_boost', testCharacter);
             expect(updatedEquipment.weapons[0].modifications).toHaveLength(0);
         });
     });
@@ -1120,7 +1120,7 @@ describe('EquipmentModifier', () => {
                 source: 'enchantment'
             };
 
-            const equipment = EquipmentModifier.enchant(testEquipment, 'Longsword', emptyMod);
+            const equipment = EquipmentModifier.enchant(testEquipment, 'TestSword', emptyMod);
             expect(equipment.weapons[0].modifications).toHaveLength(1);
         });
 
@@ -1150,7 +1150,7 @@ describe('EquipmentModifier', () => {
                 source: 'enchantment'
             };
 
-            const equipment = EquipmentModifier.enchant(testEquipment, 'Longsword', complexMod);
+            const equipment = EquipmentModifier.enchant(testEquipment, 'TestSword', complexMod);
             const mod = equipment.weapons[0].modifications?.[0];
 
             expect(mod?.properties).toHaveLength(1);
@@ -1165,7 +1165,7 @@ describe('EquipmentModifier', () => {
                 weapons: [],
                 armor: [
                     {
-                        name: 'Leather Armor',
+                        name: 'Test Leather Armor',
                         quantity: 1,
                         equipped: true
                     }
@@ -1177,7 +1177,7 @@ describe('EquipmentModifier', () => {
 
             // Register armor
             const armorData: EnhancedEquipment = {
-                name: 'Leather Armor',
+                name: 'Test Leather Armor',
                 type: 'armor',
                 rarity: 'common',
                 weight: 10,
@@ -1195,18 +1195,18 @@ describe('EquipmentModifier', () => {
                 source: 'enchantment'
             };
 
-            const result = EquipmentModifier.enchant(armorEquipment, 'Leather Armor', enchantment);
+            const result = EquipmentModifier.enchant(armorEquipment, 'Test Leather Armor', enchantment);
             expect(result.armor[0].modifications).toHaveLength(1);
         });
 
         it('should handle multiple items with same name in different slots', () => {
             const multiEquipment: CharacterEquipment = {
                 weapons: [
-                    { name: 'Dagger', quantity: 1, equipped: true }
+                    { name: 'Test Dagger', quantity: 1, equipped: true }
                 ],
                 armor: [],
                 items: [
-                    { name: 'Dagger', quantity: 2, equipped: false }
+                    { name: 'Test Dagger', quantity: 2, equipped: false }
                 ],
                 totalWeight: 3,
                 equippedWeight: 2
@@ -1214,7 +1214,7 @@ describe('EquipmentModifier', () => {
 
             // Register dagger
             const daggerData: EnhancedEquipment = {
-                name: 'Dagger',
+                name: 'Test Dagger',
                 type: 'weapon',
                 rarity: 'common',
                 weight: 1,
@@ -1233,7 +1233,7 @@ describe('EquipmentModifier', () => {
             };
 
             // Should enchant first matching item (weapons first)
-            const result = EquipmentModifier.enchant(multiEquipment, 'Dagger', enchantment);
+            const result = EquipmentModifier.enchant(multiEquipment, 'Test Dagger', enchantment);
             expect(result.weapons[0].modifications).toHaveLength(1);
             // Items gets modifications array initialized but empty
             expect(result.items[0].modifications).toEqual([]);
