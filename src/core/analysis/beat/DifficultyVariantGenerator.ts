@@ -1422,6 +1422,23 @@ export class DifficultyVariantGenerator {
         // Create enhanced beats array
         const enhancedBeats: CompositeBeat[] = [];
 
+        // Global occupied-slot tracker: "beatIndex:gridPosition" → gridType.
+        // Every beat addition must check this before writing. Once a slot is
+        // claimed, no other source (pattern, interpolation, creation, or
+        // original beats) can double-dip into the same position.
+        const occupiedSlots = new Map<string, string>(); // slot → gridType
+
+        const slotKey = (beatIdx: number, gridPos: number) => `${beatIdx}:${gridPos}`;
+
+        // Register all existing beats into the occupied set up front so
+        // nothing can collide with them.
+        for (const beat of cleanedBeats) {
+            const key = slotKey(beat.beatIndex, beat.gridPosition);
+            if (!occupiedSlots.has(key)) {
+                occupiedSlots.set(key, beat.gridType);
+            }
+        }
+
         for (let beatIndex = 0; beatIndex <= maxBeatIndex; beatIndex++) {
             const existingBeats = beatsByIndex.get(beatIndex) ?? [];
             const targetCount = targetBeatsPerBeat.get(beatIndex) ?? 0;
@@ -1446,12 +1463,24 @@ export class DifficultyVariantGenerator {
                     gridDecisions,
                     quarterNoteInterval,
                     beatsByIndex,
-                    enhancedBeats
+                    occupiedSlots
                 );
-                enhancedBeats.push(...createdBeats);
-                metadata.interpolatedBeats += createdBeats.length;
+                // Gate through occupiedSlots — only add beats whose slot is free
+                // AND whose grid type matches this beat index's established grid.
+                const gridForIndex = this.getGridForBeatIndex(beatIndex, createdBeats, gridDecisions);
+                for (const b of createdBeats) {
+                    const key = slotKey(b.beatIndex, b.gridPosition);
+                    if (!occupiedSlots.has(key) && b.gridType === gridForIndex) {
+                        occupiedSlots.set(key, b.gridType);
+                        enhancedBeats.push(b);
+                        metadata.interpolatedBeats++;
+                    }
+                }
                 continue;
             }
+
+            // Lock grid type for this beat index from existing beats
+            const gridForIndex = existingBeats[0].gridType;
 
             // Try pattern insertion first (if enabled and phrase analysis available)
             let addedFromPattern = 0;
@@ -1461,7 +1490,8 @@ export class DifficultyVariantGenerator {
                     beatIndex,
                     beatsToAdd,
                     phraseAnalysis,
-                    enhancedBeats
+                    occupiedSlots,
+                    gridForIndex
                 );
                 addedFromPattern = patternResult.beatsAdded;
                 if (patternResult.patternId) {
@@ -1472,28 +1502,27 @@ export class DifficultyVariantGenerator {
 
             // If pattern insertion didn't add enough beats, use interpolation
             if (addedFromPattern < beatsToAdd) {
-                // Collect positions already filled by pattern insertion so
-                // interpolation doesn't duplicate them
-                const patternPositions = new Set<number>();
-                for (const b of enhancedBeats) {
-                    if (b.beatIndex === beatIndex) {
-                        patternPositions.add(b.gridPosition);
-                    }
-                }
-
                 const interpolatedBeats = this.interpolateBeats(
                     existingBeats,
                     beatIndex,
                     beatsToAdd - addedFromPattern,
-                    gridDecisions,
                     quarterNoteInterval,
-                    patternPositions
+                    occupiedSlots,
+                    gridForIndex
                 );
-                enhancedBeats.push(...interpolatedBeats);
-                metadata.interpolatedBeats += interpolatedBeats.length;
+                // Gate through occupiedSlots
+                for (const b of interpolatedBeats) {
+                    const key = slotKey(b.beatIndex, b.gridPosition);
+                    if (!occupiedSlots.has(key)) {
+                        occupiedSlots.set(key, b.gridType);
+                        enhancedBeats.push(b);
+                        metadata.interpolatedBeats++;
+                    }
+                }
             }
 
-            // Add original beats
+            // Add original beats (already registered in occupiedSlots up front,
+            // so they're safe — but push them so they're in the output)
             enhancedBeats.push(...existingBeats);
         }
 
@@ -1503,7 +1532,12 @@ export class DifficultyVariantGenerator {
             return a.gridPosition - b.gridPosition;
         });
 
-        const deduplicatedBeats = this.deduplicateEnhancedBeats(sortedBeats);
+        // Resolve mixed grids BEFORE dedup. If a beat index has both triplet and
+        // straight notes, enforceSingleGridPerBeat picks the winning grid type
+        // and removes the loser. Then dedup collapses any position collisions
+        // within the single remaining grid type.
+        const singleGridBeats = this.enforceSingleGridPerBeat(sortedBeats);
+        const deduplicatedBeats = this.deduplicateEnhancedBeats(singleGridBeats);
 
         metadata.totalBeatsAfter = deduplicatedBeats.length;
 
@@ -1584,7 +1618,8 @@ export class DifficultyVariantGenerator {
         beatIndex: number,
         beatsToAdd: number,
         phraseAnalysis: PhraseAnalysisResult,
-        enhancedBeats: CompositeBeat[]
+        occupiedSlots: Map<string, string>,
+        lockedGridType: GridType
     ): { beatsAdded: number; patternId?: string } {
         const patternLibrary = phraseAnalysis.patternLibrary;
 
@@ -1597,26 +1632,20 @@ export class DifficultyVariantGenerator {
             return { beatsAdded: 0 };
         }
 
-        // Get the grid type of existing beats (if any)
-        const existingGridType = existingBeats.length > 0 ? existingBeats[0].gridType : 'straight_16th';
-
-        // Find patterns that match the grid type
+        // Only use patterns whose beats match the locked grid type for this beat index
         const matchingPatterns = suitablePatterns.filter(p =>
-            p.pattern.some(b => b.gridType === existingGridType)
+            p.pattern.some(b => b.gridType === lockedGridType)
         );
 
-        // Only use patterns that match the existing grid type.
-        // Inserting a mismatched grid creates unmusical mixed-grid beats.
         if (matchingPatterns.length === 0) {
             return { beatsAdded: 0 };
         }
-        const patternsToUse = matchingPatterns;
 
         // Sort by significance (most significant first)
-        patternsToUse.sort((a, b) => b.significance - a.significance);
+        matchingPatterns.sort((a, b) => b.significance - a.significance);
 
         // Try to use the most significant pattern
-        const pattern = patternsToUse[0];
+        const pattern = matchingPatterns[0];
 
         // Find beats from the pattern that fit in the current beat index
         const patternBeatsForCurrentBeat = pattern.pattern.filter(b => b.beatIndex === 0);
@@ -1624,8 +1653,15 @@ export class DifficultyVariantGenerator {
         // Get existing grid positions
         const existingPositions = new Set(existingBeats.map(b => b.gridPosition));
 
-        // Find pattern beats that don't overlap with existing beats
-        const newBeats = patternBeatsForCurrentBeat.filter(b => !existingPositions.has(b.gridPosition));
+        // Filter pattern beats: must match grid type, not overlap existing positions,
+        // AND the slot must not already be occupied in the global tracker.
+        const slotKey = (idx: number, pos: number) => `${idx}:${pos}`;
+        const newBeats = patternBeatsForCurrentBeat.filter(b => {
+            if (b.gridType !== lockedGridType) return false;
+            if (existingPositions.has(b.gridPosition)) return false;
+            if (occupiedSlots.has(slotKey(beatIndex, b.gridPosition))) return false;
+            return true;
+        });
 
         if (newBeats.length === 0) {
             return { beatsAdded: 0 };
@@ -1634,17 +1670,19 @@ export class DifficultyVariantGenerator {
         // Take only the number of beats we need
         const beatsToInsert = newBeats.slice(0, beatsToAdd);
 
-        // Convert pattern beats to composite beats
+        // Convert pattern beats to composite beats and register in occupiedSlots
         const sourceBand = pattern.sourceBand;
         const compositeBeats: CompositeBeat[] = beatsToInsert.map(b => ({
             ...b,
-            beatIndex, // Use current beat index
+            beatIndex,
             band: sourceBand,
             sourceBand,
-            intensity: b.intensity * 0.8, // Slightly reduce intensity for inserted patterns
+            intensity: b.intensity * 0.8,
         }));
 
-        enhancedBeats.push(...compositeBeats);
+        for (const b of compositeBeats) {
+            occupiedSlots.set(slotKey(b.beatIndex, b.gridPosition), b.gridType);
+        }
 
         return {
             beatsAdded: compositeBeats.length,
@@ -1674,7 +1712,7 @@ export class DifficultyVariantGenerator {
         gridDecisions?: Map<number, GridDecision>,
         quarterNoteInterval: number = 0.5,
         beatsByIndex?: Map<number, CompositeBeat[]>,
-        enhancedBeats?: CompositeBeat[]
+        occupiedSlots?: Map<string, string>
     ): CompositeBeat[] {
         // Determine grid type: grid decision > neighbor > default to straight_16th
         let gridType: GridType = 'straight_16th';
@@ -1701,12 +1739,13 @@ export class DifficultyVariantGenerator {
             }
         }
 
-        // Collect positions already filled by pattern insertion at this beat index
+        // Collect positions already occupied from the global tracker
         const occupiedPositions = new Set<number>();
-        if (enhancedBeats) {
-            for (const b of enhancedBeats) {
-                if (b.beatIndex === beatIndex) {
-                    occupiedPositions.add(b.gridPosition);
+        if (occupiedSlots) {
+            const slotKey = (idx: number, pos: number) => `${idx}:${pos}`;
+            for (let pos = 0; pos < 4; pos++) {
+                if (occupiedSlots.has(slotKey(beatIndex, pos))) {
+                    occupiedPositions.add(pos);
                 }
             }
         }
@@ -1754,50 +1793,44 @@ export class DifficultyVariantGenerator {
      * Interpolate beats to add density
      *
      * Adds beats at intermediate grid positions that don't already have beats.
-     * Respects grid decisions (16th vs triplet) if available.
+     * Always uses the existing beats' grid type to avoid mixed grids.
      *
      * @param existingBeats - Existing beats at this beat index
      * @param beatIndex - The beat index to interpolate for
      * @param beatsToAdd - Number of beats to add
-     * @param gridDecisions - Optional grid decisions from quantized streams
      * @param quarterNoteInterval - Duration of a quarter note in seconds for timestamp calculation
-     * @param occupiedPositions - Optional set of grid positions already filled (e.g., by pattern insertion)
+     * @param occupiedSlots - Global occupied slot tracker
+     * @param lockedGridType - Grid type locked for this beat index
      * @returns Array of interpolated beats
      */
     private interpolateBeats(
         existingBeats: CompositeBeat[],
         beatIndex: number,
         beatsToAdd: number,
-        gridDecisions?: Map<number, GridDecision>,
         quarterNoteInterval: number = 0.5,
-        occupiedPositions?: Set<number>
+        occupiedSlots?: Map<string, string>,
+        lockedGridType?: GridType
     ): CompositeBeat[] {
         if (beatsToAdd <= 0 || existingBeats.length === 0) {
             return [];
         }
 
-        // Determine grid type from existing beats or grid decisions
-        let gridType: GridType = existingBeats[0].gridType;
+        // Use the locked grid type (caller ensures this matches existing beats)
+        const gridType: GridType = lockedGridType ?? existingBeats[0].gridType;
         const getMaxPositions = (gt: string) =>
             gt === 'straight_16th' ? 4
                 : gt === 'straight_8th' ? 2
                     : 3;
-        let maxPositions = getMaxPositions(gridType);
+        const maxPositions = getMaxPositions(gridType);
 
-        // Check grid decisions for this beat index
-        if (gridDecisions) {
-            const decision = gridDecisions.get(beatIndex);
-            if (decision) {
-                gridType = decision.selectedGrid;
-                maxPositions = getMaxPositions(gridType);
-            }
-        }
-
-        // Get existing positions, plus any positions already filled by pattern insertion
+        // Get existing positions, plus any positions in the global occupied tracker
+        const slotKey = (idx: number, pos: number) => `${idx}:${pos}`;
         const existingPositions = new Set(existingBeats.map(b => b.gridPosition));
-        if (occupiedPositions) {
-            for (const pos of occupiedPositions) {
-                existingPositions.add(pos);
+        if (occupiedSlots) {
+            for (let pos = 0; pos < maxPositions; pos++) {
+                if (occupiedSlots.has(slotKey(beatIndex, pos))) {
+                    existingPositions.add(pos);
+                }
             }
         }
 
@@ -1861,18 +1894,77 @@ export class DifficultyVariantGenerator {
     }
 
     /**
-     * Deduplicate enhanced beats (same beatIndex + gridPosition + gridType)
+     * Determine the grid type for a beat index.
+     * Used when creating beats for an empty index that has no existing beats.
+     */
+    private getGridForBeatIndex(
+        beatIndex: number,
+        candidateBeats: CompositeBeat[],
+        gridDecisions?: Map<number, GridDecision>,
+        beatsByIndex?: Map<number, CompositeBeat[]>
+    ): GridType {
+        if (candidateBeats.length > 0) {
+            return candidateBeats[0].gridType;
+        }
+        if (gridDecisions?.has(beatIndex)) {
+            return gridDecisions.get(beatIndex)!.selectedGrid;
+        }
+        if (beatsByIndex) {
+            for (const offset of [1, -1, 2, -2, 3, -3]) {
+                const neighbor = beatsByIndex.get(beatIndex + offset);
+                if (neighbor && neighbor.length > 0) {
+                    return neighbor[0].gridType;
+                }
+            }
+        }
+        return 'straight_16th';
+    }
+
+    /**
+     * Deduplicate enhanced beats — each beat index has exactly one grid type.
+     * Beats at the same beatIndex:gridPosition are the same musical event regardless
+     * of grid type. If two grid types somehow landed at the same position, keep the
+     * one matching the dominant grid type for that beat index.
      */
     private deduplicateEnhancedBeats(beats: CompositeBeat[]): CompositeBeat[] {
+        // First pass: determine the dominant grid type per beat index.
+        // Each beat index has only one grid — the one with the most beats wins.
+        const gridCounts = new Map<number, Map<string, number>>();
+        for (const beat of beats) {
+            const indexMap = gridCounts.get(beat.beatIndex) ?? new Map<string, number>();
+            indexMap.set(beat.gridType, (indexMap.get(beat.gridType) ?? 0) + 1);
+            gridCounts.set(beat.beatIndex, indexMap);
+        }
+
+        const dominantGrid = new Map<number, string>();
+        for (const [beatIndex, counts] of gridCounts) {
+            let bestGrid = 'straight_16th';
+            let bestCount = 0;
+            for (const [grid, count] of counts) {
+                if (count > bestCount) {
+                    bestCount = count;
+                    bestGrid = grid;
+                }
+            }
+            dominantGrid.set(beatIndex, bestGrid);
+        }
+
+        // Second pass: dedup on beatIndex:gridPosition, prefer the beat
+        // matching the dominant grid type for that beat index.
         const beatMap = new Map<string, CompositeBeat>();
 
         for (const beat of beats) {
-            const key = `${beat.beatIndex}:${beat.gridPosition}:${beat.gridType}`;
+            const key = `${beat.beatIndex}:${beat.gridPosition}`;
             const existing = beatMap.get(key);
+            const dominant = dominantGrid.get(beat.beatIndex);
 
-            if (!existing || beat.intensity > existing.intensity) {
+            if (!existing) {
+                beatMap.set(key, beat);
+            } else if (beat.gridType === dominant && existing.gridType !== dominant) {
+                // New beat matches the dominant grid, existing doesn't — replace.
                 beatMap.set(key, beat);
             }
+            // else: keep existing (either both match or neither matches)
         }
 
         return Array.from(beatMap.values());
