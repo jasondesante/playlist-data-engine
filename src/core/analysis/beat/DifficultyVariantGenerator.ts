@@ -544,10 +544,16 @@ export class DifficultyVariantGenerator {
         const medium = this.generateVariant(composite, 'medium', naturalDifficulty, phraseAnalysis, gridDecisions);
         const hard = this.generateVariant(composite, 'hard', naturalDifficulty, phraseAnalysis, gridDecisions);
 
+        // Enforce single grid type per beat index across all variants.
+        // Mixed grids (triplet + straight in same beat) are unmusical and hard to read.
+        easy.beats = this.enforceSingleGridPerBeat(easy.beats);
+        medium.beats = this.enforceSingleGridPerBeat(medium.beats);
+        hard.beats = this.enforceSingleGridPerBeat(hard.beats);
+
         // Generate the natural variant (unedited composite stream)
         const natural: DifficultyVariant = {
             difficulty: 'natural',
-            beats: [...composite.beats],
+            beats: this.enforceSingleGridPerBeat([...composite.beats]),
             isUnedited: true,
             editType: 'none',
             editAmount: 0,
@@ -1539,8 +1545,12 @@ export class DifficultyVariantGenerator {
             p.pattern.some(b => b.gridType === existingGridType)
         );
 
-        // If no matching patterns, use any pattern
-        const patternsToUse = matchingPatterns.length > 0 ? matchingPatterns : suitablePatterns;
+        // Only use patterns that match the existing grid type.
+        // Inserting a mismatched grid creates unmusical mixed-grid beats.
+        if (matchingPatterns.length === 0) {
+            return { beatsAdded: 0 };
+        }
+        const patternsToUse = matchingPatterns;
 
         // Sort by significance (most significant first)
         patternsToUse.sort((a, b) => b.significance - a.significance);
@@ -1630,15 +1640,9 @@ export class DifficultyVariantGenerator {
             }
         }
 
-        // If no available positions, try alternate grid type
-        if (availablePositions.length === 0 && gridType === 'straight_16th') {
-            // Try triplet grid
-            for (let pos = 0; pos < 3; pos++) {
-                if (!existingPositions.has(pos)) {
-                    availablePositions.push(pos);
-                }
-            }
-        }
+        // Don't fall back to alternate grid type - that would mix grids within a single beat.
+        // enforceSingleGridPerBeat will clean up any remaining mixing, but avoiding it
+        // at the source produces better results.
 
         // Sort available positions (prefer mid-beat positions for interpolation)
         availablePositions.sort((a, b) => {
@@ -1697,6 +1701,74 @@ export class DifficultyVariantGenerator {
         }
 
         return Array.from(beatMap.values());
+    }
+
+    /**
+     * Enforce single grid type per beat index.
+     *
+     * When a beat index has notes from both triplet and straight grids,
+     * keep only the grid type with higher total intensity. This prevents
+     * unmusical combinations like a 16th note and a triplet in the same beat.
+     *
+     * @param beats - The beats to enforce single-grid on
+     * @returns Beats with at most one grid type per beat index
+     */
+    private enforceSingleGridPerBeat<T extends CompositeBeat | VariantBeat>(
+        beats: T[]
+    ): T[] {
+        // Group beats by beatIndex
+        const beatsByIndex = new Map<number, T[]>();
+        for (const beat of beats) {
+            const existing = beatsByIndex.get(beat.beatIndex) ?? [];
+            existing.push(beat);
+            beatsByIndex.set(beat.beatIndex, existing);
+        }
+
+        const result: T[] = [];
+
+        for (const [, beatsAtIndex] of beatsByIndex) {
+            if (beatsAtIndex.length <= 1) {
+                result.push(...beatsAtIndex);
+                continue;
+            }
+
+            // Check if this beat index has mixed grid types
+            const gridTypes = new Set(beatsAtIndex.map(b => b.gridType));
+            if (gridTypes.size <= 1) {
+                // Single grid type, keep all
+                result.push(...beatsAtIndex);
+                continue;
+            }
+
+            // Mixed grids - pick the winner by total intensity
+            let winnerGrid: ExtendedGridType = 'straight_16th';
+            let winnerIntensity = 0;
+
+            for (const gridType of gridTypes) {
+                const totalIntensity = beatsAtIndex
+                    .filter(b => b.gridType === gridType)
+                    .reduce((sum, b) => sum + b.intensity, 0);
+                if (totalIntensity > winnerIntensity) {
+                    winnerIntensity = totalIntensity;
+                    winnerGrid = gridType;
+                }
+            }
+
+            // Keep only beats matching the winner grid type
+            const kept = beatsAtIndex.filter(b => b.gridType === winnerGrid);
+
+            if (this.config.logConversions && kept.length < beatsAtIndex.length) {
+                const removed = beatsAtIndex.filter(b => b.gridType !== winnerGrid);
+                console.log(
+                    `[DifficultyVariantGenerator] Enforced single grid at beat ${beatsAtIndex[0].beatIndex}: ` +
+                    `kept ${winnerGrid} (${kept.length} beats), removed ${removed.map(b => b.gridType).join(', ')} (${removed.length} beats)`
+                );
+            }
+
+            result.push(...kept);
+        }
+
+        return result.sort((a, b) => a.timestamp - b.timestamp);
     }
 
     /**
