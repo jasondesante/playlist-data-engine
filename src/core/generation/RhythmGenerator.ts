@@ -1092,7 +1092,7 @@ export class RhythmGenerator {
             `natural difficulty: ${composite.naturalDifficulty}`);
         signal?.throwIfAborted();
 
-        const difficultyVariants = this.generateDifficultyVariants(composite, phraseAnalysis, quantizationResult);
+        const difficultyVariants = this.generateDifficultyVariants(composite, phraseAnalysis, quantizationResult, unifiedBeatMap);
         log('Phase 3', 0.8, 'Generated easy/medium/hard difficulty variants');
         log('Phase 3', 1, 'Phase 3 complete');
 
@@ -1257,12 +1257,13 @@ export class RhythmGenerator {
     generateDifficultyVariants(
         composite: CompositeStream,
         phraseAnalysis: PhraseAnalysisResult,
-        quantizationResult: QuantizedBandStreams
+        quantizationResult: QuantizedBandStreams,
+        unifiedBeatMap: UnifiedBeatMap
     ): { easy: DifficultyVariant; medium: DifficultyVariant; hard: DifficultyVariant; natural: DifficultyVariant } {
         // Collect grid decisions from all band streams
         const gridDecisions = this.collectGridDecisions(quantizationResult);
 
-        return this.variantGenerator.generate(composite, phraseAnalysis, gridDecisions);
+        return this.variantGenerator.generate(composite, unifiedBeatMap, phraseAnalysis, gridDecisions);
     }
 
     /**

@@ -38,6 +38,7 @@ import type { CompositeBeat, CompositeStream } from './CompositeStreamGenerator.
 import type { NaturalDifficulty } from './DensityAnalyzer.js';
 import type { GridType, GridDecision } from './RhythmQuantizer.js';
 import type { PhraseAnalysisResult, RhythmicPhrase } from './PhraseAnalyzer.js';
+import type { UnifiedBeatMap } from '../../types/BeatMap.js';
 
 // ============================================================================
 // Extended Grid Types
@@ -359,7 +360,7 @@ const DEFAULT_DIFFICULTY_VARIANT_CONFIG: DifficultyVariantConfig = {
     heavySimplificationIntensityThreshold: 0.5,
     moderateSimplificationIntensityThreshold: 0.4,
     densityReductionMinIntensity: 0.25,
-    enhancementDensityMultiplier: 1.5,
+    enhancementDensityMultiplier: 1.42,
     interpolatedBeatIntensity: 0.5,
     preferPatternInsertion: true,
     maxPatternInsertionSize: 4,
@@ -529,6 +530,7 @@ export class DifficultyVariantGenerator {
      */
     generate(
         composite: CompositeStream,
+        unifiedBeatMap: UnifiedBeatMap,
         phraseAnalysis?: PhraseAnalysisResult,
         gridDecisions?: Map<number, GridDecision>
     ): {
@@ -540,9 +542,9 @@ export class DifficultyVariantGenerator {
         const naturalDifficulty = composite.naturalDifficulty;
 
         // Generate variants based on natural difficulty
-        const easy = this.generateVariant(composite, 'easy', naturalDifficulty, phraseAnalysis, gridDecisions);
-        const medium = this.generateVariant(composite, 'medium', naturalDifficulty, phraseAnalysis, gridDecisions);
-        const hard = this.generateVariant(composite, 'hard', naturalDifficulty, phraseAnalysis, gridDecisions);
+        const easy = this.generateVariant(composite, 'easy', naturalDifficulty, unifiedBeatMap, phraseAnalysis, gridDecisions);
+        const medium = this.generateVariant(composite, 'medium', naturalDifficulty, unifiedBeatMap, phraseAnalysis, gridDecisions);
+        const hard = this.generateVariant(composite, 'hard', naturalDifficulty, unifiedBeatMap, phraseAnalysis, gridDecisions);
 
         // Enforce single grid type per beat index across all variants.
         // Mixed grids (triplet + straight in same beat) are unmusical and hard to read.
@@ -623,6 +625,7 @@ export class DifficultyVariantGenerator {
         composite: CompositeStream,
         targetDifficulty: DifficultyLevel,
         naturalDifficulty: NaturalDifficulty,
+        unifiedBeatMap: UnifiedBeatMap,
         phraseAnalysis?: PhraseAnalysisResult,
         gridDecisions?: Map<number, GridDecision>
     ): DifficultyVariant {
@@ -705,6 +708,7 @@ export class DifficultyVariantGenerator {
                 composite.beats,
                 targetDifficulty,
                 enhancementLevel,
+                unifiedBeatMap,
                 phraseAnalysis,
                 gridDecisions,
                 composite.quarterNoteInterval
@@ -1373,6 +1377,7 @@ export class DifficultyVariantGenerator {
         beats: CompositeBeat[],
         targetDifficulty: DifficultyLevel,
         enhancementLevel: 'moderate' | 'heavy',
+        unifiedBeatMap: UnifiedBeatMap,
         phraseAnalysis?: PhraseAnalysisResult,
         gridDecisions?: Map<number, GridDecision>,
         quarterNoteInterval: number = 0.5
@@ -1388,7 +1393,7 @@ export class DifficultyVariantGenerator {
 
         // Adjust density multiplier based on enhancement level
         const densityMultiplier = enhancementLevel === 'heavy'
-            ? this.config.enhancementDensityMultiplier * 1.5
+            ? this.config.enhancementDensityMultiplier * 1.45
             : this.config.enhancementDensityMultiplier;
 
         metadata.densityMultiplier = densityMultiplier;
@@ -1437,6 +1442,7 @@ export class DifficultyVariantGenerator {
                 const createdBeats = this.createBeatsForEmptyIndex(
                     beatIndex,
                     beatsToAdd,
+                    unifiedBeatMap,
                     gridDecisions,
                     quarterNoteInterval,
                     beatsByIndex,
@@ -1664,6 +1670,7 @@ export class DifficultyVariantGenerator {
     private createBeatsForEmptyIndex(
         beatIndex: number,
         beatsToAdd: number,
+        unifiedBeatMap: UnifiedBeatMap,
         gridDecisions?: Map<number, GridDecision>,
         quarterNoteInterval: number = 0.5,
         beatsByIndex?: Map<number, CompositeBeat[]>,
@@ -1723,14 +1730,13 @@ export class DifficultyVariantGenerator {
 
         const positionsToFill = availablePositions.slice(0, beatsToAdd);
 
-        // Calculate beat start timestamp from beatIndex
-        // beatIndex 0 starts at some reference time; use 0 as base since we
-        // have no existing beat to derive an absolute timestamp from.
-        // The actual timestamp will be recalculated downstream if needed.
+        // Use the actual beat timestamp from the unified beat map.
+        // This is the authoritative source for where each beat sits in time.
+        const beatStartTimestamp = unifiedBeatMap.beats[beatIndex]?.timestamp ?? beatIndex * quarterNoteInterval;
+
         const interval = gridType === 'straight_16th' ? quarterNoteInterval / 4
             : gridType === 'straight_8th' ? quarterNoteInterval / 2
                 : quarterNoteInterval / 3;
-        const beatStartTimestamp = beatIndex * quarterNoteInterval;
 
         return positionsToFill.map(gridPosition => ({
             timestamp: beatStartTimestamp + (gridPosition * interval),
