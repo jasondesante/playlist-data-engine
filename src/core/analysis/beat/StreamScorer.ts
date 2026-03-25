@@ -197,7 +197,11 @@ const DEFAULT_STREAM_SCORER_CONFIG: StreamScorerConfig = {
         triplet_8th: [1, 2], // Triplet offbeats (after the downbeat)
         straight_8th: [1], // 8th note offbeat (the "and" in "1-and")
     },
-    bandBiasWeights: undefined, // No bias by default
+    bandBiasWeights: {
+        low: 0.8,
+        mid: 0.95,
+        high: 1.0,
+    },
 };
 
 // ============================================================================

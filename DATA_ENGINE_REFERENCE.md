@@ -2773,7 +2773,7 @@ constructor(config?: Partial<StreamScorerConfig>)
 | `phraseSignificanceWeight` | `0.25` | Weight for phrase significance (pattern detection) in scoring |
 | `densityWeight` | `0.15` | Weight for density factor (note count) in scoring |
 | `offbeatGridPositions` | `{ straight_16th: [1, 3], triplet_8th: [1, 2] }` | Grid positions considered "offbeats" for syncopation scoring |
-| `bandBiasWeights` | `undefined` | Band bias multipliers applied to final section scores (see below) |
+| `bandBiasWeights` | `{ low: 0.8, mid: 0.95, high: 1.0 }` | Band bias multipliers applied to final section scores (see below) |
 
 **Band Bias Weights:**
 

@@ -3495,11 +3495,11 @@ Manual preference multipliers applied to the final score for each frequency band
 
 | Parameter | Default | Range | Effect |
 |-----------|---------|-------|--------|
-| `bandBiasWeights.low` | undefined | 0.0-2.0 | 0 = never win, 1 = neutral, 2 = strongly favored |
-| `bandBiasWeights.mid` | undefined | 0.0-2.0 | Same as above |
-| `bandBiasWeights.high` | undefined | 0.0-2.0 | Same as above |
+| `bandBiasWeights.low` | 0.8 | 0.0-2.0 | 0 = never win, 1 = neutral, 2 = strongly favored |
+| `bandBiasWeights.mid` | 0.95 | 0.0-2.0 | Same as above |
+| `bandBiasWeights.high` | 1.0 | 0.0-2.0 | Same as above |
 
-**Note**: When `undefined`, no bias is applied (all bands compete on merit alone).
+**Note**: Bass is slightly disfavored by default (0.8) to reduce low-frequency dominance in composite stream selection. Mids are very slightly disfavored (0.95).
 
 #### How Bias Affects Selection
 
