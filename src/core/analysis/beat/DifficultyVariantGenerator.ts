@@ -364,7 +364,7 @@ const DEFAULT_DIFFICULTY_VARIANT_CONFIG: DifficultyVariantConfig = {
     heavySimplificationIntensityThreshold: 0.5,
     moderateSimplificationIntensityThreshold: 0.4,
     densityReductionMinIntensity: 0.25,
-    enhancementDensityMultiplier: 1.6,
+    enhancementDensityMultiplier: 1.5,
     interpolatedBeatIntensity: 0.5,
     preferPatternInsertion: true,
     maxPatternInsertionSize: 4,
@@ -1398,7 +1398,7 @@ export class DifficultyVariantGenerator {
 
         // Adjust density multiplier based on enhancement level
         const densityMultiplier = enhancementLevel === 'heavy'
-            ? this.config.enhancementDensityMultiplier * 1.7
+            ? this.config.enhancementDensityMultiplier * 1.2
             : this.config.enhancementDensityMultiplier;
 
         metadata.densityMultiplier = densityMultiplier;

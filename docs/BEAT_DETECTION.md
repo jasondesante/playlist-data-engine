@@ -3671,7 +3671,7 @@ const config = generator.getConfig();
 | `heavySimplificationIntensityThreshold` | `number` | `0.5` | Min intensity for heavy simplification |
 | `moderateSimplificationIntensityThreshold` | `number` | `0.4` | Threshold for removing offbeat 16ths (hard→medium) |
 | `densityReductionMinIntensity` | `number` | `0.25` | Min intensity for density reduction removal |
-| `enhancementDensityMultiplier` | `number` | `1.6` | Target density multiplier for enhancement (1.0 = no change) |
+| `enhancementDensityMultiplier` | `number` | `1.5` | Target density multiplier for enhancement (1.0 = no change) |
 | `interpolatedBeatIntensity` | `number` | `0.5` | Intensity assigned to interpolated beats (0.0–1.0) |
 | `preferPatternInsertion` | `boolean` | `true` | Prefer pattern insertion over simple interpolation |
 | `maxPatternInsertionSize` | `number` | `4` | Max phrase size (in beats) for pattern insertion |
