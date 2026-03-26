@@ -170,6 +170,7 @@ export interface AllDifficultiesResult {
     easy: GeneratedLevel
     medium: GeneratedLevel
     hard: GeneratedLevel
+    natural?: GeneratedLevel
 }
 
 /**
@@ -679,6 +680,7 @@ export class LevelGenerator {
             easy: results.easy!,
             medium: results.medium!,
             hard: results.hard!,
+            natural: results.natural!,
         };
     }
 

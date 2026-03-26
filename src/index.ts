@@ -682,6 +682,7 @@ export {
     type GeneratedLevel,
     type AllDifficultiesResult,
     type LevelProgressCallback,
+    type LevelGenerationProgress,
 } from './core/generation/LevelGenerator.js';
 
 // Level Serializer (Phase 4.2.2)
