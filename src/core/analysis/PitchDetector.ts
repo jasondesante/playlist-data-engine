@@ -405,6 +405,171 @@ export class PitchDetector {
     }
 
     /**
+     * Detect pitch continuously across a signal (full pYIN with HMM tracking)
+     *
+     * Same as detect() but accepts a Float32Array directly instead of AudioBuffer.
+     * Use this when audio has already been decoded or filtered.
+     *
+     * Note: The HMM is tuned for clean monophonic signals and may be too conservative
+     * for band-pass filtered polyphonic music. For such cases, prefer detectSignalRaw()
+     * which uses raw YIN voicing decisions without HMM bias.
+     *
+     * @param signal - Mono audio signal
+     * @param sampleRate - Sample rate of the signal
+     * @returns Array of pitch results, one per analysis frame
+     */
+    detectSignal(signal: Float32Array, sampleRate: number): PitchResult[] {
+        const { frameSize, hopSize } = this.config;
+        const numFrames = Math.floor((signal.length - frameSize) / hopSize) + 1;
+        const hopTime = hopSize / sampleRate;
+
+        // Collect pitch candidates for each frame
+        const frameCandidates: PitchCandidate[][] = [];
+        const allFrameCandidates: PitchCandidate[][] = [];
+
+        for (let frame = 0; frame < numFrames; frame++) {
+            const startSample = frame * hopSize;
+            const frameSignal = signal.slice(startSample, startSample + frameSize);
+
+            const { filtered, all } = this.analyzeFrame(frameSignal, sampleRate);
+            frameCandidates.push(filtered);
+            allFrameCandidates.push(all);
+        }
+
+        // Run Viterbi decoding to find optimal pitch path
+        const optimalPath = this.viterbiDecode(frameCandidates);
+
+        // Convert to PitchResult array
+        const results: PitchResult[] = [];
+        for (let frame = 0; frame < numFrames; frame++) {
+            const stateIndex = optimalPath[frame];
+            const state = this.states[stateIndex];
+            const candidates = frameCandidates[frame];
+            const allCandidates = allFrameCandidates[frame];
+
+            const result: PitchResult = {
+                timestamp: frame * hopTime,
+                frequency: state.frequency,
+                probability: this.getFrameProbability(stateIndex, candidates),
+                isVoiced: state.frequency > 0,
+                midiNote: state.frequency > 0 ? state.midiNote : null,
+                noteName: state.frequency > 0 ? this.midiToNoteName(state.midiNote) : null,
+            };
+
+            if (allCandidates.length > 1) {
+                result.alternativeHypotheses = allCandidates.slice(0, 5).map(c => ({
+                    frequency: c.frequency,
+                    probability: c.probability,
+                }));
+            }
+
+            results.push(result);
+        }
+
+        return results;
+    }
+
+    /**
+     * Detect pitch continuously across a signal using raw YIN (no HMM)
+     *
+     * Analyzes every frame with YIN and uses raw candidate probability for voicing
+     * decisions, without the HMM's unvoiced-state bias. More suitable than detectSignal()
+     * for band-pass filtered polyphonic music where the HMM tends to stay stuck in
+     * the unvoiced state.
+     *
+     * @param signal - Mono audio signal
+     * @param sampleRate - Sample rate of the signal
+     * @returns Array of pitch results, one per analysis frame
+     */
+    detectSignalRaw(signal: Float32Array, sampleRate: number): PitchResult[] {
+        const { frameSize, hopSize, voicingThreshold } = this.config;
+        const numFrames = Math.floor((signal.length - frameSize) / hopSize) + 1;
+        const hopTime = hopSize / sampleRate;
+
+        const results: PitchResult[] = [];
+
+        // DEBUG: track candidate quality distribution
+        let framesWithCandidates = 0;
+        let framesWithNoCandidates = 0;
+        const probBuckets = { below01: 0, b01_02: 0, b02_03: 0, b03_04: 0, b04_05: 0, above05: 0 };
+
+        for (let frame = 0; frame < numFrames; frame++) {
+            const startSample = frame * hopSize;
+            const frameSignal = signal.slice(startSample, startSample + frameSize);
+
+            const { filtered, all } = this.analyzeFrame(frameSignal, sampleRate);
+            const timestamp = frame * hopTime;
+
+            if (filtered.length > 0) {
+                framesWithCandidates++;
+                const bestProb = filtered[0].probability;
+
+                // Bucket the probability
+                if (bestProb < 0.1) probBuckets.below01++;
+                else if (bestProb < 0.2) probBuckets.b01_02++;
+                else if (bestProb < 0.3) probBuckets.b02_03++;
+                else if (bestProb < 0.4) probBuckets.b03_04++;
+                else if (bestProb < 0.5) probBuckets.b04_05++;
+                else probBuckets.above05++;
+
+                if (bestProb >= voicingThreshold) {
+                    const best = filtered[0];
+                    const midiNote = Math.round(this.frequencyToMidi(best.frequency));
+
+                    const result: PitchResult = {
+                        timestamp,
+                        frequency: best.frequency,
+                        probability: best.probability,
+                        isVoiced: true,
+                        midiNote,
+                        noteName: this.midiToNoteName(midiNote),
+                    };
+
+                    if (all.length > 1) {
+                        result.alternativeHypotheses = all.slice(0, 5).map(c => ({
+                            frequency: c.frequency,
+                            probability: c.probability,
+                        }));
+                    }
+
+                    results.push(result);
+                } else {
+                    results.push({
+                        timestamp,
+                        frequency: 0,
+                        probability: 0,
+                        isVoiced: false,
+                        midiNote: null,
+                        noteName: null,
+                    });
+                }
+            } else {
+                framesWithNoCandidates++;
+                results.push({
+                    timestamp,
+                    frequency: 0,
+                    probability: 0,
+                    isVoiced: false,
+                    midiNote: null,
+                    noteName: null,
+                });
+            }
+        }
+
+        // DEBUG: log candidate quality distribution
+        console.log('[PitchDetector.detectSignalRaw] Candidate quality:', {
+            numFrames,
+            framesWithCandidates,
+            framesWithNoCandidates,
+            candidateRate: ((framesWithCandidates / numFrames) * 100).toFixed(1) + '%',
+            voicingThreshold,
+            probBuckets,
+        });
+
+        return results;
+    }
+
+    /**
      * Detect pitch at a specific timestamp
      *
      * Analyzes a single frame centered at the given timestamp.

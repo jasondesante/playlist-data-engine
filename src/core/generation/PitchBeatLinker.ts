@@ -206,6 +206,7 @@ const DEFAULT_CONFIG: Required<Omit<PitchBeatLinkerConfig, 'pitchDetector'>> & {
 export class PitchBeatLinker {
     private config: Required<Omit<PitchBeatLinkerConfig, 'pitchDetector'>> & { pitchDetector: Partial<PitchDetectorConfig> };
     private pitchDetectors: Map<PitchBandName, PitchDetector> = new Map();
+    private fullSpectrumDetector: PitchDetector;
 
     /**
      * Create a new PitchBeatLinker
@@ -239,6 +240,19 @@ export class PitchBeatLinker {
 
             this.pitchDetectors.set(bandName, new PitchDetector(detectorConfig));
         }
+
+        // Initialize a full-spectrum detector for pitch detection on unfiltered audio.
+        // Band-pass filtered audio (8th order Butterworth) removes too many harmonics
+        // for YIN to find periodicity reliably, so we detect pitch on the full signal.
+        // Use a relaxed YIN threshold (0.3 vs default 0.1) for polyphonic music where
+        // CMNDF rarely drops below 0.1 due to competing periodicities.
+        this.fullSpectrumDetector = new PitchDetector({
+            ...this.config.pitchDetector,
+            minFrequency: this.config.pitchDetector.minFrequency ?? 80,
+            maxFrequency: this.config.pitchDetector.maxFrequency ?? 1000,
+            targetSampleRate: this.config.targetSampleRate,
+            yinThreshold: this.config.pitchDetector.yinThreshold ?? 0.3,
+        });
     }
 
     /**
@@ -272,7 +286,44 @@ export class PitchBeatLinker {
         const resampled = resampleAudio(audioBuffer, sampleRate);
         const signal = resampled.data;
 
-        // Create pre-filtered band signals
+        // Run pitch detection on the FULL unfiltered signal.
+        // Band-pass filtering (8th order Butterworth) removes too many harmonics
+        // for YIN to find periodicity, so all bands share one full-spectrum analysis.
+        const fullSpectrumResults = this.fullSpectrumDetector.detectSignalRaw(signal, sampleRate);
+        const hopTime = this.fullSpectrumDetector.getConfig().hopSize / sampleRate;
+
+        // DEBUG: pitch detection diagnostics
+        const voicedFrames = fullSpectrumResults.filter(r => r.isVoiced);
+        const maxProb = Math.max(...fullSpectrumResults.map(r => r.probability));
+        const probsAbove03 = fullSpectrumResults.filter(r => r.probability > 0.3 && !r.isVoiced);
+        console.log('[PitchBeatLinker] Full-spectrum analysis:', {
+            totalFrames: fullSpectrumResults.length,
+            voicedFrames: voicedFrames.length,
+            voicedPct: ((voicedFrames.length / fullSpectrumResults.length) * 100).toFixed(1) + '%',
+            maxProbability: maxProb.toFixed(3),
+            voicingThreshold: this.fullSpectrumDetector.getConfig().voicingThreshold,
+            nearMissFrames: probsAbove03.length, // frames with prob 0.3-0.5 that didn't pass threshold
+            signalLength: signal.length,
+            signalSampleRate: sampleRate,
+            detectorFreqRange: `${this.fullSpectrumDetector.getConfig().minFrequency}-${this.fullSpectrumDetector.getConfig().maxFrequency} Hz`,
+        });
+        if (voicedFrames.length > 0) {
+            console.log('[PitchBeatLinker] Sample voiced frames:', voicedFrames.slice(0, 5).map(r => ({
+                t: r.timestamp.toFixed(3) + 's',
+                freq: r.frequency.toFixed(1) + ' Hz',
+                prob: r.probability.toFixed(3),
+                note: r.noteName,
+            })));
+        }
+        if (probsAbove03.length > 0) {
+            console.log('[PitchBeatLinker] Near-miss frames (prob 0.3-0.5, below threshold):', probsAbove03.slice(0, 5).map(r => ({
+                t: r.timestamp.toFixed(3) + 's',
+                prob: r.probability.toFixed(3),
+            })));
+        }
+
+        // Create pre-filtered band signals (still needed for linkPreFiltered interface,
+        // but pitch detection uses fullSpectrumResults instead)
         const preFilteredBands: PreFilteredBandAudio[] = [];
         for (const band of this.config.bands) {
             const bandName = band.name as PitchBandName;
@@ -284,8 +335,9 @@ export class PitchBeatLinker {
             });
         }
 
-        return this.linkPreFiltered(bandStreams, preFilteredBands, { duration }, phrases);
+        return this.linkPreFiltered(bandStreams, preFilteredBands, { duration }, phrases, fullSpectrumResults, hopTime);
     }
+
 
     /**
      * Link pitch detection to rhythm beats using pre-filtered audio
@@ -297,42 +349,47 @@ export class PitchBeatLinker {
      * @param preFilteredBands - Pre-filtered audio signals for each band
      * @param config - Configuration including duration
      * @param phrases - Optional rhythmic phrases for phrase-level correlation
+     * @param sharedPitchResults - Optional pre-computed pitch results from full-spectrum analysis
+     * @param hopTime - Hop time in seconds (required if sharedPitchResults provided)
      * @returns Linked pitch analysis result
      */
     linkPreFiltered(
         bandStreams: { low: GeneratedRhythmMap; mid: GeneratedRhythmMap; high: GeneratedRhythmMap },
         preFilteredBands: PreFilteredBandAudio[],
         config: PreFilteredLinkConfig,
-        phrases?: RhythmicPhrase[]
+        phrases?: RhythmicPhrase[],
+        sharedPitchResults?: PitchResult[],
+        hopTime?: number
     ): LinkedPitchAnalysis {
         const duration = config.duration;
         const bandPitches = new Map<PitchBandName, BandPitchAtBeat>();
 
-        // Create a map for quick band signal lookup
-        const bandSignalMap = new Map<PitchBandName, PreFilteredBandAudio>();
-        for (const preFiltered of preFilteredBands) {
-            bandSignalMap.set(preFiltered.band, preFiltered);
-        }
-
         // Process each band stream independently
         for (const bandName of ['low', 'mid', 'high'] as const) {
             const bandStream = bandStreams[bandName];
-            const preFiltered = bandSignalMap.get(bandName);
 
-            if (!preFiltered) {
-                // No pre-filtered signal for this band, create empty result
-                bandPitches.set(bandName, {
-                    band: bandName,
-                    pitches: [],
-                    avgProbability: 0,
-                    voicedBeatCount: 0,
-                    totalBeatCount: bandStream.beats.length,
-                });
-                continue;
+            if (sharedPitchResults && hopTime) {
+                // Use shared full-spectrum pitch results for all bands
+                const bandResult = this.analyzeBandStreamWithResults(bandStream, sharedPitchResults, hopTime, bandName);
+                bandPitches.set(bandName, bandResult);
+            } else {
+                // Fallback: run per-band pitch detection (less accurate)
+                const preFiltered = preFilteredBands.find(b => b.band === bandName);
+
+                if (!preFiltered) {
+                    bandPitches.set(bandName, {
+                        band: bandName,
+                        pitches: [],
+                        avgProbability: 0,
+                        voicedBeatCount: 0,
+                        totalBeatCount: bandStream.beats.length,
+                    });
+                    continue;
+                }
+
+                const bandResult = this.analyzeBandStream(bandStream, preFiltered);
+                bandPitches.set(bandName, bandResult);
             }
-
-            const bandResult = this.analyzeBandStream(bandStream, preFiltered);
-            bandPitches.set(bandName, bandResult);
         }
 
         // Flatten all pitches into a single array sorted by timestamp
@@ -351,7 +408,7 @@ export class PitchBeatLinker {
         let totalProbability = 0;
         let totalBeatsAnalyzed = 0;
 
-        for (const [, bandResult] of bandPitches) {
+        for (const [bandName, bandResult] of bandPitches) {
             totalBeatsAnalyzed += bandResult.totalBeatCount;
             totalVoicedBeats += bandResult.voicedBeatCount;
             for (const pitchAtBeat of bandResult.pitches) {
@@ -359,6 +416,46 @@ export class PitchBeatLinker {
                     totalProbability += pitchAtBeat.pitch.probability;
                 }
             }
+        }
+
+        // DEBUG: per-band pitch results + timing diagnostics
+        const allBeatTimestamps = Array.from(bandPitches.values()).flatMap(b => b.pitches.map(p => p.timestamp));
+        const voicedTimestamps = sharedPitchResults?.filter(r => r.isVoiced).map(r => r.timestamp) ?? [];
+        console.log('[PitchBeatLinker] Per-band results:', {
+            low: { total: bandPitches.get('low')?.totalBeatCount, voiced: bandPitches.get('low')?.voicedBeatCount },
+            mid: { total: bandPitches.get('mid')?.totalBeatCount, voiced: bandPitches.get('mid')?.voicedBeatCount },
+            high: { total: bandPitches.get('high')?.totalBeatCount, voiced: bandPitches.get('high')?.voicedBeatCount },
+        });
+        console.log('[PitchBeatLinker] Timing ranges:', {
+            beats: allBeatTimestamps.length > 0 ? {
+                min: Math.min(...allBeatTimestamps).toFixed(3) + 's',
+                max: Math.max(...allBeatTimestamps).toFixed(3) + 's',
+            } : 'none',
+            voicedFrames: voicedTimestamps.length > 0 ? {
+                count: voicedTimestamps.length,
+                min: Math.min(...voicedTimestamps).toFixed(3) + 's',
+                max: Math.max(...voicedTimestamps).toFixed(3) + 's',
+            } : 'none',
+        });
+
+        // DEBUG: distance stats from lookup
+        if (this._distanceStats.low?.distances.length) {
+            for (const [bandName, stats] of Object.entries(this._distanceStats)) {
+                const sorted = [...stats.distances].sort((a, b) => a - b);
+                const median = sorted[Math.floor(sorted.length / 2)];
+                console.log(`[PitchBeatLinker] Distance stats for '${bandName}':`, {
+                    totalBeats: sorted.length,
+                    minDist: sorted[0] + ' frames',
+                    medianDist: median + ' frames',
+                    maxDist: sorted[sorted.length - 1] + ' frames',
+                    within5: sorted.filter(d => d <= 5).length,
+                    within50: sorted.filter(d => d <= 50).length,
+                    within500: sorted.filter(d => d <= 500).length,
+                    sampleBeats: stats.sampleBeats,
+                });
+            }
+            // Reset for next call
+            this._distanceStats = {};
         }
 
         return {
@@ -376,26 +473,24 @@ export class PitchBeatLinker {
     }
 
     /**
-     * Analyze pitch for a single band stream
+     * Analyze pitch for a band stream using pre-computed full-spectrum pitch results
+     *
+     * All bands share the same pitch analysis from the unfiltered audio.
+     * This is more accurate than per-band filtered analysis because the full
+     * harmonic series is preserved, giving YIN better periodicity detection.
      */
-    private analyzeBandStream(
+    private analyzeBandStreamWithResults(
         bandStream: GeneratedRhythmMap,
-        preFiltered: PreFilteredBandAudio
+        pitchResults: PitchResult[],
+        hopTime: number,
+        band: PitchBandName
     ): BandPitchAtBeat {
-        const { signal, sampleRate, band } = preFiltered;
-        const detector = this.pitchDetectors.get(band);
-
-        if (!detector) {
-            throw new Error(`No pitch detector found for band: ${band}`);
-        }
-
         const pitches: PitchAtBeat[] = [];
         let voicedCount = 0;
         let totalProbability = 0;
 
-        // Iterate over each beat in this band stream
         for (const beat of bandStream.beats) {
-            const pitch = this.detectPitchAtBeat(detector, signal, sampleRate, beat, band);
+            const pitch = this.lookupPitchAtTimestamp(pitchResults, hopTime, beat, band);
             pitches.push(pitch);
 
             if (pitch.pitch?.isVoiced) {
@@ -414,29 +509,113 @@ export class PitchBeatLinker {
     }
 
     /**
-     * Detect pitch at a specific beat timestamp
+     * Analyze pitch for a single band stream using continuous pYIN with HMM tracking
+     *
+     * Runs full continuous pitch detection on the entire signal, then looks up
+     * the nearest frame result for each beat timestamp. This is dramatically more
+     * accurate than single-frame detectAt() because the HMM Viterbi decoder finds
+     * the most probable smooth pitch trajectory across all frames.
      */
-    private detectPitchAtBeat(
-        detector: PitchDetector,
-        signal: Float32Array,
-        sampleRate: number,
+    private analyzeBandStream(
+        bandStream: GeneratedRhythmMap,
+        preFiltered: PreFilteredBandAudio
+    ): BandPitchAtBeat {
+        const { signal, sampleRate, band } = preFiltered;
+        const detector = this.pitchDetectors.get(band);
+
+        if (!detector) {
+            throw new Error(`No pitch detector found for band: ${band}`);
+        }
+
+        // Run continuous YIN detection without HMM (raw voicing decisions)
+        // HMM is too conservative for band-pass filtered polyphonic music
+        const continuousResults = detector.detectSignalRaw(signal, sampleRate);
+        const hopTime = detector.getConfig().hopSize / sampleRate;
+
+        const pitches: PitchAtBeat[] = [];
+        let voicedCount = 0;
+        let totalProbability = 0;
+
+        // Look up the nearest frame for each beat timestamp
+        for (const beat of bandStream.beats) {
+            const pitch = this.lookupPitchAtTimestamp(continuousResults, hopTime, beat, band);
+            pitches.push(pitch);
+
+            if (pitch.pitch?.isVoiced) {
+                voicedCount++;
+                totalProbability += pitch.pitch.probability;
+            }
+        }
+
+        return {
+            band,
+            pitches,
+            avgProbability: voicedCount > 0 ? totalProbability / voicedCount : 0,
+            voicedBeatCount: voicedCount,
+            totalBeatCount: bandStream.beats.length,
+        };
+    }
+
+    /**
+     * Look up the best pitch result near a beat timestamp
+     *
+     * Searches the ENTIRE voiced frame array for the nearest voiced frame to
+     * the beat timestamp and logs the distance. This is a diagnostic version
+     * to understand timing misalignment between beats and pitch detection.
+     */
+    private lookupPitchAtTimestamp(
+        continuousResults: PitchResult[],
+        hopTime: number,
         beat: GeneratedBeat,
         band: PitchBandName
     ): PitchAtBeat {
-        // Use original transient timestamp for pitch detection (more accurate)
-        // Falls back to quantized timestamp if unavailable
-        const analysisTimestamp = beat.detectedTimestamp ?? beat.timestamp;
-        const pitch = detector.detectAt(signal, sampleRate, analysisTimestamp);
+        const lookupTimestamp = beat.detectedTimestamp ?? beat.timestamp;
+        const centerFrame = Math.round(lookupTimestamp / hopTime);
+
+        // Find nearest voiced frame across ALL results (not just a window)
+        let bestResult: PitchResult | null = null;
+        let bestDist = Infinity;
+        let bestProb = 0;
+
+        for (let i = 0; i < continuousResults.length; i++) {
+            const result = continuousResults[i];
+            if (!result.isVoiced) continue;
+
+            const dist = Math.abs(i - centerFrame);
+            // Prefer closer frames; among equal distance, prefer higher probability
+            if (dist < bestDist || (dist === bestDist && result.probability > bestProb)) {
+                bestDist = dist;
+                bestProb = result.probability;
+                bestResult = result;
+            }
+        }
+
+        // Collect distance stats for logging (only on first call per band)
+        if (!this._distanceStats[band]) {
+            this._distanceStats[band] = { distances: [], sampleBeats: [] };
+        }
+        const stats = this._distanceStats[band];
+        stats.distances.push(bestDist);
+        if (stats.sampleBeats.length < 3) {
+            stats.sampleBeats.push({
+                beatTime: lookupTimestamp.toFixed(3),
+                nearestVoicedDist: bestDist,
+                nearestVoicedTime: bestResult?.timestamp.toFixed(3) ?? 'none',
+                nearestVoicedNote: bestResult?.noteName ?? 'none',
+            });
+        }
 
         return {
             beatIndex: beat.beatIndex,
             timestamp: beat.timestamp,
             band,
-            pitch: pitch.isVoiced ? pitch : null,
+            pitch: bestResult,
             direction: 'none', // Populated in melody contour analysis
             intervalFromPrevious: 0, // Populated in melody contour analysis
         };
     }
+
+    private _distanceStats: Record<string, { distances: number[]; sampleBeats: object[] }> = {};
 
     /**
      * Flatten all band pitches into a single sorted array
