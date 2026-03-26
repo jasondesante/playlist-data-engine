@@ -423,7 +423,10 @@ export class PitchBeatLinker {
         beat: GeneratedBeat,
         band: PitchBandName
     ): PitchAtBeat {
-        const pitch = detector.detectAt(signal, sampleRate, beat.timestamp);
+        // Use original transient timestamp for pitch detection (more accurate)
+        // Falls back to quantized timestamp if unavailable
+        const analysisTimestamp = beat.detectedTimestamp ?? beat.timestamp;
+        const pitch = detector.detectAt(signal, sampleRate, analysisTimestamp);
 
         return {
             beatIndex: beat.beatIndex,

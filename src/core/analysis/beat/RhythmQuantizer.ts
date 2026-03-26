@@ -239,6 +239,9 @@ export interface GeneratedBeat {
     /** Frequency band */
     band: 'low' | 'mid' | 'high';
 
+    /** Original transient detection timestamp in seconds (before quantization) */
+    detectedTimestamp?: number;
+
     /** How far it was moved from original (ms), for debugging */
     quantizationError?: number;
 }
@@ -973,6 +976,7 @@ export class RhythmQuantizer {
 
         return {
             timestamp: gridTime,
+            detectedTimestamp: transient.timestamp,
             beatIndex,
             gridPosition,
             gridType,
