@@ -52,7 +52,7 @@ import type { MelodyContour, MelodyContourDirection } from './MultiBandPitchAnal
 import type { ControllerMode } from '../types/ButtonMapping.js';
 import type { DifficultyPreset } from '../types/BeatMap.js';
 import type { CompositeStream, CompositeBeat } from '../analysis/beat/CompositeStreamGenerator.js';
-import type { PitchBandName, BandPitchAtBeat } from '../generation/PitchBeatLinker.js';
+
 
 // ============================================================================
 // Type Definitions
@@ -298,7 +298,7 @@ export class LevelSerializer {
             controllerMode: metadata.controllerMode,
             seed: metadata.generationConfig.seed,
             generatedAt: new Date().toISOString(),
-            pitchBand: pitchAnalysis?.dominantBand,
+            pitchBand: metadata.pitchMetadata?.bandUsed,
             directionStats: pitchAnalysis?.directionStats ?? undefined,
             intervalStats: pitchAnalysis?.intervalStats ?? undefined,
             rhythmMetadata: {
@@ -884,26 +884,10 @@ export class LevelSerializer {
             return null;
         }
 
-        // Create minimal band contours as a Map
-        const bandContours = new Map<PitchBandName, MelodyContour>();
-        bandContours.set('low', this.buildMinimalMelodyContour());
-        bandContours.set('mid', this.buildMinimalMelodyContour());
-        bandContours.set('high', this.buildMinimalMelodyContour());
-
-        // Create minimal band pitches as a Map
-        const bandPitches = new Map<PitchBandName, BandPitchAtBeat>();
-        bandPitches.set('low', { band: 'low', pitches: [], avgProbability: 0, voicedBeatCount: 0, totalBeatCount: 0 });
-        bandPitches.set('mid', { band: 'mid', pitches: [], avgProbability: 0, voicedBeatCount: 0, totalBeatCount: 0 });
-        bandPitches.set('high', { band: 'high', pitches: [], avgProbability: 0, voicedBeatCount: 0, totalBeatCount: 0 });
-
-        // Create minimal pitch analysis result
+        // Create minimal pitch analysis result (composite contour only)
         return {
             pitchByBeat: [],
-            bandPitches,
             melodyContour: this.buildMinimalMelodyContour(),
-            dominantBand: genMeta.pitchBand as PitchBandName,
-            bandContours,
-            combinedContour: this.buildMinimalMelodyContour(),
             directionStats: genMeta.directionStats ?? {
                 up: 0,
                 down: 0,

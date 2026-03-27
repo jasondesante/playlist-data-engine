@@ -3022,7 +3022,7 @@ new PitchBeatLinker(config?: Partial<PitchDetectorConfig>)
 
 | Method | Returns | Description |
 |--------|---------|-------------|
-| `linkWithComposite(bandStreams, compositeStream, audioBuffer)` | `PitchAtBeat[]` | Game-ready: returns pitch at each composite beat |
+| `linkWithComposite(compositeStream, audioBuffer)` | `PitchAtBeat[]` | Game-ready: fast path — runs pitch detection directly against composite beat timestamps |
 | `linkWithBands(bandStreams, audioBuffer, phrases?)` | `LinkedPitchAnalysis` | Analysis: full band-level pitch data |
 
 > **Preferred:** Use `linkWithComposite()` for gameplay — it returns only the composite pitches (the beats the player interacts with). Use `linkWithBands()` for advanced analysis that needs per-band data.
@@ -3033,7 +3033,6 @@ new PitchBeatLinker(config?: Partial<PitchDetectorConfig>)
 |----------|------|-------------|
 | `bandPitches` | Map | Pitch at each beat, keyed by band name |
 | `pitchByBeat` | PitchAtBeat[] | All pitches flattened and sorted by timestamp |
-| `dominantBand` | string | Band with highest average pitch probability |
 | `phrasePitchCorrelation` | Map | Phrase-level pitch correlation (phrase ID → pitches) |
 
 #### PitchAtBeat Properties

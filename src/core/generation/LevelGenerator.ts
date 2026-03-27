@@ -30,7 +30,7 @@
 import { RhythmGenerator } from './RhythmGenerator.js';
 import type { RhythmGenerationOptions, GeneratedRhythm, RhythmMetadata, Band } from './RhythmGenerator.js';
 import { PitchBeatLinker } from './PitchBeatLinker.js';
-import type { LinkedPitchAnalysis, PitchAtBeat, PitchBeatLinkerConfig } from './PitchBeatLinker.js';
+import type { PitchBeatLinkerConfig } from './PitchBeatLinker.js';
 import type { PitchAlgorithm } from '../analysis/EssentiaPitchDetector.js';
 import { MelodyContourAnalyzer } from '../analysis/MelodyContourAnalyzer.js';
 import type { MelodyContourAnalysisResult } from '../analysis/MelodyContourAnalyzer.js';
@@ -741,9 +741,8 @@ export class LevelGenerator {
         }
         const pitchLinker = new PitchBeatLinker(pitchLinkerConfig);
 
-        // Link pitch to composite stream beats
+        // Link pitch to composite stream beats (fast path — no band-level analysis)
         const compositePitches = await pitchLinker.linkWithComposite(
-            generatedRhythm.bandStreams,
             generatedRhythm.composite,
             audioBuffer
         );

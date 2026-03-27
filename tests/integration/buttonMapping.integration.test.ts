@@ -199,19 +199,18 @@ describe('Full Button Mapping Integration with Real Pitch Data', () => {
             expect(generatedRhythm.difficultyVariants.medium.beats.length).toBeGreaterThan(0);
             expect(generatedRhythm.bandStreams).toBeDefined();
 
-            // Step 2: Detect pitch at beat timestamps
-            const linkedPitchAnalysis = pitchBeatLinker.link(
-                generatedRhythm.bandStreams,
+            // Step 2: Detect pitch at composite beat timestamps
+            const compositePitches = await pitchBeatLinker.linkWithComposite(
+                generatedRhythm.composite,
                 audioBuffer
             );
 
             // Verify pitch was detected
-            expect(linkedPitchAnalysis).toBeDefined();
-            expect(linkedPitchAnalysis.pitchByBeat.length).toBeGreaterThan(0);
-            expect(linkedPitchAnalysis.dominantBand).toBeDefined();
+            expect(compositePitches).toBeDefined();
+            expect(compositePitches.length).toBeGreaterThan(0);
 
             // Step 3: Analyze melody contour
-            const contourResult = melodyContourAnalyzer.analyze(linkedPitchAnalysis);
+            const contourResult = melodyContourAnalyzer.analyze(compositePitches);
 
             // Verify contour was analyzed
             expect(contourResult).toBeDefined();
@@ -252,12 +251,12 @@ describe('Full Button Mapping Integration with Real Pitch Data', () => {
                 'test-track-ascending'
             );
 
-            const linkedPitchAnalysis = pitchBeatLinker.link(
-                generatedRhythm.bandStreams,
+            const compositePitches = await pitchBeatLinker.linkWithComposite(
+                generatedRhythm.composite,
                 audioBuffer
             );
 
-            const contourResult = melodyContourAnalyzer.analyze(linkedPitchAnalysis);
+            const contourResult = melodyContourAnalyzer.analyze(compositePitches);
 
             const mappedResult = buttonMapper.map(
                 generatedRhythm,
@@ -286,12 +285,12 @@ describe('Full Button Mapping Integration with Real Pitch Data', () => {
                 'test-track-descending'
             );
 
-            const linkedPitchAnalysis = pitchBeatLinker.link(
-                generatedRhythm.bandStreams,
+            const compositePitches = await pitchBeatLinker.linkWithComposite(
+                generatedRhythm.composite,
                 audioBuffer
             );
 
-            const contourResult = melodyContourAnalyzer.analyze(linkedPitchAnalysis);
+            const contourResult = melodyContourAnalyzer.analyze(compositePitches);
 
             const mappedResult = buttonMapper.map(
                 generatedRhythm,
@@ -313,12 +312,12 @@ describe('Full Button Mapping Integration with Real Pitch Data', () => {
                 'test-track-weight-comparison'
             );
 
-            const linkedPitchAnalysis = pitchBeatLinker.link(
-                generatedRhythm.bandStreams,
+            const compositePitches = await pitchBeatLinker.linkWithComposite(
+                generatedRhythm.composite,
                 audioBuffer
             );
 
-            const contourResult = melodyContourAnalyzer.analyze(linkedPitchAnalysis);
+            const contourResult = melodyContourAnalyzer.analyze(compositePitches);
 
             // Test with full pitch influence
             const fullPitchMapper = new ButtonMapper({
@@ -372,12 +371,12 @@ describe('Full Button Mapping Integration with Real Pitch Data', () => {
                 'test-track-guitar-hero'
             );
 
-            const linkedPitchAnalysis = pitchBeatLinker.link(
-                generatedRhythm.bandStreams,
+            const compositePitches = await pitchBeatLinker.linkWithComposite(
+                generatedRhythm.composite,
                 audioBuffer
             );
 
-            const contourResult = melodyContourAnalyzer.analyze(linkedPitchAnalysis);
+            const contourResult = melodyContourAnalyzer.analyze(compositePitches);
 
             const mappedResult = buttonMapper.map(
                 generatedRhythm,
@@ -401,12 +400,12 @@ describe('Full Button Mapping Integration with Real Pitch Data', () => {
                 'test-track-guitar-ascending'
             );
 
-            const linkedPitchAnalysis = pitchBeatLinker.link(
-                generatedRhythm.bandStreams,
+            const compositePitches = await pitchBeatLinker.linkWithComposite(
+                generatedRhythm.composite,
                 audioBuffer
             );
 
-            const contourResult = melodyContourAnalyzer.analyze(linkedPitchAnalysis);
+            const contourResult = melodyContourAnalyzer.analyze(compositePitches);
 
             const mappedResult = buttonMapper.map(
                 generatedRhythm,
@@ -431,12 +430,12 @@ describe('Full Button Mapping Integration with Real Pitch Data', () => {
                 'test-track-all-variants'
             );
 
-            const linkedPitchAnalysis = pitchBeatLinker.link(
-                generatedRhythm.bandStreams,
+            const compositePitches = await pitchBeatLinker.linkWithComposite(
+                generatedRhythm.composite,
                 audioBuffer
             );
 
-            const contourResult = melodyContourAnalyzer.analyze(linkedPitchAnalysis);
+            const contourResult = melodyContourAnalyzer.analyze(compositePitches);
 
             // Map all variants at once
             const allMapped = buttonMapper.mapAll(generatedRhythm, contourResult.pitchByBeat);
@@ -467,12 +466,12 @@ describe('Full Button Mapping Integration with Real Pitch Data', () => {
                 'test-track-metadata'
             );
 
-            const linkedPitchAnalysis = pitchBeatLinker.link(
-                generatedRhythm.bandStreams,
+            const compositePitches = await pitchBeatLinker.linkWithComposite(
+                generatedRhythm.composite,
                 audioBuffer
             );
 
-            const contourResult = melodyContourAnalyzer.analyze(linkedPitchAnalysis);
+            const contourResult = melodyContourAnalyzer.analyze(compositePitches);
 
             const mappedResult = buttonMapper.map(
                 generatedRhythm,
@@ -540,12 +539,12 @@ describe('Full Button Mapping Integration with Real Pitch Data', () => {
                 'test-track-short'
             );
 
-            const linkedPitchAnalysis = pitchBeatLinker.link(
-                generatedRhythm.bandStreams,
+            const compositePitches = await pitchBeatLinker.linkWithComposite(
+                generatedRhythm.composite,
                 audioBuffer
             );
 
-            const contourResult = melodyContourAnalyzer.analyze(linkedPitchAnalysis);
+            const contourResult = melodyContourAnalyzer.analyze(compositePitches);
 
             const mappedResult = buttonMapper.map(
                 generatedRhythm,
@@ -592,12 +591,12 @@ describe('Full Button Mapping Integration with Real Pitch Data', () => {
                 'test-track-noise'
             );
 
-            const linkedPitchAnalysis = pitchBeatLinker.link(
-                generatedRhythm.bandStreams,
+            const compositePitches = await pitchBeatLinker.linkWithComposite(
+                generatedRhythm.composite,
                 audioBuffer
             );
 
-            const contourResult = melodyContourAnalyzer.analyze(linkedPitchAnalysis);
+            const contourResult = melodyContourAnalyzer.analyze(compositePitches);
 
             const mappedResult = buttonMapper.map(
                 generatedRhythm,

@@ -270,7 +270,7 @@ describe('PitchBeatLinker', () => {
 
             const result = await linker.linkWithBands(bandStreams, audioBuffer);
 
-            expect(['low', 'mid', 'high']).toContain(result.dominantBand);
+            expect(result.bandPitches).toBeDefined();
         });
 
         it('should prefer bands with higher pitch probability', async () => {
@@ -288,7 +288,7 @@ describe('PitchBeatLinker', () => {
 
             const result = await linker.linkWithBands(bandStreams, audioBuffer);
 
-            expect(result.dominantBand).toBe('mid');
+            expect(result.bandPitches.get('mid')!.avgProbability).toBeGreaterThan(0);
         });
     });
 
@@ -930,7 +930,7 @@ describe('PitchBeatLinker', () => {
             const signal = createSineWave(440, 5.0);
             const audioBuffer = createMockAudioBuffer(signal);
 
-            const result = await linker.linkWithComposite(bandStreams, compositeStream, audioBuffer);
+            const result = await linker.linkWithComposite(compositeStream, audioBuffer);
 
             expect(Array.isArray(result)).toBe(true);
             expect(result).toHaveLength(3);
@@ -954,7 +954,7 @@ describe('PitchBeatLinker', () => {
             const signal = createSineWave(440, 5.0);
             const audioBuffer = createMockAudioBuffer(signal);
 
-            const result = await linker.linkWithComposite(bandStreams, compositeStream, audioBuffer);
+            const result = await linker.linkWithComposite(compositeStream, audioBuffer);
 
             expect(result).toHaveLength(2);
             expect(result[0].beatIndex).toBe(0);
@@ -963,28 +963,28 @@ describe('PitchBeatLinker', () => {
             expect(result[1].band).toBe('low');
         });
 
-        it('should set null pitch for composite beats not found in any band', async () => {
+        it('should detect pitch directly from audio for each composite beat timestamp', async () => {
             const linker = new PitchBeatLinker();
 
-            const bandStreams = createMockBandStreams([
-                { timestamp: 0.5, beatIndex: 0, band: 'mid' },
-            ]);
-
-            // Composite has a beat from a band with no data
             const compositeStream = createMockCompositeStream([
                 { beatIndex: 0, timestamp: 0.5, sourceBand: 'mid' },
-                { beatIndex: 99, timestamp: 5.0, sourceBand: 'high' },
+                { beatIndex: 1, timestamp: 1.0, sourceBand: 'high' },
             ]);
 
-            const signal = createSineWave(440, 5.0);
+            const signal = createSineWave(440, 2.0);
             const audioBuffer = createMockAudioBuffer(signal);
 
-            const result = await linker.linkWithComposite(bandStreams, compositeStream, audioBuffer);
+            const result = await linker.linkWithComposite(compositeStream, audioBuffer);
 
             expect(result).toHaveLength(2);
+            // Both beats should have pitch — direct detection on the audio signal
             expect(result[0].pitch).toBeDefined();
-            expect(result[1].pitch).toBeNull();
-            expect(result[1].beatIndex).toBe(99);
+            expect(result[0].beatIndex).toBe(0);
+            expect(result[1].pitch).toBeDefined();
+            expect(result[1].beatIndex).toBe(1);
+            // sourceBand is preserved from composite
+            expect(result[0].band).toBe('mid');
+            expect(result[1].band).toBe('high');
         });
 
         it('should return only composite pitches (not full LinkedPitchAnalysis)', async () => {
@@ -1002,14 +1002,14 @@ describe('PitchBeatLinker', () => {
             const signal = createSineWave(440, 5.0);
             const audioBuffer = createMockAudioBuffer(signal);
 
-            const result = await linker.linkWithComposite(bandStreams, compositeStream, audioBuffer);
+            const result = await linker.linkWithComposite(compositeStream, audioBuffer);
 
             // Result is a plain PitchAtBeat[] array
             expect(Array.isArray(result)).toBe(true);
             expect(result).toHaveLength(1);
             expect(result[0].beatIndex).toBe(0);
             expect(result[0].band).toBe('mid');
-            // No bandPitches, pitchByBeat, dominantBand, etc.
+            // No bandPitches, pitchByBeat, etc.
             expect((result as any).bandPitches).toBeUndefined();
             expect((result as any).pitchByBeat).toBeUndefined();
         });
@@ -1029,7 +1029,6 @@ describe('PitchBeatLinker', () => {
             // Full analysis with band-level data
             expect(result.bandPitches).toBeDefined();
             expect(result.pitchByBeat).toBeDefined();
-            expect(result.dominantBand).toBeDefined();
         });
     });
 });

@@ -4199,7 +4199,6 @@ The recommended approach is to use `linkWithComposite()`, which returns pitch at
 ```typescript
 // Get pitch at each composite beat (game-ready)
 const compositePitches = await linker.linkWithComposite(
-  generatedRhythm.bandStreams,
   generatedRhythm.composite,
   audioBuffer
 );
@@ -4222,7 +4221,7 @@ console.log('Medium pitches:', variantPitches.medium.length);
 console.log('Hard pitches:', variantPitches.hard.length);
 ```
 
-> **Note:** `linkWithComposite()` returns `PitchAtBeat[]` (game-ready). Use `linkWithBands()` for advanced analysis that needs per-band data (`LinkedPitchAnalysis`).
+> **Note:** `linkWithComposite(compositeStream, audioBuffer)` runs pitch detection directly against composite beat timestamps — it's the fast path for gameplay. Use `linkWithBands()` for advanced analysis that needs per-band data (`LinkedPitchAnalysis`).
 
 ---
 
@@ -4403,7 +4402,6 @@ const rhythm = await rhythmGenerator.generate(audioBuffer, beatMap, interpolated
 // Step 2: Link pitch to composite stream beats
 const linker = new PitchBeatLinker();
 const compositePitches = await linker.linkWithComposite(
-  rhythm.bandStreams,
   rhythm.composite,
   audioBuffer
 );
@@ -4468,7 +4466,6 @@ const rhythm = await rhythmGenerator.generate(audioBuffer, beatMap, interpolated
 // Step 5: Link pitch to composite stream beats
 const linker = new PitchBeatLinker();
 const compositePitches = await linker.linkWithComposite(
-  rhythm.bandStreams,
   rhythm.composite,
   audioBuffer
 );

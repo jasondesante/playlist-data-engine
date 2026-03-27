@@ -324,26 +324,7 @@ function createMockGeneratedRhythm(chart: ChartedBeatMap): GeneratedRhythm {
 function createMockPitchAnalysis(): MelodyContourAnalysisResult {
     return {
         pitchByBeat: [],
-        bandPitches: new Map([
-            ['low', { band: 'low', pitches: [], avgProbability: 0, voicedBeatCount: 0, totalBeatCount: 0 }],
-            ['mid', { band: 'mid', pitches: [], avgProbability: 0.8, voicedBeatCount: 20, totalBeatCount: 40 }],
-            ['high', { band: 'high', pitches: [], avgProbability: 0, voicedBeatCount: 0, totalBeatCount: 0 }],
-        ]),
         melodyContour: {
-            segments: [],
-            direction: 'mixed',
-            range: { minNote: 'C4', maxNote: 'G5', semitones: 7 },
-            shortTermDirection: 'up',
-            mediumTermDirection: 'stable',
-            longTermDirection: 'down',
-        },
-        dominantBand: 'mid',
-        bandContours: new Map([
-            ['low', { segments: [], direction: 'stable', range: { minNote: 'N/A', maxNote: 'N/A', semitones: 0 }, shortTermDirection: 'stable', mediumTermDirection: 'stable', longTermDirection: 'stable' }],
-            ['mid', { segments: [], direction: 'mixed', range: { minNote: 'C4', maxNote: 'G5', semitones: 7 }, shortTermDirection: 'up', mediumTermDirection: 'stable', longTermDirection: 'down' }],
-            ['high', { segments: [], direction: 'stable', range: { minNote: 'N/A', maxNote: 'N/A', semitones: 0 }, shortTermDirection: 'stable', mediumTermDirection: 'stable', longTermDirection: 'stable' }],
-        ]),
-        combinedContour: {
             segments: [],
             direction: 'mixed',
             range: { minNote: 'C4', maxNote: 'G5', semitones: 7 },

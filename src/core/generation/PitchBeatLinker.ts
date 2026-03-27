@@ -38,8 +38,6 @@ import type { GeneratedRhythmMap, GeneratedBeat } from '../analysis/beat/RhythmQ
 import type { RhythmicPhrase } from '../analysis/beat/PhraseAnalyzer.js';
 import type { CompositeStream } from '../analysis/beat/CompositeStreamGenerator.js';
 import type { DifficultyVariant } from '../analysis/beat/DifficultyVariantGenerator.js';
-import type { MelodyContour } from '../analysis/MultiBandPitchAnalyzer.js';
-
 // ============================================================================
 // Type Definitions
 // ============================================================================
@@ -95,9 +93,6 @@ export interface BandPitchAtBeat {
     /** Pitch at each beat in this band stream */
     pitches: PitchAtBeat[];
 
-    /** Melody contour for this band (populated by MelodyContourAnalyzer) */
-    melodyContour?: MelodyContour;
-
     /** Average probability of voiced frames */
     avgProbability: number;
 
@@ -117,9 +112,6 @@ export interface LinkedPitchAnalysis {
 
     /** All pitches flattened and sorted by timestamp */
     pitchByBeat: PitchAtBeat[];
-
-    /** Band with the highest average pitch probability */
-    dominantBand: PitchBandName;
 
     /** Phrase-level pitch correlation (phrase ID → pitches) */
     phrasePitchCorrelation: Map<string, PitchResult[]>;
@@ -289,25 +281,79 @@ export class PitchBeatLinker {
      * Link pitch detection to composite stream beats only.
      *
      * Runs pitch detection on the full unfiltered signal, then matches each composite
-     * beat's sourceBand + beatIndex directly against band-level pitch data.
-     * This is exact (no timestamp tolerance) since CompositeBeat preserves beatIndex.
+     * beat's timestamp directly against pitch frames. This is the fast path for gameplay
+     * — it returns only the composite pitches (the beats the player will interact with)
+     * without running the full band-level analysis.
      *
-     * This is the preferred method for gameplay — it returns only the composite pitches
-     * (the beats the player will actually interact with).
-     *
-     * @param bandStreams - The band streams from GeneratedRhythm
      * @param compositeStream - The composite stream from GeneratedRhythm
      * @param audioBuffer - Web Audio API AudioBuffer to analyze
      * @returns Promise resolving to pitch at each composite beat
      */
     async linkWithComposite(
-        bandStreams: { low: GeneratedRhythmMap; mid: GeneratedRhythmMap; high: GeneratedRhythmMap },
         compositeStream: CompositeStream,
         audioBuffer: AudioBuffer
     ): Promise<PitchAtBeat[]> {
-        // Run full analysis via linkWithBands, then extract composite pitches
-        const linkedAnalysis = await this.linkWithBands(bandStreams, audioBuffer);
-        return this.buildCompositePitchesByBeatIndex(compositeStream, linkedAnalysis.bandPitches);
+        const sampleRate = this.config.targetSampleRate;
+
+        // Resample audio to target sample rate
+        const resampled = resampleAudio(audioBuffer, sampleRate);
+        const signal = resampled.data;
+
+        // Run pitch detection on the full unfiltered signal
+        let fullSpectrumResults: PitchResult[];
+        let hopTime: number;
+
+        if (this.config.pitchAlgorithm === 'pyin_legacy') {
+            fullSpectrumResults = this.fullSpectrumDetector.detectSignalRaw(signal, sampleRate);
+            hopTime = this.fullSpectrumDetector.getConfig().hopSize / sampleRate;
+        } else {
+            if (!this.essentiaDetector) {
+                this.essentiaDetector = await EssentiaPitchDetector.create({
+                    algorithm: this.config.pitchAlgorithm as EssentiaPitchAlgorithm,
+                    minFrequency: this.config.pitchDetector.minFrequency ?? 80,
+                    maxFrequency: this.config.pitchDetector.maxFrequency ?? 20000,
+                    crepeModelUrl: this.config.crepeModelUrl,
+                });
+                console.log(`[PitchBeatLinker] Essentia detector initialized: ${this.config.pitchAlgorithm}`);
+            }
+
+            fullSpectrumResults = this.essentiaDetector.detectSignal(signal, sampleRate);
+            hopTime = this.essentiaDetector.getConfig().hopSize / sampleRate;
+        }
+
+        // Match pitch directly to composite beat timestamps
+        const compositePitches: PitchAtBeat[] = [];
+        for (const beat of compositeStream.beats) {
+            const lookupTimestamp = beat.detectedTimestamp ?? beat.timestamp;
+            const centerFrame = Math.round(lookupTimestamp / hopTime);
+
+            let bestResult: PitchResult | null = null;
+            let bestDist = Infinity;
+            let bestProb = 0;
+
+            for (let i = 0; i < fullSpectrumResults.length; i++) {
+                const result = fullSpectrumResults[i];
+                if (!result.isVoiced) continue;
+
+                const dist = Math.abs(i - centerFrame);
+                if (dist < bestDist || (dist === bestDist && result.probability > bestProb)) {
+                    bestDist = dist;
+                    bestProb = result.probability;
+                    bestResult = result;
+                }
+            }
+
+            compositePitches.push({
+                beatIndex: beat.beatIndex,
+                timestamp: beat.timestamp,
+                band: beat.sourceBand,
+                pitch: bestResult,
+                direction: 'none', // Populated in melody contour analysis
+                intervalFromPrevious: 0, // Populated in melody contour analysis
+            });
+        }
+
+        return compositePitches;
     }
 
     /**
@@ -359,9 +405,6 @@ export class PitchBeatLinker {
         // Flatten all pitches into a single array sorted by timestamp
         const pitchByBeat = this.flattenPitches(bandPitches);
 
-        // Determine dominant band
-        const dominantBand = this.determineDominantBand(bandPitches);
-
         // Build phrase-pitch correlation if phrases provided
         const phrasePitchCorrelation = phrases
             ? this.buildPhraseCorrelation(phrases, bandPitches)
@@ -385,7 +428,6 @@ export class PitchBeatLinker {
         return {
             bandPitches,
             pitchByBeat,
-            dominantBand,
             phrasePitchCorrelation,
             metadata: {
                 duration,
@@ -485,84 +527,6 @@ export class PitchBeatLinker {
 
         allPitches.sort((a, b) => a.timestamp - b.timestamp);
         return allPitches;
-    }
-
-    /**
-     * Build composite pitches by matching beatIndex directly against band-level pitch data.
-     *
-     * This is exact (no timestamp tolerance) because CompositeBeat preserves beatIndex
-     * from the source band stream via the spread operator in CompositeStreamGenerator.
-     *
-     * @param compositeStream - The composite stream with sourceBand per beat
-     * @param bandPitches - Already-computed band pitch data
-     * @returns Array of PitchAtBeat for composite stream beats
-     */
-    private buildCompositePitchesByBeatIndex(
-        compositeStream: CompositeStream,
-        bandPitches: Map<PitchBandName, BandPitchAtBeat>
-    ): PitchAtBeat[] {
-        const compositePitches: PitchAtBeat[] = [];
-
-        // Build a per-band lookup: beatIndex → PitchAtBeat
-        const bandPitchesByIndex = new Map<PitchBandName, Map<number, PitchAtBeat>>();
-        for (const [bandName, bandResult] of bandPitches) {
-            const indexMap = new Map<number, PitchAtBeat>();
-            for (const pitch of bandResult.pitches) {
-                indexMap.set(pitch.beatIndex, pitch);
-            }
-            bandPitchesByIndex.set(bandName, indexMap);
-        }
-
-        for (const compositeBeat of compositeStream.beats) {
-            const indexMap = bandPitchesByIndex.get(compositeBeat.sourceBand);
-            const matchingPitch = indexMap?.get(compositeBeat.beatIndex);
-
-            if (matchingPitch) {
-                compositePitches.push({
-                    beatIndex: compositeBeat.beatIndex,
-                    timestamp: compositeBeat.timestamp,
-                    band: compositeBeat.sourceBand,
-                    pitch: matchingPitch.pitch,
-                    direction: matchingPitch.direction,
-                    intervalFromPrevious: matchingPitch.intervalFromPrevious,
-                    intervalCategory: matchingPitch.intervalCategory,
-                });
-            } else {
-                compositePitches.push({
-                    beatIndex: compositeBeat.beatIndex,
-                    timestamp: compositeBeat.timestamp,
-                    band: compositeBeat.sourceBand,
-                    pitch: null,
-                    direction: 'none',
-                    intervalFromPrevious: 0,
-                });
-            }
-        }
-
-        return compositePitches;
-    }
-
-    /**
-     * Determine which band has the best pitch results
-     */
-    private determineDominantBand(bandPitches: Map<PitchBandName, BandPitchAtBeat>): PitchBandName {
-        let bestBand: PitchBandName = 'mid';
-        let bestScore = -1;
-
-        for (const [bandName, bandResult] of bandPitches) {
-            const voicedRatio = bandResult.totalBeatCount > 0
-                ? bandResult.voicedBeatCount / bandResult.totalBeatCount
-                : 0;
-
-            const score = bandResult.avgProbability * 0.7 + voicedRatio * 0.3;
-
-            if (score > bestScore) {
-                bestScore = score;
-                bestBand = bandName;
-            }
-        }
-
-        return bestBand;
     }
 
     /**
