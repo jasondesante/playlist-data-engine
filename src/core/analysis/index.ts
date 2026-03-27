@@ -8,6 +8,12 @@ export { AudioAnalyzer } from './AudioAnalyzer.js';
 export { SpectrumScanner } from './SpectrumScanner.js';
 export { MusicClassifier } from './MusicClassifier.js';
 export { PitchDetector } from './PitchDetector.js';
+export { EssentiaPitchDetector } from './EssentiaPitchDetector.js';
+export type {
+    EssentiaPitchAlgorithm,
+    EssentiaPitchDetectorConfig,
+    CrepeModelVariant,
+} from './EssentiaPitchDetector.js';
 export { MultiBandAnalyzer } from './MultiBandAnalyzer.js';
 export { MultiBandPitchAnalyzer } from './MultiBandPitchAnalyzer.js';
 // Multi-band pitch analysis types for button mapping
