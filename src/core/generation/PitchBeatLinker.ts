@@ -34,6 +34,7 @@
  */
 
 import { PitchDetector, type PitchResult, type PitchDetectorConfig } from '../analysis/PitchDetector.js';
+import type { EssentiaPitchAlgorithm } from '../analysis/EssentiaPitchDetector.js';
 import {
     resampleAudio,
     applyFrequencyBand,
@@ -172,6 +173,15 @@ export interface PitchBeatLinkerConfig {
 
     /** Custom frequency bands (default: FREQUENCY_BANDS from audioUtils) */
     bands?: FrequencyBand[];
+
+    /** Use Essentia.js pitch detection instead of the built-in pYIN detector */
+    useEssentiaPitch?: boolean;
+
+    /** Which Essentia pitch algorithm to use (default: 'predominant_melodia') */
+    essentiaPitchAlgorithm?: EssentiaPitchAlgorithm;
+
+    /** URL to the CREPE TFJS model (only required when essentiaPitchAlgorithm is 'pitch_crepe') */
+    crepeModelUrl?: string;
 }
 
 /**
