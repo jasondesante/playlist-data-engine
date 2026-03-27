@@ -642,8 +642,6 @@ export {
     type PitchAtBeat,
     type BandPitchAtBeat,
     type PitchBandName as LinkedPitchBandName,
-    type PreFilteredBandAudio,
-    type PreFilteredLinkConfig,
     type PitchDirection,
     type IntervalCategory,
 } from './core/generation/PitchBeatLinker.js';

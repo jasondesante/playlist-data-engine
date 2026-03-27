@@ -4065,29 +4065,27 @@ Since the engine already imports the `essentia.js` WebAssembly library for genre
 
 | Algorithm | Type | Best For | Confidence? | Polyphonic? |
 |-----------|------|----------|-------------|-------------|
-| `predominant_melodia` | Built-in WASM | Lead melody in polyphonic music **(Recommended)** | Yes | Single F0 |
-| `pitch_melodia` | Built-in WASM | Standard monophonic melody extraction | Yes | Single F0 |
+| `pitch_melodia` | Built-in WASM | Standard monophonic melody extraction **(Recommended)** | Yes | Single F0 |
 | `pitch_yin_probabilistic` | Built-in WASM | WASM-accelerated pYIN (same algo, C++ speed) | Yes | Single F0 |
 | `multipitch_melodia` | Built-in WASM | Multiple simultaneous F0 contours (MELODIA) | No | Multi F0 |
 | `multipitch_klapuri` | Built-in WASM | Harmonic summation multi-pitch detection | No | Multi F0 |
 | `pitch_crepe` | External TFJS model | Neural network pitch detection (high accuracy) | Yes | Single F0 |
 
-**Why PredominantPitchMelodia?** This is the industry-standard algorithm for extracting the lead melody from fully polyphonic music. It was designed specifically to isolate a single dominant pitch contour even in dense mixes — exactly the use case for rhythm game button mapping. It outperforms the custom pYIN implementation because:
+**Why pitch_melodia?** This is the industry-standard algorithm for extracting the lead melody from fully polyphonic music. It was designed specifically to isolate a single dominant pitch contour even in dense mixes — exactly the use case for rhythm game button mapping. It outperforms the custom pYIN implementation because:
 
 1. **Native C++ performance**: Compiled to WebAssembly, it runs orders of magnitude faster than the TypeScript pYIN
 2. **Designed for polyphony**: Uses spectral harmonic analysis rather than autocorrelation, so it doesn't destroy harmonics through band-pass filtering
 3. **Finer time resolution**: Uses a 128-sample hop size (~2.9ms at 44.1kHz) vs pYIN's 512 samples (~11.6ms), capturing faster melodic passages
 4. **Built-in confidence**: Returns per-frame pitch confidence, enabling quality filtering
 
-**Usage via PitchBeatLinker** — The Essentia detector is toggled through the `PitchBeatLinkerConfig`:
+**Usage via PitchBeatLinker** — The pitch algorithm is selected through the `PitchBeatLinkerConfig`:
 
 ```typescript
 const linker = new PitchBeatLinker({
-  useEssentiaPitch: true,
-  essentiaPitchAlgorithm: 'predominant_melodia',
+  pitchAlgorithm: 'pitch_melodia', // Use Essentia.js (default)
 });
 
-// link() is now async due to WASM loading
+// link() is async due to lazy WASM loading
 const linkedAnalysis = await linker.link(bandStreams, audioBuffer);
 ```
 
@@ -4138,69 +4136,9 @@ The `probability` field is crucial for button mapping—lower-confidence pitches
 
 ---
 
-### Multi-Band Pitch Analysis
-
-Pitch detection is more accurate when applied to pre-filtered frequency bands. The engine reuses the same band definitions and filtering infrastructure from rhythm generation.
-
-#### Why Analyze on Pre-Filtered Bands
-
-1. **Isolation**: Each band contains different instruments, making pitch detection easier
-2. **Consistency**: Uses the same filtering as rhythm generation, ensuring alignment
-3. **Efficiency**: Reuses already-filtered audio when available
-
-#### Band Characteristics and Typical Pitch Content
-
-| Band | Frequency Range | Typical Content | Pitch Usefulness |
-|------|-----------------|-----------------|------------------|
-| **Low** | 20-500 Hz | Bass, kick drum, sub frequencies | Limited—often percussive |
-| **Mid** | 500-2000 Hz | Vocals, lead melody, snare body | **Primary**—most melodic content |
-| **High** | 2000-20000 Hz | Hi-hats, cymbals, harmonics | Limited—often unpitched |
-
-The **mid band** typically contains the most useful pitch information for melody-based button mapping.
-
-#### Band Selection Strategy
-
-The `MultiBandPitchAnalyzer` automatically selects the **primary band** based on:
-
-1. Average probability of voiced frames (70% weight)
-2. Ratio of voiced to total frames (30% weight)
-
-This ensures the band with the most consistent, confident pitch detection is used for button mapping.
-
-```typescript
-const analyzer = new MultiBandPitchAnalyzer();
-const result = analyzer.analyze(audioBuffer);
-
-console.log('Primary band:', result.primaryBand); // Usually 'mid'
-
-// Access pitches from the best band
-const primaryPitches = analyzer.getPrimaryBandPitches(result);
-```
-
-#### Integration with MultiBandAnalyzer
-
-For efficiency, use pre-filtered audio from rhythm generation:
-
-```typescript
-// After running MultiBandAnalyzer for rhythm generation
-const rhythmAnalyzer = new MultiBandAnalyzer();
-const rhythmResult = rhythmAnalyzer.analyze(audioBuffer);
-
-// Get pre-filtered signals
-const preFilteredBands = rhythmAnalyzer.getFilteredSignals();
-
-// Use pre-filtered signals for pitch analysis (avoids redundant filtering)
-const pitchAnalyzer = new MultiBandPitchAnalyzer();
-const pitchResult = pitchAnalyzer.analyzePreFiltered(preFilteredBands, {
-  duration: audioBuffer.duration,
-});
-```
-
----
-
 ### Beat-Timestamped Pitch Detection
 
-Rather than analyzing the entire audio continuously, pitch detection is performed at specific timestamps from the generated rhythm patterns.
+Rather than analyzing the entire audio continuously, pitch detection is performed on the full unfiltered signal and then matched to beat timestamps from the generated rhythm patterns.
 
 #### Why Timestamp-Based Analysis
 
@@ -4220,17 +4158,10 @@ import { PitchBeatLinker } from 'playlist-data-engine';
 
 const linker = new PitchBeatLinker();
 
-// Option 1: Analyze with automatic band filtering
-const linkedAnalysis = linker.link(
+// Analyze pitch on the full unfiltered signal and link to beats
+const linkedAnalysis = await linker.link(
   generatedRhythm.bandStreams, // From rhythm generation
   audioBuffer
-);
-
-// Option 2: Analyze with pre-filtered audio (more efficient)
-const linkedAnalysis = linker.linkPreFiltered(
-  generatedRhythm.bandStreams,
-  preFilteredBands,
-  { duration: audioBuffer.duration }
 );
 
 // Access pitch at each beat
@@ -4247,7 +4178,7 @@ The linker can correlate pitches with detected rhythmic phrases using `RhythmicP
 
 ```typescript
 // Pass phrases from rhythm generation for correlation
-const linkedAnalysis = linker.link(
+const linkedAnalysis = await linker.link(
   generatedRhythm.bandStreams,
   audioBuffer,
   generatedRhythm.phrases // Optional: enables phrase correlation

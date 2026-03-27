@@ -102,7 +102,6 @@ export type {
     BandPitchAtBeat,
     LinkedPitchAnalysis,
     PitchBandName,
-    PreFilteredBandAudio,
     IntervalCategory,
     PitchDirection,
 } from './PitchBeatLinker.js';

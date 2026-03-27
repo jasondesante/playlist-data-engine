@@ -70,6 +70,17 @@ export type EssentiaPitchAlgorithm =
     | 'pitch_crepe';
 
 /**
+ * Unified pitch detection algorithm selection.
+ *
+ * Includes the built-in pYIN detector (`pyin_legacy`) alongside all
+ * Essentia.js WASM algorithms. Used by `PitchBeatLinker` to select
+ * which pitch detection backend to use.
+ *
+ * @default 'pitch_melodia'
+ */
+export type PitchAlgorithm = 'pyin_legacy' | EssentiaPitchAlgorithm;
+
+/**
  * CREPE model variants for neural network pitch detection.
  *
  * All variants have been converted to browser-compatible TFJS format.
@@ -83,7 +94,7 @@ export type CrepeModelVariant = 'tiny' | 'small' | 'medium' | 'large' | 'full';
 export interface EssentiaPitchDetectorConfig {
     /**
      * The pitch detection algorithm to use.
-     * @default 'predominant_melodia'
+     * @default 'pitch_melodia'
      */
     algorithm: EssentiaPitchAlgorithm;
 
@@ -123,7 +134,7 @@ export interface EssentiaPitchDetectorConfig {
      * URL to the CREPE TensorFlow.js model.
      * Only required when algorithm is 'pitch_crepe'.
      * Should point to the model.json file of the converted TFJS model.
-     * @default '/models/crepe/large/model.json'
+     * @default 'https://arweave.net/PLACEHOLDER_CREPE_TINY'
      */
     crepeModelUrl?: string;
 }
@@ -136,13 +147,13 @@ export interface EssentiaPitchDetectorConfig {
  * Default configuration for EssentiaPitchDetector.
  */
 const DEFAULT_CONFIG: EssentiaPitchDetectorConfig = {
-    algorithm: 'predominant_melodia',
+    algorithm: 'pitch_melodia',
     minFrequency: 80,
     maxFrequency: 20000,
     frameSize: 2048,
     hopSize: 128,
     targetSampleRate: 44100,
-    crepeModelUrl: '/models/crepe/large/model.json',
+    crepeModelUrl: 'https://arweave.net/PLACEHOLDER_CREPE_TINY',
 };
 
 /** MIDI note number for A4 (440 Hz) */
@@ -273,7 +284,7 @@ export class EssentiaPitchDetector {
         try {
             this.crepeModel = await tf.loadGraphModel(modelUrl);
             // Warm up the model with a dummy inference to avoid JIT lag on first real call
-            const dummy = tf.zeros([1, 1024, 1]);
+            const dummy = tf.zeros([1, 1024]);
             tf.tidy(() => { this.crepeModel!.execute(dummy); });
             dummy.dispose();
             console.log(`[EssentiaPitchDetector] CREPE model loaded from ${modelUrl}`);
@@ -550,7 +561,7 @@ export class EssentiaPitchDetector {
             try {
                 // Run CREPE inference inside tf.tidy for automatic tensor cleanup
                 const inferenceResult = tf.tidy(() => {
-                    const inputTensor = tf.tensor(frame, [1, crepeFrameSize, 1]);
+                    const inputTensor = tf.tensor(frame, [1, crepeFrameSize]);
                     const output = this.crepeModel!.execute(inputTensor) as tf.Tensor;
                     return output.dataSync().slice() as Float32Array;
                 });

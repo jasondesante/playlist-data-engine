@@ -2943,7 +2943,7 @@ Available pitch detection algorithms, separated by category:
 
 | Algorithm | Best For | Returns Confidence? | Polyphonic? |
 |-----------|----------|-------------------|-------------|
-| `predominant_melodia` | Lead melody in polyphonic music **(Recommended default)** | Yes (`pitchConfidence[]`) | Single F0 |
+| `pitch_melodia` | Standard monophonic melody extraction **(Recommended default)** | Yes (`pitchConfidence[]`) | Single F0 |
 | `pitch_melodia` | Standard monophonic melody extraction | Yes (`pitchConfidence[]`) | Single F0 |
 | `pitch_yin_probabilistic` | WASM-accelerated pYIN (same algo as `PitchDetector`, C++ speed) | Yes (`voicedProbabilities[]`) | Single F0 |
 | `multipitch_melodia` | Multiple simultaneous F0 contours (MELODIA) | No | Multi F0 |
@@ -2975,19 +2975,19 @@ Uses a static factory pattern (same as `MusicClassifier`) to handle async WASM m
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
-| `algorithm` | `EssentiaPitchAlgorithm` | `'predominant_melodia'` | Pitch detection algorithm to use |
+| `algorithm` | `EssentiaPitchAlgorithm` | `'pitch_melodia'` | Pitch detection algorithm to use |
 | `minFrequency` | number | 80 | Minimum frequency to detect in Hz |
 | `maxFrequency` | number | 20000 | Maximum frequency to detect in Hz |
 | `frameSize` | number | 2048 | Frame size in samples (~46ms at 44.1kHz) |
 | `hopSize` | number | 128 | Hop size in samples (~2.9ms at 44.1kHz). Essentia prefers finer hop sizes than pYIN's 512. |
 | `targetSampleRate` | number | 44100 | Target sample rate for analysis |
-| `crepeModelUrl` | string | `'/models/crepe/large/model.json'` | URL to CREPE TFJS model (only for `pitch_crepe`) |
+| `crepeModelUrl` | string | `'https://arweave.net/PLACEHOLDER_CREPE_TINY'` | URL to CREPE TFJS model (only for `pitch_crepe`) |
 
 #### Algorithm Output Behavior
 
-**Single-F0 algorithms** (`predominant_melodia`, `pitch_melodia`, `pitch_yin_probabilistic`):
+**Single-F0 algorithms** (`pitch_melodia`, `pitch_yin_probabilistic`):
 - Return one frequency per frame. Voiced frames have `frequency > 0`; unvoiced frames have `frequency === 0`.
-- `predominant_melodia` and `pitch_melodia` map `pitchConfidence[]` to `probability`.
+- `pitch_melodia` maps `pitchConfidence[]` to `probability`.
 - `pitch_yin_probabilistic` maps `voicedProbabilities[]` to `probability`, with voiced threshold at 0.5.
 
 **Multi-pitch algorithms** (`multipitch_melodia`, `multipitch_klapuri`):
@@ -3023,8 +3023,6 @@ new PitchBeatLinker(config?: Partial<PitchDetectorConfig>)
 | Method | Returns | Description |
 |--------|---------|-------------|
 | `link(generatedRhythm, audioBuffer)` | `LinkedPitchAnalysis` | Analyze pitch with automatic band filtering |
-| `linkPreFiltered(generatedRhythm, preFilteredBands, metadata)` | `LinkedPitchAnalysis` | Analyze with pre-filtered audio (more efficient) |
-
 #### LinkedPitchAnalysis Properties
 
 | Property | Type | Description |

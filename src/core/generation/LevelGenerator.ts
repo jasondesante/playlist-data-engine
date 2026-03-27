@@ -31,7 +31,7 @@ import { RhythmGenerator } from './RhythmGenerator.js';
 import type { RhythmGenerationOptions, GeneratedRhythm, RhythmMetadata, Band } from './RhythmGenerator.js';
 import { PitchBeatLinker } from './PitchBeatLinker.js';
 import type { LinkedPitchAnalysis, PitchAtBeat, PitchBeatLinkerConfig } from './PitchBeatLinker.js';
-import type { EssentiaPitchAlgorithm } from '../analysis/EssentiaPitchDetector.js';
+import type { PitchAlgorithm } from '../analysis/EssentiaPitchDetector.js';
 import { MelodyContourAnalyzer } from '../analysis/MelodyContourAnalyzer.js';
 import type { MelodyContourAnalysisResult } from '../analysis/MelodyContourAnalyzer.js';
 import { ButtonMapper } from './ButtonMapper.js';
@@ -74,13 +74,10 @@ export interface LevelGenerationOptions {
      */
     cachedRhythm?: GeneratedRhythm
 
-    /** Use Essentia.js pitch detection instead of the built-in pYIN detector */
-    useEssentiaPitch?: boolean
+    /** Which pitch detection algorithm to use. 'pyin_legacy' uses built-in pYIN; others use Essentia.js. (default: 'pitch_melodia') */
+    pitchAlgorithm?: PitchAlgorithm
 
-    /** Which Essentia pitch algorithm to use (default: 'predominant_melodia') */
-    essentiaPitchAlgorithm?: EssentiaPitchAlgorithm
-
-    /** URL to the CREPE TFJS model (only required when essentiaPitchAlgorithm is 'pitch_crepe') */
+    /** URL to the CREPE TFJS model (only required when pitchAlgorithm is 'pitch_crepe') */
     crepeModelUrl?: string
 }
 
@@ -346,8 +343,7 @@ export class LevelGenerator {
         if (phase === 'pitch') {
             // Pitch analysis depends on which detector/algorithm is used
             return JSON.stringify({
-                useEssentiaPitch: this.options.useEssentiaPitch,
-                essentiaPitchAlgorithm: this.options.essentiaPitchAlgorithm,
+                pitchAlgorithm: this.options.pitchAlgorithm,
                 crepeModelUrl: this.options.crepeModelUrl,
             });
         }
@@ -551,7 +547,7 @@ export class LevelGenerator {
                 progress('pitch', 1, 'Pitch analysis complete');
             }
         } else {
-            progress('pitch', 1, 'Pitch analysis skipped (pitchInfluenceWeight = 0)');
+            progress('pitch', 1, 'Pitch analysis skipped');
         }
 
         // Check for cancellation after pitch analysis
@@ -735,13 +731,10 @@ export class LevelGenerator {
     ): Promise<MelodyContourAnalysisResult> {
         progressCallback?.(0.1, 'Linking pitch to beats...');
 
-        // Create pitch linker with essentia config propagated from LevelGenerationOptions
+        // Create pitch linker with pitch config propagated from LevelGenerationOptions
         const pitchLinkerConfig: PitchBeatLinkerConfig = {};
-        if (this.options.useEssentiaPitch !== undefined) {
-            pitchLinkerConfig.useEssentiaPitch = this.options.useEssentiaPitch;
-        }
-        if (this.options.essentiaPitchAlgorithm !== undefined) {
-            pitchLinkerConfig.essentiaPitchAlgorithm = this.options.essentiaPitchAlgorithm;
+        if (this.options.pitchAlgorithm !== undefined) {
+            pitchLinkerConfig.pitchAlgorithm = this.options.pitchAlgorithm;
         }
         if (this.options.crepeModelUrl !== undefined) {
             pitchLinkerConfig.crepeModelUrl = this.options.crepeModelUrl;
