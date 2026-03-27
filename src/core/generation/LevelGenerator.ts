@@ -28,7 +28,7 @@
  */
 
 import { RhythmGenerator } from './RhythmGenerator.js';
-import type { RhythmGenerationOptions, GeneratedRhythm, RhythmMetadata, Band } from './RhythmGenerator.js';
+import type { RhythmGenerationOptions, GeneratedRhythm, RhythmMetadata } from './RhythmGenerator.js';
 import { PitchBeatLinker } from './PitchBeatLinker.js';
 import type { PitchBeatLinkerConfig } from './PitchBeatLinker.js';
 import type { PitchAlgorithm } from '../analysis/EssentiaPitchDetector.js';
@@ -103,7 +103,6 @@ export interface LevelMetadata {
 
     /** Pitch analysis metadata (if pitch detection was used) */
     pitchMetadata: {
-        bandUsed: Band
         melodyRange: { min: string; max: string } | null
         directionStats: {
             up: number
@@ -824,7 +823,6 @@ export class LevelGenerator {
                 patternsUsed: mappedResult.buttonMetadata.patternsUsed,
             },
             pitchMetadata: pitchAnalysis ? {
-                bandUsed: 'mid' as Band, // composite pulls from multiple bands
                 melodyRange: pitchAnalysis.melodyContour.range.minNote !== 'N/A' ? {
                     min: pitchAnalysis.melodyContour.range.minNote,
                     max: pitchAnalysis.melodyContour.range.maxNote,

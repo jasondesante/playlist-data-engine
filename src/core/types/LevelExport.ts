@@ -259,9 +259,6 @@ export interface ProceduralGenerationMetadata {
     /** Generation timestamp */
     generatedAt: string;
 
-    /** Band used for primary pitch detection */
-    pitchBand?: Band;
-
     /** Direction statistics from melody contour analysis */
     directionStats?: {
         up: number;

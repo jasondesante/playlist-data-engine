@@ -23,13 +23,13 @@
  *
  * @example
  * ```typescript
- * // After running PitchBeatLinker
+ * // After running PitchBeatLinker on the composite stream
  * const linker = new PitchBeatLinker();
- * const linkedAnalysis = linker.link(bandStreams, audioBuffer);
+ * const compositePitches = await linker.linkWithComposite(composite, audioBuffer);
  *
  * // Analyze melody contour
  * const contourAnalyzer = new MelodyContourAnalyzer();
- * const contourResult = contourAnalyzer.analyze(linkedAnalysis);
+ * const contourResult = contourAnalyzer.analyze(compositePitches);
  *
  * // Access direction and interval for each beat
  * for (const pitchAtBeat of contourResult.pitchByBeat) {

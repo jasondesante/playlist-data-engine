@@ -103,9 +103,6 @@ export interface RhythmMetadataSummary {
  * Metadata about pitch analysis used for chart generation
  */
 export interface PitchMetadata {
-    /** Band used for primary pitch detection */
-    bandUsed: Band;
-
     /** Melody range detected (min and max note names) */
     melodyRange: { min: string; max: string } | null;
 

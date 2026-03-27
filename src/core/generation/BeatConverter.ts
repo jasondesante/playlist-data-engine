@@ -403,7 +403,6 @@ export class BeatConverter {
 
         // Build pitch metadata from button metadata
         const pitchMetadata = buttonMetadata.directionStats ? {
-            bandUsed: 'mid' as Band, // Default to mid band
             melodyRange: null,
             directionStats: buttonMetadata.directionStats,
             intervalStats: buttonMetadata.intervalStats ?? null,

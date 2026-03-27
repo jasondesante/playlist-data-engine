@@ -4596,7 +4596,6 @@ console.log(`  Patterns used: ${level.metadata.buttonMetadata.patternsUsed.join(
 
 if (level.metadata.pitchMetadata) {
   console.log('Pitch analysis:');
-  console.log(`  Band used: ${level.metadata.pitchMetadata.bandUsed}`);
   console.log(`  Melody range: ${level.metadata.pitchMetadata.melodyRange?.min} - ${level.metadata.pitchMetadata.melodyRange?.max}`);
   console.log(`  Direction stats:`, level.metadata.pitchMetadata.directionStats);
   console.log(`  Interval stats:`, level.metadata.pitchMetadata.intervalStats);
@@ -4680,8 +4679,7 @@ interface ProceduralGenerationMetadata {
   seed?: string;                   // For reproducibility
   generatedAt: string;             // ISO timestamp
 
-  // Pitch analysis results (null if pitchInfluenceWeight = 0)
-  pitchBand?: 'low' | 'mid' | 'high';
+  // Pitch analysis results (absent if pitchInfluenceWeight = 0)
   directionStats?: {
     up: number;
     down: number;
@@ -4793,7 +4791,6 @@ console.assert(
 
 When pitch influence is disabled during generation:
 
-- `generationMetadata.pitchBand` is absent
 - `generationMetadata.directionStats` is absent
 - `generationMetadata.intervalStats` is absent
 - `generationMetadata.pitchInfluenceWeight = 0`

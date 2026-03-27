@@ -129,7 +129,6 @@ function createMockChartedBeatMap(
                 naturalDifficulty: 'medium',
             },
             pitchMetadata: {
-                bandUsed: 'mid',
                 melodyRange: { min: 'C4', max: 'G5' },
                 directionStats: { up: 10, down: 8, stable: 5, none: 17 },
                 intervalStats: { unison: 5, small: 12, medium: 8, large: 3, very_large: 2 },
@@ -377,7 +376,6 @@ function createMockLevelMetadata(chart: ChartedBeatMap): LevelMetadata {
             patternsUsed: ['alternating', 'roll'],
         },
         pitchMetadata: {
-            bandUsed: 'mid',
             melodyRange: { min: 'C4', max: 'G5' },
             directionStats: { up: 10, down: 8, stable: 5, none: 17 },
             intervalStats: { unison: 5, small: 12, medium: 8, large: 3, very_large: 2 },
@@ -1106,7 +1104,7 @@ describe('LevelSerializer Compatibility with Showcase App', () => {
             const exportData = createMockManualChartExportData();
             const level = LevelSerializer.fromExportData(exportData);
 
-            // Manual charts without generationMetadata.pitchBand should have null pitch analysis
+            // Manual charts without generationMetadata.directionStats should have null pitch analysis
             expect(level.pitchAnalysis).toBeNull();
 
             console.log('✓ Pitch analysis is null for manual chart without pitch metadata');
@@ -1259,8 +1257,7 @@ describe('LevelSerializer Compatibility with Showcase App', () => {
             const level = createMockGeneratedLevelWithoutPitch();
             const exportData = LevelSerializer.toExportData(level);
 
-            // pitchBand, directionStats, intervalStats should be undefined
-            expect(exportData.generationMetadata?.pitchBand).toBeUndefined();
+            // directionStats, intervalStats should be undefined
             expect(exportData.generationMetadata?.directionStats).toBeUndefined();
             expect(exportData.generationMetadata?.intervalStats).toBeUndefined();
 

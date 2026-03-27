@@ -298,7 +298,6 @@ export class LevelSerializer {
             controllerMode: metadata.controllerMode,
             seed: metadata.generationConfig.seed,
             generatedAt: new Date().toISOString(),
-            pitchBand: metadata.pitchMetadata?.bandUsed,
             directionStats: pitchAnalysis?.directionStats ?? undefined,
             intervalStats: pitchAnalysis?.intervalStats ?? undefined,
             rhythmMetadata: {
@@ -503,9 +502,8 @@ export class LevelSerializer {
                 averageDensity: genMeta?.rhythmMetadata?.averageDensity ?? 0.5,
                 naturalDifficulty: this.parseDifficultyLevel(genMeta?.difficulty),
             },
-            pitchMetadata: genMeta?.pitchBand
+            pitchMetadata: genMeta?.directionStats || genMeta?.intervalStats
                 ? {
-                    bandUsed: genMeta.pitchBand as Band,
                     melodyRange: null,
                     directionStats: genMeta.directionStats ?? null,
                     intervalStats: genMeta.intervalStats ?? null,
@@ -880,7 +878,7 @@ export class LevelSerializer {
     ): MelodyContourAnalysisResult | null {
         const genMeta = data.generationMetadata;
 
-        if (!genMeta || !genMeta.pitchBand) {
+        if (!genMeta || (!genMeta.directionStats && !genMeta.intervalStats)) {
             return null;
         }
 
@@ -931,9 +929,8 @@ export class LevelSerializer {
                     : 0,
                 patternsUsed: genMeta?.patternsUsed ?? [],
             },
-            pitchMetadata: genMeta?.pitchBand
+            pitchMetadata: genMeta?.directionStats || genMeta?.intervalStats
                 ? {
-                    bandUsed: genMeta.pitchBand as Band,
                     melodyRange: null,
                     directionStats: genMeta.directionStats ?? null,
                     intervalStats: genMeta.intervalStats ?? null,

@@ -172,8 +172,8 @@ const DEFAULT_CONFIG: Required<Omit<PitchBeatLinkerConfig, 'pitchDetector'>> & {
 /**
  * Links pitch detection to rhythm beat timestamps
  *
- * Performs timestamp-based pitch detection on rhythm patterns, analyzing
- * each band stream independently with its corresponding filtered audio.
+ * Performs full-spectrum pitch detection on the unfiltered audio signal,
+ * then matches pitch frames to beat timestamps.
  */
 export class PitchBeatLinker {
     private config: Required<Omit<PitchBeatLinkerConfig, 'pitchDetector'>> & { pitchDetector: Partial<PitchDetectorConfig> };
