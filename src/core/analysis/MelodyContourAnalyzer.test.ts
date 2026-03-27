@@ -18,15 +18,8 @@ import {
     determineOverallDirection,
     midiToNoteName,
     type MelodyContourAnalyzerConfig,
-    type DirectionStats,
-    type IntervalStats,
 } from './MelodyContourAnalyzer.js';
-import type {
-    LinkedPitchAnalysis,
-    PitchAtBeat,
-    BandPitchAtBeat,
-    PitchBandName,
-} from '../generation/PitchBeatLinker.js';
+import type { PitchAtBeat } from '../generation/PitchBeatLinker.js';
 import type { PitchResult } from './PitchDetector.js';
 
 describe('MelodyContourAnalyzer', () => {
@@ -52,7 +45,7 @@ describe('MelodyContourAnalyzer', () => {
     function createMockPitchAtBeat(
         beatIndex: number,
         timestamp: number,
-        band: PitchBandName,
+        band: string,
         midiNote: number | null,
         noteName: string | null,
         isVoiced: boolean = true
@@ -64,40 +57,6 @@ describe('MelodyContourAnalyzer', () => {
             pitch: isVoiced ? createMockPitchResult(440, midiNote, noteName, isVoiced) : null,
             direction: 'none',
             intervalFromPrevious: 0,
-        };
-    }
-
-    // Helper to create a mock linked pitch analysis
-    function createMockLinkedAnalysis(
-        bandPitches: Map<PitchBandName, BandPitchAtBeat>,
-        dominantBand: PitchBandName = 'mid'
-    ): LinkedPitchAnalysis {
-        return {
-            bandPitches,
-            pitchByBeat: [],
-            dominantBand,
-            phrasePitchCorrelation: new Map(),
-            metadata: {
-                duration: 5.0,
-                totalBeatsAnalyzed: 0,
-                totalVoicedBeats: 0,
-                overallAvgProbability: 0.9,
-            },
-        };
-    }
-
-    // Helper to create mock band pitch at beat
-    function createMockBandPitchAtBeat(
-        band: PitchBandName,
-        pitches: PitchAtBeat[]
-    ): BandPitchAtBeat {
-        const voicedBeats = pitches.filter(p => p.pitch?.isVoiced);
-        return {
-            band,
-            pitches,
-            avgProbability: voicedBeats.length > 0 ? 0.9 : 0,
-            voicedBeatCount: voicedBeats.length,
-            totalBeatCount: pitches.length,
         };
     }
 
@@ -246,11 +205,7 @@ describe('MelodyContourAnalyzer', () => {
                 createMockPitchAtBeat(2, 0.5, 'mid', 64, 'E4'),
             ];
 
-            const bandPitches = new Map<PitchBandName, BandPitchAtBeat>();
-            bandPitches.set('mid', createMockBandPitchAtBeat('mid', pitches));
-
-            const linkedAnalysis = createMockLinkedAnalysis(bandPitches, 'mid');
-            const result = analyzer.analyze(linkedAnalysis);
+            const result = analyzer.analyze(pitches);
 
             // First pitch has no previous
             expect(result.pitchByBeat[0].direction).toBe('none');
@@ -270,11 +225,7 @@ describe('MelodyContourAnalyzer', () => {
                 createMockPitchAtBeat(2, 0.5, 'mid', 60, 'C4'),
             ];
 
-            const bandPitches = new Map<PitchBandName, BandPitchAtBeat>();
-            bandPitches.set('mid', createMockBandPitchAtBeat('mid', pitches));
-
-            const linkedAnalysis = createMockLinkedAnalysis(bandPitches, 'mid');
-            const result = analyzer.analyze(linkedAnalysis);
+            const result = analyzer.analyze(pitches);
 
             expect(result.pitchByBeat[0].direction).toBe('none');
             expect(result.pitchByBeat[1].direction).toBe('down');
@@ -291,11 +242,7 @@ describe('MelodyContourAnalyzer', () => {
                 createMockPitchAtBeat(2, 0.5, 'mid', 60, 'C4'),
             ];
 
-            const bandPitches = new Map<PitchBandName, BandPitchAtBeat>();
-            bandPitches.set('mid', createMockBandPitchAtBeat('mid', pitches));
-
-            const linkedAnalysis = createMockLinkedAnalysis(bandPitches, 'mid');
-            const result = analyzer.analyze(linkedAnalysis);
+            const result = analyzer.analyze(pitches);
 
             expect(result.pitchByBeat[0].direction).toBe('none');
             expect(result.pitchByBeat[1].direction).toBe('stable');
@@ -311,11 +258,7 @@ describe('MelodyContourAnalyzer', () => {
                 createMockPitchAtBeat(1, 2.0, 'mid', 64, 'E4'), // 2 second gap > 0.5 default
             ];
 
-            const bandPitches = new Map<PitchBandName, BandPitchAtBeat>();
-            bandPitches.set('mid', createMockBandPitchAtBeat('mid', pitches));
-
-            const linkedAnalysis = createMockLinkedAnalysis(bandPitches, 'mid');
-            const result = analyzer.analyze(linkedAnalysis);
+            const result = analyzer.analyze(pitches);
 
             // Second beat should be "none" because time gap exceeds threshold
             expect(result.pitchByBeat[1].direction).toBe('none');
@@ -331,11 +274,7 @@ describe('MelodyContourAnalyzer', () => {
                 createMockPitchAtBeat(1, 2.0, 'mid', 64, 'E4'), // 2 second gap < 3.0
             ];
 
-            const bandPitches = new Map<PitchBandName, BandPitchAtBeat>();
-            bandPitches.set('mid', createMockBandPitchAtBeat('mid', pitches));
-
-            const linkedAnalysis = createMockLinkedAnalysis(bandPitches, 'mid');
-            const result = analyzer.analyze(linkedAnalysis);
+            const result = analyzer.analyze(pitches);
 
             // Now direction should be calculated because gap is within threshold
             expect(result.pitchByBeat[1].direction).toBe('up');
@@ -352,11 +291,7 @@ describe('MelodyContourAnalyzer', () => {
                 createMockPitchAtBeat(1, 0.25, 'mid', 62, 'D4'),
             ];
 
-            const bandPitches = new Map<PitchBandName, BandPitchAtBeat>();
-            bandPitches.set('mid', createMockBandPitchAtBeat('mid', pitches));
-
-            const linkedAnalysis = createMockLinkedAnalysis(bandPitches, 'mid');
-            const result = analyzer.analyze(linkedAnalysis);
+            const result = analyzer.analyze(pitches);
 
             expect(result.pitchByBeat[1].intervalFromPrevious).toBe(2);
         });
@@ -373,11 +308,7 @@ describe('MelodyContourAnalyzer', () => {
                 createMockPitchAtBeat(4, 1.0, 'mid', 74, 'A#4'),   // 8 semitones from 66 (very_large)
             ];
 
-            const bandPitches = new Map<PitchBandName, BandPitchAtBeat>();
-            bandPitches.set('mid', createMockBandPitchAtBeat('mid', pitches));
-
-            const linkedAnalysis = createMockLinkedAnalysis(bandPitches, 'mid');
-            const result = analyzer.analyze(linkedAnalysis);
+            const result = analyzer.analyze(pitches);
 
             expect(result.pitchByBeat[0].intervalCategory).toBe('unison');    // First beat
             expect(result.pitchByBeat[1].intervalCategory).toBe('small');    // 1 semitone
@@ -398,11 +329,7 @@ describe('MelodyContourAnalyzer', () => {
                 createMockPitchAtBeat(3, 0.75, 'mid', 62, 'D4'),  // stable
             ];
 
-            const bandPitches = new Map<PitchBandName, BandPitchAtBeat>();
-            bandPitches.set('mid', createMockBandPitchAtBeat('mid', pitches));
-
-            const linkedAnalysis = createMockLinkedAnalysis(bandPitches, 'mid');
-            const result = analyzer.analyze(linkedAnalysis);
+            const result = analyzer.analyze(pitches);
 
             expect(result.directionStats.none).toBe(1);
             expect(result.directionStats.up).toBe(1);
@@ -420,11 +347,7 @@ describe('MelodyContourAnalyzer', () => {
                 createMockPitchAtBeat(3, 0.75, 'mid', 70, 'A#4'), // large (6 semitones)
             ];
 
-            const bandPitches = new Map<PitchBandName, BandPitchAtBeat>();
-            bandPitches.set('mid', createMockBandPitchAtBeat('mid', pitches));
-
-            const linkedAnalysis = createMockLinkedAnalysis(bandPitches, 'mid');
-            const result = analyzer.analyze(linkedAnalysis);
+            const result = analyzer.analyze(pitches);
 
             expect(result.intervalStats.unison).toBe(1);  // First pitch
             expect(result.intervalStats.small).toBe(1);   // 1 semitone
@@ -441,11 +364,7 @@ describe('MelodyContourAnalyzer', () => {
                 createMockPitchAtBeat(2, 0.5, 'mid', null, null, false), // Unvoiced
             ];
 
-            const bandPitches = new Map<PitchBandName, BandPitchAtBeat>();
-            bandPitches.set('mid', createMockBandPitchAtBeat('mid', pitches));
-
-            const linkedAnalysis = createMockLinkedAnalysis(bandPitches, 'mid');
-            const result = analyzer.analyze(linkedAnalysis);
+            const result = analyzer.analyze(pitches);
 
             expect(result.metadata.totalBeats).toBe(3);
             expect(result.metadata.voicedBeats).toBe(2);
@@ -464,11 +383,7 @@ describe('MelodyContourAnalyzer', () => {
                 createMockPitchAtBeat(3, 0.75, 'mid', 72, 'C5'),
             ];
 
-            const bandPitches = new Map<PitchBandName, BandPitchAtBeat>();
-            bandPitches.set('mid', createMockBandPitchAtBeat('mid', pitches));
-
-            const linkedAnalysis = createMockLinkedAnalysis(bandPitches, 'mid');
-            const result = analyzer.analyze(linkedAnalysis);
+            const result = analyzer.analyze(pitches);
 
             expect(result.melodyContour.range.minNote).toBe('C4');
             expect(result.melodyContour.range.maxNote).toBe('C5');
@@ -487,11 +402,7 @@ describe('MelodyContourAnalyzer', () => {
                 createMockPitchAtBeat(4, 1.0, 'mid', 67, 'G4'),
             ];
 
-            const bandPitches = new Map<PitchBandName, BandPitchAtBeat>();
-            bandPitches.set('mid', createMockBandPitchAtBeat('mid', pitches));
-
-            const linkedAnalysis = createMockLinkedAnalysis(bandPitches, 'mid');
-            const result = analyzer.analyze(linkedAnalysis);
+            const result = analyzer.analyze(pitches);
 
             expect(result.melodyContour.direction).toBe('ascending');
         });
@@ -508,11 +419,7 @@ describe('MelodyContourAnalyzer', () => {
                 createMockPitchAtBeat(4, 1.0, 'mid', 60, 'C4'),
             ];
 
-            const bandPitches = new Map<PitchBandName, BandPitchAtBeat>();
-            bandPitches.set('mid', createMockBandPitchAtBeat('mid', pitches));
-
-            const linkedAnalysis = createMockLinkedAnalysis(bandPitches, 'mid');
-            const result = analyzer.analyze(linkedAnalysis);
+            const result = analyzer.analyze(pitches);
 
             expect(result.melodyContour.direction).toBe('descending');
         });
@@ -528,11 +435,7 @@ describe('MelodyContourAnalyzer', () => {
                 createMockPitchAtBeat(3, 0.75, 'mid', 65, 'F4'),
             ];
 
-            const bandPitches = new Map<PitchBandName, BandPitchAtBeat>();
-            bandPitches.set('mid', createMockBandPitchAtBeat('mid', pitches));
-
-            const linkedAnalysis = createMockLinkedAnalysis(bandPitches, 'mid');
-            const result = analyzer.analyze(linkedAnalysis);
+            const result = analyzer.analyze(pitches);
 
             // Should have one ascending segment (beats 1-3, all 'up')
             const upSegments = result.melodyContour.segments.filter(s => s.direction === 'up');
@@ -540,198 +443,11 @@ describe('MelodyContourAnalyzer', () => {
         });
     });
 
-    describe('Multiple Bands', () => {
-        it('should analyze all bands', () => {
-            const analyzer = new MelodyContourAnalyzer();
-
-            const lowPitches: PitchAtBeat[] = [
-                createMockPitchAtBeat(0, 0.0, 'low', 36, 'C2'),
-                createMockPitchAtBeat(1, 0.5, 'low', 38, 'D2'),
-            ];
-
-            const midPitches: PitchAtBeat[] = [
-                createMockPitchAtBeat(0, 0.0, 'mid', 60, 'C4'),
-                createMockPitchAtBeat(1, 0.5, 'mid', 62, 'D4'),
-            ];
-
-            const highPitches: PitchAtBeat[] = [
-                createMockPitchAtBeat(0, 0.0, 'high', 84, 'C6'),
-                createMockPitchAtBeat(1, 0.5, 'high', 86, 'D6'),
-            ];
-
-            const bandPitches = new Map<PitchBandName, BandPitchAtBeat>();
-            bandPitches.set('low', createMockBandPitchAtBeat('low', lowPitches));
-            bandPitches.set('mid', createMockBandPitchAtBeat('mid', midPitches));
-            bandPitches.set('high', createMockBandPitchAtBeat('high', highPitches));
-
-            const linkedAnalysis = createMockLinkedAnalysis(bandPitches, 'mid');
-            const result = analyzer.analyze(linkedAnalysis);
-
-            expect(result.bandPitches.size).toBe(3);
-            expect(result.bandPitches.has('low')).toBe(true);
-            expect(result.bandPitches.has('mid')).toBe(true);
-            expect(result.bandPitches.has('high')).toBe(true);
-        });
-
-        it('should preserve band information in output', () => {
-            const analyzer = new MelodyContourAnalyzer();
-
-            const pitches: PitchAtBeat[] = [
-                createMockPitchAtBeat(0, 0.0, 'low', 36, 'C2'),
-                createMockPitchAtBeat(1, 0.25, 'mid', 60, 'C4'),
-                createMockPitchAtBeat(2, 0.5, 'high', 84, 'C6'),
-            ];
-
-            const bandPitches = new Map<PitchBandName, BandPitchAtBeat>();
-            bandPitches.set('low', createMockBandPitchAtBeat('low', [pitches[0]]));
-            bandPitches.set('mid', createMockBandPitchAtBeat('mid', [pitches[1]]));
-            bandPitches.set('high', createMockBandPitchAtBeat('high', [pitches[2]]));
-
-            const linkedAnalysis = createMockLinkedAnalysis(bandPitches, 'mid');
-            const result = analyzer.analyze(linkedAnalysis);
-
-            // Each pitch should retain its band
-            for (const pitch of result.pitchByBeat) {
-                expect(['low', 'mid', 'high']).toContain(pitch.band);
-            }
-        });
-
-        it('should analyze contour separately for each band stream (Phase 1.5.3)', () => {
-            const analyzer = new MelodyContourAnalyzer();
-
-            // Create different melodies in each band with different directions
-            // Low band: ascending (C2 -> E2 -> G2)
-            const lowPitches: PitchAtBeat[] = [
-                createMockPitchAtBeat(0, 0.0, 'low', 36, 'C2'),
-                createMockPitchAtBeat(1, 0.25, 'low', 40, 'E2'),
-                createMockPitchAtBeat(2, 0.5, 'low', 43, 'G2'),
-            ];
-
-            // Mid band: descending (G4 -> E4 -> C4)
-            const midPitches: PitchAtBeat[] = [
-                createMockPitchAtBeat(0, 0.0, 'mid', 67, 'G4'),
-                createMockPitchAtBeat(1, 0.25, 'mid', 64, 'E4'),
-                createMockPitchAtBeat(2, 0.5, 'mid', 60, 'C4'),
-            ];
-
-            // High band: stable (C6 -> C6 -> C6)
-            const highPitches: PitchAtBeat[] = [
-                createMockPitchAtBeat(0, 0.0, 'high', 84, 'C6'),
-                createMockPitchAtBeat(1, 0.25, 'high', 84, 'C6'),
-                createMockPitchAtBeat(2, 0.5, 'high', 84, 'C6'),
-            ];
-
-            const bandPitches = new Map<PitchBandName, BandPitchAtBeat>();
-            bandPitches.set('low', createMockBandPitchAtBeat('low', lowPitches));
-            bandPitches.set('mid', createMockBandPitchAtBeat('mid', midPitches));
-            bandPitches.set('high', createMockBandPitchAtBeat('high', highPitches));
-
-            const linkedAnalysis = createMockLinkedAnalysis(bandPitches, 'mid');
-            const result = analyzer.analyze(linkedAnalysis);
-
-            // Verify bandContours exists and has all three bands
-            expect(result.bandContours).toBeDefined();
-            expect(result.bandContours.size).toBe(3);
-            expect(result.bandContours.has('low')).toBe(true);
-            expect(result.bandContours.has('mid')).toBe(true);
-            expect(result.bandContours.has('high')).toBe(true);
-
-            // Verify each band has its own contour with correct direction
-            const lowContour = result.bandContours.get('low')!;
-            const midContour = result.bandContours.get('mid')!;
-            const highContour = result.bandContours.get('high')!;
-
-            expect(lowContour.direction).toBe('ascending');
-            expect(midContour.direction).toBe('descending');
-            expect(highContour.direction).toBe('stable');
-
-            // Verify each band has correct range
-            expect(lowContour.range.minNote).toBe('C2');
-            expect(lowContour.range.maxNote).toBe('G2');
-            expect(midContour.range.minNote).toBe('C4');
-            expect(midContour.range.maxNote).toBe('G4');
-            expect(highContour.range.minNote).toBe('C6');
-            expect(highContour.range.maxNote).toBe('C6');
-        });
-
-        it('should generate combined contour from composite pitches (Phase 1.5.3)', () => {
-            const analyzer = new MelodyContourAnalyzer();
-
-            // Create pitches across multiple bands that interleave in time
-            const lowPitches: PitchAtBeat[] = [
-                createMockPitchAtBeat(0, 0.0, 'low', 36, 'C2'),
-                createMockPitchAtBeat(1, 0.5, 'low', 40, 'E2'),
-            ];
-
-            const midPitches: PitchAtBeat[] = [
-                createMockPitchAtBeat(0, 0.25, 'mid', 60, 'C4'),
-                createMockPitchAtBeat(1, 0.75, 'mid', 64, 'E4'),
-            ];
-
-            const highPitches: PitchAtBeat[] = [
-                createMockPitchAtBeat(0, 0.125, 'high', 84, 'C6'),
-                createMockPitchAtBeat(1, 0.625, 'high', 86, 'D6'),
-            ];
-
-            const bandPitches = new Map<PitchBandName, BandPitchAtBeat>();
-            bandPitches.set('low', createMockBandPitchAtBeat('low', lowPitches));
-            bandPitches.set('mid', createMockBandPitchAtBeat('mid', midPitches));
-            bandPitches.set('high', createMockBandPitchAtBeat('high', highPitches));
-
-            const linkedAnalysis = createMockLinkedAnalysis(bandPitches, 'mid');
-            const result = analyzer.analyze(linkedAnalysis);
-
-            // Verify combinedContour exists
-            expect(result.combinedContour).toBeDefined();
-            expect(result.combinedContour).not.toBeNull();
-
-            // Combined contour should span the full range of all bands
-            expect(result.combinedContour!.range.minNote).toBe('C2');  // Lowest from low band
-            expect(result.combinedContour!.range.maxNote).toBe('D6');  // Highest from high band
-
-            // Combined contour should have segments
-            expect(result.combinedContour!.segments.length).toBeGreaterThan(0);
-        });
-
-        it('should have combinedContour that differs from dominant band contour', () => {
-            const analyzer = new MelodyContourAnalyzer();
-
-            // Create different melodies in each band
-            const lowPitches: PitchAtBeat[] = [
-                createMockPitchAtBeat(0, 0.0, 'low', 36, 'C2'),
-                createMockPitchAtBeat(1, 0.5, 'low', 48, 'C3'),  // Large jump
-            ];
-
-            const midPitches: PitchAtBeat[] = [
-                createMockPitchAtBeat(0, 0.25, 'mid', 60, 'C4'),
-                createMockPitchAtBeat(1, 0.75, 'mid', 62, 'D4'),  // Small step
-            ];
-
-            const bandPitches = new Map<PitchBandName, BandPitchAtBeat>();
-            bandPitches.set('low', createMockBandPitchAtBeat('low', lowPitches));
-            bandPitches.set('mid', createMockBandPitchAtBeat('mid', midPitches));
-
-            const linkedAnalysis = createMockLinkedAnalysis(bandPitches, 'mid');
-            const result = analyzer.analyze(linkedAnalysis);
-
-            // melodyContour should be from dominant band (mid)
-            const dominantContour = result.melodyContour;
-            const combinedContour = result.combinedContour!;
-
-            // Combined should have larger range (includes low band's C2-C3)
-            expect(combinedContour.range.semitones).toBeGreaterThanOrEqual(dominantContour.range.semitones);
-        });
-    });
-
     describe('Edge Cases', () => {
-        it('should handle empty band streams', () => {
+        it('should handle empty input', () => {
             const analyzer = new MelodyContourAnalyzer();
 
-            const bandPitches = new Map<PitchBandName, BandPitchAtBeat>();
-            bandPitches.set('mid', createMockBandPitchAtBeat('mid', []));
-
-            const linkedAnalysis = createMockLinkedAnalysis(bandPitches, 'mid');
-            const result = analyzer.analyze(linkedAnalysis);
+            const result = analyzer.analyze([]);
 
             expect(result.pitchByBeat).toHaveLength(0);
             expect(result.melodyContour.segments).toHaveLength(0);
@@ -745,11 +461,7 @@ describe('MelodyContourAnalyzer', () => {
                 createMockPitchAtBeat(0, 0.0, 'mid', 60, 'C4'),
             ];
 
-            const bandPitches = new Map<PitchBandName, BandPitchAtBeat>();
-            bandPitches.set('mid', createMockBandPitchAtBeat('mid', pitches));
-
-            const linkedAnalysis = createMockLinkedAnalysis(bandPitches, 'mid');
-            const result = analyzer.analyze(linkedAnalysis);
+            const result = analyzer.analyze(pitches);
 
             expect(result.pitchByBeat).toHaveLength(1);
             expect(result.pitchByBeat[0].direction).toBe('none'); // No previous
@@ -765,11 +477,7 @@ describe('MelodyContourAnalyzer', () => {
                 createMockPitchAtBeat(2, 0.5, 'mid', 64, 'E4'),
             ];
 
-            const bandPitches = new Map<PitchBandName, BandPitchAtBeat>();
-            bandPitches.set('mid', createMockBandPitchAtBeat('mid', pitches));
-
-            const linkedAnalysis = createMockLinkedAnalysis(bandPitches, 'mid');
-            const result = analyzer.analyze(linkedAnalysis);
+            const result = analyzer.analyze(pitches);
 
             // First: none (no previous)
             // Second: none (no pitch)
@@ -787,11 +495,7 @@ describe('MelodyContourAnalyzer', () => {
                 createMockPitchAtBeat(1, 0.25, 'mid', null, null, false),
             ];
 
-            const bandPitches = new Map<PitchBandName, BandPitchAtBeat>();
-            bandPitches.set('mid', createMockBandPitchAtBeat('mid', pitches));
-
-            const linkedAnalysis = createMockLinkedAnalysis(bandPitches, 'mid');
-            const result = analyzer.analyze(linkedAnalysis);
+            const result = analyzer.analyze(pitches);
 
             expect(result.melodyContour.range.minNote).toBe('N/A');
             expect(result.melodyContour.range.maxNote).toBe('N/A');

@@ -3022,8 +3022,12 @@ new PitchBeatLinker(config?: Partial<PitchDetectorConfig>)
 
 | Method | Returns | Description |
 |--------|---------|-------------|
-| `link(generatedRhythm, audioBuffer)` | `LinkedPitchAnalysis` | Analyze pitch with automatic band filtering |
-#### LinkedPitchAnalysis Properties
+| `linkWithComposite(bandStreams, compositeStream, audioBuffer)` | `PitchAtBeat[]` | Game-ready: returns pitch at each composite beat |
+| `linkWithBands(bandStreams, audioBuffer, phrases?)` | `LinkedPitchAnalysis` | Analysis: full band-level pitch data |
+
+> **Preferred:** Use `linkWithComposite()` for gameplay — it returns only the composite pitches (the beats the player interacts with). Use `linkWithBands()` for advanced analysis that needs per-band data.
+
+#### LinkedPitchAnalysis Properties (returned by `linkWithBands()`)
 
 | Property | Type | Description |
 |----------|------|-------------|
@@ -3065,18 +3069,14 @@ new MelodyContourAnalyzer(config?: Partial<MelodyContourAnalyzerConfig>)
 
 | Method | Returns | Description |
 |--------|---------|-------------|
-| `analyze(linkedAnalysis)` | `MelodyContourAnalysisResult` | Analyze linked pitch data for melody contour |
+| `analyze(compositePitches)` | `MelodyContourAnalysisResult` | Analyze composite pitch data for melody contour |
 
 #### MelodyContourAnalysisResult Properties
 
 | Property | Type | Description |
 |----------|------|-------------|
 | `pitchByBeat` | PitchAtBeat[] | Updated pitch-by-beat with direction and interval |
-| `bandPitches` | Map | Band pitch analyses with updated direction/interval |
-| `melodyContour` | MelodyContour | Melody contour from the dominant band |
-| `bandContours` | Map | Per-band melody contours |
-| `combinedContour` | MelodyContour \| null | Combined contour from composite pitches |
-| `dominantBand` | string | Band with the best pitch results |
+| `melodyContour` | MelodyContour | Melody contour from composite pitches |
 | `directionStats` | DirectionStats | Direction statistics (up/down/stable/none counts) |
 | `intervalStats` | IntervalStats | Interval statistics by category |
 

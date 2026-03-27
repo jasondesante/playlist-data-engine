@@ -741,27 +741,18 @@ export class LevelGenerator {
         }
         const pitchLinker = new PitchBeatLinker(pitchLinkerConfig);
 
-        // Link pitch to band streams
-        const linkedAnalysis = await pitchLinker.link(
+        // Link pitch to composite stream beats
+        const compositePitches = await pitchLinker.linkWithComposite(
             generatedRhythm.bandStreams,
+            generatedRhythm.composite,
             audioBuffer
         );
 
-        progressCallback?.(0.4, 'Deriving composite pitches...');
+        progressCallback?.(0.4, 'Analyzing melody contour...');
 
-        // Derive composite pitches from linked analysis
-        const compositePitches = pitchLinker.deriveCompositePitches(
-            generatedRhythm.composite,
-            linkedAnalysis
-        );
-
-        progressCallback?.(0.6, 'Analyzing melody contour...');
-
-        // Analyze melody contour
+        // Analyze melody contour from composite pitches
         const contourAnalyzer = new MelodyContourAnalyzer();
-
-        // Analyze the linked pitches to get direction/interval
-        const contourResult = contourAnalyzer.analyze(linkedAnalysis);
+        const contourResult = contourAnalyzer.analyze(compositePitches);
 
         progressCallback?.(0.8, 'Deriving variant pitches...');
 
@@ -834,7 +825,7 @@ export class LevelGenerator {
                 patternsUsed: mappedResult.buttonMetadata.patternsUsed,
             },
             pitchMetadata: pitchAnalysis ? {
-                bandUsed: pitchAnalysis.dominantBand,
+                bandUsed: 'mid' as Band, // composite pulls from multiple bands
                 melodyRange: pitchAnalysis.melodyContour.range.minNote !== 'N/A' ? {
                     min: pitchAnalysis.melodyContour.range.minNote,
                     max: pitchAnalysis.melodyContour.range.maxNote,

@@ -43,10 +43,7 @@
  */
 
 import type {
-    LinkedPitchAnalysis,
     PitchAtBeat,
-    BandPitchAtBeat,
-    PitchBandName,
 } from '../generation/PitchBeatLinker.js';
 import type {
     MelodyContour,
@@ -110,20 +107,8 @@ export interface MelodyContourAnalysisResult {
     /** Updated pitch-by-beat with direction and interval populated */
     pitchByBeat: PitchAtBeat[];
 
-    /** Band pitch analyses with updated direction/interval info */
-    bandPitches: Map<PitchBandName, BandPitchAtBeat>;
-
-    /** Melody contour from the dominant band */
+    /** Melody contour from composite pitches */
     melodyContour: MelodyContour;
-
-    /** Per-band melody contours (Phase 1.5.3) */
-    bandContours: Map<PitchBandName, MelodyContour>;
-
-    /** Combined contour from composite pitches (Phase 1.5.3) */
-    combinedContour: MelodyContour | null;
-
-    /** Band with the best pitch results */
-    dominantBand: PitchBandName;
 
     /** Direction statistics */
     directionStats: DirectionStats;
@@ -305,58 +290,29 @@ export class MelodyContourAnalyzer {
     }
 
     /**
-     * Analyze linked pitch data to extract melody contour
+     * Analyze composite pitch data to extract melody contour
      *
      * This method:
-     * 1. Iterates through each band stream's pitches
-     * 2. Compares consecutive pitches to calculate direction and interval
-     * 3. Creates melody segments for phrases
-     * 4. Calculates overall contour direction and range
+     * 1. Compares consecutive pitches to calculate direction and interval
+     * 2. Creates melody segments
+     * 3. Calculates overall contour direction and range
      *
-     * @param linkedAnalysis - The linked pitch analysis from PitchBeatLinker
+     * @param compositePitches - Pitch at each composite beat from PitchBeatLinker.linkWithComposite()
      * @returns Melody contour analysis result with populated direction/interval
      */
-    analyze(linkedAnalysis: LinkedPitchAnalysis): MelodyContourAnalysisResult {
-        // Process each band stream
-        const updatedBandPitches = new Map<PitchBandName, BandPitchAtBeat>();
-        const allPitchByBeat: PitchAtBeat[] = [];
-        const bandContours = new Map<PitchBandName, MelodyContour>();
-
-        for (const [bandName, bandResult] of linkedAnalysis.bandPitches) {
-            const updatedPitches = this.analyzeBandPitches(bandResult.pitches);
-            const bandContour = this.buildMelodyContour(updatedPitches);
-
-            updatedBandPitches.set(bandName, {
-                ...bandResult,
-                pitches: updatedPitches,
-                melodyContour: bandContour,
-            });
-            bandContours.set(bandName, bandContour);
-            allPitchByBeat.push(...updatedPitches);
-        }
-
-        // Sort all pitches by timestamp
-        allPitchByBeat.sort((a, b) => a.timestamp - b.timestamp);
+    analyze(compositePitches: PitchAtBeat[]): MelodyContourAnalysisResult {
+        // Analyze direction and interval for each pitch
+        const pitchByBeat = this.analyzeBandPitches(compositePitches);
 
         // Calculate statistics
-        const { directionStats, intervalStats, metadata } = this.calculateStatistics(allPitchByBeat);
+        const { directionStats, intervalStats, metadata } = this.calculateStatistics(pitchByBeat);
 
-        // Build melody contour from dominant band
-        const dominantBandPitches = updatedBandPitches.get(linkedAnalysis.dominantBand);
-        const melodyContour = this.buildMelodyContour(
-            dominantBandPitches?.pitches ?? []
-        );
-
-        // Build combined contour from all pitches
-        const combinedContour = this.buildMelodyContour(allPitchByBeat);
+        // Build melody contour from composite pitches
+        const melodyContour = this.buildMelodyContour(pitchByBeat);
 
         return {
-            pitchByBeat: allPitchByBeat,
-            bandPitches: updatedBandPitches,
+            pitchByBeat,
             melodyContour,
-            bandContours,
-            combinedContour,
-            dominantBand: linkedAnalysis.dominantBand,
             directionStats,
             intervalStats,
             metadata,

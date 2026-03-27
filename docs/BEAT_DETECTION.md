@@ -4159,7 +4159,7 @@ import { PitchBeatLinker } from 'playlist-data-engine';
 const linker = new PitchBeatLinker();
 
 // Analyze pitch on the full unfiltered signal and link to beats
-const linkedAnalysis = await linker.link(
+const linkedAnalysis = await linker.linkWithBands(
   generatedRhythm.bandStreams, // From rhythm generation
   audioBuffer
 );
@@ -4178,7 +4178,7 @@ The linker can correlate pitches with detected rhythmic phrases using `RhythmicP
 
 ```typescript
 // Pass phrases from rhythm generation for correlation
-const linkedAnalysis = await linker.link(
+const linkedAnalysis = await linker.linkWithBands(
   generatedRhythm.bandStreams,
   audioBuffer,
   generatedRhythm.phrases // Optional: enables phrase correlation
@@ -4192,16 +4192,24 @@ for (const [phraseId, pitches] of linkedAnalysis.phrasePitchCorrelation) {
 
 This enables patterns that respect both the rhythm and melody of repeated musical phrases.
 
-#### Composite Stream Pitch Derivation
+#### Composite Stream Pitch Linking
 
-Since the composite stream is assembled from band stream sections, pitches can be derived without re-analyzing:
+The recommended approach is to use `linkWithComposite()`, which returns pitch at each composite beat directly:
 
 ```typescript
-// Derive pitches for composite stream
-const compositePitches = linker.deriveCompositePitches(
+// Get pitch at each composite beat (game-ready)
+const compositePitches = await linker.linkWithComposite(
+  generatedRhythm.bandStreams,
   generatedRhythm.composite,
-  linkedAnalysis
+  audioBuffer
 );
+
+// compositePitches is PitchAtBeat[] — use directly for analysis or button mapping
+console.log(`Composite has ${compositePitches.length} beats with pitch data`);
+
+// Analyze melody contour from composite pitches
+const contourAnalyzer = new MelodyContourAnalyzer();
+const contourResult = contourAnalyzer.analyze(compositePitches);
 
 // Derive pitches for all difficulty variants
 const variantPitches = linker.deriveAllVariantPitches(
@@ -4213,6 +4221,8 @@ console.log('Easy pitches:', variantPitches.easy.length);
 console.log('Medium pitches:', variantPitches.medium.length);
 console.log('Hard pitches:', variantPitches.hard.length);
 ```
+
+> **Note:** `linkWithComposite()` returns `PitchAtBeat[]` (game-ready). Use `linkWithBands()` for advanced analysis that needs per-band data (`LinkedPitchAnalysis`).
 
 ---
 
@@ -4390,14 +4400,15 @@ import { RhythmGenerator, PitchBeatLinker, ButtonMapper } from 'playlist-data-en
 const rhythmGenerator = new RhythmGenerator({ difficulty: 'medium' });
 const rhythm = await rhythmGenerator.generate(audioBuffer, beatMap, interpolated);
 
-// Step 2: Link pitch to beats
+// Step 2: Link pitch to composite stream beats
 const linker = new PitchBeatLinker();
-const linkedPitch = linker.link(rhythm.bandStreams, audioBuffer);
+const compositePitches = await linker.linkWithComposite(
+  rhythm.bandStreams,
+  rhythm.composite,
+  audioBuffer
+);
 
-// Step 3: Derive composite pitches
-const compositePitches = linker.deriveCompositePitches(rhythm.composite, linkedPitch);
-
-// Step 4: Map buttons
+// Step 3: Map buttons
 const mapper = new ButtonMapper({
   controllerMode: 'ddr',
   pitchInfluenceWeight: 0.8
@@ -4454,12 +4465,15 @@ const rhythmGenerator = new RhythmGenerator({
 });
 const rhythm = await rhythmGenerator.generate(audioBuffer, beatMap, interpolated);
 
-// Step 5: Link pitch to beats
+// Step 5: Link pitch to composite stream beats
 const linker = new PitchBeatLinker();
-const linkedPitch = linker.link(rhythm.bandStreams, audioBuffer);
+const compositePitches = await linker.linkWithComposite(
+  rhythm.bandStreams,
+  rhythm.composite,
+  audioBuffer
+);
 
 // Step 6: Derive pitches for all difficulty variants
-const compositePitches = linker.deriveCompositePitches(rhythm.composite, linkedPitch);
 const variantPitches = linker.deriveAllVariantPitches(rhythm.difficultyVariants, compositePitches);
 
 // Step 7: Map buttons for each difficulty

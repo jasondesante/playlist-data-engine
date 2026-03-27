@@ -155,7 +155,7 @@ describe('PitchBeatLinker', () => {
             const signal = createSineWave(220, 5.0);
             const audioBuffer = createMockAudioBuffer(signal);
 
-            const result = await linker.link(bandStreams, audioBuffer);
+            const result = await linker.linkWithBands(bandStreams, audioBuffer);
 
             expect(result.bandPitches.size).toBe(3);
             expect(result.bandPitches.has('low')).toBe(true);
@@ -175,7 +175,7 @@ describe('PitchBeatLinker', () => {
             const signal = createSineWave(440, 5.0);
             const audioBuffer = createMockAudioBuffer(signal);
 
-            const result = await linker.link(bandStreams, audioBuffer);
+            const result = await linker.linkWithBands(bandStreams, audioBuffer);
             const midPitches = result.bandPitches.get('mid');
 
             expect(midPitches).toBeDefined();
@@ -194,7 +194,7 @@ describe('PitchBeatLinker', () => {
             const signal = createSineWave(220, 5.0);
             const audioBuffer = createMockAudioBuffer(signal);
 
-            const result = await linker.link(bandStreams, audioBuffer);
+            const result = await linker.linkWithBands(bandStreams, audioBuffer);
 
             for (const pitchAtBeat of result.pitchByBeat) {
                 expect(['low', 'mid', 'high']).toContain(pitchAtBeat.band);
@@ -212,7 +212,7 @@ describe('PitchBeatLinker', () => {
             const signal = createSineWave(440, 5.0);
             const audioBuffer = createMockAudioBuffer(signal);
 
-            const result = await linker.link(bandStreams, audioBuffer);
+            const result = await linker.linkWithBands(bandStreams, audioBuffer);
 
             expect(result.pitchByBeat[0].timestamp).toBe(0.5);
             expect(result.pitchByBeat[0].beatIndex).toBe(0);
@@ -234,7 +234,7 @@ describe('PitchBeatLinker', () => {
             const audioBuffer = createMockAudioBuffer(signal);
 
             // Run full analysis to get pitch results
-            const fullResult = await linker.link(bandStreams, audioBuffer);
+            const fullResult = await linker.linkWithBands(bandStreams, audioBuffer);
 
             // Use linkPreFiltered with the pitch results from full analysis
             const preFilteredResult = await linker.linkPreFiltered(
@@ -268,7 +268,7 @@ describe('PitchBeatLinker', () => {
             const signal = createSineWave(440, 5.0);
             const audioBuffer = createMockAudioBuffer(signal);
 
-            const result = await linker.link(bandStreams, audioBuffer);
+            const result = await linker.linkWithBands(bandStreams, audioBuffer);
 
             expect(['low', 'mid', 'high']).toContain(result.dominantBand);
         });
@@ -286,7 +286,7 @@ describe('PitchBeatLinker', () => {
             const signal = createSineWave(1000, 5.0);
             const audioBuffer = createMockAudioBuffer(signal);
 
-            const result = await linker.link(bandStreams, audioBuffer);
+            const result = await linker.linkWithBands(bandStreams, audioBuffer);
 
             expect(result.dominantBand).toBe('mid');
         });
@@ -305,7 +305,7 @@ describe('PitchBeatLinker', () => {
             const signal = createSineWave(440, 5.0);
             const audioBuffer = createMockAudioBuffer(signal);
 
-            const result = await linker.link(bandStreams, audioBuffer);
+            const result = await linker.linkWithBands(bandStreams, audioBuffer);
 
             expect(result.pitchByBeat).toHaveLength(3);
             expect(result.pitchByBeat[0].timestamp).toBeLessThanOrEqual(
@@ -330,7 +330,7 @@ describe('PitchBeatLinker', () => {
             const signal = createSineWave(440, 5.0);
             const audioBuffer = createMockAudioBuffer(signal);
 
-            const result = await linker.link(bandStreams, audioBuffer);
+            const result = await linker.linkWithBands(bandStreams, audioBuffer);
 
             expect(result.metadata.duration).toBeCloseTo(5.0, 1);
             expect(result.metadata.totalBeatsAnalyzed).toBe(3);
@@ -351,7 +351,7 @@ describe('PitchBeatLinker', () => {
             const signal = createSineWave(440, 5.0);
             const audioBuffer = createMockAudioBuffer(signal);
 
-            const result = await linker.link(bandStreams, audioBuffer);
+            const result = await linker.linkWithBands(bandStreams, audioBuffer);
             const midPitches = linker.getBandPitches(result, 'mid');
 
             expect(midPitches).toBeDefined();
@@ -369,7 +369,7 @@ describe('PitchBeatLinker', () => {
             const signal = createSineWave(440, 5.0);
             const audioBuffer = createMockAudioBuffer(signal);
 
-            const result = await linker.link(bandStreams, audioBuffer);
+            const result = await linker.linkWithBands(bandStreams, audioBuffer);
             const voicedPitches = linker.getAllVoicedPitches(result);
 
             for (const p of voicedPitches) {
@@ -391,7 +391,7 @@ describe('PitchBeatLinker', () => {
             const signal = createSineWave(440, 5.0);
             const audioBuffer = createMockAudioBuffer(signal);
 
-            const result = await linker.link(bandStreams, audioBuffer);
+            const result = await linker.linkWithBands(bandStreams, audioBuffer);
             const rangePitches = linker.getPitchesInRange(result, 0.75, 1.75);
 
             expect(rangePitches).toHaveLength(2);
@@ -411,7 +411,7 @@ describe('PitchBeatLinker', () => {
             const signal = createSineWave(440, 5.0);
             const audioBuffer = createMockAudioBuffer(signal);
 
-            const result = await linker.link(bandStreams, audioBuffer);
+            const result = await linker.linkWithBands(bandStreams, audioBuffer);
 
             expect(result.pitchByBeat[0].direction).toBe('none');
         });
@@ -426,7 +426,7 @@ describe('PitchBeatLinker', () => {
             const signal = createSineWave(440, 5.0);
             const audioBuffer = createMockAudioBuffer(signal);
 
-            const result = await linker.link(bandStreams, audioBuffer);
+            const result = await linker.linkWithBands(bandStreams, audioBuffer);
 
             expect(result.pitchByBeat[0].intervalFromPrevious).toBe(0);
         });
@@ -441,7 +441,7 @@ describe('PitchBeatLinker', () => {
             const signal = createSineWave(440, 5.0);
             const audioBuffer = createMockAudioBuffer(signal);
 
-            const result = await linker.link(bandStreams, audioBuffer);
+            const result = await linker.linkWithBands(bandStreams, audioBuffer);
 
             expect(result.pitchByBeat[0].intervalCategory).toBeUndefined();
         });
@@ -456,7 +456,7 @@ describe('PitchBeatLinker', () => {
             const signal = createSineWave(440, 5.0);
             const audioBuffer = createMockAudioBuffer(signal);
 
-            const result = await linker.link(bandStreams, audioBuffer);
+            const result = await linker.linkWithBands(bandStreams, audioBuffer);
 
             expect(result.pitchByBeat).toHaveLength(0);
             expect(result.metadata.totalBeatsAnalyzed).toBe(0);
@@ -537,7 +537,7 @@ describe('PitchBeatLinker', () => {
 
             const signal = createSineWave(440, 5.0);
             const audioBuffer = createMockAudioBuffer(signal);
-            const linkedAnalysis = await linker.link(bandStreams, audioBuffer);
+            const linkedAnalysis = await linker.linkWithBands(bandStreams, audioBuffer);
 
             const compositeStream = createMockCompositeStream([
                 { beatIndex: 0, timestamp: 0.5, sourceBand: 'mid', gridPosition: 0, intensity: 0.8, band: 'mid' },
@@ -562,7 +562,7 @@ describe('PitchBeatLinker', () => {
 
             const signal = createSineWave(440, 5.0);
             const audioBuffer = createMockAudioBuffer(signal);
-            const linkedAnalysis = await linker.link(bandStreams, audioBuffer);
+            const linkedAnalysis = await linker.linkWithBands(bandStreams, audioBuffer);
 
             const compositeStream = createMockCompositeStream([
                 { beatIndex: 0, timestamp: 2.0, sourceBand: 'mid', gridPosition: 0, intensity: 0.8, band: 'mid' },
@@ -587,7 +587,7 @@ describe('PitchBeatLinker', () => {
 
             const signal = createSineWave(440, 5.0);
             const audioBuffer = createMockAudioBuffer(signal);
-            const linkedAnalysis = await linker.link(bandStreams, audioBuffer);
+            const linkedAnalysis = await linker.linkWithBands(bandStreams, audioBuffer);
 
             const compositeStream = createMockCompositeStream([
                 { beatIndex: 0, timestamp: 0.5, sourceBand: 'mid', gridPosition: 0, intensity: 0.8, band: 'mid' },
@@ -620,7 +620,7 @@ describe('PitchBeatLinker', () => {
 
             const signal = createSineWave(440, 5.0);
             const audioBuffer = createMockAudioBuffer(signal);
-            const linkedAnalysis = await linker.link(bandStreams, audioBuffer);
+            const linkedAnalysis = await linker.linkWithBands(bandStreams, audioBuffer);
 
             const compositeStream = createMockCompositeStream([
                 { beatIndex: 0, timestamp: 0.5, sourceBand: 'mid', gridPosition: 0, intensity: 0.8, band: 'mid' },
@@ -650,7 +650,7 @@ describe('PitchBeatLinker', () => {
 
             const signal = createSineWave(440, 5.0);
             const audioBuffer = createMockAudioBuffer(signal);
-            const linkedAnalysis = await linker.link(bandStreams, audioBuffer);
+            const linkedAnalysis = await linker.linkWithBands(bandStreams, audioBuffer);
 
             const compositeStream = createMockCompositeStream([
                 { beatIndex: 0, timestamp: 0.5, sourceBand: 'mid', gridPosition: 0, intensity: 0.8, band: 'mid' },
@@ -735,7 +735,7 @@ describe('PitchBeatLinker', () => {
                 ]),
             ];
 
-            const result = await linker.link(bandStreams, audioBuffer, phrases);
+            const result = await linker.linkWithBands(bandStreams, audioBuffer, phrases);
 
             expect(result.phrasePitchCorrelation).toBeDefined();
             expect(result.phrasePitchCorrelation.size).toBe(1);
@@ -757,7 +757,7 @@ describe('PitchBeatLinker', () => {
                 ]),
             ];
 
-            const result = await linker.link(bandStreams, audioBuffer, phrases);
+            const result = await linker.linkWithBands(bandStreams, audioBuffer, phrases);
 
             expect(result.phrasePitchCorrelation.has('my_unique_phrase_id')).toBe(true);
         });
@@ -779,7 +779,7 @@ describe('PitchBeatLinker', () => {
                 ]),
             ];
 
-            const result = await linker.link(bandStreams, audioBuffer, phrases);
+            const result = await linker.linkWithBands(bandStreams, audioBuffer, phrases);
 
             expect(result.phrasePitchCorrelation.has('low_phrase')).toBe(true);
             const lowPhrasePitches = result.phrasePitchCorrelation.get('low_phrase');
@@ -806,7 +806,7 @@ describe('PitchBeatLinker', () => {
                 ]),
             ];
 
-            const result = await linker.link(bandStreams, audioBuffer, phrases);
+            const result = await linker.linkWithBands(bandStreams, audioBuffer, phrases);
 
             const rangePhrasePitches = result.phrasePitchCorrelation.get('range_phrase');
             expect(rangePhrasePitches).toBeDefined();
@@ -831,7 +831,7 @@ describe('PitchBeatLinker', () => {
                 ]),
             ];
 
-            const result = await linker.link(bandStreams, audioBuffer, phrases);
+            const result = await linker.linkWithBands(bandStreams, audioBuffer, phrases);
 
             const repeatingPhrasePitches = result.phrasePitchCorrelation.get('repeating_phrase');
             expect(repeatingPhrasePitches).toBeDefined();
@@ -848,7 +848,7 @@ describe('PitchBeatLinker', () => {
             const signal = createSineWave(440, 5.0);
             const audioBuffer = createMockAudioBuffer(signal);
 
-            const result = await linker.link(bandStreams, audioBuffer);
+            const result = await linker.linkWithBands(bandStreams, audioBuffer);
 
             expect(result.phrasePitchCorrelation.size).toBe(0);
         });
@@ -869,9 +869,167 @@ describe('PitchBeatLinker', () => {
                 ]),
             ];
 
-            const result = await linker.link(bandStreams, audioBuffer, phrases);
+            const result = await linker.linkWithBands(bandStreams, audioBuffer, phrases);
 
             expect(result.phrasePitchCorrelation.size).toBe(0);
+        });
+    });
+
+    // ============================================================================
+    // linkWithComposite Tests
+    // ============================================================================
+
+    describe('linkWithComposite', () => {
+        // Helper to create mock composite stream
+        function createMockCompositeStream(
+            beats: Array<{ beatIndex: number; timestamp: number; sourceBand: PitchBandName }>
+        ): CompositeStream {
+            return {
+                beats: beats.map(b => ({
+                    ...b,
+                    gridPosition: 0,
+                    gridType: 'straight_16th' as const,
+                    intensity: 0.8,
+                    band: b.sourceBand,
+                    sourceBand: b.sourceBand,
+                })),
+                sections: [
+                    {
+                        beatRange: { start: beats[0]?.beatIndex ?? 0, end: beats[beats.length - 1]?.beatIndex ?? 0 },
+                        sourceBand: beats[0]?.sourceBand ?? 'mid',
+                        score: 1,
+                        margin: 0.5,
+                    },
+                ],
+                naturalDifficulty: 'medium',
+                quarterNoteInterval: 0.5,
+                metadata: {
+                    totalBeats: beats.length,
+                    sectionCount: 1,
+                    beatsPerBand: { low: 0, mid: 0, high: 0 },
+                    sectionsPerBand: { low: 0, mid: 0, high: 0 },
+                },
+            };
+        }
+
+        it('should return PitchAtBeat[] for composite stream beats', async () => {
+            const linker = new PitchBeatLinker();
+
+            const bandStreams = createMockBandStreams([
+                { timestamp: 0.5, beatIndex: 0, band: 'mid' },
+                { timestamp: 1.0, beatIndex: 1, band: 'mid' },
+                { timestamp: 1.5, beatIndex: 2, band: 'low' },
+            ]);
+
+            const compositeStream = createMockCompositeStream([
+                { beatIndex: 0, timestamp: 0.5, sourceBand: 'mid' },
+                { beatIndex: 1, timestamp: 1.0, sourceBand: 'mid' },
+                { beatIndex: 2, timestamp: 1.5, sourceBand: 'low' },
+            ]);
+
+            const signal = createSineWave(440, 5.0);
+            const audioBuffer = createMockAudioBuffer(signal);
+
+            const result = await linker.linkWithComposite(bandStreams, compositeStream, audioBuffer);
+
+            expect(Array.isArray(result)).toBe(true);
+            expect(result).toHaveLength(3);
+        });
+
+        it('should match composite pitches to band pitches by beatIndex (exact)', async () => {
+            const linker = new PitchBeatLinker();
+
+            const bandStreams = createMockBandStreams([
+                { timestamp: 0.5, beatIndex: 0, band: 'mid' },
+                { timestamp: 1.0, beatIndex: 1, band: 'mid' },
+                { timestamp: 1.5, beatIndex: 2, band: 'low' },
+            ]);
+
+            // Composite selects from different bands
+            const compositeStream = createMockCompositeStream([
+                { beatIndex: 0, timestamp: 0.5, sourceBand: 'mid' },
+                { beatIndex: 2, timestamp: 1.5, sourceBand: 'low' },
+            ]);
+
+            const signal = createSineWave(440, 5.0);
+            const audioBuffer = createMockAudioBuffer(signal);
+
+            const result = await linker.linkWithComposite(bandStreams, compositeStream, audioBuffer);
+
+            expect(result).toHaveLength(2);
+            expect(result[0].beatIndex).toBe(0);
+            expect(result[0].band).toBe('mid');
+            expect(result[1].beatIndex).toBe(2);
+            expect(result[1].band).toBe('low');
+        });
+
+        it('should set null pitch for composite beats not found in any band', async () => {
+            const linker = new PitchBeatLinker();
+
+            const bandStreams = createMockBandStreams([
+                { timestamp: 0.5, beatIndex: 0, band: 'mid' },
+            ]);
+
+            // Composite has a beat from a band with no data
+            const compositeStream = createMockCompositeStream([
+                { beatIndex: 0, timestamp: 0.5, sourceBand: 'mid' },
+                { beatIndex: 99, timestamp: 5.0, sourceBand: 'high' },
+            ]);
+
+            const signal = createSineWave(440, 5.0);
+            const audioBuffer = createMockAudioBuffer(signal);
+
+            const result = await linker.linkWithComposite(bandStreams, compositeStream, audioBuffer);
+
+            expect(result).toHaveLength(2);
+            expect(result[0].pitch).toBeDefined();
+            expect(result[1].pitch).toBeNull();
+            expect(result[1].beatIndex).toBe(99);
+        });
+
+        it('should return only composite pitches (not full LinkedPitchAnalysis)', async () => {
+            const linker = new PitchBeatLinker();
+
+            const bandStreams = createMockBandStreams([
+                { timestamp: 0.5, beatIndex: 0, band: 'mid' },
+                { timestamp: 1.0, beatIndex: 1, band: 'low' },
+            ]);
+
+            const compositeStream = createMockCompositeStream([
+                { beatIndex: 0, timestamp: 0.5, sourceBand: 'mid' },
+            ]);
+
+            const signal = createSineWave(440, 5.0);
+            const audioBuffer = createMockAudioBuffer(signal);
+
+            const result = await linker.linkWithComposite(bandStreams, compositeStream, audioBuffer);
+
+            // Result is a plain PitchAtBeat[] array
+            expect(Array.isArray(result)).toBe(true);
+            expect(result).toHaveLength(1);
+            expect(result[0].beatIndex).toBe(0);
+            expect(result[0].band).toBe('mid');
+            // No bandPitches, pitchByBeat, dominantBand, etc.
+            expect((result as any).bandPitches).toBeUndefined();
+            expect((result as any).pitchByBeat).toBeUndefined();
+        });
+
+        it('should return full LinkedPitchAnalysis from linkWithBands() (no composite)', async () => {
+            const linker = new PitchBeatLinker();
+
+            const bandStreams = createMockBandStreams([
+                { timestamp: 0.5, beatIndex: 0, band: 'mid' },
+            ]);
+
+            const signal = createSineWave(440, 5.0);
+            const audioBuffer = createMockAudioBuffer(signal);
+
+            const result = await linker.linkWithBands(bandStreams, audioBuffer);
+
+            // Full analysis with band-level data
+            expect(result.bandPitches).toBeDefined();
+            expect(result.pitchByBeat).toBeDefined();
+            expect(result.dominantBand).toBeDefined();
         });
     });
 });

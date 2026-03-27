@@ -16,7 +16,7 @@
  * const linker = new PitchBeatLinker();
  *
  * // Analyze pitch and link to beats
- * const result = await linker.link(generatedRhythm, audioBuffer);
+ * const result = await linker.linkWithBands(generatedRhythm, audioBuffer);
  *
  * // Access pitch at each beat
  * for (const pitchAtBeat of result.pitchByBeat) {
@@ -237,7 +237,7 @@ export class PitchBeatLinker {
      * @param phrases - Optional rhythmic phrases for phrase-level correlation
      * @returns Promise resolving to linked pitch analysis result
      */
-    async link(
+    async linkWithBands(
         bandStreams: { low: GeneratedRhythmMap; mid: GeneratedRhythmMap; high: GeneratedRhythmMap },
         audioBuffer: AudioBuffer,
         phrases?: RhythmicPhrase[]
@@ -286,6 +286,31 @@ export class PitchBeatLinker {
     }
 
     /**
+     * Link pitch detection to composite stream beats only.
+     *
+     * Runs pitch detection on the full unfiltered signal, then matches each composite
+     * beat's sourceBand + beatIndex directly against band-level pitch data.
+     * This is exact (no timestamp tolerance) since CompositeBeat preserves beatIndex.
+     *
+     * This is the preferred method for gameplay — it returns only the composite pitches
+     * (the beats the player will actually interact with).
+     *
+     * @param bandStreams - The band streams from GeneratedRhythm
+     * @param compositeStream - The composite stream from GeneratedRhythm
+     * @param audioBuffer - Web Audio API AudioBuffer to analyze
+     * @returns Promise resolving to pitch at each composite beat
+     */
+    async linkWithComposite(
+        bandStreams: { low: GeneratedRhythmMap; mid: GeneratedRhythmMap; high: GeneratedRhythmMap },
+        compositeStream: CompositeStream,
+        audioBuffer: AudioBuffer
+    ): Promise<PitchAtBeat[]> {
+        // Run full analysis via linkWithBands, then extract composite pitches
+        const linkedAnalysis = await this.linkWithBands(bandStreams, audioBuffer);
+        return this.buildCompositePitchesByBeatIndex(compositeStream, linkedAnalysis.bandPitches);
+    }
+
+    /**
      * Link pre-computed pitch results to rhythm beats
      *
      * Use this when you already have pitch detection results (e.g., from an
@@ -308,6 +333,10 @@ export class PitchBeatLinker {
 
     /**
      * Core linking logic: match pitch results to beat timestamps for all bands
+     *
+     * When compositeStream is provided, also produces compositePitches by matching
+     * each composite beat's sourceBand + beatIndex directly against the band-level
+     * pitch data (exact match, no timestamp tolerance).
      */
     private linkWithResults(
         bandStreams: { low: GeneratedRhythmMap; mid: GeneratedRhythmMap; high: GeneratedRhythmMap },
@@ -459,6 +488,61 @@ export class PitchBeatLinker {
     }
 
     /**
+     * Build composite pitches by matching beatIndex directly against band-level pitch data.
+     *
+     * This is exact (no timestamp tolerance) because CompositeBeat preserves beatIndex
+     * from the source band stream via the spread operator in CompositeStreamGenerator.
+     *
+     * @param compositeStream - The composite stream with sourceBand per beat
+     * @param bandPitches - Already-computed band pitch data
+     * @returns Array of PitchAtBeat for composite stream beats
+     */
+    private buildCompositePitchesByBeatIndex(
+        compositeStream: CompositeStream,
+        bandPitches: Map<PitchBandName, BandPitchAtBeat>
+    ): PitchAtBeat[] {
+        const compositePitches: PitchAtBeat[] = [];
+
+        // Build a per-band lookup: beatIndex → PitchAtBeat
+        const bandPitchesByIndex = new Map<PitchBandName, Map<number, PitchAtBeat>>();
+        for (const [bandName, bandResult] of bandPitches) {
+            const indexMap = new Map<number, PitchAtBeat>();
+            for (const pitch of bandResult.pitches) {
+                indexMap.set(pitch.beatIndex, pitch);
+            }
+            bandPitchesByIndex.set(bandName, indexMap);
+        }
+
+        for (const compositeBeat of compositeStream.beats) {
+            const indexMap = bandPitchesByIndex.get(compositeBeat.sourceBand);
+            const matchingPitch = indexMap?.get(compositeBeat.beatIndex);
+
+            if (matchingPitch) {
+                compositePitches.push({
+                    beatIndex: compositeBeat.beatIndex,
+                    timestamp: compositeBeat.timestamp,
+                    band: compositeBeat.sourceBand,
+                    pitch: matchingPitch.pitch,
+                    direction: matchingPitch.direction,
+                    intervalFromPrevious: matchingPitch.intervalFromPrevious,
+                    intervalCategory: matchingPitch.intervalCategory,
+                });
+            } else {
+                compositePitches.push({
+                    beatIndex: compositeBeat.beatIndex,
+                    timestamp: compositeBeat.timestamp,
+                    band: compositeBeat.sourceBand,
+                    pitch: null,
+                    direction: 'none',
+                    intervalFromPrevious: 0,
+                });
+            }
+        }
+
+        return compositePitches;
+    }
+
+    /**
      * Determine which band has the best pitch results
      */
     private determineDominantBand(bandPitches: Map<PitchBandName, BandPitchAtBeat>): PitchBandName {
@@ -595,7 +679,7 @@ export class PitchBeatLinker {
      * const linker = new PitchBeatLinker();
      *
      * // First, analyze band streams
-     * const linkedAnalysis = await linker.link(bandStreams, audioBuffer);
+     * const linkedAnalysis = await linker.linkWithBands(bandStreams, audioBuffer);
      *
      * // Then derive composite pitches from band stream pitches
      * const compositePitches = linker.deriveCompositePitches(
