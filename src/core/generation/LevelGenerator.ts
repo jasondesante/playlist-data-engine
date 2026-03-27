@@ -725,7 +725,7 @@ export class LevelGenerator {
         const pitchLinker = new PitchBeatLinker();
 
         // Link pitch to band streams
-        const linkedAnalysis = pitchLinker.link(
+        const linkedAnalysis = await pitchLinker.link(
             generatedRhythm.bandStreams,
             audioBuffer
         );

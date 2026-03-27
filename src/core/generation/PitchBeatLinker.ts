@@ -17,7 +17,7 @@
  * const linker = new PitchBeatLinker();
  *
  * // Option 1: Analyze with automatic band filtering
- * const result = linker.link(generatedRhythm, audioBuffer);
+ * const result = await linker.link(generatedRhythm, audioBuffer);
  *
  * // Option 2: Analyze with pre-filtered audio (more efficient)
  * const result = linker.linkPreFiltered(generatedRhythm, preFilteredBands, {
@@ -34,7 +34,7 @@
  */
 
 import { PitchDetector, type PitchResult, type PitchDetectorConfig } from '../analysis/PitchDetector.js';
-import type { EssentiaPitchAlgorithm } from '../analysis/EssentiaPitchDetector.js';
+import { EssentiaPitchDetector, type EssentiaPitchAlgorithm } from '../analysis/EssentiaPitchDetector.js';
 import {
     resampleAudio,
     applyFrequencyBand,
@@ -201,6 +201,9 @@ const DEFAULT_CONFIG: Required<Omit<PitchBeatLinkerConfig, 'pitchDetector'>> & {
     targetSampleRate: 44100,
     pitchDetector: {},
     bands: FREQUENCY_BANDS,
+    useEssentiaPitch: false,
+    essentiaPitchAlgorithm: 'predominant_melodia',
+    crepeModelUrl: '/models/crepe/large/model.json',
 };
 
 // ============================================================================
@@ -217,6 +220,7 @@ export class PitchBeatLinker {
     private config: Required<Omit<PitchBeatLinkerConfig, 'pitchDetector'>> & { pitchDetector: Partial<PitchDetectorConfig> };
     private pitchDetectors: Map<PitchBandName, PitchDetector> = new Map();
     private fullSpectrumDetector: PitchDetector;
+    private essentiaDetector: EssentiaPitchDetector | null = null;
 
     /**
      * Create a new PitchBeatLinker
@@ -279,16 +283,19 @@ export class PitchBeatLinker {
      * when filtering has already been done (e.g., by MultiBandAnalyzer), use
      * `linkPreFiltered()` instead.
      *
+     * When `useEssentiaPitch` is enabled in the config, the Essentia.js WASM
+     * module is loaded lazily on first call (async) and cached for reuse.
+     *
      * @param bandStreams - The band streams from GeneratedRhythm
      * @param audioBuffer - Web Audio API AudioBuffer to analyze
      * @param phrases - Optional rhythmic phrases for phrase-level correlation
-     * @returns Linked pitch analysis result
+     * @returns Promise resolving to linked pitch analysis result
      */
-    link(
+    async link(
         bandStreams: { low: GeneratedRhythmMap; mid: GeneratedRhythmMap; high: GeneratedRhythmMap },
         audioBuffer: AudioBuffer,
         phrases?: RhythmicPhrase[]
-    ): LinkedPitchAnalysis {
+    ): Promise<LinkedPitchAnalysis> {
         const duration = audioBuffer.duration;
         const sampleRate = this.config.targetSampleRate;
 
@@ -299,14 +306,36 @@ export class PitchBeatLinker {
         // Run pitch detection on the FULL unfiltered signal.
         // Band-pass filtering (8th order Butterworth) removes too many harmonics
         // for YIN to find periodicity, so all bands share one full-spectrum analysis.
-        const fullSpectrumResults = this.fullSpectrumDetector.detectSignalRaw(signal, sampleRate);
-        const hopTime = this.fullSpectrumDetector.getConfig().hopSize / sampleRate;
+        // When useEssentiaPitch is enabled, lazily instantiate the Essentia detector
+        // and use it instead of the built-in pYIN detector.
+        let fullSpectrumResults: PitchResult[];
+        let hopTime: number;
+
+        if (this.config.useEssentiaPitch) {
+            // Lazily instantiate Essentia detector (WASM loading is async)
+            if (!this.essentiaDetector) {
+                this.essentiaDetector = await EssentiaPitchDetector.create({
+                    algorithm: this.config.essentiaPitchAlgorithm,
+                    minFrequency: this.config.pitchDetector.minFrequency ?? 80,
+                    maxFrequency: this.config.pitchDetector.maxFrequency ?? 20000,
+                    crepeModelUrl: this.config.crepeModelUrl,
+                });
+                console.log(`[PitchBeatLinker] Essentia detector initialized: ${this.config.essentiaPitchAlgorithm}`);
+            }
+
+            fullSpectrumResults = this.essentiaDetector.detectSignal(signal, sampleRate);
+            hopTime = this.essentiaDetector.getConfig().hopSize / sampleRate;
+        } else {
+            fullSpectrumResults = this.fullSpectrumDetector.detectSignalRaw(signal, sampleRate);
+            hopTime = this.fullSpectrumDetector.getConfig().hopSize / sampleRate;
+        }
 
         // DEBUG: pitch detection diagnostics
         const voicedFrames = fullSpectrumResults.filter(r => r.isVoiced);
         const maxProb = Math.max(...fullSpectrumResults.map(r => r.probability));
         const probsAbove03 = fullSpectrumResults.filter(r => r.probability > 0.3 && !r.isVoiced);
         console.log('[PitchBeatLinker] Full-spectrum analysis:', {
+            detector: this.config.useEssentiaPitch ? `essentia/${this.config.essentiaPitchAlgorithm}` : 'pYIN',
             totalFrames: fullSpectrumResults.length,
             voicedFrames: voicedFrames.length,
             voicedPct: ((voicedFrames.length / fullSpectrumResults.length) * 100).toFixed(1) + '%',
@@ -783,7 +812,7 @@ export class PitchBeatLinker {
      * const linker = new PitchBeatLinker();
      *
      * // First, analyze band streams
-     * const linkedAnalysis = linker.link(bandStreams, audioBuffer);
+     * const linkedAnalysis = await linker.link(bandStreams, audioBuffer);
      *
      * // Then derive composite pitches from band stream pitches
      * const compositePitches = linker.deriveCompositePitches(
