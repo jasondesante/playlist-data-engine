@@ -33,7 +33,7 @@ The Playlist Data Engine provides beat detection and rhythm analysis features fo
 
 > **Note**: This is the pitch detection and button mapping half of automatic level generation. It depends on the rhythm generation outputs.
 
-- [Pitch Detection](#pitch-detection) — pYIN algorithm and multi-band analysis
+- [Pitch Detection](#pitch-detection) — pYIN algorithm, Essentia.js alternatives, and multi-band analysis
 - [Melody Contour Analysis](#melody-contour-analysis) — Pitch direction and interval tracking
 - [Button Mapping Strategies](#button-mapping-strategies) — DDR and Guitar Hero modes
 - [Level Generation Examples](#level-generation-examples) — Complete workflows
@@ -3992,6 +3992,7 @@ The pitch detection system extracts melodic information from audio to create but
 | Component | Location |
 |-----------|----------|
 | **PitchDetector** (pYIN algorithm) | [src/core/analysis/PitchDetector.ts](../src/core/analysis/PitchDetector.ts) |
+| **EssentiaPitchDetector** (Essentia.js WASM) | [src/core/analysis/EssentiaPitchDetector.ts](../src/core/analysis/EssentiaPitchDetector.ts) |
 | **MultiBandPitchAnalyzer** | [src/core/analysis/MultiBandPitchAnalyzer.ts](../src/core/analysis/MultiBandPitchAnalyzer.ts) |
 | **PitchBeatLinker** | [src/core/generation/PitchBeatLinker.ts](../src/core/generation/PitchBeatLinker.ts) |
 
@@ -4055,6 +4056,42 @@ The Hidden Markov Model provides temporal smoothing:
 | CREPE | Very accurate on monophonic audio | Heavy neural network, browser-incompatible |
 
 pYIN strikes the best balance for browser-based rhythm games: accurate enough for melody following, efficient enough for real-time use.
+
+#### Essentia.js Alternatives
+
+While pYIN is a solid general-purpose pitch detector, its pure-TypeScript implementation has limitations when applied to polyphonic music (full mixes with vocals, bass, drums, and harmony simultaneously). The band-pass filtering it relies on can destroy harmonics, reducing accuracy on dense arrangements.
+
+Since the engine already imports the `essentia.js` WebAssembly library for genre classification (`MusicClassifier`), the `EssentiaPitchDetector` provides access to 6 natively compiled C++ algorithms with no additional dependencies:
+
+| Algorithm | Type | Best For | Confidence? | Polyphonic? |
+|-----------|------|----------|-------------|-------------|
+| `predominant_melodia` | Built-in WASM | Lead melody in polyphonic music **(Recommended)** | Yes | Single F0 |
+| `pitch_melodia` | Built-in WASM | Standard monophonic melody extraction | Yes | Single F0 |
+| `pitch_yin_probabilistic` | Built-in WASM | WASM-accelerated pYIN (same algo, C++ speed) | Yes | Single F0 |
+| `multipitch_melodia` | Built-in WASM | Multiple simultaneous F0 contours (MELODIA) | No | Multi F0 |
+| `multipitch_klapuri` | Built-in WASM | Harmonic summation multi-pitch detection | No | Multi F0 |
+| `pitch_crepe` | External TFJS model | Neural network pitch detection (high accuracy) | Yes | Single F0 |
+
+**Why PredominantPitchMelodia?** This is the industry-standard algorithm for extracting the lead melody from fully polyphonic music. It was designed specifically to isolate a single dominant pitch contour even in dense mixes — exactly the use case for rhythm game button mapping. It outperforms the custom pYIN implementation because:
+
+1. **Native C++ performance**: Compiled to WebAssembly, it runs orders of magnitude faster than the TypeScript pYIN
+2. **Designed for polyphony**: Uses spectral harmonic analysis rather than autocorrelation, so it doesn't destroy harmonics through band-pass filtering
+3. **Finer time resolution**: Uses a 128-sample hop size (~2.9ms at 44.1kHz) vs pYIN's 512 samples (~11.6ms), capturing faster melodic passages
+4. **Built-in confidence**: Returns per-frame pitch confidence, enabling quality filtering
+
+**Usage via PitchBeatLinker** — The Essentia detector is toggled through the `PitchBeatLinkerConfig`:
+
+```typescript
+const linker = new PitchBeatLinker({
+  useEssentiaPitch: true,
+  essentiaPitchAlgorithm: 'predominant_melodia',
+});
+
+// link() is now async due to WASM loading
+const linkedAnalysis = await linker.link(bandStreams, audioBuffer);
+```
+
+For the full API, see [DATA_ENGINE_REFERENCE.md](DATA_ENGINE_REFERENCE.md#essentiapitchdetector).
 
 #### Configurable Parameters
 

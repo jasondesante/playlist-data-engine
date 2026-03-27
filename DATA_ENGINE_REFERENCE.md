@@ -30,6 +30,7 @@ Complete API reference for the Playlist Data Engine. Contains all type definitio
    - [DifficultyVariantGenerator](#difficultyvariantgenerator)
 6. [Pitch Detection & Button Mapping](#pitch-detection--button-mapping)
    - [PitchDetector](#pitchdetector)
+   - [EssentiaPitchDetector](#essentiapitchdetector)
    - [PitchBeatLinker](#pitchbeatlinker)
    - [MelodyContourAnalyzer](#melodycontouranalyzer)
    - [ButtonMapper](#buttonmapper)
@@ -210,6 +211,7 @@ A concise overview of all main exports from the library, organized by category.
 | Export | Description | Section |
 |--------|-------------|---------|
 | `PitchDetector` | pYIN algorithm for pitch/fundamental frequency detection | [Pitch Detection & Button Mapping](#pitch-detection--button-mapping) |
+| `EssentiaPitchDetector` | Essentia.js WASM pitch detection (6 algorithms incl. polyphonic) | [Pitch Detection & Button Mapping](#pitch-detection--button-mapping) |
 | `PitchBeatLinker` | Link pitch detection to rhythm beat timestamps | [Pitch Detection & Button Mapping](#pitch-detection--button-mapping) |
 | `MelodyContourAnalyzer` | Analyze pitch data for melodic contour information | [Pitch Detection & Button Mapping](#pitch-detection--button-mapping) |
 | `ButtonMapper` | Map pitch analysis to button assignments for rhythm games | [Pitch Detection & Button Mapping](#pitch-detection--button-mapping) |
@@ -2922,6 +2924,82 @@ new PitchDetector(config?: Partial<PitchDetectorConfig>)
 | `midiNote` | number \| null | MIDI note number (null if unvoiced) |
 | `noteName` | string \| null | Note name e.g., "C4", "F#5" (null if unvoiced) |
 | `alternativeHypotheses` | array | Alternative hypotheses for debugging (optional) |
+
+### EssentiaPitchDetector
+
+*Location:* *[src/core/analysis/EssentiaPitchDetector.ts](src/core/analysis/EssentiaPitchDetector.ts)*
+
+Pitch detection using Essentia.js WebAssembly algorithms. Provides 6 different algorithms including industry-standard options for polyphonic music (PredominantPitchMelodia) and neural network models (CREPE).
+
+Produces the same `PitchResult[]` output as `PitchDetector` for drop-in compatibility with `PitchBeatLinker`.
+
+*Also known as: essentia pitch detection, WASM pitch detection, polyphonic pitch extraction*
+
+#### EssentiaPitchAlgorithm
+
+Available pitch detection algorithms, separated by category:
+
+**Built-in WASM algorithms** (no external model files required — compiled into `essentia-wasm.wasm`):
+
+| Algorithm | Best For | Returns Confidence? | Polyphonic? |
+|-----------|----------|-------------------|-------------|
+| `predominant_melodia` | Lead melody in polyphonic music **(Recommended default)** | Yes (`pitchConfidence[]`) | Single F0 |
+| `pitch_melodia` | Standard monophonic melody extraction | Yes (`pitchConfidence[]`) | Single F0 |
+| `pitch_yin_probabilistic` | WASM-accelerated pYIN (same algo as `PitchDetector`, C++ speed) | Yes (`voicedProbabilities[]`) | Single F0 |
+| `multipitch_melodia` | Multiple simultaneous F0 contours (MELODIA) | No | Multi F0 |
+| `multipitch_klapuri` | Harmonic summation multi-pitch detection | No | Multi F0 |
+
+**External model algorithm** (requires TFJS model loaded via `crepeModelUrl`):
+
+| Algorithm | Best For | Returns Confidence? | Polyphonic? |
+|-----------|----------|-------------------|-------------|
+| `pitch_crepe` | Neural network pitch detection (high accuracy) | Yes (per-frame) | Single F0 |
+
+#### Class: `EssentiaPitchDetector`
+
+**Static Factory:**
+```typescript
+static async create(config?: Partial<EssentiaPitchDetectorConfig>): Promise<EssentiaPitchDetector>
+```
+
+Uses a static factory pattern (same as `MusicClassifier`) to handle async WASM module loading. The constructor is private — always use `EssentiaPitchDetector.create()`.
+
+**Methods:**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `detectSignal(signal, sampleRate)` | `PitchResult[]` | Detect pitch using the configured algorithm |
+| `getConfig()` | `EssentiaPitchDetectorConfig` | Get the current configuration |
+
+#### EssentiaPitchDetectorConfig Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `algorithm` | `EssentiaPitchAlgorithm` | `'predominant_melodia'` | Pitch detection algorithm to use |
+| `minFrequency` | number | 80 | Minimum frequency to detect in Hz |
+| `maxFrequency` | number | 20000 | Maximum frequency to detect in Hz |
+| `frameSize` | number | 2048 | Frame size in samples (~46ms at 44.1kHz) |
+| `hopSize` | number | 128 | Hop size in samples (~2.9ms at 44.1kHz). Essentia prefers finer hop sizes than pYIN's 512. |
+| `targetSampleRate` | number | 44100 | Target sample rate for analysis |
+| `crepeModelUrl` | string | `'/models/crepe/large/model.json'` | URL to CREPE TFJS model (only for `pitch_crepe`) |
+
+#### Algorithm Output Behavior
+
+**Single-F0 algorithms** (`predominant_melodia`, `pitch_melodia`, `pitch_yin_probabilistic`):
+- Return one frequency per frame. Voiced frames have `frequency > 0`; unvoiced frames have `frequency === 0`.
+- `predominant_melodia` and `pitch_melodia` map `pitchConfidence[]` to `probability`.
+- `pitch_yin_probabilistic` maps `voicedProbabilities[]` to `probability`, with voiced threshold at 0.5.
+
+**Multi-pitch algorithms** (`multipitch_melodia`, `multipitch_klapuri`):
+- Return multiple frequencies per frame. The lowest (most fundamental) is used as the primary `frequency`.
+- Additional pitches are stored in `alternativeHypotheses: { frequency, probability }[]`.
+- `probability` defaults to `1.0` for voiced frames (no confidence array returned).
+
+**CREPE** (`pitch_crepe`):
+- Operates at 16kHz with 1024-sample frames internally (signal is resampled automatically).
+- Outputs a 360-bin pitch distribution (10 cents per bin, C1 ≈ 32.7 Hz to ~2093 Hz).
+- Uses weighted centroid of the distribution for frequency; max bin probability for confidence.
+- Frames with max probability below 0.3 are considered unvoiced.
 
 ### PitchBeatLinker
 
