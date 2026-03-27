@@ -244,14 +244,14 @@ export class PitchBeatLinker {
         // Initialize a full-spectrum detector for pitch detection on unfiltered audio.
         // Band-pass filtered audio (8th order Butterworth) removes too many harmonics
         // for YIN to find periodicity reliably, so we detect pitch on the full signal.
-        // Use a relaxed YIN threshold (0.3 vs default 0.1) for polyphonic music where
+        // Use a relaxed YIN threshold (0.4 vs default 0.1) for polyphonic music where
         // CMNDF rarely drops below 0.1 due to competing periodicities.
         this.fullSpectrumDetector = new PitchDetector({
             ...this.config.pitchDetector,
             minFrequency: this.config.pitchDetector.minFrequency ?? 80,
             maxFrequency: this.config.pitchDetector.maxFrequency ?? 1000,
             targetSampleRate: this.config.targetSampleRate,
-            yinThreshold: this.config.pitchDetector.yinThreshold ?? 0.3,
+            yinThreshold: this.config.pitchDetector.yinThreshold ?? 0.4,
         });
     }
 

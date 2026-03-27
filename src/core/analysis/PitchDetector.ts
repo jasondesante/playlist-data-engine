@@ -162,7 +162,7 @@ const DEFAULT_CONFIG: PitchDetectorConfig = {
     voicingThreshold: 0.5,
     transitionPenalty: 0.5,
     selfTransitionProbability: 0.99,
-    yinThreshold: 0.1,
+    yinThreshold: 0.4,
     targetSampleRate: 44100,
 };
 
