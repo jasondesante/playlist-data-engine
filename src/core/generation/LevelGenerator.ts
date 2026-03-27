@@ -30,7 +30,8 @@
 import { RhythmGenerator } from './RhythmGenerator.js';
 import type { RhythmGenerationOptions, GeneratedRhythm, RhythmMetadata, Band } from './RhythmGenerator.js';
 import { PitchBeatLinker } from './PitchBeatLinker.js';
-import type { LinkedPitchAnalysis, PitchAtBeat } from './PitchBeatLinker.js';
+import type { LinkedPitchAnalysis, PitchAtBeat, PitchBeatLinkerConfig } from './PitchBeatLinker.js';
+import type { EssentiaPitchAlgorithm } from '../analysis/EssentiaPitchDetector.js';
 import { MelodyContourAnalyzer } from '../analysis/MelodyContourAnalyzer.js';
 import type { MelodyContourAnalysisResult } from '../analysis/MelodyContourAnalyzer.js';
 import { ButtonMapper } from './ButtonMapper.js';
@@ -72,6 +73,15 @@ export interface LevelGenerationOptions {
      * Useful for reusing rhythm from a previous generation step.
      */
     cachedRhythm?: GeneratedRhythm
+
+    /** Use Essentia.js pitch detection instead of the built-in pYIN detector */
+    useEssentiaPitch?: boolean
+
+    /** Which Essentia pitch algorithm to use (default: 'predominant_melodia') */
+    essentiaPitchAlgorithm?: EssentiaPitchAlgorithm
+
+    /** URL to the CREPE TFJS model (only required when essentiaPitchAlgorithm is 'pitch_crepe') */
+    crepeModelUrl?: string
 }
 
 /**
@@ -334,8 +344,12 @@ export class LevelGenerator {
         }
 
         if (phase === 'pitch') {
-            // Pitch analysis is not affected by config - it's deterministic based on audio
-            return 'pitch-default';
+            // Pitch analysis depends on which detector/algorithm is used
+            return JSON.stringify({
+                useEssentiaPitch: this.options.useEssentiaPitch,
+                essentiaPitchAlgorithm: this.options.essentiaPitchAlgorithm,
+                crepeModelUrl: this.options.crepeModelUrl,
+            });
         }
 
         return 'default';
@@ -721,8 +735,18 @@ export class LevelGenerator {
     ): Promise<MelodyContourAnalysisResult> {
         progressCallback?.(0.1, 'Linking pitch to beats...');
 
-        // Create pitch linker
-        const pitchLinker = new PitchBeatLinker();
+        // Create pitch linker with essentia config propagated from LevelGenerationOptions
+        const pitchLinkerConfig: PitchBeatLinkerConfig = {};
+        if (this.options.useEssentiaPitch !== undefined) {
+            pitchLinkerConfig.useEssentiaPitch = this.options.useEssentiaPitch;
+        }
+        if (this.options.essentiaPitchAlgorithm !== undefined) {
+            pitchLinkerConfig.essentiaPitchAlgorithm = this.options.essentiaPitchAlgorithm;
+        }
+        if (this.options.crepeModelUrl !== undefined) {
+            pitchLinkerConfig.crepeModelUrl = this.options.crepeModelUrl;
+        }
+        const pitchLinker = new PitchBeatLinker(pitchLinkerConfig);
 
         // Link pitch to band streams
         const linkedAnalysis = await pitchLinker.link(
