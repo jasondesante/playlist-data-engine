@@ -364,8 +364,8 @@ describe('Level Generation API Integration Tests', () => {
             // If original had pitch metadata, restored should too
             if (original.metadata.pitchMetadata) {
                 expect(restored.metadata.pitchMetadata).toBeDefined();
-                expect(restored.metadata.pitchMetadata?.bandUsed).toBe(
-                    original.metadata.pitchMetadata?.bandUsed
+                expect(restored.metadata.pitchMetadata?.directionStats).toEqual(
+                    original.metadata.pitchMetadata?.directionStats
                 );
             }
 

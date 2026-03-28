@@ -266,13 +266,11 @@ describe('LevelGenerator Full Pipeline Integration', () => {
             expect(level.pitchAnalysis).toBeDefined();
 
             if (level.metadata.pitchMetadata) {
-                expect(level.metadata.pitchMetadata.bandUsed).toBeDefined();
                 expect(level.metadata.pitchMetadata.directionStats).toBeDefined();
                 expect(level.metadata.pitchMetadata.intervalStats).toBeDefined();
             }
 
             console.log('\n✓ Pitch metadata populated');
-            console.log(`  Band used: ${level.metadata.pitchMetadata?.bandUsed}`);
             console.log(`  Direction stats:`, level.metadata.pitchMetadata?.directionStats);
         });
 

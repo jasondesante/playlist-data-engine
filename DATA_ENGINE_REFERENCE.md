@@ -276,7 +276,7 @@ All TypeScript types are exported, including:
 
 **Pitch Detection Types:** `PitchDetectorConfig`, `PitchResult` — see [Pitch Detection & Button Mapping](#pitch-detection--button-mapping) and [docs/BEAT_DETECTION.md](docs/BEAT_DETECTION.md#pitch-detection)
 
-**Pitch Analysis Types:** `PitchAtBeat`, `BandPitchAtBeat`, `LinkedPitchAnalysis`, `PitchBandName`, `IntervalCategory`, `PitchDirection` — see [Pitch Detection & Button Mapping](#pitch-detection--button-mapping)
+**Pitch Analysis Types:** `PitchAtBeat`, `PitchBandName`, `IntervalCategory`, `PitchDirection`, `PitchBeatLinkerConfig` — see [Pitch Detection & Button Mapping](#pitch-detection--button-mapping)
 
 **Melody Contour Types:** `MelodyContourAnalysisResult`, `MelodyContour`, `MelodySegment`, `MelodyContourDirection`, `DirectionStats`, `IntervalStats` — see [Pitch Detection & Button Mapping](#pitch-detection--button-mapping)
 
@@ -3005,35 +3005,26 @@ Uses a static factory pattern (same as `MusicClassifier`) to handle async WASM m
 
 *Location:* *[src/core/generation/PitchBeatLinker.ts](src/core/generation/PitchBeatLinker.ts)*
 
-Links pitch detection to rhythm beat timestamps. Performs pitch detection at specific timestamps from generated rhythm patterns, iterating over each band stream independently.
+Links pitch detection to rhythm beat timestamps. Performs full-spectrum pitch detection on the unfiltered audio signal, then matches pitch frames to composite beat timestamps.
 
 *Also known as: beat-timestamped pitch detection, pitch-to-rhythm linking*
 
-**For band stream pitch detection approach, see [docs/BEAT_DETECTION.md#beat-timestamped-pitch](docs/BEAT_DETECTION.md#beat-timestamped-pitch)**
+**For pitch detection approach, see [docs/BEAT_DETECTION.md#beat-timestamped-pitch](docs/BEAT_DETECTION.md#beat-timestamped-pitch)**
 
 #### Class: `PitchBeatLinker`
 
 **Constructor:**
 ```typescript
-new PitchBeatLinker(config?: Partial<PitchDetectorConfig>)
+new PitchBeatLinker(config?: PitchBeatLinkerConfig)
 ```
 
 **Methods:**
 
 | Method | Returns | Description |
 |--------|---------|-------------|
-| `linkWithComposite(compositeStream, audioBuffer)` | `PitchAtBeat[]` | Game-ready: fast path — runs pitch detection directly against composite beat timestamps |
-| `linkWithBands(bandStreams, audioBuffer, phrases?)` | `LinkedPitchAnalysis` | Analysis: full band-level pitch data |
-
-> **Preferred:** Use `linkWithComposite()` for gameplay — it returns only the composite pitches (the beats the player interacts with). Use `linkWithBands()` for advanced analysis that needs per-band data.
-
-#### LinkedPitchAnalysis Properties (returned by `linkWithBands()`)
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `bandPitches` | Map | Pitch at each beat, keyed by band name |
-| `pitchByBeat` | PitchAtBeat[] | All pitches flattened and sorted by timestamp |
-| `phrasePitchCorrelation` | Map | Phrase-level pitch correlation (phrase ID → pitches) |
+| `linkWithComposite(compositeStream, audioBuffer)` | `Promise<PitchAtBeat[]>` | Runs full-spectrum pitch detection and matches to composite beat timestamps |
+| `deriveVariantPitches(variant, compositePitches)` | `PitchAtBeat[]` | Derives pitches for a difficulty variant from composite pitches |
+| `deriveAllVariantPitches(difficultyVariants, compositePitches)` | `{ easy, medium, hard }` | Derives pitches for all difficulty variants at once |
 
 #### PitchAtBeat Properties
 
