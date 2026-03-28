@@ -528,7 +528,9 @@ describe('Phrase and Density Analysis Integration Tests', () => {
                 minOccurrences: 2,
                 includePhrasesWithoutVariation: false,
             });
-            densityAnalyzer = new DensityAnalyzer();
+            densityAnalyzer = new DensityAnalyzer({
+                denseThreshold: 2.5,
+            });
         });
 
         it('should correctly identify sparse patterns as easy difficulty', async () => {
@@ -624,6 +626,7 @@ describe('Phrase and Density Analysis Integration Tests', () => {
             });
             densityAnalyzer = new DensityAnalyzer({
                 beatsPerSection: 8, // 2 measures in 4/4 time
+                denseThreshold: 2.5,
             });
         });
 

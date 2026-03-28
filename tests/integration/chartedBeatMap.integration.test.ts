@@ -531,24 +531,24 @@ describe('checkButtonPress with ChartedBeatMap', () => {
         const beatMap = chartedBeatMapToBeatMap(chartedMap);
         const beatStream = new BeatStream(beatMap, mockAudioContext);
 
-        // Perfect timing (within 40ms)
+        // Perfect timing (within ±10ms for medium)
         const perfect = beatStream.checkButtonPress(1.0, 'up');
         expect(perfect.accuracy).toBe('perfect');
-        expect(perfect.absoluteOffset).toBeLessThanOrEqual(0.04);
+        expect(perfect.absoluteOffset).toBeLessThanOrEqual(0.010);
 
-        // Great timing (within 80ms)
-        const great = beatStream.checkButtonPress(1.06, 'up');
+        // Great timing (within ±25ms for medium)
+        const great = beatStream.checkButtonPress(1.02, 'up');
         expect(great.accuracy).toBe('great');
 
-        // Good timing (within 120ms)
-        const good = beatStream.checkButtonPress(1.10, 'up');
+        // Good timing (within ±50ms for medium)
+        const good = beatStream.checkButtonPress(1.04, 'up');
         expect(good.accuracy).toBe('good');
 
-        // OK timing (within 150ms)
-        const ok = beatStream.checkButtonPress(1.13, 'up');
+        // OK timing (within ±100ms for medium)
+        const ok = beatStream.checkButtonPress(1.08, 'up');
         expect(ok.accuracy).toBe('ok');
 
-        // Miss (too far off)
+        // Miss (beyond ±100ms)
         const miss = beatStream.checkButtonPress(1.2, 'up');
         expect(miss.accuracy).toBe('miss');
 
@@ -818,10 +818,10 @@ describe('Full conversion pipeline: VariantBeat -> ChartedBeatMap -> BeatStream'
         const beatMap = chartedBeatMapToBeatMap(chartedMap);
         const beatStream = new BeatStream(beatMap, mockAudioContext);
 
-        // Check button press for each position
+        // Check button press for each position (exact timestamps = perfect)
         expect(beatStream.checkButtonPress(0, '1').accuracy).toBe('perfect');
-        expect(beatStream.checkButtonPress(0.167, '2').accuracy).toBe('great');
-        expect(beatStream.checkButtonPress(0.333, '3').accuracy).toBe('great');
+        expect(beatStream.checkButtonPress(0.167, '2').accuracy).toBe('perfect');
+        expect(beatStream.checkButtonPress(0.333, '3').accuracy).toBe('perfect');
 
         beatStream.dispose();
     });
@@ -929,7 +929,6 @@ describe('Edge cases', () => {
 
         // Test a few random beats
         expect(beatStream.checkButtonPress(0, 'left').accuracy).toBe('perfect');
-        expect(beatStream.checkButtonPress(5.0, 'right').accuracy).toBe('perfect'); // beat 50, position 2 = up... wait let me recalculate
         // beat 50: i=50, 50 % 4 = 2, so key = 'up'
         expect(beatStream.checkButtonPress(5.0, 'up').accuracy).toBe('perfect');
 

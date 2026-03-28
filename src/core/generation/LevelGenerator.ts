@@ -79,6 +79,15 @@ export interface LevelGenerationOptions {
 
     /** URL to the CREPE TFJS model (only required when pitchAlgorithm is 'pitch_crepe') */
     crepeModelUrl?: string
+
+    /**
+     * Probability threshold for voiced/unvoiced decision in pitch detection.
+     * Higher values require stronger pitch signal to be considered "voiced".
+     * Passed through to PitchDetectorConfig.
+     *
+     * @default 0.5
+     */
+    voicingThreshold?: number
 }
 
 /**
@@ -340,10 +349,11 @@ export class LevelGenerator {
         }
 
         if (phase === 'pitch') {
-            // Pitch analysis depends on which detector/algorithm is used
+            // Pitch analysis depends on which detector/algorithm is used and voicing threshold
             return JSON.stringify({
                 pitchAlgorithm: this.options.pitchAlgorithm,
                 crepeModelUrl: this.options.crepeModelUrl,
+                voicingThreshold: this.options.voicingThreshold,
             });
         }
 
@@ -737,6 +747,12 @@ export class LevelGenerator {
         }
         if (this.options.crepeModelUrl !== undefined) {
             pitchLinkerConfig.crepeModelUrl = this.options.crepeModelUrl;
+        }
+        if (this.options.voicingThreshold !== undefined) {
+            pitchLinkerConfig.pitchDetector = {
+                ...pitchLinkerConfig.pitchDetector,
+                voicingThreshold: this.options.voicingThreshold,
+            };
         }
         const pitchLinker = new PitchBeatLinker(pitchLinkerConfig);
 

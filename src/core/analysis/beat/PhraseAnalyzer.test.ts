@@ -224,6 +224,7 @@ describe('PhraseAnalyzer', () => {
             analyzer = new PhraseAnalyzer({
                 phraseSizes: [2, 4],
                 minOccurrences: 2,
+                minNotesPerPhrase: 1,
             });
         });
 
@@ -384,6 +385,7 @@ describe('PhraseAnalyzer', () => {
                 phraseSizes: [1],
                 minOccurrences: 2,
                 includePhrasesWithoutVariation: true,
+                minNotesPerPhrase: 1,
             });
 
             // Straight quarter notes
@@ -472,6 +474,7 @@ describe('PhraseAnalyzer', () => {
             analyzer = new PhraseAnalyzer({
                 phraseSizes: [1],
                 minOccurrences: 2,
+                minNotesPerPhrase: 1,
             });
         });
 
@@ -535,6 +538,7 @@ describe('PhraseAnalyzer', () => {
             analyzer = new PhraseAnalyzer({
                 phraseSizes: [1],
                 minOccurrences: 2,
+                minNotesPerPhrase: 1,
             });
         });
 
@@ -624,6 +628,7 @@ describe('PhraseAnalyzer', () => {
             analyzer = new PhraseAnalyzer({
                 phraseSizes: [1],
                 minOccurrences: 2,
+                minNotesPerPhrase: 1,
             });
         });
 
@@ -685,6 +690,7 @@ describe('PhraseAnalyzer', () => {
             analyzer = new PhraseAnalyzer({
                 phraseSizes: [1],
                 minOccurrences: 2,
+                minNotesPerPhrase: 1,
             });
         });
 
@@ -736,6 +742,7 @@ describe('PhraseAnalyzer', () => {
             analyzer = new PhraseAnalyzer({
                 phraseSizes: [8],
                 minOccurrences: 2,
+                minNotesPerPhrase: 1,
             });
 
             const beats: GeneratedBeat[] = [];

@@ -812,8 +812,8 @@ describe('StreamScorer', () => {
             const phraseResult = phraseAnalyzer.analyze(streams.streams);
             const densityResult = densityAnalyzer.analyze(streams);
 
-            // Score with default weights (0.3, 0.3, 0.25, 0.15)
-            const defaultScorer = new StreamScorer({ beatsPerSection: 8 });
+            // Score with default weights (0.3, 0.3, 0.25, 0.15) and no band bias
+            const defaultScorer = new StreamScorer({ beatsPerSection: 8, bandBiasWeights: undefined });
             const defaultResult = defaultScorer.score(streams, phraseResult, densityResult);
 
             const defaultScore = defaultResult.sectionScores.find(
@@ -839,6 +839,7 @@ describe('StreamScorer', () => {
                 syncopationWeight: 0.5,
                 phraseSignificanceWeight: 0.25,
                 densityWeight: 0.15,
+                bandBiasWeights: undefined,
             });
             const customResult = customScorer.score(streams, phraseResult, densityResult);
 
@@ -972,7 +973,7 @@ describe('StreamScorer', () => {
             const densityResult = densityAnalyzer.analyze(streams);
 
             // First score without bias to get baseline
-            const unbiasedScorer = new StreamScorer({ beatsPerSection: 8 });
+            const unbiasedScorer = new StreamScorer({ beatsPerSection: 8, bandBiasWeights: undefined });
             const unbiasedResult = unbiasedScorer.score(streams, phraseResult, densityResult);
 
             // Get baseline scores
@@ -1037,11 +1038,11 @@ describe('StreamScorer', () => {
             const phraseResult = phraseAnalyzer.analyze(streams.streams);
             const densityResult = densityAnalyzer.analyze(streams);
 
-            // Create scorer without band bias config
-            scorer = new StreamScorer({ beatsPerSection: 8 });
+            // Create scorer without band bias config (explicitly disable bias)
+            scorer = new StreamScorer({ beatsPerSection: 8, bandBiasWeights: undefined });
             const config = scorer.getConfig();
 
-            // bandBiasWeights should be undefined by default
+            // bandBiasWeights should be undefined when explicitly set
             expect(config.bandBiasWeights).toBeUndefined();
 
             // Score the streams
@@ -1087,7 +1088,7 @@ describe('StreamScorer', () => {
             const densityResult = densityAnalyzer.analyze(streams);
 
             // First get baseline scores without any bias
-            const baselineScorer = new StreamScorer({ beatsPerSection: 8 });
+            const baselineScorer = new StreamScorer({ beatsPerSection: 8, bandBiasWeights: undefined });
             const baselineResult = baselineScorer.score(streams, phraseResult, densityResult);
 
             const baselineMid = baselineResult.sectionScores.find(

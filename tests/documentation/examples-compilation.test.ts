@@ -963,7 +963,7 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
         });
 
         it('should compile hair styles example', () => {
-            const customHairStyles = ['mohawk', 'braided', 'pompadour', 'mullet'];
+            const customHairStyles = ['buzzcut', 'cornrows', 'pompadour', 'mullet'];
 
             const character = CharacterGenerator.generate(
                 'my-seed',
