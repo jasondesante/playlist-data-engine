@@ -773,10 +773,10 @@ export class LevelGenerator {
         // Get the target difficulty level
         const difficultyLevel: DifficultyLevel = this.options.difficulty === 'custom' ? 'medium' : this.options.difficulty;
 
-        // Derive variant pitches from composite with direction/interval
+        // Derive variant pitches from enriched composite (with direction/interval from contour analysis)
         const variantPitches = pitchLinker.deriveVariantPitches(
             generatedRhythm.difficultyVariants[difficultyLevel],
-            compositePitches
+            contourResult.pitchByBeat
         );
 
         // Return the full contour analysis with variant pitches for button mapping
