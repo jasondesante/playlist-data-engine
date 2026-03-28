@@ -85,7 +85,7 @@ export interface LevelGenerationOptions {
      * Higher values require stronger pitch signal to be considered "voiced".
      * Passed through to PitchDetectorConfig.
      *
-     * @default 0.5
+     * @default 0.2
      */
     voicingThreshold?: number
 }

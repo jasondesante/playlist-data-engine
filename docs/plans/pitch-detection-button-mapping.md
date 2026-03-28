@@ -73,7 +73,7 @@ We use pYIN instead of standard YIN for several key advantages:
     hopSize: number;       // Default: 512 samples (~12ms at 44.1kHz)
 
     // === pYIN HMM Parameters ===
-    voicingThreshold: number;    // Default: 0.5 - probability threshold for voiced/unvoiced
+    voicingThreshold: number;    // Default: 0.2 - probability threshold for voiced/unvoiced
     transitionPenalty: number;   // Default: 0.5 - penalty for large pitch jumps in HMM
     selfTransitionProbability: number;  // Default: 0.99 - probability of staying in same pitch state
 

@@ -2907,7 +2907,7 @@ new PitchDetector(config?: Partial<PitchDetectorConfig>)
 | `maxFrequency` | number | 1000 | Maximum frequency to detect in Hz (high vocals) |
 | `frameSize` | number | 2048 | Frame size in samples (~46ms at 44.1kHz) |
 | `hopSize` | number | 512 | Hop size in samples (~12ms at 44.1kHz) |
-| `voicingThreshold` | number | 0.5 | Probability threshold for voiced/unvoiced decision |
+| `voicingThreshold` | number | 0.2 | Probability threshold for voiced/unvoiced decision |
 | `transitionPenalty` | number | 0.5 | Penalty for large pitch jumps in HMM |
 | `selfTransitionProbability` | number | 0.99 | Probability of staying in same pitch state |
 | `yinThreshold` | number | 0.1 | Threshold for accepting pitch candidates |

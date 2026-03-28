@@ -159,7 +159,7 @@ const DEFAULT_CONFIG: PitchDetectorConfig = {
     maxFrequency: 1000,
     frameSize: 2048,
     hopSize: 512,
-    voicingThreshold: 0.5,
+    voicingThreshold: 0.2,
     transitionPenalty: 0.5,
     selfTransitionProbability: 0.99,
     yinThreshold: 0.4,

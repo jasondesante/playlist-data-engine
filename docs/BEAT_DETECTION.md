@@ -4097,7 +4097,7 @@ For the full API, see [DATA_ENGINE_REFERENCE.md](DATA_ENGINE_REFERENCE.md#essent
 |-----------|---------|-------------|
 | `minFrequency` | 80 Hz | Lowest frequency to detect (low guitar string) |
 | `maxFrequency` | 1000 Hz | Highest frequency to detect (high vocals) |
-| `voicingThreshold` | 0.5 | Probability threshold for voiced/unvoiced decision |
+| `voicingThreshold` | 0.2 | Probability threshold for voiced/unvoiced decision |
 | `transitionPenalty` | 0.5 | Penalty for large pitch jumps in HMM |
 | `selfTransitionProbability` | 0.99 | Probability of staying in same pitch state |
 | `yinThreshold` | 0.1 | Threshold for accepting pitch candidates |

@@ -58,7 +58,7 @@ describe('PitchDetector', () => {
             expect(config.maxFrequency).toBe(1000);
             expect(config.frameSize).toBe(2048);
             expect(config.hopSize).toBe(512);
-            expect(config.voicingThreshold).toBe(0.5);
+            expect(config.voicingThreshold).toBe(0.2);
         });
 
         it('should allow custom configuration', () => {
