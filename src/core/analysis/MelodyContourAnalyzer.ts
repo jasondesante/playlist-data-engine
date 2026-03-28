@@ -45,14 +45,69 @@
 import type {
     PitchAtBeat,
 } from '../generation/PitchBeatLinker.js';
-import type {
-    MelodyContour,
-    MelodySegment,
-    MelodyContourDirection,
-} from './MultiBandPitchAnalyzer.js';
 
-// Re-export types needed by button mapping
-export type { MelodyContour, MelodySegment, MelodyContourDirection };
+// ============================================================================
+// Melody Contour Types
+// ============================================================================
+
+/**
+ * Direction of a melody segment
+ */
+export type MelodySegmentDirection = 'up' | 'down' | 'stable';
+
+/**
+ * Overall direction of a melody contour
+ */
+export type MelodyContourDirection = 'ascending' | 'descending' | 'stable' | 'mixed';
+
+/**
+ * A segment of a melody with consistent direction
+ *
+ * Part of Phase 1.5 (Melody Contour Analysis)
+ */
+export interface MelodySegment {
+    /** Start time in seconds */
+    startTime: number;
+    /** End time in seconds */
+    endTime: number;
+    /** Starting pitch (note name, e.g., "C4") */
+    startPitch: string;
+    /** Ending pitch (note name, e.g., "F#5") */
+    endPitch: string;
+    /** Direction of this segment */
+    direction: MelodySegmentDirection;
+    /** Interval in semitones between start and end */
+    interval: number;
+}
+
+/**
+ * Melody contour representing the overall melodic shape
+ *
+ * Populated by melody contour analysis (Phase 1.5).
+ * Used by button mapping (Phase 2) to generate patterns that follow the melody.
+ */
+export interface MelodyContour {
+    /** Melody segments grouped by direction */
+    segments: MelodySegment[];
+    /** Overall direction of the melody */
+    direction: MelodyContourDirection;
+    /** Pitch range of the melody */
+    range: {
+        /** Lowest note (e.g., "C4") */
+        minNote: string;
+        /** Highest note (e.g., "F#5") */
+        maxNote: string;
+        /** Total span in semitones */
+        semitones: number;
+    };
+    /** Time-window direction analysis (Phase 1.5.3) */
+    /** Direction over the last 1-2 beats */
+    shortTermDirection: MelodyContourDirection;
+    /** Direction over the last 4-8 beats */
+    mediumTermDirection: MelodyContourDirection;
+    /** Direction over the last 16+ beats */
+    longTermDirection: MelodyContourDirection;
+}
 
 // ============================================================================
 // Type Definitions

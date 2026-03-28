@@ -3993,8 +3993,8 @@ The pitch detection system extracts melodic information from audio to create but
 |-----------|----------|
 | **PitchDetector** (pYIN algorithm) | [src/core/analysis/PitchDetector.ts](../src/core/analysis/PitchDetector.ts) |
 | **EssentiaPitchDetector** (Essentia.js WASM) | [src/core/analysis/EssentiaPitchDetector.ts](../src/core/analysis/EssentiaPitchDetector.ts) |
-| **MultiBandPitchAnalyzer** | [src/core/analysis/MultiBandPitchAnalyzer.ts](../src/core/analysis/MultiBandPitchAnalyzer.ts) |
 | **PitchBeatLinker** | [src/core/generation/PitchBeatLinker.ts](../src/core/generation/PitchBeatLinker.ts) |
+| **MelodyContourAnalyzer** | [src/core/analysis/MelodyContourAnalyzer.ts](../src/core/analysis/MelodyContourAnalyzer.ts) |
 
 ### pYIN Algorithm Explanation
 
@@ -4149,63 +4149,34 @@ Rather than analyzing the entire audio continuously, pitch detection is performe
 
 For rhythm games, we only need pitch at the moments when players press buttons—analyzing at beat timestamps is both efficient and accurate.
 
-#### Linking Pitch to GeneratedBeat Timestamps
+#### Linking Pitch to Composite Beat Timestamps
 
-The `PitchBeatLinker` connects pitch detection to rhythm beats:
+The `PitchBeatLinker` runs full-spectrum pitch detection and matches pitch frames to composite beat timestamps:
 
 ```typescript
 import { PitchBeatLinker } from 'playlist-data-engine';
 
 const linker = new PitchBeatLinker();
 
-// Analyze pitch on the full unfiltered signal and link to beats
-const linkedAnalysis = await linker.linkWithBands(
-  generatedRhythm.bandStreams, // From rhythm generation
+// Analyze pitch on the full unfiltered signal and link to composite beats
+const compositePitches = await linker.linkWithComposite(
+  generatedRhythm.composite,
   audioBuffer
 );
 
 // Access pitch at each beat
-for (const pitchAtBeat of linkedAnalysis.pitchByBeat) {
+for (const pitchAtBeat of compositePitches) {
   if (pitchAtBeat.pitch?.isVoiced) {
     console.log(`Beat ${pitchAtBeat.beatIndex}: ${pitchAtBeat.pitch.noteName}`);
   }
 }
 ```
 
-#### Phrase-Level Pitch Correlation
+All pitch detection runs on the full unfiltered audio signal — band-pass filtering removes too many harmonics for YIN/Essentia to find periodicity reliably. The `band` field on each `PitchAtBeat` reflects the rhythm origin (which frequency band the beat was detected in), not the pitch detection source.
 
-The linker can correlate pitches with detected rhythmic phrases using `RhythmicPhrase.sourceBand`:
-
-```typescript
-// Pass phrases from rhythm generation for correlation
-const linkedAnalysis = await linker.linkWithBands(
-  generatedRhythm.bandStreams,
-  audioBuffer,
-  generatedRhythm.phrases // Optional: enables phrase correlation
-);
-
-// Access pitches associated with each phrase
-for (const [phraseId, pitches] of linkedAnalysis.phrasePitchCorrelation) {
-  console.log(`Phrase ${phraseId}: ${pitches.length} pitches`);
-}
-```
-
-This enables patterns that respect both the rhythm and melody of repeated musical phrases.
-
-#### Composite Stream Pitch Linking
-
-The recommended approach is to use `linkWithComposite()`, which returns pitch at each composite beat directly:
+#### Melody Contour Analysis and Variant Derivation
 
 ```typescript
-// Get pitch at each composite beat (game-ready)
-const compositePitches = await linker.linkWithComposite(
-  generatedRhythm.composite,
-  audioBuffer
-);
-
-// compositePitches is PitchAtBeat[] — use directly for analysis or button mapping
-console.log(`Composite has ${compositePitches.length} beats with pitch data`);
-
 // Analyze melody contour from composite pitches
 const contourAnalyzer = new MelodyContourAnalyzer();
 const contourResult = contourAnalyzer.analyze(compositePitches);
@@ -4220,8 +4191,6 @@ console.log('Easy pitches:', variantPitches.easy.length);
 console.log('Medium pitches:', variantPitches.medium.length);
 console.log('Hard pitches:', variantPitches.hard.length);
 ```
-
-> **Note:** `linkWithComposite(compositeStream, audioBuffer)` runs pitch detection directly against composite beat timestamps — it's the fast path for gameplay. Use `linkWithBands()` for advanced analysis that needs per-band data (`LinkedPitchAnalysis`).
 
 ---
 

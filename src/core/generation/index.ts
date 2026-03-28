@@ -99,11 +99,10 @@ export type {
 export { PitchBeatLinker } from './PitchBeatLinker.js';
 export type {
     PitchAtBeat,
-    BandPitchAtBeat,
-    LinkedPitchAnalysis,
     PitchBandName,
     IntervalCategory,
     PitchDirection,
+    PitchBeatLinkerConfig,
 } from './PitchBeatLinker.js';
 
 // Button Pattern Library

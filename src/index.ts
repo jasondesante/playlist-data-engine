@@ -624,23 +624,11 @@ export {
     type PitchResult,
 } from './core/analysis/PitchDetector.js';
 
-// Multi-Band Pitch Analyzer
-export {
-    MultiBandPitchAnalyzer,
-    type MultiBandPitchAnalyzerConfig,
-    type MultiBandPitchAnalysis,
-    type BandPitchAnalysis,
-    type BandName as PitchBandName,
-    type PreFilteredBandInput,
-} from './core/analysis/MultiBandPitchAnalyzer.js';
-
 // Pitch Beat Linker
 export {
     PitchBeatLinker,
     type PitchBeatLinkerConfig,
-    type LinkedPitchAnalysis,
     type PitchAtBeat,
-    type BandPitchAtBeat,
     type PitchBandName as LinkedPitchBandName,
     type PitchDirection,
     type IntervalCategory,

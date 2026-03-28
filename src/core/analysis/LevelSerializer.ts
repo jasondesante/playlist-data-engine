@@ -47,8 +47,7 @@ import type { DifficultyLevel, DifficultyVariant } from '../analysis/beat/Diffic
 import type { NaturalDifficulty } from '../analysis/beat/DensityAnalyzer.js';
 import type { GeneratedBeat, GridType, GeneratedRhythmMap } from '../analysis/beat/RhythmQuantizer.js';
 import type { GeneratedRhythm, RhythmMetadata, Band } from '../generation/RhythmGenerator.js';
-import type { MelodyContourAnalysisResult, DirectionStats, IntervalStats } from './MelodyContourAnalyzer.js';
-import type { MelodyContour, MelodyContourDirection } from './MultiBandPitchAnalyzer.js';
+import type { MelodyContourAnalysisResult, DirectionStats, IntervalStats, MelodyContour } from './MelodyContourAnalyzer.js';
 import type { ControllerMode } from '../types/ButtonMapping.js';
 import type { DifficultyPreset } from '../types/BeatMap.js';
 import type { CompositeStream, CompositeBeat } from '../analysis/beat/CompositeStreamGenerator.js';

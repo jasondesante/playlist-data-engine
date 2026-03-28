@@ -15,20 +15,6 @@ export type {
     CrepeModelVariant,
 } from './EssentiaPitchDetector.js';
 export { MultiBandAnalyzer } from './MultiBandAnalyzer.js';
-export { MultiBandPitchAnalyzer } from './MultiBandPitchAnalyzer.js';
-// Multi-band pitch analysis types for button mapping
-export type {
-    MultiBandPitchAnalysis,
-    BandPitchAnalysis,
-    BandName,
-    MelodyContour,
-    MelodySegment,
-    MelodySegmentDirection,
-    MelodyContourDirection,
-    MultiBandPitchAnalyzerConfig,
-    PreFilteredBandInput,
-    PreFilteredAnalysisConfig,
-} from './MultiBandPitchAnalyzer.js';
 
 // Beat analysis
 export * from './beat/index.js';
@@ -42,4 +28,8 @@ export type {
     IntervalStats,
     IntervalCategory,
     PitchDirection,
+    MelodyContour,
+    MelodySegment,
+    MelodySegmentDirection,
+    MelodyContourDirection,
 } from './MelodyContourAnalyzer.js';
