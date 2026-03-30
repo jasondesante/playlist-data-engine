@@ -1237,7 +1237,17 @@ export class ButtonMapper {
     // ============================================================================
 
     /**
-     * Map buttons for a single difficulty variant
+     * Map buttons for a single difficulty variant using run-based pattern placement.
+     *
+     * Pipeline:
+     * 1. classifyBeats() → pitchKeys, probabilities
+     * 2. classifyPitchVsPattern() → boolean classification (pitch vs pattern)
+     * 3. Build workingKeys array (null for pattern beats, pitch key for pitch beats)
+     * 4. identifyPatternRuns() → runs of consecutive pattern beats
+     * 5. selectPatternForRun() per run → pattern placements
+     * 6. placePatterns() → final keys + patternIds
+     * 7. Build ButtonAssignment[] with proper source/patternId per beat
+     * 8. applyConsecutiveLimit() → fix any monotony
      */
     private mapButtons(
         variant: DifficultyVariant,
@@ -1258,88 +1268,130 @@ export class ButtonMapper {
             difficulty,
         );
 
-        // Generate pattern-derived buttons for blending fallback
-        const patternKeys: (DDRButton | GuitarHeroButton)[] = [];
-        const patternIds: (string | undefined)[] = [];
-        let previousKey: DDRButton | GuitarHeroButton | null = null;
-
-        for (let i = 0; i < beats.length; i++) {
-            const patternResult: { key: DDRButton | GuitarHeroButton; patternId: string | undefined } =
-                this.config.controllerMode === 'ddr'
-                    ? this.selectPatternButton(previousKey as DDRButton | null, DDR_PATTERN_LIBRARY.patterns, maxPatternDifficulty)
-                    : this.selectPatternButton(previousKey as GuitarHeroButton | null, GUITAR_HERO_PATTERN_LIBRARY.patterns, maxPatternDifficulty);
-            patternKeys.push(patternResult.key);
-            patternIds.push(patternResult.patternId);
-            previousKey = pitchKeys[i] ?? patternResult.key;
-        }
-
-        // Second pass: blend pitch and pattern based on probability and weight
-        // First, identify which beats should use pitch vs pattern based on probability
-        const weight = this.config.pitchInfluenceWeight;
-        const blendedKeys = this.blendPitchAndPattern(
-            beats.map(b => ({ timestamp: b.timestamp })),
+        // Step 2: Determine which beats should be pitch vs pattern
+        // Uses the same probability-based blending logic as blendPitchAndPattern,
+        // but produces a boolean classification instead of generating pattern keys.
+        const isPitchBeat = this.classifyPitchVsPattern(
             pitchKeys,
-            patternKeys,
             probabilities,
-            weight
+            this.config.pitchInfluenceWeight
         );
 
-        // Third pass: use sophisticated pattern filling for any remaining holes
-        // This ensures smooth transitions considering both previous and next pitch keys
+        // Step 3: Create working array — null for pattern beats, pitch key for pitch beats
+        const workingKeys: (DDRButton | GuitarHeroButton | null)[] = pitchKeys.map((key, i) =>
+            key !== null && isPitchBeat[i] ? key : null
+        );
+
+        // Step 4: Get pattern library for this controller mode
         const patternLibrary = this.config.controllerMode === 'ddr'
             ? DDR_PATTERN_LIBRARY.patterns as ButtonPattern<DDRButton | GuitarHeroButton>[]
             : GUITAR_HERO_PATTERN_LIBRARY.patterns as ButtonPattern<DDRButton | GuitarHeroButton>[];
 
-        // Create a pitch-key array where null means "needs pattern filling"
-        // After blending, keys that came from patterns may benefit from smarter selection
-        const keysNeedingSmartFill: (DDRButton | GuitarHeroButton | null)[] = blendedKeys.map((key, i) => {
-            // If this beat originally had no pitch, mark for smart fill
-            if (pitchKeys[i] === null) {
-                return null;
+        // Step 5: Identify runs of consecutive pattern beats
+        const runs = identifyPatternRuns(workingKeys);
+
+        // Step 6: Select patterns for each run, tracking recently used patterns for variety
+        const recentlyUsedPatternIds = new Set<string>();
+        const placementsByRun = runs.map(run => {
+            const placements = selectPatternForRun(
+                run,
+                patternLibrary,
+                maxPatternDifficulty,
+                recentlyUsedPatternIds
+            );
+            // Update recently used set for cross-run variety
+            for (const p of placements) {
+                if (p.pattern.id !== '__interpolated__') {
+                    recentlyUsedPatternIds.add(p.pattern.id);
+                }
             }
-            // If this beat was replaced with pattern due to low probability, mark for smart fill
-            if (pitchKeys[i] !== null && pitchKeys[i] !== key) {
-                return null;
-            }
-            // Otherwise, keep the pitch-derived key
-            return key;
+            return placements;
         });
 
-        // Apply sophisticated pattern filling (now returns pattern IDs too)
-        const fillResult = fillPatternHoles(
-            beats.map(b => ({ timestamp: b.timestamp })),
-            keysNeedingSmartFill,
-            patternLibrary,
-            null, // No previous key context at start
-            maxPatternDifficulty
+        // Step 7: Place patterns into the final key and patternId arrays
+        const { keys: finalKeys, patternIds: finalPatternIds } = placePatterns(
+            workingKeys,
+            runs,
+            placementsByRun
         );
-        const finalKeys = fillResult.keys;
-        const fillPatternIds = fillResult.patternIds;
 
-        // Build final assignments with pattern IDs
+        // Step 8: Build final assignments with proper source/patternId per beat
         for (let i = 0; i < beats.length; i++) {
-            const isPitchSource = pitchKeys[i] !== null && pitchKeys[i] === finalKeys[i];
-            // Determine patternId: from smart fill if available, otherwise from initial pattern selection
-            const pid = fillPatternIds[i] ?? patternIds[i];
+            const isPitchSource = workingKeys[i] !== null;
             assignments.push({
                 beatIndex: i,
                 timestamp: beats[i].timestamp,
                 key: finalKeys[i],
                 source: isPitchSource ? 'pitch' : 'pattern',
-                patternId: isPitchSource ? undefined : pid,
+                patternId: isPitchSource ? undefined : finalPatternIds[i],
                 probability: probabilities[i],
             });
         }
 
-        // Apply consecutive same-key limit
+        // Step 9: Apply consecutive same-key limit (post-processing)
         if (this.config.consecutiveSameKeyLimit > 0) {
-            const patterns = this.config.controllerMode === 'ddr'
-                ? DDR_PATTERN_LIBRARY.patterns as ButtonPattern<DDRButton | GuitarHeroButton>[]
-                : GUITAR_HERO_PATTERN_LIBRARY.patterns as ButtonPattern<DDRButton | GuitarHeroButton>[];
-            this.applyConsecutiveLimit(assignments, patterns, maxPatternDifficulty);
+            this.applyConsecutiveLimit(assignments, patternLibrary, maxPatternDifficulty);
         }
 
         return assignments;
+    }
+
+    /**
+     * Classify each beat as pitch or pattern based on probability and weight.
+     *
+     * Uses the same probability-based blending logic as blendPitchAndPattern:
+     * sorts pitch beats by probability (lowest first), replaces the bottom
+     * `(1 - weight)` fraction with patterns. Beats with no pitch data always
+     * use patterns regardless of weight.
+     *
+     * @param pitchKeys - Array from classifyBeats; null = no pitch available
+     * @param probabilities - Per-beat pitch probabilities
+     * @param weight - pitchInfluenceWeight (0.0 = all pattern, 1.0 = all pitch)
+     * @returns Boolean array where true = pitch, false = pattern
+     */
+    private classifyPitchVsPattern(
+        pitchKeys: (DDRButton | GuitarHeroButton | null)[],
+        probabilities: number[],
+        weight: number
+    ): boolean[] {
+        const result: boolean[] = new Array(pitchKeys.length).fill(false);
+
+        // Collect indices that have pitch, sorted by probability (lowest first)
+        const withProbability = pitchKeys
+            .map((key, index) => ({
+                index,
+                probability: probabilities[index],
+                hasPitch: key !== null,
+            }))
+            .filter(item => item.hasPitch);
+
+        withProbability.sort((a, b) => a.probability - b.probability);
+
+        // Calculate how many beats to replace with patterns
+        // weight = 1.0 → replaceCount = 0 (all pitch kept)
+        // weight = 0.0 → replaceCount = all (all replaced)
+        // weight = 0.5 → replaceCount = half (lowest prob half replaced)
+        const replaceCount = Math.floor(withProbability.length * (1 - weight));
+
+        // Indices of beats to demote from pitch to pattern (lowest probability)
+        const indicesToReplace = new Set(
+            withProbability.slice(0, replaceCount).map(item => item.index)
+        );
+
+        for (let i = 0; i < pitchKeys.length; i++) {
+            if (pitchKeys[i] === null) {
+                // No pitch available → always pattern
+                result[i] = false;
+            } else if (indicesToReplace.has(i)) {
+                // Low probability → demote to pattern
+                result[i] = false;
+            } else {
+                // High probability → keep as pitch
+                result[i] = true;
+            }
+        }
+
+        return result;
     }
 
     /**
