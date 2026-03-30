@@ -10,6 +10,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { ButtonMapper } from '../../../src/core/generation/ButtonMapper.js';
+import { DDR_PATTERN_LIBRARY, getPatternById } from '../../../src/core/generation/ButtonPatternLibrary.js';
 import type { MappedLevelResult } from '../../../src/core/generation/ButtonMapper.js';
 import type { PitchAtBeat, IntervalCategory, PitchDirection } from '../../../src/core/generation/PitchBeatLinker.js';
 import type { DDRButton } from '../../../src/core/types/ButtonMapping.js';
@@ -1897,6 +1898,159 @@ describe('Backward Compatibility: mappingSources correctness', () => {
         // All beats pitch with weight 1.0
         for (let i = 0; i < 8; i++) {
             expect(result.mappingSources.get(i)).toBe('pitch');
+        }
+    });
+});
+
+// =============================================================================
+// Tests: mappingPatternIds — same patternId for consecutive beats in same placement (Task 2.5)
+// =============================================================================
+
+describe('Backward Compatibility: mappingPatternIds consecutive pattern grouping', () => {
+    /**
+     * Scan the mappingPatternIds Map and group consecutive beats that share
+     * the same patternId. Returns an array of { patternId, startIndex, length }.
+     * Skips beats where patternId is undefined (pitch-sourced).
+     */
+    function groupConsecutivePatternBeats(
+        mappingPatternIds: Map<number, string | undefined>,
+        beatCount: number,
+    ): Array<{ patternId: string; startIndex: number; length: number }> {
+        const groups: Array<{ patternId: string; startIndex: number; length: number }> = [];
+        let i = 0;
+
+        while (i < beatCount) {
+            const pid = mappingPatternIds.get(i);
+            if (!pid) {
+                i++;
+                continue;
+            }
+
+            // Start of a new group
+            const startIndex = i;
+            while (i < beatCount && mappingPatternIds.get(i) === pid) {
+                i++;
+            }
+            groups.push({ patternId: pid, startIndex, length: i - startIndex });
+        }
+
+        return groups;
+    }
+
+    it('should assign the same patternId to all beats within a multi-beat pattern placement', () => {
+        // Force all beats to be pattern (single long run)
+        const mapper = new ButtonMapper({
+            controllerMode: 'ddr',
+            difficulty: 'medium',
+            pitchInfluenceWeight: 0.0,
+            consecutiveSameKeyLimit: 100, // high limit to avoid post-processing overrides
+        });
+
+        const rhythm = createMinimalGeneratedRhythm(16);
+        const result = mapper.map(rhythm, 'medium');
+
+        // All beats should be pattern-sourced
+        for (let i = 0; i < 16; i++) {
+            expect(result.mappingSources.get(i)).toBe('pattern');
+        }
+
+        // Group consecutive beats by patternId
+        const groups = groupConsecutivePatternBeats(result.mappingPatternIds, 16);
+
+        // There should be at least one group (we have 16 pattern beats)
+        expect(groups.length).toBeGreaterThan(0);
+
+        // The total of all group lengths should equal 16
+        const totalGrouped = groups.reduce((sum, g) => sum + g.length, 0);
+        expect(totalGrouped).toBe(16);
+
+        // Each group's length must match the pattern's keys.length in the library
+        for (const group of groups) {
+            const pattern = getPatternById(
+                DDR_PATTERN_LIBRARY as any,
+                group.patternId,
+            );
+
+            if (group.patternId === '__interpolated__') {
+                // Interpolated fallback: may be 1 beat
+                expect(group.length).toBeGreaterThanOrEqual(1);
+            } else {
+                expect(pattern).toBeDefined();
+                expect(group.length).toBe(pattern!.keys.length);
+            }
+        }
+    });
+
+    it('should have at least one multi-beat group in a 16-beat pattern-only run', () => {
+        const mapper = new ButtonMapper({
+            controllerMode: 'ddr',
+            difficulty: 'medium',
+            pitchInfluenceWeight: 0.0,
+            consecutiveSameKeyLimit: 100,
+        });
+
+        const rhythm = createMinimalGeneratedRhythm(16);
+        const result = mapper.map(rhythm, 'medium');
+
+        const groups = groupConsecutivePatternBeats(result.mappingPatternIds, 16);
+
+        // At least one group should span 2+ beats (a real multi-beat pattern, not single-key)
+        const multiBeatGroups = groups.filter(g => g.length >= 2);
+        expect(multiBeatGroups.length).toBeGreaterThan(0);
+    });
+
+    it('should assign different patternIds to different pattern placements within a run', () => {
+        const mapper = new ButtonMapper({
+            controllerMode: 'ddr',
+            difficulty: 'medium',
+            pitchInfluenceWeight: 0.0,
+            consecutiveSameKeyLimit: 100,
+        });
+
+        // Use 20 beats — can't be filled by a single pattern (largest is 8),
+        // so variety tracking must produce at least 2 different placements
+        const rhythm = createMinimalGeneratedRhythm(20);
+        const result = mapper.map(rhythm, 'medium');
+
+        const groups = groupConsecutivePatternBeats(result.mappingPatternIds, 20);
+
+        // Should have more than one group (can't all be the same 8-beat pattern)
+        expect(groups.length).toBeGreaterThan(1);
+
+        // Variety tracking should ensure at least 2 distinct patternIds
+        const distinctIds = new Set(groups.map(g => g.patternId));
+        expect(distinctIds.size).toBeGreaterThan(1);
+    });
+
+    it('should assign undefined patternId to pitch-sourced beats', () => {
+        // Mix of pitch and pattern beats
+        const mapper = new ButtonMapper({
+            controllerMode: 'ddr',
+            difficulty: 'medium',
+            pitchInfluenceWeight: 0.5,
+            consecutiveSameKeyLimit: 100,
+        });
+
+        const rhythm = createMinimalGeneratedRhythm(16);
+        const pitchAnalysis = createPitchAnalysis(16);
+        const result = mapper.map(rhythm, 'medium', pitchAnalysis);
+
+        // Pitch-sourced beats must have undefined patternId
+        for (let i = 0; i < 16; i++) {
+            const source = result.mappingSources.get(i);
+            const patternId = result.mappingPatternIds.get(i);
+            if (source === 'pitch') {
+                expect(patternId).toBeUndefined();
+            }
+        }
+
+        // Pattern-sourced beats must have a defined patternId
+        for (let i = 0; i < 16; i++) {
+            const source = result.mappingSources.get(i);
+            const patternId = result.mappingPatternIds.get(i);
+            if (source === 'pattern') {
+                expect(patternId).toBeDefined();
+            }
         }
     });
 });
