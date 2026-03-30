@@ -557,6 +557,195 @@ export function isPatternRunCompatible<T extends DDRButton | GuitarHeroButton>(
 }
 
 // ============================================================================
+// Run-Based Pattern Selection
+// ============================================================================
+
+/**
+ * Select patterns to fill a pattern run using a greedy largest-first strategy.
+ *
+ * The algorithm walks through the run left-to-right:
+ * 1. Filters patterns by difficulty and sorts by length (largest first).
+ * 2. At each position, tries to find a compatible pattern:
+ *    - **Exact fit**: a pattern whose length equals the remaining space, with
+ *      the run's `nextKey` used for exit-transition checking.
+ *    - **Largest fit**: the largest compatible pattern (intermediate placements
+ *      use `null` for nextKey, so exit transitions are deferred).
+ * 3. If no compatible pattern exists at all, the beat is filled via
+ *    `interpolateButton()` and recorded as a synthetic single-key placement.
+ *
+ * Variety constraints (applied in order of priority):
+ * - Never repeat the same pattern consecutively within a run.
+ * - Prefer a different category from the last placed pattern.
+ * - Optionally avoid patterns recently used across runs (via `recentlyUsedPatternIds`).
+ *
+ * @param run - The pattern run to fill
+ * @param patternLibrary - All available patterns for the controller mode
+ * @param maxDifficulty - Maximum pattern difficulty to consider
+ * @param recentlyUsedPatternIds - Optional set of pattern IDs used in recent
+ *   measures (for cross-run variety). Defaults to no constraint.
+ * @returns Array of placements covering every beat in the run
+ */
+export function selectPatternForRun<T extends DDRButton | GuitarHeroButton>(
+    run: PatternRun<T>,
+    patternLibrary: ButtonPattern<T>[],
+    maxDifficulty: number,
+    recentlyUsedPatternIds?: Set<string>,
+): PatternPlacement<T>[] {
+    const placements: PatternPlacement<T>[] = [];
+
+    // Step 1: Filter by difficulty, exclude empty patterns
+    const eligible = patternLibrary.filter(
+        p => p.difficulty <= maxDifficulty && p.keys.length > 0
+    );
+
+    // Step 2: Sort by keys.length descending (greedy: largest first)
+    eligible.sort((a, b) => b.keys.length - a.keys.length);
+
+    // Determine controller mode from library (for synthetic interpolated placements)
+    const controllerMode = eligible[0]?.controllerMode ?? 'ddr';
+
+    let posInRun = 0;
+    let prevKey: T | null = run.previousKey;
+    let lastPatternId: string | null = null;
+    let lastCategory: string | null = null;
+
+    while (posInRun < run.length) {
+        const remaining = run.length - posInRun;
+        let selected: ButtonPattern<T> | undefined;
+
+        // Strategy 1: Exact-fit pattern (fills remaining space, uses run.nextKey for exit check)
+        const exactCandidates = eligible.filter(p => p.keys.length === remaining);
+        selected = findCompatiblePattern(
+            exactCandidates, run, posInRun, prevKey, run.nextKey,
+            lastPatternId, lastCategory, recentlyUsedPatternIds
+        );
+
+        // Strategy 2: Largest compatible pattern (intermediate placement, no exit check)
+        if (!selected) {
+            const fittingCandidates = eligible.filter(p => p.keys.length <= remaining);
+            selected = findCompatiblePattern(
+                fittingCandidates, run, posInRun, prevKey, null,
+                lastPatternId, lastCategory, recentlyUsedPatternIds
+            );
+        }
+
+        // Strategy 3: Relax all variety constraints
+        if (!selected) {
+            const fittingCandidates = eligible.filter(p => p.keys.length <= remaining);
+            selected = findCompatiblePattern(
+                fittingCandidates, run, posInRun, prevKey, null,
+                null, null, null
+            );
+        }
+
+        if (selected) {
+            placements.push({
+                pattern: selected,
+                startIndex: run.startIndex + posInRun,
+                filledLength: selected.keys.length,
+            });
+            prevKey = selected.keys[selected.keys.length - 1];
+            lastPatternId = selected.id;
+            lastCategory = selected.category;
+            posInRun += selected.keys.length;
+        } else {
+            // No compatible pattern: use interpolation for this beat
+            const effectiveNextKey = (posInRun === run.length - 1) ? run.nextKey : null;
+            const interpKey = interpolateButton(prevKey, effectiveNextKey);
+            placements.push({
+                pattern: {
+                    id: '__interpolated__',
+                    name: 'Interpolated',
+                    controllerMode,
+                    keys: [interpKey],
+                    measures: 0,
+                    tags: ['interpolated'],
+                    category: 'transition',
+                    difficulty: 1,
+                },
+                startIndex: run.startIndex + posInRun,
+                filledLength: 1,
+            });
+            prevKey = interpKey;
+            posInRun++;
+        }
+    }
+
+    return placements;
+}
+
+/**
+ * Find a compatible pattern from candidates, applying variety constraints in
+ * order of strictness.
+ *
+ * Passes (each more relaxed than the last):
+ * 1. Avoid same pattern + different category + not recently used
+ * 2. Allow same category (still avoid same pattern + recently used)
+ * 3. Allow recently used (still avoid same pattern consecutively)
+ * 4. Allow everything
+ *
+ * Within each pass, picks randomly from the largest group of same-sized
+ * compatible patterns (candidates must be pre-sorted by `keys.length` desc).
+ */
+function findCompatiblePattern<T extends DDRButton | GuitarHeroButton>(
+    candidates: ButtonPattern<T>[],
+    run: PatternRun<T>,
+    positionInRun: number,
+    previousKey: T | null,
+    nextKey: T | null,
+    avoidPatternId: string | null,
+    preferDifferentCategory: string | null,
+    recentlyUsedPatternIds: Set<string> | null | undefined,
+): ButtonPattern<T> | undefined {
+    // Pass 1: strict variety
+    const pass1 = candidates.filter(p =>
+        isPatternRunCompatible(p, run, positionInRun, previousKey, nextKey) &&
+        p.id !== avoidPatternId &&
+        p.category !== preferDifferentCategory &&
+        !recentlyUsedPatternIds?.has(p.id)
+    );
+    if (pass1.length > 0) return pickFromLargestGroup(pass1);
+
+    // Pass 2: allow same category
+    const pass2 = candidates.filter(p =>
+        isPatternRunCompatible(p, run, positionInRun, previousKey, nextKey) &&
+        p.id !== avoidPatternId &&
+        !recentlyUsedPatternIds?.has(p.id)
+    );
+    if (pass2.length > 0) return pickFromLargestGroup(pass2);
+
+    // Pass 3: allow recently used
+    const pass3 = candidates.filter(p =>
+        isPatternRunCompatible(p, run, positionInRun, previousKey, nextKey) &&
+        p.id !== avoidPatternId
+    );
+    if (pass3.length > 0) return pickFromLargestGroup(pass3);
+
+    // Pass 4: no constraints
+    const pass4 = candidates.filter(p =>
+        isPatternRunCompatible(p, run, positionInRun, previousKey, nextKey)
+    );
+    if (pass4.length > 0) return pickFromLargestGroup(pass4);
+
+    return undefined;
+}
+
+/**
+ * Pick a random pattern from the largest group of same-sized patterns.
+ *
+ * Candidates must be sorted by `keys.length` descending. The first element
+ * determines the maximum size, and all patterns of that size are pooled for
+ * random selection.
+ */
+function pickFromLargestGroup<T extends DDRButton | GuitarHeroButton>(
+    patterns: ButtonPattern<T>[]
+): ButtonPattern<T> {
+    const maxSize = patterns[0].keys.length;
+    const largest = patterns.filter(p => p.keys.length === maxSize);
+    return largest[Math.floor(Math.random() * largest.length)];
+}
+
+// ============================================================================
 // Helper Functions
 // ============================================================================
 
