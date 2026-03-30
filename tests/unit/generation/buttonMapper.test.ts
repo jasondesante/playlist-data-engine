@@ -10,8 +10,11 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { ButtonMapper } from '../../../src/core/generation/ButtonMapper.js';
+import type { MappedLevelResult } from '../../../src/core/generation/ButtonMapper.js';
 import type { PitchAtBeat, IntervalCategory, PitchDirection } from '../../../src/core/generation/PitchBeatLinker.js';
 import type { DDRButton } from '../../../src/core/types/ButtonMapping.js';
+import type { GeneratedRhythm, RhythmMetadata } from '../../../src/core/generation/RhythmGenerator.js';
+import type { DifficultyVariant } from '../../../src/core/analysis/beat/DifficultyVariantGenerator.js';
 
 // =============================================================================
 // Helper Functions
@@ -1368,5 +1371,333 @@ describe('Cross-Difficulty Comparison', () => {
         expect(ddrEasy.getConfig().consecutiveSameKeyLimit).toBe(
             ghEasy.getConfig().consecutiveSameKeyLimit
         );
+    });
+});
+
+// =============================================================================
+// Tests: Backward Compatibility — MappedLevelResult shape
+// =============================================================================
+
+/**
+ * Create a minimal GeneratedRhythm fixture with N beats for testing mapper.map().
+ * All beats use 'straight_16th' grid type with ascending timestamps.
+ */
+function createMinimalGeneratedRhythm(beatCount: number): GeneratedRhythm {
+    const beats = Array.from({ length: beatCount }, (_, i) => ({
+        timestamp: i * 0.25,
+        beatIndex: Math.floor(i / 4),
+        gridPosition: i % 4,
+        gridType: 'straight_16th' as const,
+        intensity: 0.5,
+        band: 'mid' as const,
+        sourceBand: 'mid' as const,
+    }));
+
+    const variant: DifficultyVariant = {
+        difficulty: 'medium',
+        beats,
+        isUnedited: true,
+        editType: 'none',
+        editAmount: 0,
+    };
+
+    const metadata: RhythmMetadata = {
+        difficulty: 'medium',
+        bandsAnalyzed: ['low', 'mid', 'high'],
+        transientsDetected: beatCount,
+        transientsFilteredByIntensity: 0,
+        densityValidationRetries: 0,
+        phrasesDetected: 1,
+        averageDensity: 1.0,
+        targetDensity: 1.0,
+        tempoBPM: 120,
+        timeSignature: { numerator: 4, denominator: 4 },
+        subdivision: 'straight_16th',
+        gridConfidence: 0.9,
+        dominantBand: 'mid',
+        densityRange: { min: 0.8, max: 1.2 },
+        densityStdDev: 0.1,
+        totalDuration: beatCount * 0.25,
+        totalBeats: beatCount,
+    };
+
+    return {
+        difficultyVariants: {
+            easy: { ...variant, difficulty: 'easy' },
+            medium: variant,
+            hard: { ...variant, difficulty: 'hard' },
+            natural: { ...variant, difficulty: 'natural' },
+        },
+        bandStreams: { low: { beats: [] }, mid: { beats: [] }, high: { beats: [] } },
+        composite: { beats: [], sections: [], naturalDifficulty: 'medium' },
+        analysis: {
+            transientAnalysis: { bands: {} },
+            quantizationResult: {} as any,
+            phraseAnalysis: {} as any,
+            densityAnalysis: {} as any,
+            scoringResult: {} as any,
+        },
+        metadata,
+    };
+}
+
+/**
+ * Create pitch analysis data for N beats with specified directions.
+ */
+function createPitchAnalysis(
+    beatCount: number,
+    direction: PitchDirection = 'ascending',
+    intervalCategory: IntervalCategory = 'small',
+    probability: number = 0.9
+): PitchAtBeat[] {
+    return Array.from({ length: beatCount }, (_, i) => ({
+        beatIndex: i,
+        timestamp: i * 0.25,
+        band: 'mid' as const,
+        pitch: {
+            timestamp: i * 0.25,
+            frequency: 440,
+            probability,
+            isVoiced: true,
+            midiNote: 69,
+            noteName: 'A4',
+        },
+        direction,
+        intervalFromPrevious: 1,
+        intervalCategory,
+    }));
+}
+
+describe('Backward Compatibility: MappedLevelResult shape', () => {
+    it('should return MappedLevelResult with all expected fields when mapping with pitch', () => {
+        const mapper = new ButtonMapper({
+            controllerMode: 'ddr',
+            difficulty: 'medium',
+            pitchInfluenceWeight: 0.8,
+        });
+
+        const rhythm = createMinimalGeneratedRhythm(16);
+        const pitchAnalysis = createPitchAnalysis(16);
+        const result: MappedLevelResult = mapper.map(rhythm, 'medium', pitchAnalysis);
+
+        // Top-level fields
+        expect(result).toHaveProperty('variant');
+        expect(result).toHaveProperty('rhythmMetadata');
+        expect(result).toHaveProperty('buttonMetadata');
+        expect(result).toHaveProperty('keyAssignments');
+        expect(result).toHaveProperty('mappingSources');
+        expect(result).toHaveProperty('mappingPatternIds');
+
+        // variant should be the medium variant
+        expect(result.variant.difficulty).toBe('medium');
+        expect(result.variant.beats).toHaveLength(16);
+
+        // rhythmMetadata should be preserved
+        expect(result.rhythmMetadata).toBe(rhythm.metadata);
+        expect(result.rhythmMetadata.tempoBPM).toBe(120);
+    });
+
+    it('should return MappedLevelResult with all expected fields when mapping without pitch', () => {
+        const mapper = new ButtonMapper({
+            controllerMode: 'ddr',
+            difficulty: 'medium',
+            pitchInfluenceWeight: 0.0,
+        });
+
+        const rhythm = createMinimalGeneratedRhythm(16);
+        const result = mapper.map(rhythm, 'medium');
+
+        // All top-level fields present even without pitch
+        expect(result).toHaveProperty('variant');
+        expect(result).toHaveProperty('rhythmMetadata');
+        expect(result).toHaveProperty('buttonMetadata');
+        expect(result).toHaveProperty('keyAssignments');
+        expect(result).toHaveProperty('mappingSources');
+        expect(result).toHaveProperty('mappingPatternIds');
+
+        // variant still correct
+        expect(result.variant.difficulty).toBe('medium');
+    });
+
+    it('should have keyAssignments as Map<number, string> with correct entries', () => {
+        const mapper = new ButtonMapper({
+            controllerMode: 'ddr',
+            difficulty: 'medium',
+            pitchInfluenceWeight: 0.8,
+        });
+
+        const rhythm = createMinimalGeneratedRhythm(16);
+        const pitchAnalysis = createPitchAnalysis(16);
+        const result = mapper.map(rhythm, 'medium', pitchAnalysis);
+
+        // keyAssignments is a Map
+        expect(result.keyAssignments).toBeInstanceOf(Map);
+
+        // Should have exactly 16 entries (one per beat)
+        expect(result.keyAssignments.size).toBe(16);
+
+        // Every key should be a valid DDR button
+        const validDDR = new Set<string>(['up', 'down', 'left', 'right']);
+        for (const [beatIndex, key] of result.keyAssignments) {
+            expect(typeof beatIndex).toBe('number');
+            expect(typeof key).toBe('string');
+            expect(validDDR.has(key)).toBe(true);
+        }
+
+        // All beat indices 0-15 should be present
+        for (let i = 0; i < 16; i++) {
+            expect(result.keyAssignments.has(i)).toBe(true);
+        }
+    });
+
+    it('should have mappingSources as Map<number, "pitch"|"pattern"> with correct values', () => {
+        const mapper = new ButtonMapper({
+            controllerMode: 'ddr',
+            difficulty: 'medium',
+            pitchInfluenceWeight: 0.8,
+        });
+
+        const rhythm = createMinimalGeneratedRhythm(16);
+        const pitchAnalysis = createPitchAnalysis(16);
+        const result = mapper.map(rhythm, 'medium', pitchAnalysis);
+
+        // mappingSources is a Map
+        expect(result.mappingSources).toBeInstanceOf(Map);
+
+        // Should have exactly 16 entries
+        expect(result.mappingSources.size).toBe(16);
+
+        // Every value should be 'pitch' or 'pattern'
+        for (const [beatIndex, source] of result.mappingSources) {
+            expect(typeof beatIndex).toBe('number');
+            expect(['pitch', 'pattern']).toContain(source);
+        }
+
+        // With pitchInfluenceWeight=0.8, most beats should be pitch
+        const pitchCount = Array.from(result.mappingSources.values())
+            .filter(s => s === 'pitch').length;
+        expect(pitchCount).toBeGreaterThan(0);
+    });
+
+    it('should have mappingPatternIds as Map<number, string|undefined> with correct values', () => {
+        const mapper = new ButtonMapper({
+            controllerMode: 'ddr',
+            difficulty: 'medium',
+            pitchInfluenceWeight: 0.8,
+        });
+
+        const rhythm = createMinimalGeneratedRhythm(16);
+        const pitchAnalysis = createPitchAnalysis(16);
+        const result = mapper.map(rhythm, 'medium', pitchAnalysis);
+
+        // mappingPatternIds is a Map
+        expect(result.mappingPatternIds).toBeInstanceOf(Map);
+
+        // Should have exactly 16 entries
+        expect(result.mappingPatternIds.size).toBe(16);
+
+        // Pattern-sourced beats should have a patternId, pitch-sourced should be undefined
+        for (const [beatIndex, patternId] of result.mappingPatternIds) {
+            expect(typeof beatIndex).toBe('number');
+            const source = result.mappingSources.get(beatIndex);
+            if (source === 'pattern') {
+                expect(patternId).toBeDefined();
+                expect(typeof patternId).toBe('string');
+            } else {
+                // Pitch-sourced beats may or may not have a patternId (undefined is expected)
+                expect(patternId === undefined || typeof patternId === 'string').toBe(true);
+            }
+        }
+    });
+
+    it('should have buttonMetadata with all expected fields', () => {
+        const mapper = new ButtonMapper({
+            controllerMode: 'ddr',
+            difficulty: 'medium',
+            pitchInfluenceWeight: 0.8,
+        });
+
+        const rhythm = createMinimalGeneratedRhythm(16);
+        const pitchAnalysis = createPitchAnalysis(16);
+        const result = mapper.map(rhythm, 'medium', pitchAnalysis);
+
+        const meta = result.buttonMetadata;
+
+        // Core fields
+        expect(meta.controllerMode).toBe('ddr');
+        expect(Array.isArray(meta.keysUsed)).toBe(true);
+        expect(typeof meta.pitchInfluencedBeats).toBe('number');
+        expect(typeof meta.patternInfluencedBeats).toBe('number');
+        expect(Array.isArray(meta.patternsUsed)).toBe(true);
+        expect(meta.buttonDistribution).toBeInstanceOf(Map);
+
+        // Beat counts should sum to total
+        expect(meta.pitchInfluencedBeats + meta.patternInfluencedBeats).toBe(16);
+
+        // With pitch analysis provided, should have direction and interval stats
+        expect(meta.directionStats).toBeDefined();
+        expect(meta.directionStats).toHaveProperty('up');
+        expect(meta.directionStats).toHaveProperty('down');
+        expect(meta.directionStats).toHaveProperty('stable');
+        expect(meta.directionStats).toHaveProperty('none');
+
+        expect(meta.intervalStats).toBeDefined();
+        expect(meta.intervalStats).toHaveProperty('unison');
+        expect(meta.intervalStats).toHaveProperty('small');
+        expect(meta.intervalStats).toHaveProperty('medium');
+        expect(meta.intervalStats).toHaveProperty('large');
+        expect(meta.intervalStats).toHaveProperty('very_large');
+
+        // Band stats
+        expect(meta.bandStats).toBeDefined();
+        expect(meta.bandStats).toHaveProperty('low');
+        expect(meta.bandStats).toHaveProperty('mid');
+        expect(meta.bandStats).toHaveProperty('high');
+
+        // New patternPlacements field (added by rewrite)
+        expect(meta.patternPlacements).toBeDefined();
+        expect(Array.isArray(meta.patternPlacements)).toBe(true);
+    });
+
+    it('should work correctly for Guitar Hero controller mode', () => {
+        const mapper = new ButtonMapper({
+            controllerMode: 'guitar_hero',
+            difficulty: 'medium',
+            pitchInfluenceWeight: 0.8,
+        });
+
+        const rhythm = createMinimalGeneratedRhythm(16);
+        const pitchAnalysis = createPitchAnalysis(16);
+        const result = mapper.map(rhythm, 'medium', pitchAnalysis);
+
+        // All fields present
+        expect(result.keyAssignments.size).toBe(16);
+        expect(result.mappingSources.size).toBe(16);
+        expect(result.mappingPatternIds.size).toBe(16);
+
+        // Keys should be numbers 1-5 for Guitar Hero
+        const validFrets = new Set<string>(['1', '2', '3', '4', '5']);
+        for (const [, key] of result.keyAssignments) {
+            expect(validFrets.has(key)).toBe(true);
+        }
+
+        expect(result.buttonMetadata.controllerMode).toBe('guitar_hero');
+    });
+
+    it('should handle zero-beat rhythm gracefully', () => {
+        const mapper = new ButtonMapper({
+            controllerMode: 'ddr',
+            difficulty: 'medium',
+        });
+
+        const rhythm = createMinimalGeneratedRhythm(0);
+        const result = mapper.map(rhythm, 'medium');
+
+        expect(result.keyAssignments.size).toBe(0);
+        expect(result.mappingSources.size).toBe(0);
+        expect(result.mappingPatternIds.size).toBe(0);
+        expect(result.buttonMetadata.pitchInfluencedBeats).toBe(0);
+        expect(result.buttonMetadata.patternInfluencedBeats).toBe(0);
+        expect(result.buttonMetadata.patternsUsed).toEqual([]);
     });
 });
