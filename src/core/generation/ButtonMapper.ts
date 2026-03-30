@@ -291,7 +291,7 @@ const GUITAR_HERO_EASY_TRANSITIONS: Record<GuitarHeroButton, {
 };
 
 // ============================================================================
-// Helper Functions
+// Pitch Classification Functions
 // ============================================================================
 
 /**
@@ -300,6 +300,140 @@ const GUITAR_HERO_EASY_TRANSITIONS: Record<GuitarHeroButton, {
 function getIntervalCategory(pitch: PitchAtBeat): IntervalCategory {
     return pitch.intervalCategory ?? 'small';
 }
+
+/**
+ * Map pitch to DDR button using state transitions.
+ *
+ * Uses the DDR circular motion transition tables to determine the next button
+ * based on current position, pitch direction, and interval size.
+ */
+function mapPitchToDDR(
+    pitch: PitchAtBeat,
+    previousKey: DDRButton | null,
+    difficulty: DifficultyLevel
+): DDRButton {
+    // Default starting position (left for natural clockwise flow)
+    const currentButton = previousKey ?? 'left';
+
+    // Stable pitch or unison = repeat same button
+    if (pitch.direction === 'stable' || pitch.intervalCategory === 'unison') {
+        return currentButton;
+    }
+
+    // Easy mode: direction-only mapping (no leaps)
+    if (difficulty === 'easy') {
+        const transitions = DDR_EASY_TRANSITIONS[currentButton];
+        return pitch.direction === 'up' ? transitions.ascending : transitions.descending;
+    }
+
+    // Medium/Hard: full transition table with interval consideration
+    const transitions = DDR_TRANSITIONS[currentButton];
+    const directionKey = pitch.direction === 'up' ? 'ascending' : 'descending';
+    const intervalCategory = getIntervalCategory(pitch);
+
+    return transitions[directionKey][intervalCategory];
+}
+
+/**
+ * Map pitch to Guitar Hero button using state transitions.
+ *
+ * Uses the Guitar Hero fret transition tables to determine the next fret
+ * based on current position, pitch direction, and interval size.
+ * Supports string wrap for large intervals.
+ */
+function mapPitchToGuitarHero(
+    pitch: PitchAtBeat,
+    previousKey: GuitarHeroButton | null,
+    difficulty: DifficultyLevel
+): GuitarHeroButton {
+    // Default to middle fret
+    const currentFret = previousKey ?? 3;
+
+    // Stable pitch or unison = stay on current fret
+    if (pitch.direction === 'stable' || pitch.intervalCategory === 'unison') {
+        return currentFret;
+    }
+
+    // Easy mode: direction-only mapping (stepwise motion)
+    if (difficulty === 'easy') {
+        const transitions = GUITAR_HERO_EASY_TRANSITIONS[currentFret];
+        return pitch.direction === 'up' ? transitions.ascending : transitions.descending;
+    }
+
+    // Medium/Hard: full transition table with interval consideration
+    const transitions = GUITAR_HERO_TRANSITIONS[currentFret];
+    const directionKey = pitch.direction === 'up' ? 'ascending' : 'descending';
+    const intervalCategory = getIntervalCategory(pitch);
+
+    return transitions[directionKey][intervalCategory];
+}
+
+/**
+ * Classify each beat as pitch-derived or pattern-needed.
+ *
+ * Builds a pitch-by-timestamp lookup, then for each beat attempts pitch mapping
+ * using the DDR/Guitar Hero transition tables. Beats with no pitch or
+ * direction === 'none' return null, indicating they need pattern filling.
+ *
+ * This is a pure function — it only considers pitch data and produces pitch keys.
+ * Pattern selection is handled separately in the run-based placement pipeline.
+ */
+function classifyBeats<T extends DDRButton | GuitarHeroButton>(
+    beats: { timestamp: number }[],
+    pitchAnalysis: PitchAtBeat[] | undefined,
+    controllerMode: 'ddr' | 'guitar_hero',
+    difficulty: DifficultyLevel,
+): {
+    pitchKeys: (T | null)[];
+    probabilities: number[];
+} {
+    // Build pitch lookup by timestamp
+    const pitchByTimestamp = new Map<number, PitchAtBeat>();
+    if (pitchAnalysis) {
+        for (const pitch of pitchAnalysis) {
+            const key = Math.round(pitch.timestamp * 1000);
+            pitchByTimestamp.set(key, pitch);
+        }
+    }
+
+    const pitchKeys: (T | null)[] = [];
+    const probabilities: number[] = [];
+    let previousKey: T | null = null;
+
+    for (const beat of beats) {
+        // Find pitch at this beat's timestamp
+        const timestampKey = Math.round(beat.timestamp * 1000);
+        let pitchAtBeat: PitchAtBeat | null = null;
+
+        // Look up with tolerance
+        for (let offset = -2; offset <= 2; offset++) {
+            pitchAtBeat = pitchByTimestamp.get(timestampKey + offset) ?? null;
+            if (pitchAtBeat) break;
+        }
+
+        // Generate pitch-derived button
+        let pitchKey: T | null = null;
+        let probability = 0;
+
+        if (pitchAtBeat && pitchAtBeat.direction !== 'none') {
+            pitchKey = controllerMode === 'ddr'
+                ? mapPitchToDDR(pitchAtBeat, previousKey as DDRButton | null, difficulty) as unknown as T
+                : mapPitchToGuitarHero(pitchAtBeat, previousKey as GuitarHeroButton | null, difficulty) as unknown as T;
+            probability = pitchAtBeat.pitch?.probability ?? 0.5;
+        }
+
+        pitchKeys.push(pitchKey);
+        probabilities.push(probability);
+
+        previousKey = pitchKey;
+    }
+
+    return { pitchKeys, probabilities };
+}
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
 
 /**
  * Check for consecutive same-key violations and return positions to fix
@@ -740,60 +874,30 @@ export class ButtonMapper {
         const beats = variant.beats;
         const assignments: ButtonAssignment[] = [];
 
-        // Build pitch lookup by timestamp
-        const pitchByTimestamp = new Map<number, PitchAtBeat>();
-        if (pitchAnalysis) {
-            for (const pitch of pitchAnalysis) {
-                const key = Math.round(pitch.timestamp * 1000);
-                pitchByTimestamp.set(key, pitch);
-            }
-        }
-
         // Get max pattern difficulty for this game difficulty
         const maxPatternDifficulty = this.getMaxPatternDifficulty(difficulty);
 
-        // First pass: generate pitch-derived and pattern-derived buttons
-        const pitchKeys: (DDRButton | GuitarHeroButton | null)[] = [];
+        // Step 1: Classify beats as pitch-derived or pattern-needed
+        const { pitchKeys, probabilities } = classifyBeats(
+            beats,
+            pitchAnalysis,
+            this.config.controllerMode,
+            difficulty,
+        );
+
+        // Generate pattern-derived buttons for blending fallback
         const patternKeys: (DDRButton | GuitarHeroButton)[] = [];
         const patternIds: (string | undefined)[] = [];
-        const probabilities: number[] = [];
-
         let previousKey: DDRButton | GuitarHeroButton | null = null;
 
-        for (const beat of beats) {
-            // Find pitch at this beat's timestamp
-            const timestampKey = Math.round(beat.timestamp * 1000);
-            let pitchAtBeat: PitchAtBeat | null = null;
-
-            // Look up with tolerance
-            for (let offset = -2; offset <= 2; offset++) {
-                pitchAtBeat = pitchByTimestamp.get(timestampKey + offset) ?? null;
-                if (pitchAtBeat) break;
-            }
-
-            // Generate pitch-derived button
-            let pitchKey: DDRButton | GuitarHeroButton | null = null;
-            let probability = 0;
-
-            if (pitchAtBeat && pitchAtBeat.direction !== 'none') {
-                pitchKey = this.config.controllerMode === 'ddr'
-                    ? this.mapPitchToDDR(pitchAtBeat, previousKey as DDRButton | null, difficulty)
-                    : this.mapPitchToGuitarHero(pitchAtBeat, previousKey as GuitarHeroButton | null, difficulty);
-                probability = pitchAtBeat.pitch?.probability ?? 0.5;
-            }
-
-            pitchKeys.push(pitchKey);
-            probabilities.push(probability);
-
-            // Generate pattern-derived button (always, for fallback)
+        for (let i = 0; i < beats.length; i++) {
             const patternResult: { key: DDRButton | GuitarHeroButton; patternId: string | undefined } =
                 this.config.controllerMode === 'ddr'
                     ? this.selectPatternButton(previousKey as DDRButton | null, DDR_PATTERN_LIBRARY.patterns, maxPatternDifficulty)
                     : this.selectPatternButton(previousKey as GuitarHeroButton | null, GUITAR_HERO_PATTERN_LIBRARY.patterns, maxPatternDifficulty);
             patternKeys.push(patternResult.key);
             patternIds.push(patternResult.patternId);
-
-            previousKey = pitchKey ?? patternResult.key;
+            previousKey = pitchKeys[i] ?? patternResult.key;
         }
 
         // Second pass: blend pitch and pattern based on probability and weight
@@ -923,74 +1027,6 @@ export class ButtonMapper {
     ): { key: T; patternId: string | undefined } {
         const pattern = selectPatternFromLibrary(library, previousKey, maxDifficulty);
         return { key: pattern.keys[0], patternId: pattern.id };
-    }
-
-    // ============================================================================
-    // DDR Pitch Mapping
-    // ============================================================================
-
-    /**
-     * Map pitch to DDR button using state transitions
-     */
-    private mapPitchToDDR(
-        pitch: PitchAtBeat,
-        previousKey: DDRButton | null,
-        difficulty: DifficultyLevel
-    ): DDRButton {
-        // Default starting position (left for natural clockwise flow)
-        const currentButton = previousKey ?? 'left';
-
-        // Stable pitch or unison = repeat same button
-        if (pitch.direction === 'stable' || pitch.intervalCategory === 'unison') {
-            return currentButton;
-        }
-
-        // Easy mode: direction-only mapping (no leaps)
-        if (difficulty === 'easy') {
-            const transitions = DDR_EASY_TRANSITIONS[currentButton];
-            return pitch.direction === 'up' ? transitions.ascending : transitions.descending;
-        }
-
-        // Medium/Hard: full transition table with interval consideration
-        const transitions = DDR_TRANSITIONS[currentButton];
-        const directionKey = pitch.direction === 'up' ? 'ascending' : 'descending';
-        const intervalCategory = getIntervalCategory(pitch);
-
-        return transitions[directionKey][intervalCategory];
-    }
-
-    // ============================================================================
-    // Guitar Hero Pitch Mapping
-    // ============================================================================
-
-    /**
-     * Map pitch to Guitar Hero button using state transitions
-     */
-    private mapPitchToGuitarHero(
-        pitch: PitchAtBeat,
-        previousKey: GuitarHeroButton | null,
-        difficulty: DifficultyLevel
-    ): GuitarHeroButton {
-        // Default to middle fret
-        const currentFret = previousKey ?? 3;
-
-        // Stable pitch or unison = stay on current fret
-        if (pitch.direction === 'stable' || pitch.intervalCategory === 'unison') {
-            return currentFret;
-        }
-
-        // Easy mode: direction-only mapping (stepwise motion)
-        if (difficulty === 'easy') {
-            const transitions = GUITAR_HERO_EASY_TRANSITIONS[currentFret];
-            return pitch.direction === 'up' ? transitions.ascending : transitions.descending;
-        }
-
-        // Medium/Hard: full transition table with interval consideration
-        const transitions = GUITAR_HERO_TRANSITIONS[currentFret];
-        const directionKey = pitch.direction === 'up' ? 'ascending' : 'descending';
-        const intervalCategory = getIntervalCategory(pitch);
-
-        return transitions[directionKey][intervalCategory];
     }
 
     // ============================================================================
