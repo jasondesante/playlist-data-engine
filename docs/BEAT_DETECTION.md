@@ -4380,9 +4380,9 @@ const mapper = new ButtonMapper({
   controllerMode: 'ddr',
   pitchInfluenceWeight: 0.8
 });
-const buttonMap = mapper.map(compositePitches, rhythm.composite);
+const buttonMap = mapper.map(rhythm, 'medium', compositePitches);
 
-console.log(`Generated ${buttonMap.length} button assignments`);
+console.log(`Generated ${buttonMap.keyAssignments.size} button assignments`);
 ```
 
 ### Pattern-Only Generation (No Pitch Analysis)
@@ -4399,7 +4399,7 @@ const mapper = new ButtonMapper({
   controllerMode: 'guitar_hero',
   pitchInfluenceWeight: 0  // Skips pitch detection entirely
 });
-const buttonMap = mapper.mapFromRhythm(rhythm.difficultyVariants.easy);
+const buttonMap = mapper.map(rhythm, 'easy');
 ```
 
 ### Full Workflow: Audio → Rhythm → Pitch → Buttons → ChartedBeatMap
@@ -4444,14 +4444,14 @@ const variantPitches = linker.deriveAllVariantPitches(rhythm.difficultyVariants,
 
 // Step 7: Map buttons for each difficulty
 const mapper = new ButtonMapper({ controllerMode: 'ddr', pitchInfluenceWeight: 0.8 });
-const easyButtons = mapper.map(variantPitches.easy, rhythm.difficultyVariants.easy);
-const mediumButtons = mapper.map(variantPitches.medium, rhythm.difficultyVariants.medium);
-const hardButtons = mapper.map(variantPitches.hard, rhythm.difficultyVariants.hard);
+const easyButtons = mapper.map(rhythm, 'easy', variantPitches.easy);
+const mediumButtons = mapper.map(rhythm, 'medium', variantPitches.medium);
+const hardButtons = mapper.map(rhythm, 'hard', variantPitches.hard);
 
 console.log('Level generation complete!');
-console.log(`  Easy: ${easyButtons.length} buttons`);
-console.log(`  Medium: ${mediumButtons.length} buttons`);
-console.log(`  Hard: ${hardButtons.length} buttons`);
+console.log(`  Easy: ${easyButtons.keyAssignments.size} buttons`);
+console.log(`  Medium: ${mediumButtons.keyAssignments.size} buttons`);
+console.log(`  Hard: ${hardButtons.keyAssignments.size} buttons`);
 ```
 
 ### Serialization: Save and Load Generated Levels

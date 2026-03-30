@@ -3110,6 +3110,9 @@ new ButtonMapper(config: Partial<ButtonMappingConfig>)
 | `variant` | DifficultyVariant | The difficulty variant with keys assigned |
 | `rhythmMetadata` | RhythmMetadata | Original rhythm metadata preserved |
 | `buttonMetadata` | ButtonMappingMetadata | Button mapping metadata |
+| `keyAssignments` | `Map<number, string>` | Per-beat key assignments (beat index → button key) |
+| `mappingSources` | `Map<number, 'pitch' \| 'pattern'>` | Per-beat mapping source |
+| `mappingPatternIds` | `Map<number, string \| undefined>` | Per-beat pattern IDs (undefined for pitch-sourced beats) |
 
 #### ButtonMappingMetadata Properties
 
@@ -3120,8 +3123,10 @@ new ButtonMapper(config: Partial<ButtonMappingConfig>)
 | `pitchInfluencedBeats` | number | Number of beats influenced by pitch |
 | `patternInfluencedBeats` | number | Number of beats from pattern library |
 | `patternsUsed` | string[] | IDs of patterns used |
+| `buttonDistribution` | `Map<string, number>` | Statistics about button distribution |
 | `directionStats` | object | Direction statistics (if pitch analysis provided) |
 | `intervalStats` | object | Interval statistics (if pitch analysis provided) |
+| `bandStats` | object | Band statistics (if pitch analysis provided) |
 
 ### Button Mapping Configuration
 
@@ -3208,7 +3213,7 @@ Converts procedural generation output (GeneratedBeat[]) to ChartedBeatMap format
 
 | Method | Returns | Description |
 |--------|---------|-------------|
-| `convertToChartedBeatMap(variant, unifiedBeatMap, keyAssignments, metadata)` | ChartedBeatMap | Convert variant to playable chart |
+| `convertToChartedBeatMap(variant, unifiedBeatMap, keyAssignments, metadata, mappingSources?, mappingPatternIds?)` | ChartedBeatMap | Convert variant to playable chart with optional per-beat mapping source tracking |
 | `convertWithOptions(variant, options)` | ChartedBeatMap | Convert with options object |
 
 #### ChartedBeatMap Properties
