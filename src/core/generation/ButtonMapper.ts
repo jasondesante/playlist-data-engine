@@ -65,6 +65,9 @@ export interface MappedLevelResult {
 
     /** Button mapping metadata */
     buttonMetadata: ButtonMappingMetadata;
+
+    /** Per-beat key assignments (beat index → button key) from the ButtonMapper */
+    keyAssignments: Map<number, string>;
 }
 
 /**
@@ -629,10 +632,17 @@ export class ButtonMapper {
         // Build metadata
         const buttonMetadata = this.buildMetadata(assignments, pitchAnalysis);
 
+        // Build per-beat key assignments map
+        const keyAssignments = new Map<number, string>();
+        for (const assignment of assignments) {
+            keyAssignments.set(assignment.beatIndex, String(assignment.key));
+        }
+
         return {
             variant,
             rhythmMetadata: generatedRhythm.metadata,
             buttonMetadata,
+            keyAssignments,
         };
     }
 

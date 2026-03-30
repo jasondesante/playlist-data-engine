@@ -816,7 +816,8 @@ export class LevelGenerator {
             mappedResult.variant,
             unifiedBeatMap,
             mappedResult.buttonMetadata,
-            mappedResult.rhythmMetadata
+            mappedResult.rhythmMetadata,
+            mappedResult.keyAssignments
         );
     }
 

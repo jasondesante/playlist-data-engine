@@ -378,15 +378,14 @@ export class BeatConverter {
         variant: DifficultyVariant,
         unifiedBeatMap: UnifiedBeatMap,
         buttonMetadata: ButtonMappingMetadata,
-        rhythmMetadata: RhythmMetadata
+        rhythmMetadata: RhythmMetadata,
+        keyAssignments?: Map<number, string>
     ): ChartedBeatMap {
-        // Build key assignments from variant beats
-        const keyAssignments = new Map<number, string>();
-        for (let i = 0; i < variant.beats.length; i++) {
-            // Key assignments come from button mapping results
-            // For now, we'll use the button metadata keysUsed
-            if (buttonMetadata.keysUsed.length > 0) {
-                keyAssignments.set(i, buttonMetadata.keysUsed[i % buttonMetadata.keysUsed.length]);
+        // Use provided key assignments, or fall back to cycling keysUsed
+        const finalKeyAssignments = keyAssignments ?? new Map<number, string>();
+        if (finalKeyAssignments.size === 0 && buttonMetadata.keysUsed.length > 0) {
+            for (let i = 0; i < variant.beats.length; i++) {
+                finalKeyAssignments.set(i, buttonMetadata.keysUsed[i % buttonMetadata.keysUsed.length]);
             }
         }
 
