@@ -4344,8 +4344,8 @@ The `pitchInfluenceWeight` parameter controls the balance between pitch-based an
 
 When pitch probability is low:
 1. The beat is marked for pattern-based replacement
-2. Pattern filling uses nearby button assignments
-3. Result is a smooth blend of melody and rhythm patterns
+2. Consecutive pattern beats are grouped into **runs**, each filled end-to-end with full multi-beat patterns (e.g., a 4-beat roll places all 4 keys across consecutive beats)
+3. Result is a smooth blend of melody and rhythm patterns, with pattern IDs shared across consecutive beats in the same placement
 
 ### Difficulty-Based Variations
 

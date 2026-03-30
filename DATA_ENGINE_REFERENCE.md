@@ -3127,6 +3127,7 @@ new ButtonMapper(config: Partial<ButtonMappingConfig>)
 | `directionStats` | object | Direction statistics (if pitch analysis provided) |
 | `intervalStats` | object | Interval statistics (if pitch analysis provided) |
 | `bandStats` | object | Band statistics (if pitch analysis provided) |
+| `patternPlacements` | object[] | Optional. Array of `{ patternId, startIndex, length }` groups for UI visualization of full pattern sequences |
 
 ### Button Mapping Configuration
 
