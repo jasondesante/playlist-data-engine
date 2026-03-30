@@ -121,6 +121,13 @@ export interface ButtonMappingMetadata {
         mid: number;
         high: number;
     };
+
+    /** Pattern placements — groups of consecutive beats sharing the same patternId */
+    patternPlacements?: {
+        patternId: string;
+        startIndex: number;
+        length: number;
+    }[];
 }
 
 /**
@@ -1552,6 +1559,37 @@ export class ButtonMapper {
             }
         }
 
+        // Build pattern placements by scanning for consecutive same-patternId beats
+        const patternPlacements: ButtonMappingMetadata['patternPlacements'] = [];
+        let currentPatternId: string | undefined;
+        let currentStartIndex = 0;
+
+        for (let i = 0; i < assignments.length; i++) {
+            const pid = assignments[i].patternId;
+            if (pid && pid === currentPatternId) {
+                // Continue current placement
+            } else {
+                // End previous placement if any
+                if (currentPatternId) {
+                    patternPlacements.push({
+                        patternId: currentPatternId,
+                        startIndex: currentStartIndex,
+                        length: i - currentStartIndex,
+                    });
+                }
+                currentPatternId = pid;
+                currentStartIndex = i;
+            }
+        }
+        // Close last placement
+        if (currentPatternId) {
+            patternPlacements.push({
+                patternId: currentPatternId,
+                startIndex: currentStartIndex,
+                length: assignments.length - currentStartIndex,
+            });
+        }
+
         return {
             controllerMode: this.config.controllerMode,
             keysUsed: Array.from(keysUsed),
@@ -1562,6 +1600,7 @@ export class ButtonMapper {
             directionStats,
             intervalStats,
             bandStats,
+            patternPlacements,
         };
     }
 
