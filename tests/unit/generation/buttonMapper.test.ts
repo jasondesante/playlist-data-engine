@@ -1701,3 +1701,202 @@ describe('Backward Compatibility: MappedLevelResult shape', () => {
         expect(result.buttonMetadata.patternsUsed).toEqual([]);
     });
 });
+
+// =============================================================================
+// Tests: mappingSources correctness (Task 2.5)
+// =============================================================================
+
+describe('Backward Compatibility: mappingSources correctness', () => {
+    /**
+     * Create pitch analysis with per-beat directions.
+     * Defaults to ascending + small interval + 0.9 probability.
+     */
+    function createMixedPitchAnalysis(
+        beatCount: number,
+        directionOverrides?: Partial<{ [beatIndex: number]: { direction: PitchDirection; intervalCategory?: IntervalCategory; probability?: number } }>
+    ): PitchAtBeat[] {
+        return Array.from({ length: beatCount }, (_, i) => {
+            const override = directionOverrides?.[i];
+            return {
+                beatIndex: i,
+                timestamp: i * 0.25,
+                band: 'mid' as const,
+                pitch: {
+                    timestamp: i * 0.25,
+                    frequency: 440,
+                    probability: override?.probability ?? 0.9,
+                    isVoiced: true,
+                    midiNote: 69,
+                    noteName: 'A4',
+                },
+                direction: override?.direction ?? 'ascending',
+                intervalFromPrevious: 1,
+                intervalCategory: override?.intervalCategory ?? 'small',
+            };
+        });
+    }
+
+    it('should mark all beats as pitch when pitchInfluenceWeight=1.0 and all beats have pitch', () => {
+        const mapper = new ButtonMapper({
+            controllerMode: 'ddr',
+            difficulty: 'medium',
+            pitchInfluenceWeight: 1.0,
+            consecutiveSameKeyLimit: 100, // high limit to avoid post-processing overrides
+        });
+
+        const rhythm = createMinimalGeneratedRhythm(16);
+        const pitchAnalysis = createMixedPitchAnalysis(16);
+        const result = mapper.map(rhythm, 'medium', pitchAnalysis);
+
+        // Every beat should be classified as pitch (weight 1.0 keeps all pitch)
+        for (let i = 0; i < 16; i++) {
+            expect(result.mappingSources.get(i)).toBe('pitch');
+        }
+    });
+
+    it('should mark all beats as pattern when pitchInfluenceWeight=0.0', () => {
+        const mapper = new ButtonMapper({
+            controllerMode: 'ddr',
+            difficulty: 'medium',
+            pitchInfluenceWeight: 0.0,
+        });
+
+        const rhythm = createMinimalGeneratedRhythm(16);
+        const pitchAnalysis = createMixedPitchAnalysis(16);
+        const result = mapper.map(rhythm, 'medium', pitchAnalysis);
+
+        // Every beat should be classified as pattern (weight 0 replaces all)
+        for (let i = 0; i < 16; i++) {
+            expect(result.mappingSources.get(i)).toBe('pattern');
+        }
+    });
+
+    it('should mark all beats as pattern when no pitch analysis is provided', () => {
+        const mapper = new ButtonMapper({
+            controllerMode: 'ddr',
+            difficulty: 'medium',
+            pitchInfluenceWeight: 0.8,
+        });
+
+        const rhythm = createMinimalGeneratedRhythm(16);
+        const result = mapper.map(rhythm, 'medium');
+
+        // No pitch at all → every beat is pattern
+        for (let i = 0; i < 16; i++) {
+            expect(result.mappingSources.get(i)).toBe('pattern');
+        }
+    });
+
+    it('should mark direction="none" beats as pattern regardless of pitchInfluenceWeight', () => {
+        const mapper = new ButtonMapper({
+            controllerMode: 'ddr',
+            difficulty: 'medium',
+            pitchInfluenceWeight: 1.0,
+        });
+
+        const rhythm = createMinimalGeneratedRhythm(8);
+        // Beats 0,1 are ascending, beats 2,3 are 'none', beats 4,5 ascending, beats 6,7 'none'
+        const pitchAnalysis = createMixedPitchAnalysis(8, {
+            2: { direction: 'none' },
+            3: { direction: 'none' },
+            6: { direction: 'none' },
+            7: { direction: 'none' },
+        });
+        const result = mapper.map(rhythm, 'medium', pitchAnalysis);
+
+        // Beats with usable pitch direction → pitch
+        expect(result.mappingSources.get(0)).toBe('pitch');
+        expect(result.mappingSources.get(1)).toBe('pitch');
+        // Beats with direction='none' → pattern (no usable transition)
+        expect(result.mappingSources.get(2)).toBe('pattern');
+        expect(result.mappingSources.get(3)).toBe('pattern');
+        // More usable pitch → pitch
+        expect(result.mappingSources.get(4)).toBe('pitch');
+        expect(result.mappingSources.get(5)).toBe('pitch');
+        // More 'none' → pattern
+        expect(result.mappingSources.get(6)).toBe('pattern');
+        expect(result.mappingSources.get(7)).toBe('pattern');
+    });
+
+    it('should have consistent mappingPatternIds: pattern beats get IDs, pitch beats get undefined', () => {
+        const mapper = new ButtonMapper({
+            controllerMode: 'ddr',
+            difficulty: 'medium',
+            pitchInfluenceWeight: 0.5,
+        });
+
+        const rhythm = createMinimalGeneratedRhythm(16);
+        const pitchAnalysis = createMixedPitchAnalysis(16);
+        const result = mapper.map(rhythm, 'medium', pitchAnalysis);
+
+        for (let i = 0; i < 16; i++) {
+            const source = result.mappingSources.get(i)!;
+            const patternId = result.mappingPatternIds.get(i);
+
+            if (source === 'pattern') {
+                expect(patternId).toBeDefined();
+                expect(typeof patternId).toBe('string');
+                expect(patternId!.length).toBeGreaterThan(0);
+            } else {
+                // Pitch-sourced beats should not have a pattern ID
+                expect(patternId).toBeUndefined();
+            }
+        }
+    });
+
+    it('should produce correct pitch/pattern ratio with pitchInfluenceWeight=0.5', () => {
+        const mapper = new ButtonMapper({
+            controllerMode: 'ddr',
+            difficulty: 'medium',
+            pitchInfluenceWeight: 0.5,
+            consecutiveSameKeyLimit: 100, // avoid post-processing overrides affecting the ratio
+        });
+
+        const rhythm = createMinimalGeneratedRhythm(16);
+        const pitchAnalysis = createMixedPitchAnalysis(16);
+        const result = mapper.map(rhythm, 'medium', pitchAnalysis);
+
+        const pitchCount = Array.from(result.mappingSources.values()).filter(s => s === 'pitch').length;
+        const patternCount = Array.from(result.mappingSources.values()).filter(s => s === 'pattern').length;
+
+        // With weight 0.5, approximately half should be pitch
+        // Exact count: floor(16 * 0.5) = 8 replaced → 8 pitch, 8 pattern
+        expect(pitchCount).toBe(8);
+        expect(patternCount).toBe(8);
+    });
+
+    it('should match buttonMetadata counts with mappingSources values', () => {
+        const mapper = new ButtonMapper({
+            controllerMode: 'ddr',
+            difficulty: 'medium',
+            pitchInfluenceWeight: 0.7,
+        });
+
+        const rhythm = createMinimalGeneratedRhythm(16);
+        const pitchAnalysis = createMixedPitchAnalysis(16);
+        const result = mapper.map(rhythm, 'medium', pitchAnalysis);
+
+        const pitchFromMap = Array.from(result.mappingSources.values()).filter(s => s === 'pitch').length;
+        const patternFromMap = Array.from(result.mappingSources.values()).filter(s => s === 'pattern').length;
+
+        expect(result.buttonMetadata.pitchInfluencedBeats).toBe(pitchFromMap);
+        expect(result.buttonMetadata.patternInfluencedBeats).toBe(patternFromMap);
+    });
+
+    it('should correctly classify Guitar Hero mapping sources', () => {
+        const mapper = new ButtonMapper({
+            controllerMode: 'guitar_hero',
+            difficulty: 'medium',
+            pitchInfluenceWeight: 1.0,
+        });
+
+        const rhythm = createMinimalGeneratedRhythm(8);
+        const pitchAnalysis = createMixedPitchAnalysis(8);
+        const result = mapper.map(rhythm, 'medium', pitchAnalysis);
+
+        // All beats pitch with weight 1.0
+        for (let i = 0; i < 8; i++) {
+            expect(result.mappingSources.get(i)).toBe('pitch');
+        }
+    });
+});
