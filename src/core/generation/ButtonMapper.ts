@@ -143,6 +143,41 @@ interface PatternHoleResult<T extends DDRButton | GuitarHeroButton> {
     patternIds: (string | undefined)[];
 }
 
+/**
+ * A consecutive run of beats that need pattern filling.
+ *
+ * Identified by scanning pitch classification results: consecutive beats
+ * with no pitch-derived key form a single run. Each run records the
+ * surrounding context keys for smooth boundary transitions.
+ */
+interface PatternRun<T extends DDRButton | GuitarHeroButton> {
+    /** Start index in the beat array */
+    startIndex: number;
+    /** End index (exclusive) in the beat array */
+    endIndex: number;
+    /** Number of beats in this run */
+    length: number;
+    /** Key from the pitch beat immediately before this run (null if run starts at beat 0) */
+    previousKey: T | null;
+    /** Key from the pitch beat immediately after this run (null if run ends at last beat) */
+    nextKey: T | null;
+}
+
+/**
+ * Result of placing a pattern within a run.
+ *
+ * Each placement represents a single pattern that was selected and
+ * written into a contiguous range of beats within a pattern run.
+ */
+interface PatternPlacement<T extends DDRButton | GuitarHeroButton> {
+    /** The pattern that was placed */
+    pattern: ButtonPattern<T>;
+    /** Beat index where this pattern starts */
+    startIndex: number;
+    /** Number of beats actually filled by this pattern */
+    filledLength: number;
+}
+
 // ============================================================================
 // DDR Transition Tables
 // ============================================================================
