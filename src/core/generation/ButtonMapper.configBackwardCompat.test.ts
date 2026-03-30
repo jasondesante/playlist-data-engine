@@ -401,6 +401,107 @@ describe('ButtonMappingConfig backward compatibility', () => {
             expect(() => new ButtonMapper({ pitchInfluenceWeight: -0.01 })).toThrow();
             expect(() => new ButtonMapper({ pitchInfluenceWeight: 1.01 })).toThrow();
         });
+
+        it('should produce mostly pitch-derived output when pitchInfluenceWeight is 1.0', () => {
+            // Create 16 beats with mixed pitch availability:
+            // - 12 beats have good pitch data (direction up/down, prob 0.8)
+            // - 4 beats have direction='none' (pitch available but unmappable)
+            const mixedBeats = Array.from({ length: 16 }, (_, i) => ({
+                beatIndex: i,
+                timestamp: i * 0.5,
+            }));
+
+            const mixedPitch: PitchAtBeat[] = mixedBeats.map((b, i) => {
+                // Beats 4, 7, 9, 13: direction='none' (has pitch but can't map to a button)
+                if (i === 4 || i === 7 || i === 9 || i === 13) {
+                    return createMockPitchAtBeat(b.beatIndex, b.timestamp, 'mid', {
+                        frequency: 440,
+                        probability: 0.7,
+                        direction: 'none',
+                    });
+                }
+                // All other beats: good pitch data
+                return createMockPitchAtBeat(b.beatIndex, b.timestamp, 'mid', {
+                    frequency: 220 + i * 40,
+                    probability: 0.8,
+                    direction: i % 2 === 0 ? 'up' : 'down',
+                    intervalCategory: 'small',
+                });
+            });
+
+            const mapper = new ButtonMapper({
+                pitchInfluenceWeight: 1.0,
+                controllerMode: 'ddr',
+            });
+
+            const rhythm = createMockGeneratedRhythm(mixedBeats);
+            const result = mapper.map(rhythm, 'medium', mixedPitch);
+
+            expectValidResultShape(result, 16);
+
+            // All 12 beats with mappable pitch should be pitch-derived
+            expect(result.buttonMetadata.pitchInfluencedBeats).toBe(12);
+
+            // Beats with direction='none' should fall to pattern
+            expect(result.buttonMetadata.patternInfluencedBeats).toBe(4);
+
+            // Verify the pattern beats are exactly the ones we expect
+            for (const [idx, source] of result.mappingSources) {
+                if (idx === 4 || idx === 7 || idx === 9 || idx === 13) {
+                    expect(source).toBe('pattern');
+                } else {
+                    expect(source).toBe('pitch');
+                }
+            }
+        });
+
+        it('should produce pattern-only output when pitchInfluenceWeight is 0.0 even with full pitch data', () => {
+            // All 16 beats have good pitch data — weight=0.0 should override all of them
+            const allPitchBeats = Array.from({ length: 16 }, (_, i) => ({
+                beatIndex: i,
+                timestamp: i * 0.5,
+            }));
+
+            const allPitch: PitchAtBeat[] = allPitchBeats.map((b, i) =>
+                createMockPitchAtBeat(b.beatIndex, b.timestamp, 'mid', {
+                    frequency: 220 + i * 40,
+                    probability: 0.9,
+                    direction: i % 2 === 0 ? 'up' : 'down',
+                    intervalCategory: 'small',
+                })
+            );
+
+            const mapper = new ButtonMapper({
+                pitchInfluenceWeight: 0.0,
+                controllerMode: 'ddr',
+            });
+
+            const rhythm = createMockGeneratedRhythm(allPitchBeats);
+            const result = mapper.map(rhythm, 'medium', allPitch);
+
+            expectValidResultShape(result, 16);
+
+            // ALL beats should be pattern-derived despite having pitch data
+            expect(result.buttonMetadata.patternInfluencedBeats).toBe(16);
+            expect(result.buttonMetadata.pitchInfluencedBeats).toBe(0);
+
+            // Every beat should have mappingSource='pattern'
+            for (const [, source] of result.mappingSources) {
+                expect(source).toBe('pattern');
+            }
+
+            // Every beat should have a patternId assigned
+            for (const [idx, patternId] of result.mappingPatternIds) {
+                expect(patternId).toBeDefined();
+                expect(patternId!.length).toBeGreaterThan(0);
+            }
+
+            // All keys should be valid DDR buttons
+            const validDDR: DDRButton[] = ['up', 'down', 'left', 'right'];
+            for (const [, key] of result.keyAssignments) {
+                expect(validDDR).toContain(key as DDRButton);
+            }
+        });
     });
 
     // -------------------------------------------------------------------------
