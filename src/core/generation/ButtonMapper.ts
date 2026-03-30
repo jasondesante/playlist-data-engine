@@ -432,6 +432,52 @@ function classifyBeats<T extends DDRButton | GuitarHeroButton>(
 }
 
 // ============================================================================
+// Run Detection
+// ============================================================================
+
+/**
+ * Scan pitch classification results and group consecutive null beats into runs.
+ *
+ * A "run" is a maximal sequence of consecutive beats that all need pattern filling
+ * (i.e., their pitchKey is null). Each run records the surrounding context keys
+ * so that pattern selection can produce smooth boundary transitions.
+ *
+ * @param pitchKeys - Array from classifyBeats; null = needs pattern, non-null = has pitch key
+ * @returns Array of PatternRun objects (empty if all beats have pitch keys)
+ */
+export function identifyPatternRuns<T extends DDRButton | GuitarHeroButton>(
+    pitchKeys: (T | null)[]
+): PatternRun<T>[] {
+    const runs: PatternRun<T>[] = [];
+    let runStart = -1;
+
+    for (let i = 0; i <= pitchKeys.length; i++) {
+        const isNull = i < pitchKeys.length && pitchKeys[i] === null;
+
+        if (isNull && runStart === -1) {
+            // Start a new run
+            runStart = i;
+        } else if (!isNull && runStart !== -1) {
+            // End the current run at the non-null position
+            const previousKey = runStart > 0 ? pitchKeys[runStart - 1] : null;
+            const nextKey = i < pitchKeys.length ? pitchKeys[i] : null;
+
+            runs.push({
+                startIndex: runStart,
+                endIndex: i,
+                length: i - runStart,
+                previousKey,
+                nextKey,
+            });
+
+            runStart = -1;
+        }
+    }
+
+    return runs;
+}
+
+// ============================================================================
 // Helper Functions
 // ============================================================================
 
