@@ -41,7 +41,7 @@ import type { ButtonMappingConfig, ControllerMode } from '../types/ButtonMapping
 import { mergeButtonMappingConfig } from '../types/ButtonMapping.js';
 import type { DifficultyPreset } from '../types/BeatMap.js';
 import type { UnifiedBeatMap } from '../types/BeatMap.js';
-import type { ChartedBeatMap, ChartMetadata, PitchMetadata, RhythmMetadataSummary } from '../types/ChartedBeatMap.js';
+import type { ChartedBeatMap } from '../types/ChartedBeatMap.js';
 import type { DifficultyVariant, DifficultyLevel } from '../analysis/beat/DifficultyVariantGenerator.js';
 
 // ============================================================================
@@ -104,11 +104,7 @@ export interface LevelMetadata {
     rhythmMetadata: RhythmMetadata
 
     /** Button mapping metadata */
-    buttonMetadata: {
-        keysUsed: string[]
-        pitchInfluencedBeats: number
-        patternsUsed: string[]
-    }
+    buttonMetadata: ButtonMappingMetadata
 
     /** Pitch analysis metadata (if pitch detection was used) */
     pitchMetadata: {
@@ -817,7 +813,9 @@ export class LevelGenerator {
             unifiedBeatMap,
             mappedResult.buttonMetadata,
             mappedResult.rhythmMetadata,
-            mappedResult.keyAssignments
+            mappedResult.keyAssignments,
+            mappedResult.mappingSources,
+            mappedResult.mappingPatternIds
         );
     }
 
@@ -834,11 +832,7 @@ export class LevelGenerator {
             difficulty: this.options.difficulty,
             controllerMode: this.options.controllerMode,
             rhythmMetadata: mappedResult.rhythmMetadata,
-            buttonMetadata: {
-                keysUsed: mappedResult.buttonMetadata.keysUsed,
-                pitchInfluencedBeats: mappedResult.buttonMetadata.pitchInfluencedBeats,
-                patternsUsed: mappedResult.buttonMetadata.patternsUsed,
-            },
+            buttonMetadata: mappedResult.buttonMetadata,
             pitchMetadata: pitchAnalysis ? {
                 melodyRange: pitchAnalysis.melodyContour.range.minNote !== 'N/A' ? {
                     min: pitchAnalysis.melodyContour.range.minNote,

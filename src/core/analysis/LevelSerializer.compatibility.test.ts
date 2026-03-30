@@ -371,9 +371,12 @@ function createMockLevelMetadata(chart: ChartedBeatMap): LevelMetadata {
             totalBeats: chart.beats.length,
         },
         buttonMetadata: {
+            controllerMode: 'ddr',
             keysUsed: ['up', 'down', 'left', 'right'],
             pitchInfluencedBeats: 20,
+            patternInfluencedBeats: 20,
             patternsUsed: ['alternating', 'roll'],
+            buttonDistribution: new Map<string, number>(),
         },
         pitchMetadata: {
             melodyRange: { min: 'C4', max: 'G5' },
@@ -453,9 +456,12 @@ function createMockGeneratedLevelWithoutPitch(): GeneratedLevel {
             totalBeats: chart.beats.length,
         },
         buttonMetadata: {
+            controllerMode: 'ddr',
             keysUsed: ['up', 'down', 'left', 'right'],
             pitchInfluencedBeats: 0, // No pitch-influenced beats when pitchInfluenceWeight is 0
+            patternInfluencedBeats: 40,
             patternsUsed: ['alternating', 'roll', 'stream'],
+            buttonDistribution: new Map<string, number>(),
         },
         pitchMetadata: null, // No pitch metadata when pitchInfluenceWeight is 0
         chartMetadata: {

@@ -61,13 +61,17 @@ export class BeatConverter {
      * @param unifiedBeatMap - The source UnifiedBeatMap for measure/beat info
      * @param keyAssignments - Map of beat index to required key
      * @param partialMetadata - Partial chart metadata
+     * @param mappingSources - Optional per-beat mapping source (beat index → 'pitch' | 'pattern')
+     * @param mappingPatternIds - Optional per-beat pattern IDs (beat index → pattern ID)
      * @returns A ChartedBeatMap ready for BeatStream
      */
     convertToChartedBeatMap(
         variant: DifficultyVariant,
         unifiedBeatMap: UnifiedBeatMap,
         keyAssignments: Map<number, string>,
-        partialMetadata: Partial<ChartMetadata>
+        partialMetadata: Partial<ChartMetadata>,
+        mappingSources?: Map<number, 'pitch' | 'pattern'>,
+        mappingPatternIds?: Map<number, string | undefined>
     ): ChartedBeatMap {
         // Convert all beats
         const beats: ChartedBeat[] = [];
@@ -79,7 +83,9 @@ export class BeatConverter {
                 variantBeat,
                 unifiedBeatMap,
                 keyAssignments.get(i),
-                i
+                i,
+                mappingSources?.get(i),
+                mappingPatternIds?.get(i)
             );
 
             beats.push(chartedBeat);
@@ -173,13 +179,17 @@ export class BeatConverter {
      * @param unifiedBeatMap - Source for measure/beat info
      * @param key - The required key (if assigned)
      * @param beatIndex - Index of this beat in the variant
+     * @param mappingSource - Whether this beat's key came from pitch or pattern
+     * @param patternId - ID of the pattern used (if mappingSource is 'pattern')
      * @returns A ChartedBeat
      */
     private convertBeat(
         beat: VariantBeat,
         unifiedBeatMap: UnifiedBeatMap,
         key: string | undefined,
-        beatIndex: number
+        beatIndex: number,
+        mappingSource?: 'pitch' | 'pattern',
+        patternId?: string
     ): ChartedBeat {
         // Get the parent quarter note info
         const quarterNoteIndex = beat.beatIndex;
@@ -218,6 +228,8 @@ export class BeatConverter {
             subdivisionType,
             sourceBand: beat.sourceBand,
             quantizationError: beat.quantizationError,
+            mappingSource,
+            patternId,
         };
     }
 
@@ -372,6 +384,9 @@ export class BeatConverter {
      * @param unifiedBeatMap - The unified beat map
      * @param buttonMetadata - Button mapping metadata
      * @param rhythmMetadata - Rhythm generation metadata
+     * @param keyAssignments - Per-beat key assignments (beat index → key)
+     * @param mappingSources - Per-beat mapping source (beat index → 'pitch' | 'pattern')
+     * @param mappingPatternIds - Per-beat pattern IDs (beat index → pattern ID)
      * @returns A ChartedBeatMap ready for BeatStream
      */
     static fromMappedResult(
@@ -379,7 +394,9 @@ export class BeatConverter {
         unifiedBeatMap: UnifiedBeatMap,
         buttonMetadata: ButtonMappingMetadata,
         rhythmMetadata: RhythmMetadata,
-        keyAssignments?: Map<number, string>
+        keyAssignments?: Map<number, string>,
+        mappingSources?: Map<number, 'pitch' | 'pattern'>,
+        mappingPatternIds?: Map<number, string | undefined>
     ): ChartedBeatMap {
         // Use provided key assignments, or fall back to cycling keysUsed
         const finalKeyAssignments = keyAssignments ?? new Map<number, string>();
@@ -420,8 +437,10 @@ export class BeatConverter {
         return converter.convertToChartedBeatMap(
             variant,
             unifiedBeatMap,
-            keyAssignments,
-            partialMetadata
+            finalKeyAssignments,
+            partialMetadata,
+            mappingSources,
+            mappingPatternIds
         );
     }
 }

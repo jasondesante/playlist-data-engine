@@ -922,11 +922,17 @@ export class LevelSerializer {
             controllerMode,
             rhythmMetadata: this.buildFullRhythmMetadata(data, this.parseDifficultyLevel(genMeta?.difficulty)),
             buttonMetadata: {
+                controllerMode,
                 keysUsed: data.chart?.usedKeys ?? [],
                 pitchInfluencedBeats: genMeta?.pitchInfluenceWeight && genMeta.pitchInfluenceWeight > 0
                     ? chart.beats.filter(b => b.requiredKey).length
                     : 0,
+                patternInfluencedBeats: chart.beats.filter(b => b.requiredKey).length -
+                    (genMeta?.pitchInfluenceWeight && genMeta.pitchInfluenceWeight > 0
+                        ? chart.beats.filter(b => b.requiredKey).length
+                        : 0),
                 patternsUsed: genMeta?.patternsUsed ?? [],
+                buttonDistribution: new Map<string, number>(),
             },
             pitchMetadata: genMeta?.directionStats || genMeta?.intervalStats
                 ? {

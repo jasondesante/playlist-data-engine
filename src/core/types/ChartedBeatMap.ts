@@ -48,6 +48,12 @@ export interface ChartedBeat extends Beat {
 
     /** Quantization error in milliseconds (how far from original transient) */
     quantizationError?: number;
+
+    /** Whether this beat's button was derived from pitch detection or pattern library */
+    mappingSource?: 'pitch' | 'pattern';
+
+    /** ID of the pattern used for this beat (if mappingSource is 'pattern') */
+    patternId?: string;
 }
 
 /**

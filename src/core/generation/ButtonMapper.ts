@@ -68,6 +68,12 @@ export interface MappedLevelResult {
 
     /** Per-beat key assignments (beat index → button key) from the ButtonMapper */
     keyAssignments: Map<number, string>;
+
+    /** Per-beat mapping source (beat index → 'pitch' | 'pattern') */
+    mappingSources: Map<number, 'pitch' | 'pattern'>;
+
+    /** Per-beat pattern IDs (beat index → pattern ID, undefined for pitch-sourced beats) */
+    mappingPatternIds: Map<number, string | undefined>;
 }
 
 /**
@@ -127,6 +133,14 @@ interface ButtonAssignment {
     source: 'pitch' | 'pattern';
     patternId?: string;
     probability?: number;
+}
+
+/**
+ * Result from fillPatternHoles that includes per-beat pattern IDs.
+ */
+interface PatternHoleResult<T extends DDRButton | GuitarHeroButton> {
+    keys: T[];
+    patternIds: (string | undefined)[];
 }
 
 // ============================================================================
@@ -508,7 +522,7 @@ function interpolateButton<T extends DDRButton | GuitarHeroButton>(
  * @param patternLibrary - Available patterns
  * @param previousKey - Starting key for context
  * @param maxDifficulty - Maximum pattern difficulty to use
- * @returns Final button assignments
+ * @returns Object with final keys and per-beat pattern IDs
  */
 function fillPatternHoles<T extends DDRButton | GuitarHeroButton>(
     beats: { timestamp: number }[],
@@ -516,35 +530,36 @@ function fillPatternHoles<T extends DDRButton | GuitarHeroButton>(
     patternLibrary: ButtonPattern<T>[],
     previousKey: T | null,
     maxDifficulty: number
-): T[] {
+): PatternHoleResult<T> {
     // Copy pitch keys as starting point
-    const result: (T | null)[] = [...pitchKeys];
+    const keys: (T | null)[] = [...pitchKeys];
+    const patternIds: (string | undefined)[] = new Array(beats.length).fill(undefined);
 
     // First pass: identify beats that need patterns
     const holesNeedingPatterns: number[] = [];
     for (let i = 0; i < beats.length; i++) {
-        if (result[i] === null) {
+        if (keys[i] === null) {
             holesNeedingPatterns.push(i);
         }
     }
 
     // If no holes, return as-is
     if (holesNeedingPatterns.length === 0) {
-        return result as T[];
+        return { keys: keys as T[], patternIds };
     }
 
     // Second pass: fill each hole with compatible pattern or interpolation
     let currentPreviousKey = previousKey;
 
     for (let i = 0; i < beats.length; i++) {
-        if (result[i] !== null) {
+        if (keys[i] !== null) {
             // This beat has a pitch key - update previous and continue
-            currentPreviousKey = result[i];
+            currentPreviousKey = keys[i];
             continue;
         }
 
         // Find the next pitch key for context
-        const nextPitchKey = findNextPitchKey(result, i);
+        const nextPitchKey = findNextPitchKey(keys, i);
 
         // Filter patterns by difficulty and compatibility
         const eligiblePatterns = patternLibrary.filter(p => p.difficulty <= maxDifficulty);
@@ -555,17 +570,18 @@ function fillPatternHoles<T extends DDRButton | GuitarHeroButton>(
         if (compatiblePatterns.length > 0) {
             // Randomly select a compatible pattern
             const pattern = compatiblePatterns[Math.floor(Math.random() * compatiblePatterns.length)];
-            result[i] = pattern.keys[0];
+            keys[i] = pattern.keys[0];
+            patternIds[i] = pattern.id;
         } else {
             // No compatible pattern - interpolate
-            result[i] = interpolateButton(currentPreviousKey, nextPitchKey);
+            keys[i] = interpolateButton(currentPreviousKey, nextPitchKey);
         }
 
         // Update previous key for next iteration
-        currentPreviousKey = result[i];
+        currentPreviousKey = keys[i];
     }
 
-    return result as T[];
+    return { keys: keys as T[], patternIds };
 }
 
 // ============================================================================
@@ -634,8 +650,12 @@ export class ButtonMapper {
 
         // Build per-beat key assignments map
         const keyAssignments = new Map<number, string>();
+        const mappingSources = new Map<number, 'pitch' | 'pattern'>();
+        const mappingPatternIds = new Map<number, string | undefined>();
         for (const assignment of assignments) {
             keyAssignments.set(assignment.beatIndex, String(assignment.key));
+            mappingSources.set(assignment.beatIndex, assignment.source);
+            mappingPatternIds.set(assignment.beatIndex, assignment.patternId);
         }
 
         return {
@@ -643,6 +663,8 @@ export class ButtonMapper {
             rhythmMetadata: generatedRhythm.metadata,
             buttonMetadata,
             keyAssignments,
+            mappingSources,
+            mappingPatternIds,
         };
     }
 
@@ -698,6 +720,7 @@ export class ButtonMapper {
         // First pass: generate pitch-derived and pattern-derived buttons
         const pitchKeys: (DDRButton | GuitarHeroButton | null)[] = [];
         const patternKeys: (DDRButton | GuitarHeroButton)[] = [];
+        const patternIds: (string | undefined)[] = [];
         const probabilities: number[] = [];
 
         let previousKey: DDRButton | GuitarHeroButton | null = null;
@@ -728,12 +751,14 @@ export class ButtonMapper {
             probabilities.push(probability);
 
             // Generate pattern-derived button (always, for fallback)
-            const patternKey: DDRButton | GuitarHeroButton = this.config.controllerMode === 'ddr'
-                ? this.selectPatternButton(previousKey as DDRButton | null, DDR_PATTERN_LIBRARY.patterns, maxPatternDifficulty)
-                : this.selectPatternButton(previousKey as GuitarHeroButton | null, GUITAR_HERO_PATTERN_LIBRARY.patterns, maxPatternDifficulty);
-            patternKeys.push(patternKey);
+            const patternResult: { key: DDRButton | GuitarHeroButton; patternId: string | undefined } =
+                this.config.controllerMode === 'ddr'
+                    ? this.selectPatternButton(previousKey as DDRButton | null, DDR_PATTERN_LIBRARY.patterns, maxPatternDifficulty)
+                    : this.selectPatternButton(previousKey as GuitarHeroButton | null, GUITAR_HERO_PATTERN_LIBRARY.patterns, maxPatternDifficulty);
+            patternKeys.push(patternResult.key);
+            patternIds.push(patternResult.patternId);
 
-            previousKey = pitchKey ?? patternKey;
+            previousKey = pitchKey ?? patternResult.key;
         }
 
         // Second pass: blend pitch and pattern based on probability and weight
@@ -768,23 +793,28 @@ export class ButtonMapper {
             return key;
         });
 
-        // Apply sophisticated pattern filling
-        const finalKeys = fillPatternHoles(
+        // Apply sophisticated pattern filling (now returns pattern IDs too)
+        const fillResult = fillPatternHoles(
             beats.map(b => ({ timestamp: b.timestamp })),
             keysNeedingSmartFill,
             patternLibrary,
             null, // No previous key context at start
             maxPatternDifficulty
         );
+        const finalKeys = fillResult.keys;
+        const fillPatternIds = fillResult.patternIds;
 
-        // Build final assignments
+        // Build final assignments with pattern IDs
         for (let i = 0; i < beats.length; i++) {
             const isPitchSource = pitchKeys[i] !== null && pitchKeys[i] === finalKeys[i];
+            // Determine patternId: from smart fill if available, otherwise from initial pattern selection
+            const pid = fillPatternIds[i] ?? patternIds[i];
             assignments.push({
                 beatIndex: i,
                 timestamp: beats[i].timestamp,
                 key: finalKeys[i],
                 source: isPitchSource ? 'pitch' : 'pattern',
+                patternId: isPitchSource ? undefined : pid,
                 probability: probabilities[i],
             });
         }
@@ -855,9 +885,9 @@ export class ButtonMapper {
         previousKey: T | null,
         library: ButtonPattern<T>[],
         maxDifficulty: number
-    ): T {
+    ): { key: T; patternId: string | undefined } {
         const pattern = selectPatternFromLibrary(library, previousKey, maxDifficulty);
-        return pattern.keys[0];
+        return { key: pattern.keys[0], patternId: pattern.id };
     }
 
     // ============================================================================
@@ -957,9 +987,6 @@ export class ButtonMapper {
         const { positions } = checkConsecutiveLimit(keys, limit);
 
         for (const pos of positions) {
-            // Get adjacent keys for variation
-            const prevKey = pos > 0 ? assignments[pos - 1].key : null;
-
             // Select a button that provides variation
             const newKey = getVariationButton(
                 assignments[pos].key,
@@ -970,6 +997,7 @@ export class ButtonMapper {
             if (newKey !== assignments[pos].key) {
                 assignments[pos].key = newKey;
                 assignments[pos].source = 'pattern';
+                assignments[pos].patternId = 'consecutive_limit_fix';
             }
         }
     }
