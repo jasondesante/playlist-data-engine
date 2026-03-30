@@ -143,14 +143,6 @@ interface ButtonAssignment {
 }
 
 /**
- * Result from fillPatternHoles that includes per-beat pattern IDs.
- */
-interface PatternHoleResult<T extends DDRButton | GuitarHeroButton> {
-    keys: T[];
-    patternIds: (string | undefined)[];
-}
-
-/**
  * A consecutive run of beats that need pattern filling.
  *
  * Identified by scanning pitch classification results: consecutive beats
@@ -846,47 +838,31 @@ function checkConsecutiveLimit(
 }
 
 /**
- * Select a pattern from the library compatible with the previous key
- */
-function selectPatternFromLibrary<T extends DDRButton | GuitarHeroButton>(
-    patterns: ButtonPattern<T>[],
-    previousKey: T | null,
-    maxDifficulty: number
-): ButtonPattern<T> {
-    // Filter by difficulty
-    const eligiblePatterns = patterns.filter(p => p.difficulty <= maxDifficulty);
-
-    if (eligiblePatterns.length === 0) {
-        // Fallback: use first pattern
-        return patterns[0];
-    }
-
-    // Try to find a pattern that starts with a different key
-    if (previousKey !== null) {
-        const differentKeyPatterns = eligiblePatterns.filter(p => p.keys[0] !== previousKey);
-        if (differentKeyPatterns.length > 0) {
-            return differentKeyPatterns[Math.floor(Math.random() * differentKeyPatterns.length)];
-        }
-    }
-
-    // Random selection
-    return eligiblePatterns[Math.floor(Math.random() * eligiblePatterns.length)];
-}
-
-/**
- * Get a pattern button that provides variation from the current key
+ * Get a pattern button that provides variation from the current key.
+ *
+ * Selects a pattern from the library that starts with a different key
+ * than the current key, filtering by difficulty. Falls back to any
+ * eligible pattern if no different-key pattern is available.
  */
 function getVariationButton<T extends DDRButton | GuitarHeroButton>(
     currentKey: T,
     library: ButtonPattern<T>[],
     maxDifficulty: number
 ): T {
-    const pattern = selectPatternFromLibrary(library, currentKey, maxDifficulty);
-    return pattern.keys[0];
+    const eligiblePatterns = library.filter(p => p.difficulty <= maxDifficulty);
+
+    if (eligiblePatterns.length === 0) {
+        return currentKey;
+    }
+
+    // Try to find a pattern that starts with a different key
+    const differentKeyPatterns = eligiblePatterns.filter(p => p.keys[0] !== currentKey);
+    const pool = differentKeyPatterns.length > 0 ? differentKeyPatterns : eligiblePatterns;
+    return pool[Math.floor(Math.random() * pool.length)].keys[0];
 }
 
 // ============================================================================
-// Pattern Hole Filling Functions (Phase 2.4.3)
+// Transition and Interpolation Utilities
 // ============================================================================
 
 /**
@@ -916,63 +892,6 @@ function findNextPitchKey<T extends DDRButton | GuitarHeroButton>(
         }
     }
     return null;
-}
-
-/**
- * Check if a pattern is compatible with previous and next keys
- *
- * A pattern is compatible if:
- * - Its first key flows well from the previous key (not the same, or adjacent)
- * - Its first key allows smooth transition to the next pitch key
- *
- * @param pattern - The pattern to check
- * @param previousKey - The previous key (may be null)
- * @param nextPitchKey - The next pitch-derived key (may be null)
- * @returns True if the pattern is compatible
- */
-function isPatternCompatible<T extends DDRButton | GuitarHeroButton>(
-    pattern: ButtonPattern<T>,
-    previousKey: T | null,
-    nextPitchKey: T | null
-): boolean {
-    const firstKey = pattern.keys[0];
-
-    // If no previous key, any pattern starting with a different key than next is OK
-    if (previousKey === null) {
-        if (nextPitchKey === null) return true;
-        return firstKey !== nextPitchKey;
-    }
-
-    // Avoid patterns that start with the same key as previous (no repetition)
-    if (firstKey === previousKey) {
-        return false;
-    }
-
-    // If there's a next pitch key, prefer patterns that transition toward it
-    if (nextPitchKey !== null) {
-        // For DDR, check if first key is adjacent or moving toward next
-        if (typeof firstKey === 'string' && typeof nextPitchKey === 'string') {
-            const adjacent = DDR_ADJACENT[firstKey as DDRButton];
-            // Good if first key is adjacent to next pitch key, or same (will be handled by pitch mapping)
-            if (adjacent?.includes(nextPitchKey as DDRButton) || firstKey === nextPitchKey) {
-                return true;
-            }
-        }
-
-        // For Guitar Hero, check if first key is between previous and next
-        if (typeof firstKey === 'number' && typeof previousKey === 'number' && typeof nextPitchKey === 'number') {
-            // Good if first key is between previous and next, or moving toward next
-            const movingTowardNext =
-                (previousKey < nextPitchKey && firstKey >= previousKey && firstKey <= nextPitchKey) ||
-                (previousKey > nextPitchKey && firstKey <= previousKey && firstKey >= nextPitchKey);
-            if (movingTowardNext) {
-                return true;
-            }
-        }
-    }
-
-    // Default: pattern is compatible if it doesn't repeat the previous key
-    return true;
 }
 
 /**
@@ -1056,81 +975,6 @@ function interpolateButton<T extends DDRButton | GuitarHeroButton>(
 
     // Fallback
     return previousKey;
-}
-
-/**
- * Fill pattern holes with compatible patterns or interpolation
- *
- * This function implements the sophisticated pattern filling logic from Phase 2.4.3.
- * It looks at beats that need patterns (null pitch keys) and fills them with:
- * 1. Patterns compatible with both previous and next pitch keys
- * 2. Interpolated buttons if no compatible pattern exists
- *
- * @param beats - Beat information (for context)
- * @param pitchKeys - Pitch-derived keys (null = needs pattern)
- * @param patternLibrary - Available patterns
- * @param previousKey - Starting key for context
- * @param maxDifficulty - Maximum pattern difficulty to use
- * @returns Object with final keys and per-beat pattern IDs
- */
-function fillPatternHoles<T extends DDRButton | GuitarHeroButton>(
-    beats: { timestamp: number }[],
-    pitchKeys: (T | null)[],
-    patternLibrary: ButtonPattern<T>[],
-    previousKey: T | null,
-    maxDifficulty: number
-): PatternHoleResult<T> {
-    // Copy pitch keys as starting point
-    const keys: (T | null)[] = [...pitchKeys];
-    const patternIds: (string | undefined)[] = new Array(beats.length).fill(undefined);
-
-    // First pass: identify beats that need patterns
-    const holesNeedingPatterns: number[] = [];
-    for (let i = 0; i < beats.length; i++) {
-        if (keys[i] === null) {
-            holesNeedingPatterns.push(i);
-        }
-    }
-
-    // If no holes, return as-is
-    if (holesNeedingPatterns.length === 0) {
-        return { keys: keys as T[], patternIds };
-    }
-
-    // Second pass: fill each hole with compatible pattern or interpolation
-    let currentPreviousKey = previousKey;
-
-    for (let i = 0; i < beats.length; i++) {
-        if (keys[i] !== null) {
-            // This beat has a pitch key - update previous and continue
-            currentPreviousKey = keys[i];
-            continue;
-        }
-
-        // Find the next pitch key for context
-        const nextPitchKey = findNextPitchKey(keys, i);
-
-        // Filter patterns by difficulty and compatibility
-        const eligiblePatterns = patternLibrary.filter(p => p.difficulty <= maxDifficulty);
-        const compatiblePatterns = eligiblePatterns.filter(pattern =>
-            isPatternCompatible(pattern, currentPreviousKey, nextPitchKey)
-        );
-
-        if (compatiblePatterns.length > 0) {
-            // Randomly select a compatible pattern
-            const pattern = compatiblePatterns[Math.floor(Math.random() * compatiblePatterns.length)];
-            keys[i] = pattern.keys[0];
-            patternIds[i] = pattern.id;
-        } else {
-            // No compatible pattern - interpolate
-            keys[i] = interpolateButton(currentPreviousKey, nextPitchKey);
-        }
-
-        // Update previous key for next iteration
-        currentPreviousKey = keys[i];
-    }
-
-    return { keys: keys as T[], patternIds };
 }
 
 // ============================================================================
@@ -1276,7 +1120,7 @@ export class ButtonMapper {
         );
 
         // Step 2: Determine which beats should be pitch vs pattern
-        // Uses the same probability-based blending logic as blendPitchAndPattern,
+        // Uses probability-based blending logic to determine which beats should be pitch vs pattern.
         // but produces a boolean classification instead of generating pattern keys.
         const isPitchBeat = this.classifyPitchVsPattern(
             pitchKeys,
@@ -1346,7 +1190,7 @@ export class ButtonMapper {
     /**
      * Classify each beat as pitch or pattern based on probability and weight.
      *
-     * Uses the same probability-based blending logic as blendPitchAndPattern:
+     * Uses probability-based blending logic:
      * sorts pitch beats by probability (lowest first), replaces the bottom
      * `(1 - weight)` fraction with patterns. Beats with no pitch data always
      * use patterns regardless of weight.
@@ -1399,66 +1243,6 @@ export class ButtonMapper {
         }
 
         return result;
-    }
-
-    /**
-     * Blend pitch-derived and pattern-derived buttons based on probability
-     */
-    private blendPitchAndPattern(
-        beats: { timestamp: number }[],
-        pitchKeys: (DDRButton | GuitarHeroButton | null)[],
-        patternKeys: (DDRButton | GuitarHeroButton)[],
-        probabilities: number[],
-        weight: number
-    ): (DDRButton | GuitarHeroButton)[] {
-        // Build list of indices with pitch, sorted by probability (lowest first)
-        const withProbability = beats
-            .map((beat, index) => ({
-                index,
-                probability: probabilities[index],
-                hasPitch: pitchKeys[index] !== null,
-            }))
-            .filter(item => item.hasPitch);
-
-        // Sort by probability (lowest first) - these get replaced first
-        withProbability.sort((a, b) => a.probability - b.probability);
-
-        // Calculate how many beats to replace with patterns
-        // weight = 1.0 → 0% replaced (all pitch)
-        // weight = 0.5 → 50% replaced (lowest probability half)
-        // weight = 0.0 → 100% replaced (all patterns)
-        const replaceCount = Math.floor(withProbability.length * (1 - weight));
-
-        // Indices of beats to replace (lowest probability)
-        const indicesToReplace = new Set(
-            withProbability.slice(0, replaceCount).map(item => item.index)
-        );
-
-        // Build final result
-        return beats.map((_, index) => {
-            // No pitch available → always use pattern
-            if (pitchKeys[index] === null) {
-                return patternKeys[index];
-            }
-            // Low probability → use pattern
-            if (indicesToReplace.has(index)) {
-                return patternKeys[index];
-            }
-            // High probability → use pitch
-            return pitchKeys[index]!;
-        });
-    }
-
-    /**
-     * Select a button from pattern library
-     */
-    private selectPatternButton<T extends DDRButton | GuitarHeroButton>(
-        previousKey: T | null,
-        library: ButtonPattern<T>[],
-        maxDifficulty: number
-    ): { key: T; patternId: string | undefined } {
-        const pattern = selectPatternFromLibrary(library, previousKey, maxDifficulty);
-        return { key: pattern.keys[0], patternId: pattern.id };
     }
 
     // ============================================================================
