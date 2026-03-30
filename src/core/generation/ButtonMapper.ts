@@ -169,7 +169,7 @@ export interface PatternRun<T extends DDRButton | GuitarHeroButton> {
  * Each placement represents a single pattern that was selected and
  * written into a contiguous range of beats within a pattern run.
  */
-interface PatternPlacement<T extends DDRButton | GuitarHeroButton> {
+export interface PatternPlacement<T extends DDRButton | GuitarHeroButton> {
     /** The pattern that was placed */
     pattern: ButtonPattern<T>;
     /** Beat index where this pattern starts */
@@ -743,6 +743,65 @@ function pickFromLargestGroup<T extends DDRButton | GuitarHeroButton>(
     const maxSize = patterns[0].keys.length;
     const largest = patterns.filter(p => p.keys.length === maxSize);
     return largest[Math.floor(Math.random() * largest.length)];
+}
+
+// ============================================================================
+// Run-Based Pattern Placement
+// ============================================================================
+
+/**
+ * Write pattern keys and IDs into the final arrays, preserving pitch-derived keys.
+ *
+ * For each run, each placement writes its pattern's keys sequentially into the
+ * output arrays. Beats that already have a pitch-derived key (non-null in
+ * `pitchKeys`) are left untouched.
+ *
+ * @param pitchKeys - Array from classifyBeats; non-null entries are pitch-derived
+ * @param runs - Pattern runs from identifyPatternRuns()
+ * @param placementsByRun - Pattern placements from selectPatternForRun(), one array per run
+ * @returns Object with fully populated keys and patternIds arrays
+ */
+export function placePatterns<T extends DDRButton | GuitarHeroButton>(
+    pitchKeys: (T | null)[],
+    runs: PatternRun<T>[],
+    placementsByRun: PatternPlacement<T>[][],
+): {
+    keys: T[];
+    patternIds: (string | undefined)[];
+} {
+    const totalBeats = pitchKeys.length;
+    const keys: (T | null)[] = [...pitchKeys];
+    const patternIds: (string | undefined)[] = new Array(totalBeats).fill(undefined);
+
+    for (let r = 0; r < runs.length; r++) {
+        const run = runs[r];
+        const placements = placementsByRun[r];
+
+        for (const placement of placements) {
+            for (let j = 0; j < placement.filledLength; j++) {
+                const beatIndex = placement.startIndex + j;
+                if (beatIndex >= totalBeats) break;
+
+                keys[beatIndex] = placement.pattern.keys[j];
+                patternIds[beatIndex] = placement.pattern.id;
+            }
+        }
+    }
+
+    // Every beat should now have a key (either from pitch or from a placement)
+    // If any beat is still null, interpolate as a safety net
+    for (let i = 0; i < totalBeats; i++) {
+        if (keys[i] === null) {
+            const prevKey = i > 0 ? keys[i - 1] : null;
+            const nextKey = i < totalBeats - 1 ? keys[i + 1] : null;
+            keys[i] = interpolateButton(prevKey, nextKey);
+        }
+    }
+
+    return {
+        keys: keys as T[],
+        patternIds,
+    };
 }
 
 // ============================================================================
