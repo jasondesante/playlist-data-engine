@@ -150,7 +150,7 @@ interface PatternHoleResult<T extends DDRButton | GuitarHeroButton> {
  * with no pitch-derived key form a single run. Each run records the
  * surrounding context keys for smooth boundary transitions.
  */
-interface PatternRun<T extends DDRButton | GuitarHeroButton> {
+export interface PatternRun<T extends DDRButton | GuitarHeroButton> {
     /** Start index in the beat array */
     startIndex: number;
     /** End index (exclusive) in the beat array */
@@ -475,6 +475,85 @@ export function identifyPatternRuns<T extends DDRButton | GuitarHeroButton>(
     }
 
     return runs;
+}
+
+// ============================================================================
+// Run-Based Pattern Compatibility
+// ============================================================================
+
+/**
+ * Check if a full multi-beat pattern is compatible for placement within a run.
+ *
+ * Evaluates boundary transitions at both ends of the pattern:
+ * - **Entry**: `pattern.keys[0]` must differ from the previous key (no immediate repeat).
+ * - **Exit**: `pattern.keys[last]` must allow a smooth transition to the next key.
+ *   - DDR: last key must be adjacent to or same as next key (uses `DDR_ADJACENT`).
+ *   - Guitar Hero: last key must be between previous and next, or moving toward next.
+ *
+ * The pattern must also fit within the remaining space of the run.
+ * Difficulty filtering is handled by the caller in `selectPatternForRun()`.
+ *
+ * @param pattern - The pattern to check
+ * @param run - The run this pattern would be placed in
+ * @param positionInRun - Offset from the start of the run (0 = start of run)
+ * @param previousKey - Key immediately before this pattern (run previousKey or previous pattern's last key)
+ * @param nextKey - Key immediately after this pattern (run nextKey, or null if more patterns follow)
+ * @returns True if the pattern is compatible with the run boundaries
+ */
+export function isPatternRunCompatible<T extends DDRButton | GuitarHeroButton>(
+    pattern: ButtonPattern<T>,
+    run: PatternRun<T>,
+    positionInRun: number,
+    previousKey: T | null,
+    nextKey: T | null,
+): boolean {
+    // Empty patterns are never compatible
+    if (pattern.keys.length === 0) {
+        return false;
+    }
+
+    // Pattern must fit within the remaining run space
+    if (positionInRun + pattern.keys.length > run.length) {
+        return false;
+    }
+
+    const firstKey = pattern.keys[0];
+    const lastKey = pattern.keys[pattern.keys.length - 1];
+
+    // Rule 1: First key must differ from previous key (no immediate repeat)
+    if (previousKey !== null && firstKey === previousKey) {
+        return false;
+    }
+
+    // Rule 2: Last key must allow smooth transition to next key
+    if (nextKey !== null) {
+        // DDR: last key should be adjacent-to or same-as next key
+        if (typeof lastKey === 'string' && typeof nextKey === 'string') {
+            const adjacent = DDR_ADJACENT[lastKey as DDRButton];
+            if (!adjacent?.includes(nextKey as DDRButton) && lastKey !== nextKey) {
+                return false;
+            }
+        }
+
+        // Guitar Hero: last key should be between previous and next, or moving toward next
+        if (typeof lastKey === 'number' && typeof nextKey === 'number') {
+            if (previousKey !== null && typeof previousKey === 'number') {
+                const movingTowardNext =
+                    (previousKey < nextKey && lastKey >= previousKey && lastKey <= nextKey) ||
+                    (previousKey > nextKey && lastKey <= previousKey && lastKey >= nextKey);
+                if (!movingTowardNext && lastKey !== nextKey) {
+                    return false;
+                }
+            } else {
+                // No previous key context: last key should be within 1 fret of next
+                if (Math.abs(lastKey - nextKey) > 1) {
+                    return false;
+                }
+            }
+        }
+    }
+
+    return true;
 }
 
 // ============================================================================
