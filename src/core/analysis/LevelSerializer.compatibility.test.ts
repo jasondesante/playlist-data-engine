@@ -255,24 +255,24 @@ function createMockGeneratedRhythm(chart: ChartedBeatMap): GeneratedRhythm {
                 perBeatDensity: [],
                 bandMetrics: {
                     low: {
-                        band: 'low', totalBeats: 0, totalTransients: 0, transientsPerBeat: 0.5,
-                        minTransientsPerBeat: 0, maxTransientsPerBeat: 1, variance: 0,
+                        band: 'low', totalBeats: 0, totalTransients: 0, notesPerSecond: 1.0,
+                        minNotesPerSecond: 0, maxNotesPerSecond: 2.0, variance: 0,
                         densityCategory: 'moderate', naturalDifficulty: 'medium', perBeatDensity: [],
                     },
                     mid: {
                         band: 'mid', totalBeats: chart.beats.length, totalTransients: chart.detectedBeatIndices.length,
-                        transientsPerBeat: 0.5, minTransientsPerBeat: 0, maxTransientsPerBeat: 1, variance: 0,
+                        notesPerSecond: 1.0, minNotesPerSecond: 0, maxNotesPerSecond: 2.0, variance: 0,
                         densityCategory: 'moderate', naturalDifficulty: 'medium', perBeatDensity: [],
                     },
                     high: {
-                        band: 'high', totalBeats: 0, totalTransients: 0, transientsPerBeat: 0.5,
-                        minTransientsPerBeat: 0, maxTransientsPerBeat: 1, variance: 0,
+                        band: 'high', totalBeats: 0, totalTransients: 0, notesPerSecond: 1.0,
+                        minNotesPerSecond: 0, maxNotesPerSecond: 2.0, variance: 0,
                         densityCategory: 'moderate', naturalDifficulty: 'medium', perBeatDensity: [],
                     },
                 },
                 combinedMetrics: {
                     totalTransients: chart.detectedBeatIndices.length,
-                    transientsPerBeat: 0.5,
+                    notesPerSecond: 1.0,
                     densityCategory: 'moderate',
                     naturalDifficulty: 'medium',
                 },

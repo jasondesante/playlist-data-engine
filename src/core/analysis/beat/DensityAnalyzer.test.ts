@@ -1,8 +1,8 @@
 /**
  * Unit tests for DensityAnalyzer
  *
- * Tests density calculation, categorization, and natural difficulty detection
- * for procedural rhythm generation - Phase 2.2
+ * Tests density calculation (notes/second), categorization, and natural
+ * difficulty detection for procedural rhythm generation - Phase 2.2
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
@@ -25,6 +25,9 @@ import type {
 // ============================================================================
 // Test Utilities
 // ============================================================================
+
+/** Standard BPM used across all tests (120 BPM → bpmPerSecond = 2.0) */
+const TEST_BPM = 120;
 
 /**
  * Create a mock GeneratedBeat for testing
@@ -59,6 +62,7 @@ function createMockRhythmMap(beats: GeneratedBeat[]): GeneratedRhythmMap {
         duration: (maxBeatIndex + 1) * 0.5, // Assume 0.5s per beat (120 BPM)
         beats,
         gridDecisions: [],
+        quarterNoteInterval: 0.5,
     };
 }
 
@@ -71,6 +75,7 @@ function createEmptyRhythmMap(): GeneratedRhythmMap {
         duration: 10.0,
         beats: [],
         gridDecisions: [],
+        quarterNoteInterval: 0.5,
     };
 }
 
@@ -91,12 +96,16 @@ function createMockStreams(
         metadata: {
             densityValidation: {
                 isValid: true,
-                minIntervalDetected: 0.125,
-                requiredMinInterval: 0.125,
-                retryCount: 0,
-                sensitivityReduction: 0,
+                bands: {
+                    low: { band: 'low', isValid: true, minIntervalDetected: 0.125, requiredMinInterval: 0.125, retryCount: 0, sensitivityReduction: 0, finalIntensityThreshold: 0.3, transientsRemaining: 0 },
+                    mid: { band: 'mid', isValid: true, minIntervalDetected: 0.125, requiredMinInterval: 0.125, retryCount: 0, sensitivityReduction: 0, finalIntensityThreshold: 0.3, transientsRemaining: 0 },
+                    high: { band: 'high', isValid: true, minIntervalDetected: 0.125, requiredMinInterval: 0.125, retryCount: 0, sensitivityReduction: 0, finalIntensityThreshold: 0.3, transientsRemaining: 0 },
+                },
+                maxRetryCount: 0,
+                maxSensitivityReduction: 0,
             },
             transientsFilteredByIntensity: 0,
+            transientsFilteredByBand: { low: 0, mid: 0, high: 0 },
         },
     };
 }
@@ -115,15 +124,15 @@ describe('DensityAnalyzer', () => {
 
             const config = analyzer.getConfig();
             expect(config.beatsPerSection).toBe(8);
-            expect(config.sparseThreshold).toBe(1.0);
-            expect(config.denseThreshold).toBe(1.75);
+            expect(config.sparseThreshold).toBe(2.5);
+            expect(config.denseThreshold).toBe(4.5);
         });
 
         it('should accept custom configuration', () => {
             const config: Partial<DensityAnalyzerConfig> = {
                 beatsPerSection: 4,
-                sparseThreshold: 0.5,
-                denseThreshold: 3.0,
+                sparseThreshold: 1.0,
+                denseThreshold: 6.0,
             };
 
             analyzer = new DensityAnalyzer(config);
@@ -131,8 +140,8 @@ describe('DensityAnalyzer', () => {
 
             const actualConfig = analyzer.getConfig();
             expect(actualConfig.beatsPerSection).toBe(4);
-            expect(actualConfig.sparseThreshold).toBe(0.5);
-            expect(actualConfig.denseThreshold).toBe(3.0);
+            expect(actualConfig.sparseThreshold).toBe(1.0);
+            expect(actualConfig.denseThreshold).toBe(6.0);
         });
     });
 
@@ -144,7 +153,7 @@ describe('DensityAnalyzer', () => {
         it('should return DensityAnalysisResult with all required properties', () => {
             const streams = createMockStreams([], [], []);
 
-            const result = analyzer.analyze(streams);
+            const result = analyzer.analyze(streams, TEST_BPM);
 
             expect(result.bandMetrics).toBeDefined();
             expect(result.combinedMetrics).toBeDefined();
@@ -155,11 +164,11 @@ describe('DensityAnalyzer', () => {
         it('should handle empty streams gracefully', () => {
             const streams = createMockStreams([], [], []);
 
-            const result = analyzer.analyze(streams);
+            const result = analyzer.analyze(streams, TEST_BPM);
 
             // All metrics should be zero for empty streams
             expect(result.combinedMetrics.totalTransients).toBe(0);
-            expect(result.combinedMetrics.transientsPerBeat).toBe(0);
+            expect(result.combinedMetrics.notesPerSecond).toBe(0);
             expect(result.bandMetrics.low.totalTransients).toBe(0);
             expect(result.bandMetrics.mid.totalTransients).toBe(0);
             expect(result.bandMetrics.high.totalTransients).toBe(0);
@@ -168,7 +177,7 @@ describe('DensityAnalyzer', () => {
         it('should return bandAnalysis for all three bands', () => {
             const streams = createMockStreams([], [], []);
 
-            const result = analyzer.analyze(streams);
+            const result = analyzer.analyze(streams, TEST_BPM);
 
             expect(result.bandMetrics.low).toBeDefined();
             expect(result.bandMetrics.mid).toBeDefined();
@@ -184,7 +193,7 @@ describe('DensityAnalyzer', () => {
             analyzer = new DensityAnalyzer();
         });
 
-        it('should calculate correct transients per beat for sparse patterns', () => {
+        it('should calculate correct notes per second for sparse patterns', () => {
             // Create sparse pattern: 1 transient per beat
             const beats: GeneratedBeat[] = [
                 createGeneratedBeat({ beatIndex: 0, band: 'low' }),
@@ -195,14 +204,15 @@ describe('DensityAnalyzer', () => {
 
             const streams = createMockStreams(beats, [], []);
 
-            const result = analyzer.analyze(streams);
+            const result = analyzer.analyze(streams, TEST_BPM);
 
             // 4 beats, 4 transients = 1.0 transients per beat
-            expect(result.bandMetrics.low.transientsPerBeat).toBe(1.0);
-            expect(result.combinedMetrics.transientsPerBeat).toBe(1.0);
+            // At 120 BPM: 1.0 * (120/60) = 2.0 notes/sec
+            expect(result.bandMetrics.low.notesPerSecond).toBe(2.0);
+            expect(result.combinedMetrics.notesPerSecond).toBe(2.0);
         });
 
-        it('should calculate correct transients per beat for moderate patterns', () => {
+        it('should calculate correct notes per second for moderate patterns', () => {
             // Create moderate pattern: 2 transients per beat
             const beats: GeneratedBeat[] = [
                 createGeneratedBeat({ beatIndex: 0, gridPosition: 0, band: 'low' }),
@@ -217,13 +227,14 @@ describe('DensityAnalyzer', () => {
 
             const streams = createMockStreams(beats, [], []);
 
-            const result = analyzer.analyze(streams);
+            const result = analyzer.analyze(streams, TEST_BPM);
 
             // 4 beats, 8 transients = 2.0 transients per beat
-            expect(result.bandMetrics.low.transientsPerBeat).toBe(2.0);
+            // At 120 BPM: 2.0 * (120/60) = 4.0 notes/sec
+            expect(result.bandMetrics.low.notesPerSecond).toBe(4.0);
         });
 
-        it('should calculate correct transients per beat for dense patterns', () => {
+        it('should calculate correct notes per second for dense patterns', () => {
             // Create dense pattern: 4 transients per beat (16th notes)
             const beats: GeneratedBeat[] = [];
             for (let beatIndex = 0; beatIndex < 4; beatIndex++) {
@@ -238,10 +249,11 @@ describe('DensityAnalyzer', () => {
 
             const streams = createMockStreams(beats, [], []);
 
-            const result = analyzer.analyze(streams);
+            const result = analyzer.analyze(streams, TEST_BPM);
 
             // 4 beats, 16 transients = 4.0 transients per beat
-            expect(result.bandMetrics.low.transientsPerBeat).toBe(4.0);
+            // At 120 BPM: 4.0 * (120/60) = 8.0 notes/sec
+            expect(result.bandMetrics.low.notesPerSecond).toBe(8.0);
         });
 
         it('should combine transients from all bands', () => {
@@ -257,14 +269,15 @@ describe('DensityAnalyzer', () => {
 
             const streams = createMockStreams(lowBeats, midBeats, highBeats);
 
-            const result = analyzer.analyze(streams);
+            const result = analyzer.analyze(streams, TEST_BPM);
 
             // Combined: 1 beat, 3 transients = 3.0 per beat
+            // At 120 BPM: 3.0 * (120/60) = 6.0 notes/sec
             expect(result.combinedMetrics.totalTransients).toBe(3);
-            expect(result.combinedMetrics.transientsPerBeat).toBe(3.0);
+            expect(result.combinedMetrics.notesPerSecond).toBe(6.0);
         });
 
-        it('should calculate min and max transients per beat', () => {
+        it('should calculate min and max notes per second', () => {
             // Variable density: beat 0 has 1, beat 1 has 3, beat 2 has 2
             const beats: GeneratedBeat[] = [
                 createGeneratedBeat({ beatIndex: 0, gridPosition: 0, band: 'low' }),
@@ -281,12 +294,34 @@ describe('DensityAnalyzer', () => {
                 beats.filter(b => b.band === 'high')
             );
 
-            const result = analyzer.analyze(streams);
+            const result = analyzer.analyze(streams, TEST_BPM);
 
             // Per beat: 1, 3, 2 transients
             expect(result.combinedMetrics.totalTransients).toBe(6);
-            // Average: 6 / 3 = 2.0
-            expect(result.combinedMetrics.transientsPerBeat).toBeCloseTo(2.0, 0.01);
+            // Average: 6 / 3 = 2.0 t/b → 4.0 n/s at 120 BPM
+            expect(result.combinedMetrics.notesPerSecond).toBeCloseTo(4.0, 0.01);
+        });
+
+        it('should scale notes per second with BPM', () => {
+            // Same pattern at different BPMs should give different notes/sec
+            const beats: GeneratedBeat[] = [
+                createGeneratedBeat({ beatIndex: 0, band: 'low' }),
+                createGeneratedBeat({ beatIndex: 1, band: 'low' }),
+            ];
+            const streams = createMockStreams(beats, [], []);
+
+            // 2 beats, 2 transients = 1.0 t/b
+            const result120 = analyzer.analyze(streams, 120);
+            // 1.0 * (120/60) = 2.0 n/s
+            expect(result120.bandMetrics.low.notesPerSecond).toBe(2.0);
+
+            const result180 = analyzer.analyze(streams, 180);
+            // 1.0 * (180/60) = 3.0 n/s
+            expect(result180.bandMetrics.low.notesPerSecond).toBe(3.0);
+
+            const result60 = analyzer.analyze(streams, 60);
+            // 1.0 * (60/60) = 1.0 n/s
+            expect(result60.bandMetrics.low.notesPerSecond).toBe(1.0);
         });
     });
 
@@ -295,8 +330,8 @@ describe('DensityAnalyzer', () => {
             analyzer = new DensityAnalyzer();
         });
 
-        it('should categorize sparse density correctly (transientsPerBeat < 1.0)', () => {
-            // Sparse: 1 transient every 2 beats = 0.5 per beat
+        it('should categorize sparse density correctly (notesPerSecond < 2.5)', () => {
+            // Sparse: 1 transient every 2 beats = 0.5 per beat → 1.0 n/s at 120 BPM
             const beats: GeneratedBeat[] = [
                 createGeneratedBeat({ beatIndex: 0, band: 'low' }),
                 createGeneratedBeat({ beatIndex: 2, band: 'low' }),
@@ -306,14 +341,14 @@ describe('DensityAnalyzer', () => {
 
             const streams = createMockStreams(beats, [], []);
 
-            const result = analyzer.analyze(streams);
+            const result = analyzer.analyze(streams, TEST_BPM);
 
-            // 8 beats, 4 transients = 0.5 per beat (< 1.0 = sparse)
+            // 8 beats, 4 transients = 0.5 per beat → 1.0 n/s (< 2.5 = sparse)
             expect(result.combinedMetrics.densityCategory).toBe('sparse');
         });
 
-        it('should categorize moderate density correctly (1.0 <= transientsPerBeat <= 1.75)', () => {
-            // Moderate: 1.5 transients per beat (6 transients over 4 beats)
+        it('should categorize moderate density correctly (2.5 <= notesPerSecond <= 4.5)', () => {
+            // Moderate: 1.5 transients per beat → 3.0 n/s at 120 BPM
             const beats: GeneratedBeat[] = [];
             for (let beatIndex = 0; beatIndex < 4; beatIndex++) {
                 beats.push(createGeneratedBeat({ beatIndex, gridPosition: 0, band: 'low' }));
@@ -325,35 +360,37 @@ describe('DensityAnalyzer', () => {
 
             const streams = createMockStreams(beats, [], []);
 
-            const result = analyzer.analyze(streams);
+            const result = analyzer.analyze(streams, TEST_BPM);
 
-            // 4 beats, 6 transients = 1.5 per beat (moderate)
+            // 4 beats, 6 transients = 1.5 per beat → 3.0 n/s (moderate)
             expect(result.combinedMetrics.densityCategory).toBe('moderate');
         });
 
-        it('should categorize dense density correctly (transientsPerBeat > 1.75)', () => {
-            // Dense: 2 transients per beat = 2.0 per beat (> 1.75)
+        it('should categorize dense density correctly (notesPerSecond > 4.5)', () => {
+            // Dense: 3 transients per beat = 3.0 per beat → 6.0 n/s at 120 BPM
             const beats: GeneratedBeat[] = [];
             for (let beatIndex = 0; beatIndex < 4; beatIndex++) {
                 beats.push(createGeneratedBeat({ beatIndex, gridPosition: 0, band: 'low' }));
+                beats.push(createGeneratedBeat({ beatIndex, gridPosition: 1, band: 'low' }));
                 beats.push(createGeneratedBeat({ beatIndex, gridPosition: 2, band: 'low' }));
             }
 
             const streams = createMockStreams(beats, [], []);
 
-            const result = analyzer.analyze(streams);
+            const result = analyzer.analyze(streams, TEST_BPM);
 
-            // 4 beats, 8 transients = 2.0 per beat (> 1.75 = dense)
+            // 4 beats, 12 transients = 3.0 per beat → 6.0 n/s (> 4.5 = dense)
             expect(result.combinedMetrics.densityCategory).toBe('dense');
         });
 
         it('should use custom thresholds when configured', () => {
             analyzer = new DensityAnalyzer({
-                sparseThreshold: 0.5,
-                denseThreshold: 4.0,
+                sparseThreshold: 1.0,
+                denseThreshold: 6.0,
             });
 
-            // 1.0 transients per beat - would be sparse with default, moderate with custom
+            // 1.0 transients per beat → 2.0 n/s at 120 BPM
+            // Would be sparse with defaults (2.0 < 2.5), but moderate with custom (1.0 < 2.0 < 6.0)
             const beats: GeneratedBeat[] = [
                 createGeneratedBeat({ beatIndex: 0, band: 'low' }),
                 createGeneratedBeat({ beatIndex: 1, band: 'low' }),
@@ -363,9 +400,9 @@ describe('DensityAnalyzer', () => {
 
             const streams = createMockStreams(beats, [], []);
 
-            const result = analyzer.analyze(streams);
+            const result = analyzer.analyze(streams, TEST_BPM);
 
-            // 1.0 per beat: > 0.5 (sparse threshold), < 4.0 (dense threshold) = moderate
+            // 2.0 n/s: > 1.0 (sparse threshold), < 6.0 (dense threshold) = moderate
             expect(result.combinedMetrics.densityCategory).toBe('moderate');
         });
     });
@@ -391,16 +428,16 @@ describe('DensityAnalyzer', () => {
         });
 
         it('should determine natural difficulty from density in analysis', () => {
-            // Sparse pattern
+            // Sparse pattern: 5 beats, 2 transients = 0.4 t/b → 0.8 n/s
             const sparseBeats: GeneratedBeat[] = [
                 createGeneratedBeat({ beatIndex: 0, band: 'low' }),
                 createGeneratedBeat({ beatIndex: 4, band: 'low' }),
             ];
             const sparseStreams = createMockStreams(sparseBeats, [], []);
-            const sparseResult = analyzer.analyze(sparseStreams);
+            const sparseResult = analyzer.analyze(sparseStreams, TEST_BPM);
             expect(sparseResult.combinedMetrics.naturalDifficulty).toBe('easy');
 
-            // Moderate pattern: 1.5 transients per beat (6 transients over 4 beats)
+            // Moderate pattern: 1.5 t/b → 3.0 n/s (6 transients over 4 beats)
             const moderateBeats: GeneratedBeat[] = [];
             for (let i = 0; i < 4; i++) {
                 moderateBeats.push(createGeneratedBeat({ beatIndex: i, gridPosition: 0, band: 'low' }));
@@ -410,10 +447,10 @@ describe('DensityAnalyzer', () => {
                 }
             }
             const moderateStreams = createMockStreams(moderateBeats, [], []);
-            const moderateResult = analyzer.analyze(moderateStreams);
+            const moderateResult = analyzer.analyze(moderateStreams, TEST_BPM);
             expect(moderateResult.combinedMetrics.naturalDifficulty).toBe('medium');
 
-            // Dense pattern
+            // Dense pattern: 4 t/b → 8.0 n/s (16 transients over 4 beats)
             const denseBeats: GeneratedBeat[] = [];
             for (let i = 0; i < 4; i++) {
                 for (let pos = 0; pos < 4; pos++) {
@@ -421,7 +458,7 @@ describe('DensityAnalyzer', () => {
                 }
             }
             const denseStreams = createMockStreams(denseBeats, [], []);
-            const denseResult = analyzer.analyze(denseStreams);
+            const denseResult = analyzer.analyze(denseStreams, TEST_BPM);
             expect(denseResult.combinedMetrics.naturalDifficulty).toBe('hard');
         });
     });
@@ -445,7 +482,7 @@ describe('DensityAnalyzer', () => {
                 beats.filter(b => b.band === 'high')
             );
 
-            const result = analyzer.analyze(streams);
+            const result = analyzer.analyze(streams, TEST_BPM);
 
             // Should have per-beat density for beats 0, 1, 2
             expect(result.perBeatDensity.length).toBe(3);
@@ -479,7 +516,7 @@ describe('DensityAnalyzer', () => {
                 []
             );
 
-            const result = analyzer.analyze(streams);
+            const result = analyzer.analyze(streams, TEST_BPM);
 
             const beat0 = result.perBeatDensity.find(b => b.beatIndex === 0);
             expect(beat0?.averageIntensity).toBeCloseTo(0.6, 0.01);
@@ -493,7 +530,7 @@ describe('DensityAnalyzer', () => {
 
             const streams = createMockStreams(beats, [], []);
 
-            const result = analyzer.analyze(streams);
+            const result = analyzer.analyze(streams, TEST_BPM);
 
             // Beat 1 should have 0 transients
             const beat1 = result.perBeatDensity.find(b => b.beatIndex === 1);
@@ -514,7 +551,7 @@ describe('DensityAnalyzer', () => {
 
             const streams = createMockStreams(beats, [], []);
 
-            const result = analyzer.analyze(streams);
+            const result = analyzer.analyze(streams, TEST_BPM);
 
             // 12 beats / 4 beats per section = 3 sections
             expect(result.sections.length).toBe(3);
@@ -528,14 +565,14 @@ describe('DensityAnalyzer', () => {
             expect(result.sections[2].endBeat).toBe(11);
         });
 
-        it('should calculate section-level density metrics', () => {
+        it('should calculate section-level density metrics in notes per second', () => {
             analyzer = new DensityAnalyzer({ beatsPerSection: 4 });
 
-            // Section 0 (beats 0-3): sparse (1 transient every 2 beats = 0.5 per beat)
-            // Section 1 (beats 4-7): dense (4 transients per beat)
+            // Section 0 (beats 0-3): sparse (1 transient every 2 beats = 0.5 t/b → 1.0 n/s)
+            // Section 1 (beats 4-7): dense (4 transients per beat = 4.0 t/b → 8.0 n/s)
             const beats: GeneratedBeat[] = [];
 
-            // Section 0: 1 transient every 2 beats = 0.5 transients per beat (sparse)
+            // Section 0: 1 transient every 2 beats = 0.5 t/b
             for (let i = 0; i < 4; i += 2) {
                 beats.push(createGeneratedBeat({ beatIndex: i, band: 'low' }));
             }
@@ -549,20 +586,20 @@ describe('DensityAnalyzer', () => {
 
             const streams = createMockStreams(beats, [], []);
 
-            const result = analyzer.analyze(streams);
+            const result = analyzer.analyze(streams, TEST_BPM);
 
-            // Section 0 should be sparse/easy (0.5 transients per beat < 1.0 threshold)
+            // Section 0 should be sparse/easy (0.5 t/b → 1.0 n/s < 2.5)
             expect(result.sections[0].densityCategory).toBe('sparse');
             expect(result.sections[0].naturalDifficulty).toBe('easy');
-            expect(result.sections[0].transientsPerBeat).toBe(0.5);
+            expect(result.sections[0].notesPerSecond).toBe(1.0);
 
-            // Section 1 should be dense/hard
+            // Section 1 should be dense/hard (4.0 t/b → 8.0 n/s > 4.5)
             expect(result.sections[1].densityCategory).toBe('dense');
             expect(result.sections[1].naturalDifficulty).toBe('hard');
-            expect(result.sections[1].transientsPerBeat).toBe(4.0);
+            expect(result.sections[1].notesPerSecond).toBe(8.0);
         });
 
-        it('should track min and max transients per beat in each section', () => {
+        it('should track min and max notes per second in each section', () => {
             analyzer = new DensityAnalyzer({ beatsPerSection: 4 });
 
             const beats: GeneratedBeat[] = [
@@ -586,12 +623,12 @@ describe('DensityAnalyzer', () => {
                 beats.filter(b => b.band === 'high')
             );
 
-            const result = analyzer.analyze(streams);
+            const result = analyzer.analyze(streams, TEST_BPM);
 
-            // Section 0 (beats 0-3) min/max
-            // Beat 0: 1, Beat 1: 2, Beat 2: 3, Beat 3: 0
-            expect(result.sections[0].minTransientsPerBeat).toBe(0);
-            expect(result.sections[0].maxTransientsPerBeat).toBe(3);
+            // Section 0 (beats 0-3) min/max in notes per second
+            // Beat 0: 1 t/b → 2.0 n/s, Beat 1: 2 t/b → 4.0 n/s, Beat 2: 3 t/b → 6.0 n/s, Beat 3: 0 → 0 n/s
+            expect(result.sections[0].minNotesPerSecond).toBe(0);
+            expect(result.sections[0].maxNotesPerSecond).toBe(6.0);
         });
 
         it('should handle partial final sections', () => {
@@ -605,7 +642,7 @@ describe('DensityAnalyzer', () => {
 
             const streams = createMockStreams(beats, [], []);
 
-            const result = analyzer.analyze(streams);
+            const result = analyzer.analyze(streams, TEST_BPM);
 
             // 10 beats / 8 beats per section = 2 sections (8 + 2)
             expect(result.sections.length).toBe(2);
@@ -622,29 +659,34 @@ describe('DensityAnalyzer', () => {
             analyzer = new DensityAnalyzer();
         });
 
-        it('should calculate separate metrics for each band', () => {
+        it('should calculate separate metrics for each band in notes per second', () => {
+            // Low band: 2 beats, 3 transients = 1.5 t/b → 3.0 n/s (moderate)
             const lowBeats: GeneratedBeat[] = [
                 createGeneratedBeat({ beatIndex: 0, band: 'low' }),
-                createGeneratedBeat({ beatIndex: 1, band: 'low' }),
+                createGeneratedBeat({ beatIndex: 1, gridPosition: 0, band: 'low' }),
+                createGeneratedBeat({ beatIndex: 1, gridPosition: 2, band: 'low' }),
             ];
+            // Mid band: 2 beats, 6 transients = 3.0 t/b → 6.0 n/s (dense)
             const midBeats: GeneratedBeat[] = [
                 createGeneratedBeat({ beatIndex: 0, gridPosition: 0, band: 'mid' }),
+                createGeneratedBeat({ beatIndex: 0, gridPosition: 1, band: 'mid' }),
                 createGeneratedBeat({ beatIndex: 0, gridPosition: 2, band: 'mid' }),
                 createGeneratedBeat({ beatIndex: 1, gridPosition: 0, band: 'mid' }),
+                createGeneratedBeat({ beatIndex: 1, gridPosition: 1, band: 'mid' }),
                 createGeneratedBeat({ beatIndex: 1, gridPosition: 2, band: 'mid' }),
             ];
             const highBeats: GeneratedBeat[] = [];
 
             const streams = createMockStreams(lowBeats, midBeats, highBeats);
 
-            const result = analyzer.analyze(streams);
+            const result = analyzer.analyze(streams, TEST_BPM);
 
-            // Low band: 2 beats, 2 transients = 1.0 per beat
-            expect(result.bandMetrics.low.transientsPerBeat).toBe(1.0);
+            // Low band: 2 beats, 3 transients = 1.5 t/b → 3.0 n/s (moderate)
+            expect(result.bandMetrics.low.notesPerSecond).toBe(3.0);
             expect(result.bandMetrics.low.naturalDifficulty).toBe('medium');
 
-            // Mid band: 2 beats, 4 transients = 2.0 per beat (> 1.75 = hard)
-            expect(result.bandMetrics.mid.transientsPerBeat).toBe(2.0);
+            // Mid band: 2 beats, 6 transients = 3.0 t/b → 6.0 n/s (dense, > 4.5)
+            expect(result.bandMetrics.mid.notesPerSecond).toBe(6.0);
             expect(result.bandMetrics.mid.naturalDifficulty).toBe('hard');
 
             // High band: empty
@@ -666,7 +708,7 @@ describe('DensityAnalyzer', () => {
 
             const streams = createMockStreams(beats, [], []);
 
-            const result = analyzer.analyze(streams);
+            const result = analyzer.analyze(streams, TEST_BPM);
 
             // Variance should be > 0 because beat 3 has different count
             expect(result.bandMetrics.low.variance).toBeGreaterThan(0);
@@ -680,7 +722,7 @@ describe('DensityAnalyzer', () => {
 
             const streams = createMockStreams(beats, [], []);
 
-            const result = analyzer.analyze(streams);
+            const result = analyzer.analyze(streams, TEST_BPM);
 
             // Low band should have per-beat density
             expect(result.bandMetrics.low.perBeatDensity.length).toBeGreaterThan(0);
@@ -695,21 +737,21 @@ describe('DensityAnalyzer', () => {
 
         it('should return sparse for values below sparseThreshold', () => {
             expect(analyzer.categorizeDensity(0.0)).toBe('sparse');
-            expect(analyzer.categorizeDensity(0.5)).toBe('sparse');
-            expect(analyzer.categorizeDensity(0.99)).toBe('sparse');
+            expect(analyzer.categorizeDensity(1.0)).toBe('sparse');
+            expect(analyzer.categorizeDensity(2.49)).toBe('sparse');
         });
 
         it('should return moderate for values between thresholds', () => {
-            expect(analyzer.categorizeDensity(1.0)).toBe('moderate');
-            expect(analyzer.categorizeDensity(1.25)).toBe('moderate');
-            expect(analyzer.categorizeDensity(1.5)).toBe('moderate');
-            expect(analyzer.categorizeDensity(1.75)).toBe('moderate');
+            expect(analyzer.categorizeDensity(2.5)).toBe('moderate');
+            expect(analyzer.categorizeDensity(3.0)).toBe('moderate');
+            expect(analyzer.categorizeDensity(4.0)).toBe('moderate');
+            expect(analyzer.categorizeDensity(4.5)).toBe('moderate');
         });
 
         it('should return dense for values above denseThreshold', () => {
-            expect(analyzer.categorizeDensity(1.76)).toBe('dense');
-            expect(analyzer.categorizeDensity(2.0)).toBe('dense');
-            expect(analyzer.categorizeDensity(3.0)).toBe('dense');
+            expect(analyzer.categorizeDensity(4.51)).toBe('dense');
+            expect(analyzer.categorizeDensity(6.0)).toBe('dense');
+            expect(analyzer.categorizeDensity(10.0)).toBe('dense');
         });
     });
 
@@ -725,7 +767,7 @@ describe('DensityAnalyzer', () => {
 
             const streams = createMockStreams(beats, [], []);
 
-            const result = analyzer.analyze(streams);
+            const result = analyzer.analyze(streams, TEST_BPM);
 
             expect(result.combinedMetrics.totalTransients).toBe(1);
             expect(result.perBeatDensity.length).toBe(1);
@@ -743,10 +785,11 @@ describe('DensityAnalyzer', () => {
 
             const streams = createMockStreams(beats, [], []);
 
-            const result = analyzer.analyze(streams);
+            const result = analyzer.analyze(streams, TEST_BPM);
 
-            expect(result.bandMetrics.low.transientsPerBeat).toBe(4.0);
-            expect(result.bandMetrics.low.maxTransientsPerBeat).toBe(4);
+            // 4.0 t/b → 8.0 n/s
+            expect(result.bandMetrics.low.notesPerSecond).toBe(8.0);
+            expect(result.bandMetrics.low.maxNotesPerSecond).toBe(8.0);
             expect(result.combinedMetrics.densityCategory).toBe('dense');
         });
 
@@ -759,7 +802,7 @@ describe('DensityAnalyzer', () => {
 
             const streams = createMockStreams(beats, [], []);
 
-            const result = analyzer.analyze(streams);
+            const result = analyzer.analyze(streams, TEST_BPM);
 
             // Should have per-beat density for all beats (including gaps)
             expect(result.perBeatDensity.length).toBe(11); // 0 to 10 inclusive
@@ -779,7 +822,7 @@ describe('DensityAnalyzer', () => {
 
             const streams = createMockStreams(lowBeats, midBeats, highBeats);
 
-            const result = analyzer.analyze(streams);
+            const result = analyzer.analyze(streams, TEST_BPM);
 
             // Beat 0 should have 3 transients from all bands
             const beat0 = result.perBeatDensity.find(b => b.beatIndex === 0);

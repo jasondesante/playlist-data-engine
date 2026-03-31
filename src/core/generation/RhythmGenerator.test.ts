@@ -1033,8 +1033,8 @@ describe('RhythmGenerator', () => {
             const deserialized = RhythmGenerator.fromJSON(jsonString);
 
             // Verify density analysis is preserved
-            expect(deserialized.analysis.densityAnalysis.combinedMetrics.transientsPerBeat).toBeCloseTo(
-                original.analysis.densityAnalysis.combinedMetrics.transientsPerBeat, 1e-10
+            expect(deserialized.analysis.densityAnalysis.combinedMetrics.notesPerSecond).toBeCloseTo(
+                original.analysis.densityAnalysis.combinedMetrics.notesPerSecond, 1e-10
             );
             expect(deserialized.analysis.densityAnalysis.combinedMetrics.densityCategory).toBe(
                 original.analysis.densityAnalysis.combinedMetrics.densityCategory

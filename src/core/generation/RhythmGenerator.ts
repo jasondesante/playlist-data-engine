@@ -543,9 +543,9 @@ interface BandDensityMetricsJSON {
     band: 'low' | 'mid' | 'high';
     totalBeats: number;
     totalTransients: number;
-    transientsPerBeat: number;
-    minTransientsPerBeat: number;
-    maxTransientsPerBeat: number;
+    notesPerSecond: number;
+    minNotesPerSecond: number;
+    maxNotesPerSecond: number;
     variance: number;
     densityCategory: 'sparse' | 'moderate' | 'dense';
     naturalDifficulty: 'easy' | 'medium' | 'hard';
@@ -563,7 +563,7 @@ interface DensityAnalysisResultJSON {
     };
     combinedMetrics: {
         totalTransients: number;
-        transientsPerBeat: number;
+        notesPerSecond: number;
         densityCategory: 'sparse' | 'moderate' | 'dense';
         naturalDifficulty: 'easy' | 'medium' | 'hard';
     };
@@ -572,9 +572,9 @@ interface DensityAnalysisResultJSON {
         endBeat: number;
         beatCount: number;
         totalTransients: number;
-        transientsPerBeat: number;
-        minTransientsPerBeat: number;
-        maxTransientsPerBeat: number;
+        notesPerSecond: number;
+        minNotesPerSecond: number;
+        maxNotesPerSecond: number;
         densityCategory: 'sparse' | 'moderate' | 'dense';
         naturalDifficulty: 'easy' | 'medium' | 'hard';
     }>;
@@ -1087,7 +1087,7 @@ export class RhythmGenerator {
         log('Phase 2', 0.3, `Detected ${phraseAnalysis.phrases.length} rhythmic phrases`);
         signal?.throwIfAborted();
 
-        const densityAnalysis = this.analyzeDensity(quantizationResult);
+        const densityAnalysis = this.analyzeDensity(quantizationResult, unifiedBeatMap.quarterNoteBpm);
         log('Phase 2', 0.7, `Density category: ${densityAnalysis.combinedMetrics.densityCategory}`);
         log('Phase 2', 1, 'Phase 2 complete');
         signal?.throwIfAborted();
@@ -1124,7 +1124,7 @@ export class RhythmGenerator {
             transientsFilteredByIntensity: quantizationResult.metadata.transientsFilteredByIntensity,
             densityValidationRetries: quantizationResult.metadata.densityValidation.maxRetryCount,
             phrasesDetected: phraseAnalysis.phrases.length,
-            averageDensity: densityAnalysis.combinedMetrics.transientsPerBeat,
+            averageDensity: densityAnalysis.combinedMetrics.notesPerSecond,
             naturalDifficulty: composite.naturalDifficulty,
             generationConfig: this.options,
             duration: audioBuffer.duration,
@@ -1219,8 +1219,8 @@ export class RhythmGenerator {
      * @param quantizedStreams - Quantized band streams
      * @returns Density analysis result
      */
-    analyzeDensity(quantizedStreams: QuantizedBandStreams): DensityAnalysisResult {
-        return this.densityAnalyzer.analyze(quantizedStreams);
+    analyzeDensity(quantizedStreams: QuantizedBandStreams, bpm: number): DensityAnalysisResult {
+        return this.densityAnalyzer.analyze(quantizedStreams, bpm);
     }
 
     /**
@@ -1864,9 +1864,9 @@ export class RhythmGenerator {
             band: metrics.band,
             totalBeats: metrics.totalBeats,
             totalTransients: metrics.totalTransients,
-            transientsPerBeat: metrics.transientsPerBeat,
-            minTransientsPerBeat: metrics.minTransientsPerBeat,
-            maxTransientsPerBeat: metrics.maxTransientsPerBeat,
+            notesPerSecond: metrics.notesPerSecond,
+            minNotesPerSecond: metrics.minNotesPerSecond,
+            maxNotesPerSecond: metrics.maxNotesPerSecond,
             variance: metrics.variance,
             densityCategory: metrics.densityCategory,
             naturalDifficulty: metrics.naturalDifficulty,
@@ -1878,9 +1878,9 @@ export class RhythmGenerator {
             band: json.band,
             totalBeats: json.totalBeats,
             totalTransients: json.totalTransients,
-            transientsPerBeat: json.transientsPerBeat,
-            minTransientsPerBeat: json.minTransientsPerBeat,
-            maxTransientsPerBeat: json.maxTransientsPerBeat,
+            notesPerSecond: json.notesPerSecond,
+            minNotesPerSecond: json.minNotesPerSecond,
+            maxNotesPerSecond: json.maxNotesPerSecond,
             variance: json.variance,
             densityCategory: json.densityCategory,
             naturalDifficulty: json.naturalDifficulty,

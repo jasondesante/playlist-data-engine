@@ -1,7 +1,8 @@
 /**
  * Density Analyzer for Procedural Rhythm Generation
  *
- * Analyzes quantized rhythm streams to measure density and determine natural difficulty.
+ * Analyzes quantized rhythm streams to measure density (in notes per second)
+ * and determine natural difficulty.
  *
  * Part of the Procedural Rhythm Generation pipeline - Phase 2.2
  *
@@ -9,15 +10,15 @@
  * ```typescript
  * // Basic usage - analyze density of quantized streams
  * const analyzer = new DensityAnalyzer();
- * const result = analyzer.analyze(quantizedBandStreams);
+ * const result = analyzer.analyze(quantizedBandStreams, 120);
  *
  * // Check combined metrics for overall density
- * console.log(`Combined density: ${result.combinedMetrics.transientsPerBeat.toFixed(2)} transients/beat`);
+ * console.log(`Combined density: ${result.combinedMetrics.notesPerSecond.toFixed(2)} notes/sec`);
  * console.log(`Natural difficulty: ${result.combinedMetrics.naturalDifficulty}`);
  *
  * // Access per-band metrics
  * for (const [band, metrics] of Object.entries(result.bandMetrics)) {
- *   console.log(`${band}: ${metrics.densityCategory} (${metrics.transientsPerBeat.toFixed(2)} t/b)`);
+ *   console.log(`${band}: ${metrics.densityCategory} (${metrics.notesPerSecond.toFixed(2)} n/s)`);
  * }
  *
  * // Check section-level density for dynamic difficulty
@@ -76,14 +77,14 @@ export interface SectionDensityMetrics {
     /** Total transients in this section */
     totalTransients: number;
 
-    /** Average transients per beat */
-    transientsPerBeat: number;
+    /** Average notes per second in this section */
+    notesPerSecond: number;
 
-    /** Minimum transients per beat in this section */
-    minTransientsPerBeat: number;
+    /** Minimum notes per second in any single beat of this section */
+    minNotesPerSecond: number;
 
-    /** Maximum transients per beat in this section */
-    maxTransientsPerBeat: number;
+    /** Maximum notes per second in any single beat of this section */
+    maxNotesPerSecond: number;
 
     /** Density category for this section */
     densityCategory: DensityCategory;
@@ -105,16 +106,16 @@ export interface BandDensityMetrics {
     /** Total transients across all beats */
     totalTransients: number;
 
-    /** Average transients per beat */
-    transientsPerBeat: number;
+    /** Average notes per second */
+    notesPerSecond: number;
 
-    /** Minimum transients in any single beat */
-    minTransientsPerBeat: number;
+    /** Minimum notes per second in any single beat */
+    minNotesPerSecond: number;
 
-    /** Maximum transients in any single beat */
-    maxTransientsPerBeat: number;
+    /** Maximum notes per second in any single beat */
+    maxNotesPerSecond: number;
 
-    /** Variance in transients per beat */
+    /** Variance in notes per second */
     variance: number;
 
     /** Density category */
@@ -143,8 +144,8 @@ export interface DensityAnalysisResult {
         /** Total transients across all bands */
         totalTransients: number;
 
-        /** Average transients per beat (across all bands) */
-        transientsPerBeat: number;
+        /** Average notes per second (across all bands) */
+        notesPerSecond: number;
 
         /** Overall density category */
         densityCategory: DensityCategory;
@@ -167,10 +168,10 @@ export interface DensityAnalyzerConfig {
     /** Number of beats per section for section analysis. Default: 8 (2 measures in 4/4 time) */
     beatsPerSection: number;
 
-    /** Threshold for sparse density (transients per beat below this = sparse). Default: 1.0 */
+    /** Threshold for sparse density (notes per second below this = sparse). Default: 2.5 */
     sparseThreshold: number;
 
-    /** Threshold for dense density (transients per beat above this = dense). Default: 1.75 */
+    /** Threshold for dense density (notes per second above this = dense). Default: 4.5 */
     denseThreshold: number;
 }
 
@@ -180,8 +181,8 @@ export interface DensityAnalyzerConfig {
 
 const DEFAULT_DENSITY_ANALYZER_CONFIG: DensityAnalyzerConfig = {
     beatsPerSection: 8, // 2 measures in 4/4 time
-    sparseThreshold: 1.0,
-    denseThreshold: 1.75,
+    sparseThreshold: 2.5,
+    denseThreshold: 4.5,
 };
 
 // ============================================================================
@@ -189,11 +190,11 @@ const DEFAULT_DENSITY_ANALYZER_CONFIG: DensityAnalyzerConfig = {
 // ============================================================================
 
 /**
- * Transients per beat thresholds for density categorization
+ * Notes per second thresholds for density categorization
  *
- * Sparse: < 1.0 transients/beat (mostly quarter notes)
- * Moderate: 1.0 - 1.75 transients/beat (eighth notes, some sixteenths)
- * Dense: > 1.75 transients/beat (heavy sixteenth notes, triplets)
+ * Sparse: < 2.5 notes/sec (mostly quarter notes at moderate tempo)
+ * Moderate: 2.5 - 4.5 notes/sec (eighth notes, some sixteenths)
+ * Dense: > 4.5 notes/sec (heavy sixteenth notes, triplets)
  */
 
 // ============================================================================
@@ -203,23 +204,30 @@ const DEFAULT_DENSITY_ANALYZER_CONFIG: DensityAnalyzerConfig = {
 /**
  * Analyzes quantized rhythm streams for density and natural difficulty.
  *
+ * Density is measured in notes per second (n/s), which accounts for BPM.
+ * A 120 BPM track with 2 notes/beat = 4 notes/sec feels much easier than
+ * a 180 BPM track with 2 notes/beat = 6 notes/sec.
+ *
  * ## Algorithm Overview
  *
  * 1. **Per-Beat Density Calculation**:
  *    - Count transients in each beat across all bands
  *    - Track which bands contribute to each beat
  *
- * 2. **Density Categorization**:
- *    - Sparse: < 1.0 transients/beat (mostly quarter notes)
- *    - Moderate: 1.0 - 1.75 transients/beat (eighth notes, some sixteenths)
- *    - Dense: > 1.75 transients/beat (heavy sixteenth notes, triplets)
+ * 2. **Notes/Second Conversion**:
+ *    - Convert per-beat transient counts to notes/sec: `transientsPerBeat * (bpm / 60)`
  *
- * 3. **Natural Difficulty Determination**:
+ * 3. **Density Categorization**:
+ *    - Sparse: < 2.5 notes/sec (mostly quarter notes at moderate tempo)
+ *    - Moderate: 2.5 - 4.5 notes/sec (eighth notes, some sixteenths)
+ *    - Dense: > 4.5 notes/sec (heavy sixteenth notes, triplets)
+ *
+ * 4. **Natural Difficulty Determination**:
  *    - High density (dense) → Hard
  *    - Medium density (moderate) → Medium
  *    - Low density (sparse) → Easy
  *
- * 4. **Section Analysis**:
+ * 5. **Section Analysis**:
  *    - Divide track into sections (default: 8 beats = 2 measures)
  *    - Calculate density per section for granular analysis
  *
@@ -227,7 +235,7 @@ const DEFAULT_DENSITY_ANALYZER_CONFIG: DensityAnalyzerConfig = {
  *
  * ```typescript
  * const analyzer = new DensityAnalyzer();
- * const result = analyzer.analyze(quantizedStreams);
+ * const result = analyzer.analyze(quantizedStreams, 150);
  *
  * // Access per-band metrics
  * const lowDensity = result.bandMetrics.low;
@@ -250,14 +258,17 @@ export class DensityAnalyzer {
      * Analyze quantized band streams for density
      *
      * @param streams - Quantized band streams from RhythmQuantizer
+     * @param bpm - Tempo in beats per minute, used to convert to notes/second
      * @returns Complete density analysis result
      */
-    analyze(streams: QuantizedBandStreams): DensityAnalysisResult {
+    analyze(streams: QuantizedBandStreams, bpm: number): DensityAnalysisResult {
+        const bpmPerSecond = bpm / 60;
+
         // Analyze each band
         const bandMetrics = {
-            low: this.analyzeBand(streams.streams.low, 'low'),
-            mid: this.analyzeBand(streams.streams.mid, 'mid'),
-            high: this.analyzeBand(streams.streams.high, 'high'),
+            low: this.analyzeBand(streams.streams.low, 'low', bpmPerSecond),
+            mid: this.analyzeBand(streams.streams.mid, 'mid', bpmPerSecond),
+            high: this.analyzeBand(streams.streams.high, 'high', bpmPerSecond),
         };
 
         // Combine all beats for combined analysis
@@ -275,10 +286,10 @@ export class DensityAnalyzer {
         );
 
         // Calculate combined metrics
-        const combinedMetrics = this.calculateCombinedMetrics(perBeatDensity);
+        const combinedMetrics = this.calculateCombinedMetrics(perBeatDensity, bpmPerSecond);
 
         // Calculate section-based metrics
-        const sections = this.calculateSectionMetrics(perBeatDensity);
+        const sections = this.calculateSectionMetrics(perBeatDensity, bpmPerSecond);
 
         return {
             bandMetrics,
@@ -291,7 +302,7 @@ export class DensityAnalyzer {
     /**
      * Analyze a single band for density metrics
      */
-    private analyzeBand(rhythmMap: GeneratedRhythmMap, band: 'low' | 'mid' | 'high'): BandDensityMetrics {
+    private analyzeBand(rhythmMap: GeneratedRhythmMap, band: 'low' | 'mid' | 'high', bpmPerSecond: number): BandDensityMetrics {
         const beats = rhythmMap.beats;
 
         // Find the maximum beat index to determine total beats
@@ -335,26 +346,26 @@ export class DensityAnalyzer {
             totalTransients += count;
         }
 
-        // Calculate statistics
+        // Calculate statistics in notes per second
         const countsArray = perBeatDensity.map(b => b.transientCount);
-        const transientsPerBeat = totalBeats > 0 ? totalTransients / totalBeats : 0;
-        const minTransientsPerBeat = countsArray.length > 0 ? Math.min(...countsArray) : 0;
-        const maxTransientsPerBeat = countsArray.length > 0 ? Math.max(...countsArray) : 0;
+        const notesPerSecond = totalBeats > 0 ? (totalTransients / totalBeats) * bpmPerSecond : 0;
+        const minNotesPerSecond = countsArray.length > 0 ? Math.min(...countsArray) * bpmPerSecond : 0;
+        const maxNotesPerSecond = countsArray.length > 0 ? Math.max(...countsArray) * bpmPerSecond : 0;
 
-        // Calculate variance
-        const variance = this.calculateVariance(countsArray, transientsPerBeat);
+        // Calculate variance (on notes/second scale)
+        const variance = this.calculateVariance(countsArray, notesPerSecond / bpmPerSecond) * bpmPerSecond * bpmPerSecond;
 
         // Determine density category and natural difficulty
-        const densityCategory = this.categorizeDensity(transientsPerBeat);
+        const densityCategory = this.categorizeDensity(notesPerSecond);
         const naturalDifficulty = this.determineNaturalDifficulty(densityCategory);
 
         return {
             band,
             totalBeats,
             totalTransients,
-            transientsPerBeat,
-            minTransientsPerBeat,
-            maxTransientsPerBeat,
+            notesPerSecond,
+            minNotesPerSecond,
+            maxNotesPerSecond,
             variance,
             densityCategory,
             naturalDifficulty,
@@ -453,22 +464,22 @@ export class DensityAnalyzer {
     /**
      * Calculate combined metrics from per-beat density
      */
-    private calculateCombinedMetrics(perBeatDensity: BeatDensityMetrics[]): {
+    private calculateCombinedMetrics(perBeatDensity: BeatDensityMetrics[], bpmPerSecond: number): {
         totalTransients: number;
-        transientsPerBeat: number;
+        notesPerSecond: number;
         densityCategory: DensityCategory;
         naturalDifficulty: NaturalDifficulty;
     } {
         const totalTransients = perBeatDensity.reduce((sum, b) => sum + b.transientCount, 0);
         const totalBeats = perBeatDensity.length;
-        const transientsPerBeat = totalBeats > 0 ? totalTransients / totalBeats : 0;
+        const notesPerSecond = totalBeats > 0 ? (totalTransients / totalBeats) * bpmPerSecond : 0;
 
-        const densityCategory = this.categorizeDensity(transientsPerBeat);
+        const densityCategory = this.categorizeDensity(notesPerSecond);
         const naturalDifficulty = this.determineNaturalDifficulty(densityCategory);
 
         return {
             totalTransients,
-            transientsPerBeat,
+            notesPerSecond,
             densityCategory,
             naturalDifficulty,
         };
@@ -477,7 +488,7 @@ export class DensityAnalyzer {
     /**
      * Calculate section-based metrics
      */
-    private calculateSectionMetrics(perBeatDensity: BeatDensityMetrics[]): SectionDensityMetrics[] {
+    private calculateSectionMetrics(perBeatDensity: BeatDensityMetrics[], bpmPerSecond: number): SectionDensityMetrics[] {
         const sections: SectionDensityMetrics[] = [];
         const beatsPerSection = this.config.beatsPerSection;
         const totalBeats = perBeatDensity.length;
@@ -488,13 +499,13 @@ export class DensityAnalyzer {
 
             const totalTransients = sectionBeats.reduce((sum, b) => sum + b.transientCount, 0);
             const beatCount = sectionBeats.length;
-            const transientsPerBeat = beatCount > 0 ? totalTransients / beatCount : 0;
+            const notesPerSecond = beatCount > 0 ? (totalTransients / beatCount) * bpmPerSecond : 0;
 
             const transientCounts = sectionBeats.map(b => b.transientCount);
-            const minTransientsPerBeat = transientCounts.length > 0 ? Math.min(...transientCounts) : 0;
-            const maxTransientsPerBeat = transientCounts.length > 0 ? Math.max(...transientCounts) : 0;
+            const minNotesPerSecond = transientCounts.length > 0 ? Math.min(...transientCounts) * bpmPerSecond : 0;
+            const maxNotesPerSecond = transientCounts.length > 0 ? Math.max(...transientCounts) * bpmPerSecond : 0;
 
-            const densityCategory = this.categorizeDensity(transientsPerBeat);
+            const densityCategory = this.categorizeDensity(notesPerSecond);
             const naturalDifficulty = this.determineNaturalDifficulty(densityCategory);
 
             sections.push({
@@ -502,9 +513,9 @@ export class DensityAnalyzer {
                 endBeat,
                 beatCount,
                 totalTransients,
-                transientsPerBeat,
-                minTransientsPerBeat,
-                maxTransientsPerBeat,
+                notesPerSecond,
+                minNotesPerSecond,
+                maxNotesPerSecond,
                 densityCategory,
                 naturalDifficulty,
             });
@@ -514,16 +525,16 @@ export class DensityAnalyzer {
     }
 
     /**
-     * Categorize density based on transients per beat
+     * Categorize density based on notes per second
      *
-     * Sparse: < sparseThreshold (mostly quarter notes)
+     * Sparse: < sparseThreshold (mostly quarter notes at moderate tempo)
      * Moderate: sparseThreshold - denseThreshold (eighth notes, some sixteenths)
      * Dense: > denseThreshold (heavy sixteenth notes, triplets)
      */
-    categorizeDensity(transientsPerBeat: number): DensityCategory {
-        if (transientsPerBeat < this.config.sparseThreshold) {
+    categorizeDensity(notesPerSecond: number): DensityCategory {
+        if (notesPerSecond < this.config.sparseThreshold) {
             return 'sparse';
-        } else if (transientsPerBeat > this.config.denseThreshold) {
+        } else if (notesPerSecond > this.config.denseThreshold) {
             return 'dense';
         } else {
             return 'moderate';
