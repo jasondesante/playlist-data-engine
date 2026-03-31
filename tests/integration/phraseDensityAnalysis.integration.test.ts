@@ -173,8 +173,8 @@ describe('Phrase and Density Analysis Integration Tests', () => {
             });
             densityAnalyzer = new DensityAnalyzer({
                 beatsPerSection: 8,
-                sparseThreshold: 1.0,
-                denseThreshold: 2.5,
+                sparseThreshold: 2.0,
+                denseThreshold: 5.0,
             });
         });
 
@@ -240,7 +240,7 @@ describe('Phrase and Density Analysis Integration Tests', () => {
             const phraseResult = phraseAnalyzer.analyze(streams.streams);
 
             // Run density analysis
-            const densityResult = densityAnalyzer.analyze(streams);
+            const densityResult = densityAnalyzer.analyze(streams, 120);
 
             // Verify phrase analysis
             expect(phraseResult.phrases).toBeDefined();
@@ -259,7 +259,7 @@ describe('Phrase and Density Analysis Integration Tests', () => {
             console.log('\n✓ Simple 4/4 drum pattern analysis:');
             console.log(`  Total phrases detected: ${phraseResult.phrases.length}`);
             console.log(`  Pattern library size: ${phraseResult.patternLibrary.length}`);
-            console.log(`  Combined transients per beat: ${densityResult.combinedMetrics.transientsPerBeat.toFixed(2)}`);
+            console.log(`  Combined notes/sec: ${densityResult.combinedMetrics.notesPerSecond.toFixed(2)}`);
             console.log(`  Combined density: ${densityResult.combinedMetrics.densityCategory}`);
             console.log(`  Natural difficulty: ${densityResult.combinedMetrics.naturalDifficulty}`);
 
@@ -301,19 +301,19 @@ describe('Phrase and Density Analysis Integration Tests', () => {
 
             // Run both analyzers
             const phraseResult = phraseAnalyzer.analyze(streams.streams);
-            const densityResult = densityAnalyzer.analyze(streams);
+            const densityResult = densityAnalyzer.analyze(streams, 120);
 
             // Should detect phrases because of 16th note variation
             expect(phraseResult.phrases.length).toBeGreaterThan(0);
 
-            // Should have dense density (3 notes per beat is > 2.5 denseThreshold)
-            expect(densityResult.bandMetrics.low.transientsPerBeat).toBeCloseTo(3.0, 0.1);
+            // Should have dense density (3 notes/beat = 6.0 notes/sec at 120 BPM is > 5.0 denseThreshold)
+            expect(densityResult.bandMetrics.low.notesPerSecond).toBeCloseTo(6.0, 0.1);
             expect(densityResult.combinedMetrics.densityCategory).toBe('dense');
 
             console.log('\n✓ 16th note pattern analysis:');
             console.log(`  Phrases detected: ${phraseResult.phrases.length}`);
             console.log(`  Phrases with variation: ${phraseResult.phrases.filter(p => p.hasVariation).length}`);
-            console.log(`  Transients per beat: ${densityResult.bandMetrics.low.transientsPerBeat.toFixed(2)}`);
+            console.log(`  Notes/sec: ${densityResult.bandMetrics.low.notesPerSecond.toFixed(2)}`);
             console.log(`  Density category: ${densityResult.combinedMetrics.densityCategory}`);
         });
 
@@ -345,7 +345,7 @@ describe('Phrase and Density Analysis Integration Tests', () => {
 
             // Run both analyzers
             const phraseResult = phraseAnalyzer.analyze(streams.streams);
-            const densityResult = densityAnalyzer.analyze(streams);
+            const densityResult = densityAnalyzer.analyze(streams, 120);
 
             // Should detect phrases because triplet grid is interesting
             expect(phraseResult.phrases.length).toBeGreaterThan(0);
@@ -356,14 +356,14 @@ describe('Phrase and Density Analysis Integration Tests', () => {
             );
             expect(tripletPhrases.length).toBeGreaterThan(0);
 
-            // Should have high density (3 notes per beat)
-            expect(densityResult.bandMetrics.mid.transientsPerBeat).toBeCloseTo(3.0, 0.1);
+            // Should have high density (3 notes/beat = 6.0 notes/sec at 120 BPM)
+            expect(densityResult.bandMetrics.mid.notesPerSecond).toBeCloseTo(6.0, 0.1);
             expect(densityResult.combinedMetrics.densityCategory).toBe('dense');
 
             console.log('\n✓ Triplet pattern analysis:');
             console.log(`  Phrases detected: ${phraseResult.phrases.length}`);
             console.log(`  Phrases with triplet grid: ${tripletPhrases.length}`);
-            console.log(`  Transients per beat: ${densityResult.bandMetrics.mid.transientsPerBeat.toFixed(2)}`);
+            console.log(`  Notes/sec: ${densityResult.bandMetrics.mid.notesPerSecond.toFixed(2)}`);
             console.log(`  Density category: ${densityResult.combinedMetrics.densityCategory}`);
             console.log(`  Natural difficulty: ${densityResult.combinedMetrics.naturalDifficulty}`);
         });
@@ -384,7 +384,7 @@ describe('Phrase and Density Analysis Integration Tests', () => {
             const midBeats: GeneratedBeat[] = [];
             const highBeats: GeneratedBeat[] = [];
 
-            // Low band: sparse (bass hits every 2 beats)
+            // Low band: sparse (0.5 notes/beat = 1.0 notes/sec at 120 BPM)
             for (let i = 0; i < 8; i++) {
                 lowBeats.push(createGeneratedBeat({
                     timestamp: i * 1.0,
@@ -395,18 +395,25 @@ describe('Phrase and Density Analysis Integration Tests', () => {
                 }));
             }
 
-            // Mid band: moderate (eighth notes)
+            // Mid band: moderate (2 notes/beat = 4.0 notes/sec at 120 BPM)
             for (let i = 0; i < 16; i++) {
                 midBeats.push(createGeneratedBeat({
                     timestamp: i * 0.5,
                     beatIndex: i,
-                    gridPosition: i % 2 === 0 ? 0 : 2,
+                    gridPosition: 0,
                     intensity: 0.7,
+                    band: 'mid',
+                }));
+                midBeats.push(createGeneratedBeat({
+                    timestamp: i * 0.5 + 0.25,
+                    beatIndex: i,
+                    gridPosition: 2,
+                    intensity: 0.6,
                     band: 'mid',
                 }));
             }
 
-            // High band: dense (16th notes with variation)
+            // High band: dense (~2.8 notes/beat ≈ 5.6 notes/sec at 120 BPM)
             for (let i = 0; i < 16; i++) {
                 for (let pos = 0; pos < 4; pos++) {
                     // Skip some notes for variation
@@ -426,7 +433,7 @@ describe('Phrase and Density Analysis Integration Tests', () => {
 
             // Run both analyzers
             const phraseResult = phraseAnalyzer.analyze(streams.streams);
-            const densityResult = densityAnalyzer.analyze(streams);
+            const densityResult = densityAnalyzer.analyze(streams, 120);
 
             // Verify per-band phrase analysis
             expect(phraseResult.bandAnalysis.low).toBeDefined();
@@ -441,17 +448,17 @@ describe('Phrase and Density Analysis Integration Tests', () => {
             console.log('\n✓ Multi-band analysis:');
             console.log(`  Low band:`);
             console.log(`    Transients: ${densityResult.bandMetrics.low.totalTransients}`);
-            console.log(`    Transients/beat: ${densityResult.bandMetrics.low.transientsPerBeat.toFixed(2)}`);
+            console.log(`    Notes/sec: ${densityResult.bandMetrics.low.notesPerSecond.toFixed(2)}`);
             console.log(`    Density: ${densityResult.bandMetrics.low.densityCategory}`);
             console.log(`    Phrases: ${phraseResult.bandAnalysis.low.phrases.length}`);
             console.log(`  Mid band:`);
             console.log(`    Transients: ${densityResult.bandMetrics.mid.totalTransients}`);
-            console.log(`    Transients/beat: ${densityResult.bandMetrics.mid.transientsPerBeat.toFixed(2)}`);
+            console.log(`    Notes/sec: ${densityResult.bandMetrics.mid.notesPerSecond.toFixed(2)}`);
             console.log(`    Density: ${densityResult.bandMetrics.mid.densityCategory}`);
             console.log(`    Phrases: ${phraseResult.bandAnalysis.mid.phrases.length}`);
             console.log(`  High band:`);
             console.log(`    Transients: ${densityResult.bandMetrics.high.totalTransients}`);
-            console.log(`    Transients/beat: ${densityResult.bandMetrics.high.transientsPerBeat.toFixed(2)}`);
+            console.log(`    Notes/sec: ${densityResult.bandMetrics.high.notesPerSecond.toFixed(2)}`);
             console.log(`    Density: ${densityResult.bandMetrics.high.densityCategory}`);
             console.log(`    Phrases: ${phraseResult.bandAnalysis.high.phrases.length}`);
         });
@@ -529,7 +536,7 @@ describe('Phrase and Density Analysis Integration Tests', () => {
                 includePhrasesWithoutVariation: false,
             });
             densityAnalyzer = new DensityAnalyzer({
-                denseThreshold: 2.5,
+                denseThreshold: 5.0,
             });
         });
 
@@ -547,13 +554,13 @@ describe('Phrase and Density Analysis Integration Tests', () => {
             }
 
             const streams = createMockStreams(lowBeats, [], []);
-            const densityResult = densityAnalyzer.analyze(streams);
+            const densityResult = densityAnalyzer.analyze(streams, 120);
 
             expect(densityResult.combinedMetrics.densityCategory).toBe('sparse');
             expect(densityResult.combinedMetrics.naturalDifficulty).toBe('easy');
 
             console.log('\n✓ Sparse pattern difficulty:');
-            console.log(`  Transients per beat: ${densityResult.combinedMetrics.transientsPerBeat.toFixed(2)}`);
+            console.log(`  Notes/sec: ${densityResult.combinedMetrics.notesPerSecond.toFixed(2)}`);
             console.log(`  Density: ${densityResult.combinedMetrics.densityCategory}`);
             console.log(`  Natural difficulty: ${densityResult.combinedMetrics.naturalDifficulty}`);
         });
@@ -579,13 +586,13 @@ describe('Phrase and Density Analysis Integration Tests', () => {
             }
 
             const streams = createMockStreams([], midBeats, []);
-            const densityResult = densityAnalyzer.analyze(streams);
+            const densityResult = densityAnalyzer.analyze(streams, 120);
 
             expect(densityResult.combinedMetrics.densityCategory).toBe('moderate');
             expect(densityResult.combinedMetrics.naturalDifficulty).toBe('medium');
 
             console.log('\n✓ Moderate pattern difficulty:');
-            console.log(`  Transients per beat: ${densityResult.combinedMetrics.transientsPerBeat.toFixed(2)}`);
+            console.log(`  Notes/sec: ${densityResult.combinedMetrics.notesPerSecond.toFixed(2)}`);
             console.log(`  Density: ${densityResult.combinedMetrics.densityCategory}`);
             console.log(`  Natural difficulty: ${densityResult.combinedMetrics.naturalDifficulty}`);
         });
@@ -606,13 +613,13 @@ describe('Phrase and Density Analysis Integration Tests', () => {
             }
 
             const streams = createMockStreams([], [], highBeats);
-            const densityResult = densityAnalyzer.analyze(streams);
+            const densityResult = densityAnalyzer.analyze(streams, 120);
 
             expect(densityResult.combinedMetrics.densityCategory).toBe('dense');
             expect(densityResult.combinedMetrics.naturalDifficulty).toBe('hard');
 
             console.log('\n✓ Dense pattern difficulty:');
-            console.log(`  Transients per beat: ${densityResult.combinedMetrics.transientsPerBeat.toFixed(2)}`);
+            console.log(`  Notes/sec: ${densityResult.combinedMetrics.notesPerSecond.toFixed(2)}`);
             console.log(`  Density: ${densityResult.combinedMetrics.densityCategory}`);
             console.log(`  Natural difficulty: ${densityResult.combinedMetrics.naturalDifficulty}`);
         });
@@ -626,7 +633,7 @@ describe('Phrase and Density Analysis Integration Tests', () => {
             });
             densityAnalyzer = new DensityAnalyzer({
                 beatsPerSection: 8, // 2 measures in 4/4 time
-                denseThreshold: 2.5,
+                denseThreshold: 5.0,
             });
         });
 
@@ -634,7 +641,7 @@ describe('Phrase and Density Analysis Integration Tests', () => {
             // Create a track with varying density sections
             const lowBeats: GeneratedBeat[] = [];
 
-            // Section 1 (beats 0-7): sparse (1 note every 2 beats = 0.5 notes/beat)
+            // Section 1 (beats 0-7): sparse (0.5 notes/beat = 1.0 notes/sec at 120 BPM)
             for (let i = 0; i < 8; i += 2) {
                 lowBeats.push(createGeneratedBeat({
                     timestamp: i * 0.5,
@@ -645,7 +652,7 @@ describe('Phrase and Density Analysis Integration Tests', () => {
                 }));
             }
 
-            // Section 2 (beats 8-15): dense (4 notes per beat)
+            // Section 2 (beats 8-15): dense (4 notes/beat = 8.0 notes/sec at 120 BPM)
             for (let i = 8; i < 16; i++) {
                 for (let pos = 0; pos < 4; pos++) {
                     lowBeats.push(createGeneratedBeat({
@@ -658,7 +665,7 @@ describe('Phrase and Density Analysis Integration Tests', () => {
                 }
             }
 
-            // Section 3 (beats 16-23): moderate (2 notes per beat)
+            // Section 3 (beats 16-23): moderate (2 notes/beat = 4.0 notes/sec at 120 BPM)
             for (let i = 16; i < 24; i++) {
                 lowBeats.push(createGeneratedBeat({
                     timestamp: i * 0.5,
@@ -677,7 +684,7 @@ describe('Phrase and Density Analysis Integration Tests', () => {
             }
 
             const streams = createMockStreams(lowBeats, [], []);
-            const densityResult = densityAnalyzer.analyze(streams);
+            const densityResult = densityAnalyzer.analyze(streams, 120);
 
             // Should have 3 sections
             expect(densityResult.sections.length).toBe(3);
@@ -691,7 +698,7 @@ describe('Phrase and Density Analysis Integration Tests', () => {
             for (let i = 0; i < densityResult.sections.length; i++) {
                 const section = densityResult.sections[i];
                 console.log(`  Section ${i + 1} (beats ${section.startBeat}-${section.endBeat}):`);
-                console.log(`    Transients/beat: ${section.transientsPerBeat.toFixed(2)}`);
+                console.log(`    Notes/sec: ${section.notesPerSecond.toFixed(2)}`);
                 console.log(`    Density: ${section.densityCategory}`);
                 console.log(`    Difficulty: ${section.naturalDifficulty}`);
             }
@@ -711,7 +718,7 @@ describe('Phrase and Density Analysis Integration Tests', () => {
             }
 
             const streams = createMockStreams(lowBeats, [], []);
-            const densityResult = densityAnalyzer.analyze(streams);
+            const densityResult = densityAnalyzer.analyze(streams, 120);
 
             // Should have 2 sections (8 + 2)
             expect(densityResult.sections.length).toBe(2);
@@ -909,7 +916,7 @@ describe('Phrase and Density Analysis Integration Tests', () => {
 
             // Run complete pipeline
             const phraseResult = phraseAnalyzer.analyze(streams.streams);
-            const densityResult = densityAnalyzer.analyze(streams);
+            const densityResult = densityAnalyzer.analyze(streams, 120);
 
             // Comprehensive verification
             expect(phraseResult.phrases.length).toBeGreaterThan(0);
@@ -937,15 +944,15 @@ describe('Phrase and Density Analysis Integration Tests', () => {
             console.log(`  `);
             console.log(`  Density Analysis:`);
             console.log(`    Total transients: ${densityResult.combinedMetrics.totalTransients}`);
-            console.log(`    Transients per beat: ${densityResult.combinedMetrics.transientsPerBeat.toFixed(2)}`);
+            console.log(`    Notes/sec: ${densityResult.combinedMetrics.notesPerSecond.toFixed(2)}`);
             console.log(`    Overall density: ${densityResult.combinedMetrics.densityCategory}`);
             console.log(`    Natural difficulty: ${densityResult.combinedMetrics.naturalDifficulty}`);
             console.log(`    Sections analyzed: ${densityResult.sections.length}`);
             console.log(`  `);
             console.log(`  Per-Band Density:`);
-            console.log(`    Low: ${densityResult.bandMetrics.low.transientsPerBeat.toFixed(2)} t/b (${densityResult.bandMetrics.low.densityCategory})`);
-            console.log(`    Mid: ${densityResult.bandMetrics.mid.transientsPerBeat.toFixed(2)} t/b (${densityResult.bandMetrics.mid.densityCategory})`);
-            console.log(`    High: ${densityResult.bandMetrics.high.transientsPerBeat.toFixed(2)} t/b (${densityResult.bandMetrics.high.densityCategory})`);
+            console.log(`    Low: ${densityResult.bandMetrics.low.notesPerSecond.toFixed(2)} n/s (${densityResult.bandMetrics.low.densityCategory})`);
+            console.log(`    Mid: ${densityResult.bandMetrics.mid.notesPerSecond.toFixed(2)} n/s (${densityResult.bandMetrics.mid.densityCategory})`);
+            console.log(`    High: ${densityResult.bandMetrics.high.notesPerSecond.toFixed(2)} n/s (${densityResult.bandMetrics.high.densityCategory})`);
         });
     });
 });
