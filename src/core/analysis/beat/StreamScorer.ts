@@ -180,6 +180,13 @@ export interface StreamScorerConfig {
      *  Range: 0.0 - 2.0 (0 = never win, 1 = neutral, 2 = strongly favored)
      */
     bandBiasWeights?: BandBiasWeights;
+
+    /** BPM for tempo-aware density factor calculation.
+     *  When provided, density is measured in notes/second (BPM-adjusted).
+     *  When undefined, density falls back to notes/beat (legacy behavior).
+     *  Default: undefined
+     */
+    bpm?: number;
 }
 
 // ============================================================================
@@ -229,7 +236,8 @@ const DEFAULT_STREAM_SCORER_CONFIG: StreamScorerConfig = {
  *
  * 4. **Density Factor**: Considers note density.
  *    - Moderate density is ideal (not too sparse, not too dense)
- *    - Uses a bell curve centered around 2 notes per beat
+ *    - Uses a bell curve centered around an optimal notes/second value (BPM-aware)
+ *    - When BPM is configured, density is measured in notes/second for tempo-accurate scoring
  *
  * ## Usage
  *
@@ -516,7 +524,8 @@ export class StreamScorer {
      * Calculate density factor
      *
      * Uses a bell curve - moderate density is ideal.
-     * Optimal density is around 2 notes per beat.
+     * When BPM is configured, density is measured in notes/second for tempo-accurate scoring.
+     * Optimal density is around 4 notes/second (at reference 120 BPM, equivalent to 2 notes/beat).
      * Normalized to 0-1 range.
      */
     private calculateDensityFactor(
@@ -537,17 +546,22 @@ export class StreamScorer {
         }
 
         // Calculate average transients per beat for this section
-        const avgDensity = sectionDensities.reduce((sum, d) => sum + d.transientCount, 0) / sectionDensities.length;
+        const avgTransientsPerBeat = sectionDensities.reduce((sum, d) => sum + d.transientCount, 0) / sectionDensities.length;
 
-        // Bell curve centered at 2 notes per beat
-        // Formula: e^(-(x - 2)^2 / 2)
-        // - At 0 notes/beat: ~0.13
-        // - At 1 note/beat: ~0.61
-        // - At 2 notes/beat: 1.0 (optimal)
-        // - At 3 notes/beat: ~0.61
-        // - At 4 notes/beat: ~0.13
-        const optimalDensity = 2.0;
-        const bellCurveWidth = 1.5; // Controls how quickly the curve drops off
+        // Convert to notes/second when BPM is available
+        const bpmPerSecond = this.config.bpm != null ? this.config.bpm / 60 : 1;
+        const avgDensity = avgTransientsPerBeat * bpmPerSecond;
+
+        // Bell curve centered at 4 notes/second (2 notes/beat at 120 BPM reference)
+        // When no BPM is configured, bpmPerSecond=1 so this is equivalent to the old 2 notes/beat
+        // Formula: e^(-(x - optimal)^2 / (2 * width^2))
+        // - At 0 notes/sec: ~0.14
+        // - At 2 notes/sec: ~0.61
+        // - At 4 notes/sec: 1.0 (optimal)
+        // - At 6 notes/sec: ~0.61
+        // - At 8 notes/sec: ~0.14
+        const optimalDensity = 4.0;
+        const bellCurveWidth = 3.0; // Controls how quickly the curve drops off
 
         const factor = Math.exp(-Math.pow(avgDensity - optimalDensity, 2) / (2 * Math.pow(bellCurveWidth, 2)));
 

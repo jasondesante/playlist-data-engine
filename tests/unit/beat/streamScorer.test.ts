@@ -332,7 +332,8 @@ describe('StreamScorer', () => {
 
         describe('Density Factor Scoring', () => {
             it('should score moderate density highest (bell curve)', async () => {
-                // 2 notes per beat (optimal)
+                // 2 notes per beat at 120 BPM = 4 notes/sec (optimal)
+                scorer = new StreamScorer({ beatsPerSection: 8, bpm: 120 });
                 const midBeats: GeneratedBeat[] = [];
                 for (let i = 0; i < 16; i++) {
                     midBeats.push(createGeneratedBeat({
@@ -360,12 +361,13 @@ describe('StreamScorer', () => {
                     s => s.band === 'mid' && s.beatRange.start === 0
                 );
                 expect(midScore).toBeDefined();
-                // 2 notes per beat should be near optimal (score close to 1)
+                // 4 notes/sec should be near optimal (score close to 1)
                 expect(midScore!.factors.densityFactor).toBeGreaterThan(0.8);
             });
 
             it('should score sparse density lower', async () => {
-                // 0.5 notes per beat (sparse)
+                // 0.5 notes per beat at 120 BPM = 1 note/sec (sparse)
+                scorer = new StreamScorer({ beatsPerSection: 8, bpm: 120 });
                 const lowBeats: GeneratedBeat[] = [];
                 for (let i = 0; i < 4; i++) {
                     lowBeats.push(createGeneratedBeat({
@@ -391,7 +393,8 @@ describe('StreamScorer', () => {
             });
 
             it('should score very dense patterns lower (too many notes)', async () => {
-                // 4 notes per beat (very dense)
+                // 4 notes per beat at 120 BPM = 8 notes/sec (very dense)
+                scorer = new StreamScorer({ beatsPerSection: 8, bpm: 120 });
                 const highBeats: GeneratedBeat[] = [];
                 for (let i = 0; i < 16; i++) {
                     for (let pos = 0; pos < 4; pos++) {
@@ -725,7 +728,7 @@ describe('StreamScorer', () => {
             const scoreResult = scorer.score(streams, phraseResult, densityResult);
 
             // Should not crash - all scores should be low (only density factor contributes)
-            // With 0 notes, density factor gives a non-zero bell curve value (0.13 at x=0)
+            // With 0 notes, density factor gives a non-zero bell curve value (~0.14 at x=0)
             expect(scoreResult.bandAverages.low).toBeLessThan(0.1);
             expect(scoreResult.bandAverages.mid).toBeLessThan(0.1);
             expect(scoreResult.bandAverages.high).toBeLessThan(0.1);
