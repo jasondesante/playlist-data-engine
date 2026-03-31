@@ -27,12 +27,12 @@ This refactor replaces both paths with **global target-based density control**: 
 
 The foundational change. Before any density work, lock the grid type for each beat index so all subsequent operations know which grid to use.
 
-- [ ] Task 1.1: Create `lockGridPerBeatIndex()` method
-  - [ ] 1.1.1: Run `enforceSingleGridPerBeat()` on the input beats to resolve mixed grids
-  - [ ] 1.1.2: Build `Map<number, ExtendedGridType>` of `beatIndex → dominantGridType` from the resolved beats
-  - [ ] 1.1.3: For empty beat indices with no resolved grid type, resolve from `gridDecisions` map, then nearest-neighbor fallback (offsets 1, -1, 2, -2, 3, -3), then default to allowed grid type for target difficulty
-  - [ ] 1.1.4: Return the lock map alongside the cleaned beats
-  - [ ] 1.1.5: Use the lock map signature: `{ beats: CompositeBeat[], gridLock: Map<number, ExtendedGridType> }`
+- [x] Task 1.1: Create `lockGridPerBeatIndex()` method
+  - [x] 1.1.1: Run `enforceSingleGridPerBeat()` on the input beats to resolve mixed grids
+  - [x] 1.1.2: Build `Map<number, ExtendedGridType>` of `beatIndex → dominantGridType` from the resolved beats
+  - [x] 1.1.3: For empty beat indices with no resolved grid type, resolve from `gridDecisions` map, then nearest-neighbor fallback (offsets 1, -1, 2, -2, 3, -3), then default to allowed grid type for target difficulty
+  - [x] 1.1.4: Return the lock map alongside the cleaned beats
+  - [x] 1.1.5: Use the lock map signature: `{ beats: CompositeBeat[], gridLock: Map<number, ExtendedGridType> }`
 
 - [ ] Task 1.2: Refactor `simplifyBeats()` to accept and use the grid lock
   - [ ] 1.2.1: Accept `gridLock: Map<number, ExtendedGridType>` parameter

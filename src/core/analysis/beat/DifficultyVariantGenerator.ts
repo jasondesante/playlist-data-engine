@@ -390,6 +390,21 @@ export interface SubdivisionViolation {
 }
 
 /**
+ * Result of locking grid types per beat index
+ *
+ * This is the foundational structure for the density balancing refactor.
+ * Before any density work, the grid type for each beat index is locked
+ * so all subsequent operations know which grid to use.
+ */
+export interface GridLockResult {
+    /** Beats after resolving mixed grids (single grid per beat index) */
+    beats: CompositeBeat[];
+
+    /** Map from beat index to locked grid type */
+    gridLock: Map<number, ExtendedGridType>;
+}
+
+/**
  * Configuration for difficulty variant generation
  */
 export interface DifficultyVariantConfig {
@@ -617,6 +632,104 @@ export class DifficultyVariantGenerator {
 
     constructor(config: Partial<DifficultyVariantConfig> = {}) {
         this.config = { ...DEFAULT_DIFFICULTY_VARIANT_CONFIG, ...config };
+    }
+
+    /**
+     * Lock grid type per beat index before density work
+     *
+     * This is the foundational method for the density balancing refactor.
+     * Before any density work (simplification or enhancement), lock the grid
+     * type for each beat index so all subsequent operations know which grid to use.
+     *
+     * The method:
+     * 1. Runs `enforceSingleGridPerBeat()` to resolve any mixed grids
+     * 2. Builds a map of beatIndex → dominantGridType from resolved beats
+     * 3. For empty beat indices, resolves grid type from:
+     *    - gridDecisions map (if available)
+     *    - Nearest-neighbor fallback (offsets 1, -1, 2, -2, 3, -3)
+     *    - Default to allowed grid type for target difficulty
+     *
+     * @param beats - Input beats (may have mixed grids)
+     * @param targetDifficulty - Target difficulty level for default grid type
+     * @param bpm - BPM for tempo-aware grid type defaults
+     * @param gridDecisions - Optional grid decisions from quantized streams
+     * @returns Grid lock result with cleaned beats and locked grid map
+     */
+    lockGridPerBeatIndex(
+        beats: CompositeBeat[],
+        targetDifficulty: DifficultyLevel,
+        bpm: number,
+        gridDecisions?: Map<number, GridDecision>
+    ): GridLockResult {
+        // 1.1.1: Run enforceSingleGridPerBeat() to resolve mixed grids
+        const cleanedBeats = this.enforceSingleGridPerBeat(beats);
+
+        // 1.1.2: Build Map<number, ExtendedGridType> of beatIndex → dominantGridType
+        const gridLock = new Map<number, ExtendedGridType>();
+
+        // Get max beat index to know the range we need to cover
+        const maxBeatIndex = cleanedBeats.length > 0
+            ? Math.max(...cleanedBeats.map(b => b.beatIndex))
+            : 0;
+
+        // Build the lock map from resolved beats
+        const beatsByIndex = new Map<number, CompositeBeat[]>();
+        for (const beat of cleanedBeats) {
+            const existing = beatsByIndex.get(beat.beatIndex) ?? [];
+            existing.push(beat);
+            beatsByIndex.set(beat.beatIndex, existing);
+        }
+
+        // Fill the lock map with dominant grid types from resolved beats
+        for (const [beatIndex, beatsAtIndex] of beatsByIndex) {
+            // Since enforceSingleGridPerBeat already resolved mixed grids,
+            // all beats at this index should have the same grid type
+            gridLock.set(beatIndex, beatsAtIndex[0].gridType);
+        }
+
+        // Get allowed grid types for this difficulty/bpm for fallback
+        const allowedGridTypes = getTempoAwareAllowedGridTypes(targetDifficulty, bpm);
+
+        // 1.1.3: Fill empty indices using gridDecisions, neighbor fallback, or default
+        for (let beatIndex = 0; beatIndex <= maxBeatIndex; beatIndex++) {
+            if (gridLock.has(beatIndex)) {
+                continue; // Already locked from resolved beats
+            }
+
+            // Try gridDecisions map first
+            if (gridDecisions?.has(beatIndex)) {
+                const decision = gridDecisions.get(beatIndex)!;
+                gridLock.set(beatIndex, decision.selectedGrid);
+                continue;
+            }
+
+            // Try nearest-neighbor fallback (offsets 1, -1, 2, -2, 3, -3)
+            let foundFromNeighbor = false;
+            for (const offset of [1, -1, 2, -2, 3, -3]) {
+                const neighborIndex = beatIndex + offset;
+                if (gridLock.has(neighborIndex)) {
+                    gridLock.set(beatIndex, gridLock.get(neighborIndex)!);
+                    foundFromNeighbor = true;
+                    break;
+                }
+            }
+
+            if (foundFromNeighbor) {
+                continue;
+            }
+
+            // Default to first allowed grid type for target difficulty
+            // For easy: 'straight_8th' (or 'straight_4th' at high BPM)
+            // For medium/hard: 'straight_8th' or 'straight_16th' depending on BPM
+            const defaultGrid = allowedGridTypes[0] ?? 'straight_8th';
+            gridLock.set(beatIndex, defaultGrid);
+        }
+
+        // 1.1.4 & 1.1.5: Return the lock map alongside the cleaned beats
+        return {
+            beats: cleanedBeats,
+            gridLock,
+        };
     }
 
     /**

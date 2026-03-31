@@ -27,9 +27,11 @@ import {
     type CompositeBeat,
     type CompositeStream,
     type VariantBeat,
+    type GridLockResult,
 } from '../../../src/core/analysis/beat/index.js';
 
 import type { UnifiedBeatMap } from '../../../src/core/types/BeatMap.js';
+import type { GridDecision } from '../../../src/core/analysis/beat/RhythmQuantizer.js';
 
 // ============================================================================
 // Test Fixtures
@@ -1743,5 +1745,124 @@ describe('Probabilistic density scaling', () => {
         // The old deterministic approach would fill all 10 or none.
         // Average should be well under 10 — this proves gradual filling.
         expect(avgNewIndices).toBeLessThan(8);
+    });
+});
+
+// ============================================================================
+// lockGridPerBeatIndex Tests
+// ============================================================================
+
+describe('lockGridPerBeatIndex', () => {
+    let generator: DifficultyVariantGenerator;
+
+    beforeEach(() => {
+        generator = new DifficultyVariantGenerator();
+    });
+
+    it('should resolve mixed grids and return correct map', () => {
+        // Create beats with mixed grids at the same beat index
+        const beats: CompositeBeat[] = [
+            createMockCompositeBeat(0, 'straight_16th', 0, 0.9),
+            createMockCompositeBeat(0, 'straight_16th', 1, 0.7),
+            createMockCompositeBeat(0, 'triplet_8th', 0, 0.5), // Lower intensity triplet
+            createMockCompositeBeat(1, 'triplet_8th', 1, 0.8),
+            createMockCompositeBeat(2, 'straight_16th', 2, 0.6),
+        ];
+
+        const result = generator.lockGridPerBeatIndex(beats);
+
+        // Should have cleaned beats with single grid per index
+        expect(result.beats.length).toBeLessThan(beats.length);
+
+        // Should have grid lock map
+        expect(result.gridLock).toBeInstanceOf(Map);
+        expect(result.gridLock.size).toBeGreaterThan(0);
+
+        // Beat index 0 should be locked to straight_16th (higher intensity)
+        expect(result.gridLock.get(0)).toBe('straight_16th');
+
+        // Beat index 1 should be locked to triplet_8th
+        expect(result.gridLock.get(1)).toBe('triplet_8th');
+
+        // Beat index 2 should be locked to straight_16th
+        expect(result.gridLock.get(2)).toBe('straight_16th');
+    });
+
+    it('should use gridDecisions for empty beat indices', () => {
+        const beats: CompositeBeat[] = [
+            createMockCompositeBeat(0, 'straight_16th', 0, 0.9),
+            // Beat index 1 is empty
+            createMockCompositeBeat(2, 'straight_16th', 0, 0.7),
+        ];
+
+        const gridDecisions = new Map<number, GridDecision>();
+        gridDecisions.set(1, {
+            beatIndex: 1,
+            selectedGrid: 'triplet_8th',
+            transientCount: 2,
+            confidence: 0.8,
+        });
+
+        const result = generator.lockGridPerBeatIndex(beats, gridDecisions, 'medium', 120);
+
+        // Beat index 1 should get grid from gridDecisions
+        expect(result.gridLock.get(1)).toBe('triplet_8th');
+    });
+
+    it('should use nearest-neighbor fallback when no gridDecisions for empty index', () => {
+        const beats: CompositeBeat[] = [
+            createMockCompositeBeat(0, 'straight_16th', 0, 0.9),
+            // Beat index 1 is empty
+            createMockCompositeBeat(2, 'triplet_8th', 0, 0.7),
+            // Beat index 3 is empty
+            createMockCompositeBeat(4, 'straight_16th', 0, 0.8),
+        ];
+
+        const result = generator.lockGridPerBeatIndex(beats, undefined, 'medium', 120);
+
+        // Beat index 1 should get grid from nearest neighbor (offset 1 = beat 2)
+        expect(result.gridLock.get(1)).toBe('triplet_8th');
+
+        // Beat index 3 should get grid from nearest neighbor (offset -1 = beat 2 or +1 = beat 4)
+        expect(result.gridLock.has(3)).toBe(true);
+    });
+
+    it('should default to allowed grid type when no neighbors available', () => {
+        const beats: CompositeBeat[] = [
+            createMockCompositeBeat(5, 'straight_16th', 0, 0.9),
+        ];
+
+        // With no neighbors for beat index 0-4, they should get allowed grid type
+        const result = generator.lockGridPerBeatIndex(beats, undefined, 'medium', 120);
+
+        // All indices 0-5 should have a grid lock
+        for (let i = 0; i <= 5; i++) {
+            expect(result.gridLock.has(i)).toBe(true);
+            // For medium at 120 BPM, only 8th notes and quarter triple are allowed
+            const grid = result.gridLock.get(i);
+            expect(['straight_8th', 'quarter_triplet']).toContain(grid!);
+        }
+    });
+
+    it('should respect maxBeatIndex for grid lock range', () => {
+        const beats: CompositeBeat[] = [
+            createMockCompositeBeat(0, 'straight_16th', 0, 0.9),
+            createMockCompositeBeat(5, 'straight_16th', 0, 0.8),
+        ];
+
+        const result = generator.lockGridPerBeatIndex(beats, undefined, 'medium', 120, 5);
+
+        // Grid lock should cover indices 0-5
+        expect(result.gridLock.has(0)).toBe(true);
+        expect(result.gridLock.has(5)).toBe(true);
+        // Should not have index 6
+        expect(result.gridLock.has(6)).toBe(false);
+    });
+
+    it('should handle empty input beats', () => {
+        const result = generator.lockGridPerBeatIndex([], undefined, 'medium', 120);
+
+        expect(result.beats).toEqual([]);
+        expect(result.gridLock.size).toBe(0);
     });
 });
