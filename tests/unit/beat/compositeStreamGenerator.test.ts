@@ -317,8 +317,8 @@ describe('CompositeStreamGenerator', () => {
 
         it('should set natural difficulty to medium for moderate patterns', async () => {
             // Create a moderate pattern (should be 'medium')
-            // Medium range: 1.0 - 1.75 notes/beat
-            // We'll create 24 beats across 16 quarter notes = 1.5 notes/beat (solidly in medium range)
+            // Moderate range: 2.5 - 4.5 notes/sec
+            // We'll create 24 beats across 16 quarter notes = 1.5 t/b → 3.0 notes/sec at 120 BPM (solidly in moderate range)
             const midBeats: GeneratedBeat[] = [];
             for (let i = 0; i < 16; i++) {
                 // Every beat gets a downbeat (16 beats)
@@ -347,7 +347,7 @@ describe('CompositeStreamGenerator', () => {
             const scoreResult = scorer.score(streams, phraseResult, densityResult);
             const composite = generator.generate(streams, scoreResult, densityResult);
 
-            // Moderate pattern (24 beats / 16 quarter notes = 1.5 notes/beat) should be 'medium'
+            // Moderate pattern (24 beats / 16 quarter notes = 3.0 notes/sec at 120 BPM) should be 'medium'
             expect(composite.naturalDifficulty).toBe('medium');
         });
     });
