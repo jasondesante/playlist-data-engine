@@ -171,6 +171,13 @@ export type {
     GeneratedRhythmMap,
 } from './RhythmQuantizer.js';
 
+// Tempo-Aware Quantization
+export type {
+    TempoQuantizationRule,
+    TempoRuleContext,
+    TempoAwareQuantizerConfig,
+} from './TempoAwareQuantizer.js';
+
 // Phrase Analyzer
 export { PhraseAnalyzer } from './PhraseAnalyzer.js';
 export type {
