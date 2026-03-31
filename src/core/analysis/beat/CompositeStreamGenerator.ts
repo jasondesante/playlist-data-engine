@@ -131,12 +131,12 @@ const DEFAULT_COMPOSITE_STREAM_CONFIG: CompositeStreamConfig = {
  * Density thresholds for determining natural difficulty from composite stream.
  * These match the defaults in DensityAnalyzer.
  *
- * Sparse: < SPARSE_THRESHOLD notes/beat → Easy
- * Moderate: SPARSE_THRESHOLD - DENSE_THRESHOLD notes/beat → Medium
- * Dense: > DENSE_THRESHOLD notes/beat → Hard
+ * Sparse: < SPARSE_THRESHOLD notes/sec → Easy
+ * Moderate: SPARSE_THRESHOLD - DENSE_THRESHOLD notes/sec → Medium
+ * Dense: > DENSE_THRESHOLD notes/sec → Hard
  */
-const SPARSE_THRESHOLD = 1.0;
-const DENSE_THRESHOLD = 1.75;
+const SPARSE_THRESHOLD = 2.5;
+const DENSE_THRESHOLD = 4.5;
 
 // ============================================================================
 // CompositeStreamGenerator Class
@@ -254,14 +254,14 @@ export class CompositeStreamGenerator {
         const deduplicatedBeats = this.deduplicateBeats(allCompositeBeats);
 
         // Determine natural difficulty based on composite density
+        // Derive BPM from quarter note interval (60 / quarterNoteInterval)
+        const quarterNoteInterval = streams.streams.low.quarterNoteInterval;
+        const bpm = 60 / quarterNoteInterval;
         const naturalDifficulty = this.determineNaturalDifficulty(
             deduplicatedBeats,
-            densityAnalysis
+            densityAnalysis,
+            bpm
         );
-
-        // Get quarter note interval from input streams (ground truth from UnifiedBeatMap)
-        // All streams come from the same beat map, so they all have the same interval
-        const quarterNoteInterval = streams.streams.low.quarterNoteInterval;
 
         // Build metadata
         const totalSections = sections.length;
@@ -326,11 +326,16 @@ export class CompositeStreamGenerator {
      * Calculates density based on the merged composite beats (what the player actually hits)
      * rather than the multi-band density (which counts overlapping beats multiple times).
      *
+     * Density is measured in notes per second, which accounts for tempo.
+     * A 120 BPM track with 2 notes/beat = 4 notes/sec feels much easier than
+     * a 180 BPM track with 2 notes/beat = 6 notes/sec.
+     *
      * This gives a more accurate representation of gameplay difficulty.
      */
     private determineNaturalDifficulty(
         beats: CompositeBeat[],
-        densityAnalysis: DensityAnalysisResult
+        densityAnalysis: DensityAnalysisResult,
+        bpm: number
     ): NaturalDifficulty {
         // Calculate density from the composite (merged) beats
         // This represents what the player actually hits
@@ -342,13 +347,13 @@ export class CompositeStreamGenerator {
         const maxBeatIndex = Math.max(...beats.map(b => b.beatIndex));
         const totalQuarterNotes = maxBeatIndex + 1;
 
-        // Calculate notes per quarter note (notes/beat)
-        const notesPerBeat = beats.length / totalQuarterNotes;
+        // Calculate notes per second: notes/beat * beats/second
+        const notesPerSecond = (beats.length / totalQuarterNotes) * (bpm / 60);
 
         // Determine natural difficulty based on density thresholds
-        if (notesPerBeat < SPARSE_THRESHOLD) {
+        if (notesPerSecond < SPARSE_THRESHOLD) {
             return 'easy';
-        } else if (notesPerBeat > DENSE_THRESHOLD) {
+        } else if (notesPerSecond > DENSE_THRESHOLD) {
             return 'hard';
         } else {
             return 'medium';

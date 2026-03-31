@@ -54,7 +54,8 @@ function createGeneratedBeat(
 function createMockRhythmMap(
     beats: GeneratedBeat[],
     audioId: string = 'test-audio-id',
-    duration: number = 10.0
+    duration: number = 10.0,
+    quarterNoteInterval: number = 0.5
 ): GeneratedRhythmMap {
     const maxBeatIndex = beats.length > 0 ? Math.max(...beats.map(b => b.beatIndex)) : 0;
     const gridDecisions: GridDecision[] = [];
@@ -79,6 +80,7 @@ function createMockRhythmMap(
         duration,
         beats,
         gridDecisions,
+        quarterNoteInterval,
     };
 }
 
@@ -205,7 +207,7 @@ describe('CompositeStreamGenerator', () => {
 
             const streams = createMockStreams(lowBeats, midBeats, highBeats);
             const phraseResult = phraseAnalyzer.analyze(streams.streams);
-            const densityResult = densityAnalyzer.analyze(streams);
+            const densityResult = densityAnalyzer.analyze(streams, 120);
             const scoreResult = scorer.score(streams, phraseResult, densityResult);
             const composite = generator.generate(streams, scoreResult, densityResult);
 
@@ -249,7 +251,7 @@ describe('CompositeStreamGenerator', () => {
 
             const streams = createMockStreams(lowBeats, midBeats, highBeats);
             const phraseResult = phraseAnalyzer.analyze(streams.streams);
-            const densityResult = densityAnalyzer.analyze(streams);
+            const densityResult = densityAnalyzer.analyze(streams, 120);
             const scoreResult = scorer.score(streams, phraseResult, densityResult);
             const composite = generator.generate(streams, scoreResult, densityResult);
 
@@ -282,7 +284,7 @@ describe('CompositeStreamGenerator', () => {
 
             const streams = createMockStreams([], [], highBeats);
             const phraseResult = phraseAnalyzer.analyze(streams.streams);
-            const densityResult = densityAnalyzer.analyze(streams);
+            const densityResult = densityAnalyzer.analyze(streams, 120);
             const scoreResult = scorer.score(streams, phraseResult, densityResult);
             const composite = generator.generate(streams, scoreResult, densityResult);
 
@@ -305,7 +307,7 @@ describe('CompositeStreamGenerator', () => {
 
             const streams = createMockStreams(lowBeats, [], []);
             const phraseResult = phraseAnalyzer.analyze(streams.streams);
-            const densityResult = densityAnalyzer.analyze(streams);
+            const densityResult = densityAnalyzer.analyze(streams, 120);
             const scoreResult = scorer.score(streams, phraseResult, densityResult);
             const composite = generator.generate(streams, scoreResult, densityResult);
 
@@ -341,7 +343,7 @@ describe('CompositeStreamGenerator', () => {
 
             const streams = createMockStreams([], midBeats, []);
             const phraseResult = phraseAnalyzer.analyze(streams.streams);
-            const densityResult = densityAnalyzer.analyze(streams);
+            const densityResult = densityAnalyzer.analyze(streams, 120);
             const scoreResult = scorer.score(streams, phraseResult, densityResult);
             const composite = generator.generate(streams, scoreResult, densityResult);
 
@@ -394,7 +396,7 @@ describe('CompositeStreamGenerator', () => {
 
             const streams = createMockStreams([], midBeats, highBeats);
             const phraseResult = phraseAnalyzer.analyze(streams.streams);
-            const densityResult = densityAnalyzer.analyze(streams);
+            const densityResult = densityAnalyzer.analyze(streams, 120);
             const scoreResult = scorer.score(streams, phraseResult, densityResult);
             const composite = generator.generate(streams, scoreResult, densityResult);
 
@@ -426,7 +428,7 @@ describe('CompositeStreamGenerator', () => {
 
             const streams = createMockStreams([], midBeats, []);
             const phraseResult = phraseAnalyzer.analyze(streams.streams);
-            const densityResult = densityAnalyzer.analyze(streams);
+            const densityResult = densityAnalyzer.analyze(streams, 120);
             const scoreResult = scorer.score(streams, phraseResult, densityResult);
             const composite = generator.generate(streams, scoreResult, densityResult);
 
@@ -447,7 +449,7 @@ describe('CompositeStreamGenerator', () => {
 
             const streams = createMockStreams([], midBeats, []);
             const phraseResult = phraseAnalyzer.analyze(streams.streams);
-            const densityResult = densityAnalyzer.analyze(streams);
+            const densityResult = densityAnalyzer.analyze(streams, 120);
             const scoreResult = scorer.score(streams, phraseResult, densityResult);
             const composite = generator.generate(streams, scoreResult, densityResult);
 
@@ -510,7 +512,7 @@ describe('CompositeStreamGenerator', () => {
 
             const streams = createMockStreams(lowBeats, midBeats, []);
             const phraseResult = phraseAnalyzer.analyze(streams.streams);
-            const densityResult = densityAnalyzer.analyze(streams);
+            const densityResult = densityAnalyzer.analyze(streams, 120);
             const scoreResult = scorer.score(streams, phraseResult, densityResult);
             const composite = generator.generate(streams, scoreResult, densityResult);
 
@@ -556,7 +558,7 @@ describe('CompositeStreamGenerator', () => {
 
             const streams = createMockStreams([], midBeats, []);
             const phraseResult = phraseAnalyzer.analyze(streams.streams);
-            const densityResult = densityAnalyzer.analyze(streams);
+            const densityResult = densityAnalyzer.analyze(streams, 120);
             const scoreResult = scorer.score(streams, phraseResult, densityResult);
             const composite = generator.generate(streams, scoreResult, densityResult);
 
@@ -580,7 +582,7 @@ describe('CompositeStreamGenerator', () => {
         it('should handle empty streams gracefully', async () => {
             const streams = createMockStreams([], [], []);
             const phraseResult = phraseAnalyzer.analyze(streams.streams);
-            const densityResult = densityAnalyzer.analyze(streams);
+            const densityResult = densityAnalyzer.analyze(streams, 120);
             const scoreResult = scorer.score(streams, phraseResult, densityResult);
             const composite = generator.generate(streams, scoreResult, densityResult);
 
@@ -604,7 +606,7 @@ describe('CompositeStreamGenerator', () => {
 
             const streams = createMockStreams(lowBeats, [], []);
             const phraseResult = phraseAnalyzer.analyze(streams.streams);
-            const densityResult = densityAnalyzer.analyze(streams);
+            const densityResult = densityAnalyzer.analyze(streams, 120);
             const scoreResult = scorer.score(streams, phraseResult, densityResult);
             const composite = generator.generate(streams, scoreResult, densityResult);
 
@@ -628,7 +630,7 @@ describe('CompositeStreamGenerator', () => {
 
             const streams = createMockStreams([], midBeats, []);
             const phraseResult = phraseAnalyzer.analyze(streams.streams);
-            const densityResult = densityAnalyzer.analyze(streams);
+            const densityResult = densityAnalyzer.analyze(streams, 120);
             const scoreResult = scorer.score(streams, phraseResult, densityResult);
             const composite = generator.generate(streams, scoreResult, densityResult);
 
@@ -655,7 +657,7 @@ describe('CompositeStreamGenerator', () => {
 
             const streams = createMockStreams([], midBeats, []);
             const phraseResult = phraseAnalyzer.analyze(streams.streams);
-            const densityResult = densityAnalyzer.analyze(streams);
+            const densityResult = densityAnalyzer.analyze(streams, 120);
             const scoreResult = scorer.score(streams, phraseResult, densityResult);
 
             // Generate twice
