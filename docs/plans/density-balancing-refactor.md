@@ -63,9 +63,10 @@ Replace the single-pass `reduceDensityToTarget()` with a global target calculato
 
 - [ ] Task 2.1: Create `calculateBeatCountTarget()` helper
   - [ ] 2.1.1: Input: current beat count, total quarter-note span (`maxBeatIndex + 1`), BPM, target difficulty
-  - [ ] 2.1.2: Calculate target density midpoint: `(targetRange.min + targetRange.max) / 2`, clamped to avoid the extremes
-  - [ ] 2.1.3: For easy: midpoint = 0.5 (center of [0, 1.0])
-  - [ ] 2.1.4: For medium: midpoint = 1.25 (center of [1.0, 1.5])
+  - [ ] 2.1.2: Calculate target density per difficulty (configurable defaults, overridable by `densityTargetStrategy`)
+  - [ ] 2.1.3: For easy: midpoint = 0.9 (biased high within [0, 1.0] to preserve musical interest)
+  - [ ] 2.1.4: For medium: midpoint = 1.25 (true center of [1.0, 1.5])
+  - [ ] 2.1.4b: For hard: midpoint = 1.75 (target above the 1.5 floor)
   - [ ] 2.1.5: Output: `targetBeatCount = Math.round(midpoint * totalBeats / bpmPerSecond)`
   - [ ] 2.1.6: Return `{ targetCount: number, maxCount: number, minCount: number }` where max/min are from the range extremes
 
@@ -97,13 +98,15 @@ Replace the probabilistic per-index multiplier with a global target calculator t
 
 - [ ] Task 3.1: Create `calculateBeatsToAdd()` helper
   - [ ] 3.1.1: Input: current beat count, total quarter-note span, BPM, target difficulty
-  - [ ] 3.1.2: Calculate target density midpoint (same as Phase 2 Task 2.1)
+  - [ ] 3.1.2: Calculate target density per difficulty: easy=0.9, medium=1.25, hard=1.75 (same as Phase 2 Task 2.1)
   - [ ] 3.1.3: Output: `beatsToAdd = max(0, targetCount - currentCount)`
   - [ ] 3.1.4: Also return `maxBeatsPerIndex` based on the target difficulty's allowed grid types (e.g., straight_8th → max 2, straight_16th → max 4)
 
 - [ ] Task 3.2: Rewrite `calculateProbabilisticTargetBeatsPerBeat()` → `distributeBeatsAcrossIndices()`
   - [ ] 3.2.1: Input: `beatsToAdd` (global count), `beatsByIndex` (current occupancy), `gridLock` (per-index grid types), `maxBeatsPerIndex` per grid type
   - [ ] 3.2.2: **Phase A — Fill empty indices first**: For each empty index (no existing beats), if the locked grid type allows it, assign 1-2 beats at preferred positions (position 0, then offbeats). Continue until either all empty indices have beats or `beatsToAdd` is exhausted.
+    - Small gaps (1-2 consecutive empty indices): prefer pattern insertion where neighboring beat context is available for pattern matching.
+    - Large gaps (3+ consecutive empty indices): use simple half-note or quarter-note beats to maintain the beat over the longer span, avoiding overly busy patterns in sparse sections.
   - [ ] 3.2.3: **Phase B — Fill partially occupied indices**: For each occupied index, calculate how many slots are still available (`maxPositions - currentCount`). Add beats at the empty positions. Continue until `beatsToAdd` is exhausted.
   - [ ] 3.2.4: **No probabilistic rolls** — the distribution is deterministic and greedy. Empty indices are always prioritized. Use the seed only for tiebreaking when multiple indices are equally good candidates (for reproducibility).
   - [ ] 3.2.5: Return `Map<number, number>` of `beatIndex → targetCount`
@@ -127,8 +130,8 @@ Replace the probabilistic per-index multiplier with a global target calculator t
   - [ ] 3.5.2: Test `distributeBeatsAcrossIndices()` fills empty indices first
   - [ ] 3.5.3: Test that enhanced variant density falls within the target range
   - [ ] 3.5.4: Test that `interpolateBeats()` timestamps align with `unifiedBeatMap` quarter-note positions
-  - [ ] 3.5.5: Test easy → medium enhancement hits [1.0, 1.5] range
-  - [ ] 3.5.6: Test easy → hard enhancement hits [1.5, ∞) range
+  - [ ] 3.5.5: Test easy → medium enhancement targets ~1.25 nps midpoint (within [1.0, 1.5] range)
+  - [ ] 3.5.6: Test easy → hard enhancement targets ~1.75 nps midpoint (above 1.5 floor)
   - [ ] 3.5.7: Test deterministic distribution (same input → same output)
 
 ## Phase 4: Convergence Validation
@@ -210,8 +213,8 @@ Add a post-generation check that validates all variants are within their density
 - Phase 5 depends on all previous phases
 - Phase 6 depends on Phase 5 (docs should reflect final code state)
 
-## Questions/Unknowns
+## Resolved Questions
 
-- Should the density target midpoint be configurable per difficulty, or is a fixed midpoint (0.5, 1.25, 1.75) sufficient? The `'midpoint' | 'lower' | 'upper'` strategy in config covers most cases.
-- For enhancement, should we prefer pattern insertion over interpolation for empty indices too (currently patterns are only tried for occupied indices)? Patterns may not exist for all contexts.
-- Should `validateDensityInRange()` throw an error for out-of-range variants, or just warn? Leaning toward warn-only since some edge cases (very short songs, extreme tempos) may not be able to hit exact targets.
+- **Density target midpoint per difficulty** — Yes, configurable per difficulty. Easy range [0, 1.0] → target 0.9 (biased high to preserve musical interest). Medium range [1.0, 1.5] → target 1.25 (true midpoint). Hard range [1.5, ∞) → target 1.75. The `'midpoint' | 'lower' | 'upper'` strategy in config still applies as an offset from these defaults.
+- **Pattern insertion vs interpolation for empty indices** — Context-dependent. Use pattern insertion for small gaps (1-2 consecutive empty indices) where musical context from neighboring beats is available. Use simple half-note or quarter-note beats for large gaps (3+ consecutive empty indices) to maintain the beat over a longer span of previously empty beats. This keeps the rhythm grounded during sparse sections.
+- **Validation behavior** — Warn only. Edge cases (very short songs, extreme tempos) may not be able to hit exact targets, so throwing would be too rigid.
