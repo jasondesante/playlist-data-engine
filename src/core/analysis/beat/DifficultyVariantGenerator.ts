@@ -405,6 +405,32 @@ export interface GridLockResult {
 }
 
 /**
+ * Strategy for where to target within the density range
+ *
+ * - 'midpoint': Aim for the middle of the range (default)
+ * - 'lower': Aim closer to the minimum (more conservative)
+ * - 'upper': Aim closer to the maximum (more aggressive)
+ */
+export type DensityTargetStrategy = 'midpoint' | 'lower' | 'upper';
+
+/**
+ * Result of calculating beat count targets for a difficulty
+ */
+export interface BeatCountTarget {
+    /** Target beat count to aim for (based on strategy) */
+    targetCount: number;
+
+    /** Maximum beat count allowed (upper bound of density range) */
+    maxCount: number;
+
+    /** Minimum beat count allowed (lower bound of density range) */
+    minCount: number;
+
+    /** The target density value (notes per second) used for calculation */
+    targetDensity: number;
+}
+
+/**
  * Configuration for difficulty variant generation
  */
 export interface DifficultyVariantConfig {
@@ -438,6 +464,9 @@ export interface DifficultyVariantConfig {
     /** Maximum phrase size to consider for pattern insertion (in beats). Default: 4 */
     maxPatternInsertionSize: number;
 
+    /** Strategy for where to target within the density range. Default: 'midpoint' */
+    densityTargetStrategy: DensityTargetStrategy;
+
     /** Seed for deterministic probability rolls in beat enhancement. If not provided, falls back to a hash of beat data. */
     seed?: string;
 }
@@ -457,6 +486,7 @@ const DEFAULT_DIFFICULTY_VARIANT_CONFIG: DifficultyVariantConfig = {
     interpolatedBeatIntensity: 0.5,
     preferPatternInsertion: true,
     maxPatternInsertionSize: 4,
+    densityTargetStrategy: 'midpoint',
     seed: undefined,
 };
 
@@ -1286,6 +1316,100 @@ export class DifficultyVariantGenerator {
         if (totalBeats === 0) return 0;
 
         return (beats.length / totalBeats) * (bpm / 60);
+    }
+
+    /**
+     * Calculate target beat count for a difficulty level based on density ranges
+     *
+     * This is the foundational helper for global target-based density control.
+     * It calculates exactly how many beats should be in the output based on:
+     * - The target density range for the difficulty
+     * - The total quarter-note span of the song
+     * - The BPM
+     * - The configured strategy (midpoint/lower/upper)
+     *
+     * Target densities by difficulty:
+     * - Easy: 0.9 nps (biased high within [0, 1.0] to preserve musical interest)
+     * - Medium: 1.25 nps (true center of [1.0, 1.5])
+     * - Hard: 1.75 nps (target above the 1.5 floor)
+     * - Natural: Uses the current density (no target)
+     *
+     * The formula derives from: density = (beatCount / totalQuarterNotes) * (bpm / 60)
+     * Solving for beatCount: beatCount = density * totalQuarterNotes * 60 / bpm
+     *
+     * @param currentBeatCount - The current number of beats
+     * @param totalQuarterNotes - The total quarter-note span (maxBeatIndex + 1)
+     * @param bpm - Tempo in beats per minute
+     * @param targetDifficulty - The target difficulty level
+     * @returns Beat count target with min/max bounds
+     */
+    private calculateBeatCountTarget(
+        currentBeatCount: number,
+        totalQuarterNotes: number,
+        bpm: number,
+        targetDifficulty: DifficultyLevel
+    ): BeatCountTarget {
+        const targetRange = SUBDIVISION_LIMITS[targetDifficulty].targetDensityRange;
+
+        // For natural difficulty, use current density as target
+        if (targetDifficulty === 'natural') {
+            const currentDensity = totalQuarterNotes > 0
+                ? (currentBeatCount / totalQuarterNotes) * (bpm / 60)
+                : 0;
+            return {
+                targetCount: currentBeatCount,
+                maxCount: currentBeatCount,
+                minCount: currentBeatCount,
+                targetDensity: currentDensity,
+            };
+        }
+
+        // Define target density midpoints per difficulty
+        const densityMidpoints: Record<'easy' | 'medium' | 'hard', number> = {
+            easy: 0.9,    // Biased high within [0, 1.0] to preserve musical interest
+            medium: 1.25, // True center of [1.0, 1.5]
+            hard: 1.75,   // Target above the 1.5 floor
+        };
+
+        const midpoint = densityMidpoints[targetDifficulty as 'easy' | 'medium' | 'hard'];
+
+        // Apply strategy offset
+        let targetDensity: number;
+        switch (this.config.densityTargetStrategy) {
+            case 'lower':
+                // Aim 75% toward the minimum from the midpoint
+                targetDensity = midpoint * 0.75 + targetRange.min * 0.25;
+                break;
+            case 'upper':
+                // Aim 75% toward the maximum from the midpoint
+                const maxDensity = targetRange.max === Infinity ? midpoint * 1.5 : targetRange.max;
+                targetDensity = midpoint * 0.75 + maxDensity * 0.25;
+                break;
+            case 'midpoint':
+            default:
+                targetDensity = midpoint;
+                break;
+        }
+
+        // Clamp target to the valid range
+        const maxDensity = targetRange.max === Infinity ? targetDensity : targetRange.max;
+        targetDensity = Math.max(targetRange.min, Math.min(maxDensity, targetDensity));
+
+        // Calculate beat counts from densities
+        // Formula: beatCount = density * totalQuarterNotes * 60 / bpm
+        const bpmPerSecond = bpm / 60;
+        const minCount = Math.round(targetRange.min * totalQuarterNotes / bpmPerSecond);
+        const maxCount = targetRange.max === Infinity
+            ? Infinity
+            : Math.round(targetRange.max * totalQuarterNotes / bpmPerSecond);
+        const targetCount = Math.round(targetDensity * totalQuarterNotes / bpmPerSecond);
+
+        return {
+            targetCount,
+            maxCount,
+            minCount,
+            targetDensity,
+        };
     }
 
     /**

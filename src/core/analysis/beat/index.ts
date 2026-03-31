@@ -255,6 +255,8 @@ export type {
     SubdivisionValidationResult,
     SubdivisionViolation,
     DifficultyVariantConfig,
+    DensityTargetStrategy,
+    BeatCountTarget,
 } from './DifficultyVariantGenerator.js';
 
 // Beat Key Helpers (for rhythm game chart creation)

@@ -51,24 +51,24 @@ The foundational change. Before any density work, lock the grid type for each be
   - [x] 1.4.2: Pass the grid lock to `simplifyBeats()` or `enhanceBeats()` as appropriate
   - [x] 1.4.3: The `generate()` method's post-variant `enforceSingleGridPerBeat()` calls (lines 653-655) become validation-only
 
-- [ ] Task 1.5: Write tests for grid lock
-  - [ ] 1.5.1: Test that `lockGridPerBeatIndex()` resolves mixed grids and returns correct map
-  - [ ] 1.5.2: Test that empty indices get grid types from neighbor fallback
-  - [ ] 1.5.3: Test that `simplifyBeats` with grid lock never produces mixed grids
-  - [ ] 1.5.4: Test that `enhanceBeats` with grid lock never produces mixed grids
+- [x] Task 1.5: Write tests for grid lock
+  - [x] 1.5.1: Test that `lockGridPerBeatIndex()` resolves mixed grids and returns correct map
+  - [x] 1.5.2: Test that empty indices get grid types from neighbor fallback
+  - [x] 1.5.3: Test that `simplifyBeats` with grid lock never produces mixed grids
+  - [x] 1.5.4: Test that `enhanceBeats` with grid lock never produces mixed grids
 
 ## Phase 2: Global Target-Based Density Reduction
 
 Replace the single-pass `reduceDensityToTarget()` with a global target calculator and convergence loop.
 
-- [ ] Task 2.1: Create `calculateBeatCountTarget()` helper
-  - [ ] 2.1.1: Input: current beat count, total quarter-note span (`maxBeatIndex + 1`), BPM, target difficulty
-  - [ ] 2.1.2: Calculate target density per difficulty (configurable defaults, overridable by `densityTargetStrategy`)
-  - [ ] 2.1.3: For easy: midpoint = 0.9 (biased high within [0, 1.0] to preserve musical interest)
-  - [ ] 2.1.4: For medium: midpoint = 1.25 (true center of [1.0, 1.5])
-  - [ ] 2.1.4b: For hard: midpoint = 1.75 (target above the 1.5 floor)
-  - [ ] 2.1.5: Output: `targetBeatCount = Math.round(midpoint * totalBeats / bpmPerSecond)`
-  - [ ] 2.1.6: Return `{ targetCount: number, maxCount: number, minCount: number }` where max/min are from the range extremes
+- [x] Task 2.1: Create `calculateBeatCountTarget()` helper
+  - [x] 2.1.1: Input: current beat count, total quarter-note span (`maxBeatIndex + 1`), BPM, target difficulty
+  - [x] 2.1.2: Calculate target density per difficulty (configurable defaults, overridable by `densityTargetStrategy`)
+  - [x] 2.1.3: For easy: midpoint = 0.9 (biased high within [0, 1.0] to preserve musical interest)
+  - [x] 2.1.4: For medium: midpoint = 1.25 (true center of [1.0, 1.5])
+  - [x] 2.1.4b: For hard: midpoint = 1.75 (target above the 1.5 floor)
+  - [x] 2.1.5: Output: `targetBeatCount = Math.round(midpoint * totalBeats / bpmPerSecond)`
+  - [x] 2.1.6: Return `{ targetCount: number, maxCount: number, minCount: number }` where max/min are from the range extremes
 
 - [ ] Task 2.2: Refactor `reduceDensityToTarget()` with convergence loop
   - [ ] 2.2.1: Call `calculateBeatCountTarget()` to get the exact removal target
