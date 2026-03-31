@@ -95,16 +95,6 @@ export interface QuantizationConfig {
 }
 
 /**
- * Filtered transients result
- */
-interface FilteredTransients {
-    /** Transients that passed the intensity filter */
-    transients: TransientResult[];
-    /** Number of transients filtered out */
-    totalFiltered: number;
-}
-
-/**
  * Complete Phase 1 output - all 3 band streams plus metadata
  */
 export interface QuantizedBandStreams {
@@ -303,8 +293,16 @@ const DEFAULT_QUANTIZATION_CONFIG: Required<QuantizationConfig> = {
  *
  * 2. **Intensity Filtering**: Removes transients below the minimum intensity threshold
  *
- * 3. **Grid Detection & Quantization**: For each beat, determines whether transients fit better
- *    on a straight 16th note grid or an 8th note triplet grid, then quantizes to the chosen grid.
+ * 3. **Decide-then-Quantize**: Two-phase per-band processing:
+ *    a. **Grid Decision** (`decideGrids()`): For each beat, determines whether transients
+ *       fit better on a straight 16th note grid or an 8th note triplet grid. Does NOT
+ *       perform quantization — the returned decisions can be modified by downstream
+ *       rules (e.g., BPM-aware quantization) before snapping.
+ *    b. **Quantization** (`quantizeToGrids()`): Snaps each transient's original timestamp
+ *       to the nearest point on the chosen grid. Uses the original (not pre-quantized)
+ *       timestamps to minimize quantization error.
+ *
+ * The `quantizeBand()` method orchestrates: decide → quantize → deduplicate.
  *
  * ## Usage
  *
@@ -658,32 +656,23 @@ export class RhythmQuantizer {
     }
 
     /**
-     * Quantize all bands
+     * Decide grid types for each beat that has transients.
+     *
+     * Grid decision phase only — determines which grid type (straight_16th,
+     * triplet_8th, or forced straight_8th) best fits the transients in each beat.
+     * Does NOT perform any quantization. The returned decisions can be modified
+     * by downstream rules (e.g., BPM-aware quantization) before quantization.
+     *
+     * @param transients - Raw transients for this band
+     * @param unifiedBeatMap - Unified beat map
+     * @param band - Band being processed
+     * @returns Array of grid decisions for beats with transients
      */
-    private quantizeBands(
-        filteredTransients: FilteredTransients,
-        unifiedBeatMap: UnifiedBeatMap
-    ): { low: GeneratedRhythmMap; mid: GeneratedRhythmMap; high: GeneratedRhythmMap } {
-        const lowTransients = filteredTransients.transients.filter(t => t.band === 'low');
-        const midTransients = filteredTransients.transients.filter(t => t.band === 'mid');
-        const highTransients = filteredTransients.transients.filter(t => t.band === 'high');
-
-        return {
-            low: this.quantizeBand(lowTransients, unifiedBeatMap, 'low'),
-            mid: this.quantizeBand(midTransients, unifiedBeatMap, 'mid'),
-            high: this.quantizeBand(highTransients, unifiedBeatMap, 'high'),
-        };
-    }
-
-    /**
-     * Quantize a single band
-     */
-    private quantizeBand(
+    public decideGrids(
         transients: TransientResult[],
         unifiedBeatMap: UnifiedBeatMap,
-        band: 'low' | 'mid' | 'high'
-    ): GeneratedRhythmMap {
-        const rawBeats: GeneratedBeat[] = [];
+        band: BandType
+    ): GridDecision[] {
         const gridDecisions: GridDecision[] = [];
         const quarterNoteInterval = unifiedBeatMap.quarterNoteInterval;
         const forcedGrid = this.getBandGridType(band);
@@ -709,20 +698,73 @@ export class RhythmQuantizer {
             }
 
             // Determine grid type: use forced grid for this band, or auto-detect
-            let gridDecision: GridDecision;
             if (forcedGrid) {
-                gridDecision = {
+                gridDecisions.push({
                     beatIndex,
                     selectedGrid: forcedGrid,
                     transientCount: beatTransients.length,
                     confidence: 1.0,
-                };
+                });
             } else {
-                gridDecision = this.detectGrid(beatTransients, beat, beatIndex, quarterNoteInterval);
+                gridDecisions.push(this.detectGrid(beatTransients, beat, beatIndex, quarterNoteInterval));
             }
-            gridDecisions.push(gridDecision);
+        }
 
-            // Quantize each transient
+        return gridDecisions;
+    }
+
+    /**
+     * Quantize transients to their chosen grid positions.
+     *
+     * Quantization phase — snaps each transient's original timestamp to the
+     * nearest grid point based on the provided grid decisions. Uses the
+     * ORIGINAL transient timestamps (not pre-quantized data) to minimize
+     * quantization error.
+     *
+     * @param transients - Raw transients for this band (original timestamps)
+     * @param unifiedBeatMap - Unified beat map
+     * @param band - Band being processed
+     * @param gridDecisions - Grid decisions for each beat (may be modified by BPM rules)
+     * @returns Array of raw quantized beats (before deduplication)
+     */
+    public quantizeToGrids(
+        transients: TransientResult[],
+        unifiedBeatMap: UnifiedBeatMap,
+        band: BandType,
+        gridDecisions: GridDecision[]
+    ): GeneratedBeat[] {
+        const rawBeats: GeneratedBeat[] = [];
+        const quarterNoteInterval = unifiedBeatMap.quarterNoteInterval;
+
+        // Sort transients by timestamp
+        const sortedTransients = [...transients].sort((a, b) => a.timestamp - b.timestamp);
+
+        // Create a map of beatIndex → grid decision for fast lookup
+        const decisionMap = new Map<number, GridDecision>();
+        for (const decision of gridDecisions) {
+            decisionMap.set(decision.beatIndex, decision);
+        }
+
+        // Process each beat in the unified beat map
+        for (let beatIndex = 0; beatIndex < unifiedBeatMap.beats.length; beatIndex++) {
+            const beat = unifiedBeatMap.beats[beatIndex];
+            const gridDecision = decisionMap.get(beatIndex);
+
+            if (!gridDecision) {
+                continue; // No grid decision for this beat (no transients)
+            }
+
+            const beatStart = beat.timestamp;
+            const beatEnd = beatIndex < unifiedBeatMap.beats.length - 1
+                ? unifiedBeatMap.beats[beatIndex + 1].timestamp
+                : beat.timestamp + quarterNoteInterval;
+
+            // Find transients in this beat's time range
+            const beatTransients = sortedTransients.filter(
+                t => t.timestamp >= beatStart && t.timestamp < beatEnd
+            );
+
+            // Quantize each transient using the (possibly BPM-modified) grid decision
             for (const transient of beatTransients) {
                 const quantizedBeat = this.quantizeTransient(
                     transient,
@@ -737,7 +779,24 @@ export class RhythmQuantizer {
             }
         }
 
-        // Deduplicate beats that snap to the same grid point (keep strongest)
+        return rawBeats;
+    }
+
+    /**
+     * Quantize a single band (orchestrator: decide → quantize → deduplicate)
+     */
+    private quantizeBand(
+        transients: TransientResult[],
+        unifiedBeatMap: UnifiedBeatMap,
+        band: BandType
+    ): GeneratedRhythmMap {
+        // Phase 1: Decide grid types for each beat (no quantization yet)
+        const gridDecisions = this.decideGrids(transients, unifiedBeatMap, band);
+
+        // Phase 2: Quantize transients using the grid decisions
+        const rawBeats = this.quantizeToGrids(transients, unifiedBeatMap, band, gridDecisions);
+
+        // Phase 3: Deduplicate beats that snap to the same grid point (keep strongest)
         const beats = this.deduplicateBeats(rawBeats);
 
         return {
