@@ -298,7 +298,7 @@ interface VariantBeatJSON {
     timestamp: number;
     beatIndex: number;
     gridPosition: number;
-    gridType: 'straight_16th' | 'triplet_8th' | 'straight_8th' | 'quarter_triplet';
+    gridType: 'straight_16th' | 'triplet_8th' | 'straight_8th' | 'quarter_triplet' | 'straight_4th';
     intensity: number;
     band: 'low' | 'mid' | 'high';
     quantizationError?: number;

@@ -226,7 +226,9 @@ export function getTempoAwareAllowedGridTypes(
         return [...SUBDIVISION_LIMITS.hard.allowedGridTypes];
     }
 
-    return [...SUBDIVISION_LIMITS[difficulty].allowedGridTypes];
+    // TypeScript exhaustive check — all DifficultyLevel values handled above
+    const _exhaustive: never = difficulty;
+    throw new Error(`Unhandled difficulty: ${_exhaustive}`);
 }
 
 // ============================================================================
@@ -1311,7 +1313,7 @@ export class DifficultyVariantGenerator {
      * @returns The converted beat as VariantBeat, or null if the beat should be removed
      */
     private convertBeatGridType(
-        beat: CompositeBeat,
+        beat: VariantBeat,
         targetDifficulty: DifficultyLevel,
         quarterNoteInterval: number,
         bpm: number = 120
@@ -1952,7 +1954,7 @@ export class DifficultyVariantGenerator {
         occupiedSlots?: Map<string, string>
     ): CompositeBeat[] {
         // Determine grid type: grid decision > neighbor > default to straight_16th
-        let gridType: GridType = 'straight_16th';
+        let gridType: ExtendedGridType = 'straight_16th';
         let band: 'low' | 'mid' | 'high' = 'mid';
         let sourceBand: 'low' | 'mid' | 'high' = 'mid';
 
@@ -1987,11 +1989,14 @@ export class DifficultyVariantGenerator {
             }
         }
 
-        const maxPositions = gridType === 'straight_16th' ? 4
-            : gridType === 'straight_8th' ? 2
-                : gridType === 'straight_4th' ? 1
-                    : gridType === 'quarter_triplet' ? 1
-                        : 3;
+        const gridPositionsMap: Record<ExtendedGridType, number> = {
+            straight_16th: 4,
+            straight_8th: 2,
+            triplet_8th: 3,
+            straight_4th: 1,
+            quarter_triplet: 1,
+        };
+        const maxPositions = gridPositionsMap[gridType];
 
         // Pick positions to fill (prefer downbeat 0, then offbeats)
         const availablePositions: number[] = [];
@@ -2013,11 +2018,14 @@ export class DifficultyVariantGenerator {
         // Falls back to beat index * quarterNoteInterval when no unified beat map is available.
         const beatStartTimestamp = unifiedBeatMap?.beats[beatIndex]?.timestamp ?? beatIndex * quarterNoteInterval;
 
-        const interval = gridType === 'straight_16th' ? quarterNoteInterval / 4
-            : gridType === 'straight_8th' ? quarterNoteInterval / 2
-                : gridType === 'straight_4th' ? quarterNoteInterval
-                    : gridType === 'quarter_triplet' ? quarterNoteInterval
-                        : quarterNoteInterval / 3;
+        const gridIntervalMap: Record<ExtendedGridType, number> = {
+            straight_16th: quarterNoteInterval / 4,
+            straight_8th: quarterNoteInterval / 2,
+            triplet_8th: quarterNoteInterval / 3,
+            straight_4th: quarterNoteInterval,
+            quarter_triplet: quarterNoteInterval,
+        };
+        const interval = gridIntervalMap[gridType];
 
         return positionsToFill.map(gridPosition => ({
             timestamp: beatStartTimestamp + (gridPosition * interval),
@@ -2028,7 +2036,7 @@ export class DifficultyVariantGenerator {
             band,
             sourceBand,
             quantizationError: 0,
-        }));
+        })) as CompositeBeat[];
     }
 
     /**
