@@ -551,7 +551,9 @@ export {
 
 // Tempo-Aware Quantization
 export {
+    TempoAwareQuantizer,
     HighBpmGridRestrictionRule,
+    DEFAULT_TEMPO_AWARE_CONFIG,
     type TempoQuantizationRule,
     type TempoRuleContext,
     type TempoAwareQuantizerConfig,

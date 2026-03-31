@@ -173,7 +173,9 @@ export type {
 
 // Tempo-Aware Quantization
 export {
+    TempoAwareQuantizer,
     HighBpmGridRestrictionRule,
+    DEFAULT_TEMPO_AWARE_CONFIG,
 } from './TempoAwareQuantizer.js';
 export type {
     TempoQuantizationRule,

@@ -41,7 +41,9 @@
  */
 
 import type { GridDecision } from './RhythmQuantizer.js';
+import { RhythmQuantizer } from './RhythmQuantizer.js';
 import type { TransientResult } from './TransientDetector.js';
+import type { UnifiedBeatMap } from '../../types/BeatMap.js';
 
 // ============================================================================
 // Rule Interface
@@ -239,4 +241,158 @@ export interface TempoAwareQuantizerConfig {
      * When disabled, `applyRules()` returns the decisions unchanged.
      */
     enabled?: boolean;
+}
+
+// ============================================================================
+// Default Configuration
+// ============================================================================
+
+/**
+ * Default configuration for tempo-aware quantization.
+ *
+ * Includes the `HighBpmGridRestrictionRule` with default thresholds:
+ * - 16th notes restricted at 160 BPM
+ * - Triplets restricted at 200 BPM
+ */
+export const DEFAULT_TEMPO_AWARE_CONFIG: TempoAwareQuantizerConfig = {
+    rules: [new HighBpmGridRestrictionRule()],
+    enabled: true,
+};
+
+// ============================================================================
+// TempoAwareQuantizer Class
+// ============================================================================
+
+/**
+ * Applies BPM-based rules to constrain the quantization grid.
+ *
+ * Plugs into the decide-then-quantize flow as a middleware layer between
+ * grid decision and quantization:
+ *
+ * ```
+ * RhythmQuantizer.decideGrids()  →  base grid decisions
+ *         ↓
+ * TempoAwareQuantizer.decideGrids()  →  BPM-constrained decisions
+ *         ↓
+ * RhythmQuantizer.quantizeToGrids()  →  quantize from original timestamps
+ * ```
+ *
+ * Internally holds a `RhythmQuantizer` instance for the base grid decisions.
+ * Can also be used in standalone mode via `applyRules()` if you already have
+ * base grid decisions and just want to apply tempo rules.
+ *
+ * @example
+ * ```typescript
+ * // Full flow: base decisions → rules → final decisions
+ * const tempoQuantizer = new TempoAwareQuantizer({
+ *   rules: [new HighBpmGridRestrictionRule({ restrict16thBpm: 170 })],
+ * });
+ * const finalDecisions = tempoQuantizer.decideGrids(
+ *   transients, unifiedBeatMap, 'mid'
+ * );
+ *
+ * // Standalone: apply rules to existing decisions
+ * const modified = tempoQuantizer.applyRules(baseDecisions, context);
+ * ```
+ */
+export class TempoAwareQuantizer {
+    private readonly config: TempoAwareQuantizerConfig;
+    private readonly rhythmQuantizer: RhythmQuantizer;
+
+    /**
+     * Create a new TempoAwareQuantizer.
+     *
+     * @param config - Configuration specifying rules and enabled state.
+     *   Defaults to `DEFAULT_TEMPO_AWARE_CONFIG` (high BPM restriction rule).
+     * @param rhythmQuantizer - Optional RhythmQuantizer instance for base grid
+     *   decisions. When omitted, a default RhythmQuantizer is created. Pass an
+     *   existing instance to share configuration (e.g., intensity filtering).
+     */
+    constructor(
+        config: TempoAwareQuantizerConfig = DEFAULT_TEMPO_AWARE_CONFIG,
+        rhythmQuantizer?: RhythmQuantizer
+    ) {
+        this.config = config;
+        this.rhythmQuantizer = rhythmQuantizer ?? new RhythmQuantizer();
+    }
+
+    /**
+     * Get the current configuration.
+     *
+     * @returns A copy of the current configuration
+     */
+    getConfig(): TempoAwareQuantizerConfig {
+        return { ...this.config };
+    }
+
+    /**
+     * Decide grid types with BPM-aware rule application.
+     *
+     * Orchestrates the full flow:
+     * 1. Gets base grid decisions from `RhythmQuantizer.decideGrids()`
+     * 2. Builds a `TempoRuleContext` from the beat map and transients
+     * 3. Applies each applicable rule in order
+     * 4. Returns the final, BPM-constrained grid decisions
+     *
+     * The returned grid decisions are suitable for passing directly to
+     * `RhythmQuantizer.quantizeToGrids()` for the actual quantization pass.
+     *
+     * @param transients - Raw transients for this band (original timestamps)
+     * @param unifiedBeatMap - Unified beat map providing BPM and beat grid
+     * @param band - Frequency band being processed ('low', 'mid', or 'high')
+     * @returns Grid decisions with BPM-based constraints applied
+     */
+    decideGrids(
+        transients: TransientResult[],
+        unifiedBeatMap: UnifiedBeatMap,
+        band: 'low' | 'mid' | 'high'
+    ): GridDecision[] {
+        // Step 1: Get base grid decisions from RhythmQuantizer
+        const baseDecisions = this.rhythmQuantizer.decideGrids(
+            transients, unifiedBeatMap, band
+        );
+
+        // Step 2: Build context for rule evaluation
+        const context: TempoRuleContext = {
+            bpm: unifiedBeatMap.quarterNoteBpm,
+            quarterNoteInterval: unifiedBeatMap.quarterNoteInterval,
+            band,
+            transients,
+        };
+
+        // Step 3: Apply BPM-aware rules
+        return this.applyRules(baseDecisions, context);
+    }
+
+    /**
+     * Apply tempo-aware rules to existing grid decisions.
+     *
+     * Iterates through the configured rules in order. Each rule's `apply()`
+     * receives the decisions (possibly modified by earlier rules) and returns
+     * the modified decisions. This chaining allows rules to build on each other.
+     *
+     * When disabled (config `enabled: false`), returns decisions unchanged.
+     *
+     * @param decisions - Grid decisions from `RhythmQuantizer.decideGrids()`
+     * @param context - Tempo context with BPM, band, transients, and beat info
+     * @returns Modified grid decisions with tempo rules applied
+     */
+    applyRules(
+        decisions: GridDecision[],
+        context: TempoRuleContext
+    ): GridDecision[] {
+        if (this.config.enabled === false) {
+            return decisions;
+        }
+
+        let modified = decisions;
+
+        for (const rule of this.config.rules) {
+            if (rule.applies(context.bpm, context)) {
+                modified = rule.apply(modified, context);
+            }
+        }
+
+        return modified;
+    }
 }
