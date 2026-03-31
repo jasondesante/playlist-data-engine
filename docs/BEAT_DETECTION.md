@@ -3264,6 +3264,29 @@ console.log(`High band: ${highBandHits?.length} (hi-hats/cymbals)`);
 
 Rhythm quantization translates raw transients into grid-aligned rhythmic subdivisions. This is the bridge between audio analysis and playable rhythm patterns.
 
+### Decide-Then-Quantize Architecture
+
+Grid detection and quantization are split into two separate phases to support BPM-aware rule overrides without double-quantizing:
+
+1. **Grid Decision Phase** — For each beat, detect whether transients fit better on a straight 16th, triplet, or 8th note grid. BPM-aware rules apply here, modifying grid decisions before any snapping occurs.
+2. **Quantization Phase** — Using the final (possibly BPM-constrained) grid decisions, snap each transient from its **original** timestamp to the chosen grid position.
+
+This means there is only one quantization pass. BPM rules are consulted during grid decision-making, not applied post-hoc to already-quantized data.
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                  Decide-Then-Quantize Flow                            │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│   1. RhythmQuantizer.decideGrids()     →  base grid decisions       │
+│          ↓                                                           │
+│   2. TempoAwareQuantizer.applyRules()  →  BPM-constrained decisions │
+│          ↓                                                           │
+│   3. RhythmQuantizer.quantizeToGrids() →  quantize from originals   │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
 ### Per-Beat Grid Detection
 
 For each quarter note beat, the system determines whether transients fit better on a straight 16th note grid or an 8th note triplet grid:
@@ -3369,8 +3392,8 @@ Each quantized beat contains detailed metadata:
 interface GeneratedBeat {
   timestamp: number;           // Quantized time (seconds)
   beatIndex: number;           // Which quarter note this belongs to
-  gridPosition: number;        // Position within beat (0-3 for 16th, 0-2 for triplet)
-  gridType: 'straight_16th' | 'triplet_8th';
+  gridPosition: number;        // Position within beat (0-3 for 16th, 0-2 for triplet, 0-1 for 8th)
+  gridType: 'straight_16th' | 'triplet_8th' | 'straight_8th';
   intensity: number;           // Transient strength (0.0 - 1.0)
   band: 'low' | 'mid' | 'high';
   quantizationError?: number;  // How far it was moved (ms)
@@ -3384,13 +3407,71 @@ For each beat, the system records which grid was chosen and why:
 ```typescript
 interface GridDecision {
   beatIndex: number;
-  selectedGrid: 'straight_16th' | 'triplet_8th';
-  straightAvgOffset: number;   // Average ms offset if using 16th grid
-  tripletAvgOffset: number;    // Average ms offset if using triplet grid
+  selectedGrid: 'straight_16th' | 'triplet_8th' | 'straight_8th';
+  straightAvgOffset?: number;  // Average ms offset if using 16th grid (undefined when forced)
+  tripletAvgOffset?: number;   // Average ms offset if using triplet grid (undefined when forced)
   transientCount: number;      // How many transients in this beat
-  confidence: number;          // How much better the chosen grid fits
+  confidence: number;          // How much better the chosen grid fits (1.0 = forced override)
 }
 ```
+
+**Confidence values:**
+- `< 1.0` — Auto-detected grid decision (chosen because it best fits transient positions)
+- `1.0` — Forced/authoritative decision (band-forced grid, or BPM-based override by TempoAwareQuantizer)
+
+When a grid decision is forced (e.g., by BPM-aware rules), `straightAvgOffset` and `tripletAvgOffset` are cleared since they no longer reflect the chosen grid.
+
+### BPM-Aware Quantization Rules
+
+The `TempoAwareQuantizer` is an extensible pipeline step that applies BPM-based rules to constrain the quantization grid for fundamental playability. This operates during the grid decision phase (before any quantization), so transients are always snapped from their original timestamps to the final grid.
+
+#### Rule Interface
+
+Rules implement the `TempoQuantizationRule` interface:
+
+```typescript
+interface TempoQuantizationRule {
+  id: string;
+  description: string;
+  /** Check if this rule applies given the BPM and context */
+  applies(bpm: number, context: TempoRuleContext): boolean;
+  /** Modify grid decisions based on this rule */
+  apply(decisions: GridDecision[], context: TempoRuleContext): GridDecision[];
+}
+```
+
+Rules are applied in order — each rule receives the decisions (possibly modified by earlier rules) and returns modified decisions.
+
+#### High BPM Grid Restriction Rule
+
+At high tempos, fine subdivisions become physically unplayable:
+
+| BPM | 16th note duration | Triplet 8th duration |
+|-----|--------------------|-----------------------|
+| 160 | 93.75ms | 125ms |
+| 200 | 75ms | 100ms |
+
+The built-in `HighBpmGridRestrictionRule` applies two thresholds:
+
+| BPM Range | Effect |
+|-----------|--------|
+| < 160 | No restriction — all grid types allowed |
+| >= 160 | `straight_16th` overridden to `straight_8th` |
+| >= 200 | `triplet_8th` also overridden to `straight_8th` |
+
+- Applies to `mid` and `high` bands only (`low` is already forced to `straight_8th`)
+- When overriding, sets `confidence: 1.0` and clears offset fields
+- Deduplication happens naturally during quantization when two transients snap to the same grid point
+- Thresholds are configurable via `HighBpmGridRestrictionConfig`
+
+#### Relationship to Difficulty-Based Limits
+
+BPM-aware rules and difficulty-based subdivision limits are separate pipeline stages:
+
+1. **BPM-aware quantization** (this step) — constrains the grid for fundamental playability at any difficulty. Happens during quantization.
+2. **Difficulty variant generation** — further simplifies the already-constrained grid for easier difficulties. Happens after composite stream generation.
+
+At 180 BPM, the BPM rule converts 16th→8th. Then the Easy difficulty variant passes through unchanged (already on 8th). At 120 BPM, the BPM rule does nothing, but Easy still limits to 8th via difficulty rules.
 
 ---
 
@@ -3407,7 +3488,7 @@ Each band stream is scored on multiple factors:
 | **IOI Variance** | - | Inter-Onset Interval variance—more varied = more interesting |
 | **Syncopation** | - | Offbeat transients score higher |
 | **Phrase Significance** | - | Higher if section contains detected phrases |
-| **Density Factor** | - | Bell curve—optimal density scores highest |
+| **Density Factor** | - | BPM-aware bell curve—optimal density (~4.0 notes/sec) scores highest |
 
 ```
 Score = ioiVariance + syncopationLevel + phraseSignificance + densityFactor
@@ -3461,11 +3542,11 @@ interface CompositeBeat extends GeneratedBeat {
 
 The composite's natural difficulty is determined by its density:
 
-| Density | Transients/Beat | Natural Difficulty |
-|---------|-----------------|-------------------|
-| Sparse | < 1.5 | Easy |
-| Moderate | 1.5 - 2.5 | Medium |
-| Dense | > 2.5 | Hard |
+| Density | Notes/Second | Natural Difficulty |
+|---------|--------------|-------------------|
+| Sparse | < 2.5 | Easy |
+| Moderate | 2.5 - 4.5 | Medium |
+| Dense | > 4.5 | Hard |
 
 ### Custom Scoring Configuration
 
@@ -3604,21 +3685,21 @@ The system generates three difficulty variants from the composite stream by eith
 
 ### Target Density Ranges
 
-Each difficulty level has a target density range (transients per beat):
+Each difficulty level has a target density range (notes per second):
 
 | Difficulty | Target Density | Description |
 |------------|----------------|-------------|
-| **Easy** | 0 - 1.0 t/b | Sparse (mostly quarter notes) |
-| **Medium** | 1.0 - 1.75 t/b | Moderate (eighth notes, some sixteenths) |
-| **Hard** | 1.75+ t/b | Dense (heavy sixteenths, triplets) |
+| **Easy** | 0 - 2.5 notes/sec | Sparse (mostly quarter and 8th notes) |
+| **Medium** | 2.5 - 4.5 notes/sec | Moderate (8th notes, some 16ths) |
+| **Hard** | > 4.5 notes/sec | Dense (16ths, triplets) |
 
 ### Subdivision Limits by Difficulty
 
 | Difficulty | Max Subdivision | Allowed Grid Types |
 |------------|-----------------|-------------------|
 | **Easy** | 8th notes | `straight_8th`, `quarter_triplet` |
-| **Medium** | 16th notes | `straight_16th`, `triplet_8th`, all types |
-| **Hard** | 16th notes | `straight_16th`, `triplet_8th`, all types |
+| **Medium** | 16th notes | `straight_16th`, `triplet_8th`, `straight_8th`, `quarter_triplet` |
+| **Hard** | 16th notes | `straight_16th`, `triplet_8th`, `straight_8th`, `quarter_triplet` |
 
 ### Variant Generation Strategy
 
@@ -3629,8 +3710,8 @@ The strategy depends on the composite's natural difficulty:
 | Variant | Strategy |
 |---------|----------|
 | **Hard** | Composite unchanged (unedited) |
-| **Medium** | Density-aware reduction to ≤1.75 t/b (removes low-priority beats) |
-| **Easy** | Grid conversion (16th→8th) + density reduction to ≤1.0 t/b |
+| **Medium** | Density-aware reduction to ≤4.5 notes/sec (removes low-priority beats) |
+| **Easy** | Grid conversion (16th→8th) + density reduction to ≤2.5 notes/sec |
 
 #### If Composite is Naturally Medium (Moderate)
 
@@ -3638,7 +3719,7 @@ The strategy depends on the composite's natural difficulty:
 |---------|----------|
 | **Hard** | Density enhancement using pattern library |
 | **Medium** | Composite unchanged (unedited) |
-| **Easy** | Grid conversion + density reduction to ≤1.0 t/b |
+| **Easy** | Grid conversion + density reduction to ≤2.5 notes/sec |
 
 #### If Composite is Naturally Easy (Sparse)
 

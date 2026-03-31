@@ -23,6 +23,7 @@ Complete API reference for the Playlist Data Engine. Contains all type definitio
    - [MultiBandAnalyzer](#multibandanalyzer)
    - [TransientDetector](#transientdetector)
    - [RhythmQuantizer](#rhythmquantizer)
+   - [TempoAwareQuantizer](#tempoawarequantizer)
    - [PhraseAnalyzer](#phraseanalyzer)
    - [DensityAnalyzer](#densityanalyzer)
    - [StreamScorer](#streamscorer)
@@ -196,8 +197,9 @@ A concise overview of all main exports from the library, organized by category.
 | `MultiBandAnalyzer` | Split audio into frequency bands for transient detection | [Procedural Rhythm Generation](#procedural-rhythm-generation) |
 | `TransientDetector` | Detect transients using band-specific strategies | [Procedural Rhythm Generation](#procedural-rhythm-generation) |
 | `RhythmQuantizer` | Quantize transients to beat map grid | [Procedural Rhythm Generation](#procedural-rhythm-generation) |
+| `TempoAwareQuantizer` | BPM-aware grid decision constraints for playability | [Procedural Rhythm Generation](#procedural-rhythm-generation) |
 | `PhraseAnalyzer` | Detect duplicate rhythmic phrases | [Procedural Rhythm Generation](#procedural-rhythm-generation) |
-| `DensityAnalyzer` | Measure density and determine natural difficulty | [Procedural Rhythm Generation](#procedural-rhythm-generation) |
+| `DensityAnalyzer` | Measure density (notes/sec) and determine natural difficulty | [Procedural Rhythm Generation](#procedural-rhythm-generation) |
 | `StreamScorer` | Score band streams for rhythmic interest | [Procedural Rhythm Generation](#procedural-rhythm-generation) |
 | `CompositeStreamGenerator` | Create composite stream from best sections | [Procedural Rhythm Generation](#procedural-rhythm-generation) |
 | `DifficultyVariantGenerator` | Generate easy/medium/hard variants | [Procedural Rhythm Generation](#procedural-rhythm-generation) |
@@ -2512,6 +2514,7 @@ constructor(options?: RhythmGenerationOptions)
 | `transientConfig` | `undefined` | Per-band transient detection config (see [TransientDetector](#transientdetector)) |
 | `densityValidation` | `undefined` | Density validation config for quantization (see [RhythmQuantizer](#rhythmquantizer)) |
 | `scoringConfig` | `undefined` | Stream scoring config for composite selection (see [StreamScorer](#streamscorer)) |
+| `tempoQuantizationConfig` | `undefined` | BPM-aware quantization rules config. When undefined, default rules apply. Set `{ enabled: false }` to disable. (see [TempoAwareQuantizer](#tempoawarequantizer)) |
 | `phraseAnalyzerConfig` | `undefined` | Phrase analyzer config (see [PhraseAnalyzer](#phraseanalyzer)) |
 | `seed` | `undefined` | Seed for reproducibility. Passed through to DifficultyVariantGenerator for deterministic density rolls and beat-level decisions |
 | `verbose` | `false` | Log progress information |
@@ -2644,7 +2647,7 @@ Within a buffer window (per-band `minInterval`), only the strongest transient is
 ### RhythmQuantizer
 *Location:* *[src/core/analysis/beat/RhythmQuantizer.ts](src/core/analysis/beat/RhythmQuantizer.ts)*
 
-Translates raw transients into quantized rhythmic subdivisions that align with the beat map grid. Performs per-beat grid detection (16th vs triplet) with density validation and sensitivity retry logic.
+Translates raw transients into quantized rhythmic subdivisions that align with the beat map grid. Uses a **decide-then-quantize** architecture: grid decisions are made first (per-beat detection of 16th vs triplet), then transients are snapped from their original timestamps to the chosen grid positions. This separation allows BPM-aware rules (via [TempoAwareQuantizer](#tempoawarequantizer)) to modify grid decisions before quantization occurs, avoiding double-quantization error.
 
 **For per-beat grid detection, density validation, and intensity filtering, see [docs/BEAT_DETECTION.md#rhythm-quantization](docs/BEAT_DETECTION.md#rhythm-quantization)**
 
@@ -2668,14 +2671,87 @@ constructor(config?: QuantizationConfig)
 
 | Method | Returns | Description |
 |--------|---------|-------------|
-| `quantize(transientAnalysis, unifiedBeatMap)` | `QuantizedBandStreams` | Quantize transients to beat map grid |
+| `quantize(transientAnalysis, unifiedBeatMap, gridDecider?)` | `QuantizedBandStreams` | Quantize transients to beat map grid. Optional `gridDecider` callback allows BPM-aware rules to override grid decisions before quantization. |
+| `decideGrids(transients, unifiedBeatMap, band)` | `GridDecision[]` | Phase 1 of decide-then-quantize: determine grid type (16th/triplet/8th) for each beat without quantizing |
+| `quantizeToGrids(transients, unifiedBeatMap, band, gridDecisions)` | `GeneratedBeat[]` | Phase 2 of decide-then-quantize: snap original transients to the chosen grid positions |
 
 **Grid Types:**
 
 | Grid Type | Description |
 |-----------|-------------|
+| `straight_8th` | 8th note grid (2 divisions per beat) — used for low band and BPM-forced downgrades |
 | `straight_16th` | Standard 16th note grid (4 divisions per beat) |
 | `triplet_8th` | 8th note triplet grid (3 divisions per beat) |
+
+### TempoAwareQuantizer
+*Location:* *[src/core/analysis/beat/TempoAwareQuantizer.ts](src/core/analysis/beat/TempoAwareQuantizer.ts)*
+
+Extends the [RhythmQuantizer](#rhythmquantizer)'s decide-then-quantize architecture with BPM-aware rules that constrain grid decisions for fundamental playability. At high tempos, certain subdivisions become physically unplayable (e.g., 16th notes at 180 BPM = 83ms apart). This quantizer applies configurable rules before quantization occurs, ensuring the grid respects tempo constraints.
+
+**Architecture:**
+
+```
+decideGrids()           →  RhythmQuantizer base grid decisions
+       ↓
+TempoAwareQuantizer.applyRules()  →  BPM-constrained decisions
+       ↓
+quantizeToGrids()       →  Quantize from original timestamps to final grid
+```
+
+The `TempoAwareQuantizer` plugs into `RhythmGenerator.quantizeTransients()` via the `gridDecider` callback on `RhythmQuantizer.quantize()`. No double-quantization occurs — BPM rules modify grid decisions before any snapping happens.
+
+**Constructor:**
+
+```typescript
+constructor(config?: TempoAwareQuantizerConfig)
+```
+
+**Config Options:**
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `rules` | `[HighBpmGridRestrictionRule]` | Array of `TempoQuantizationRule` instances to apply |
+| `enabled` | `true` | Whether tempo-aware quantization is active |
+
+**Methods:**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `decideGrids(transients, unifiedBeatMap, band)` | `GridDecision[]` | Get base grid decisions from `RhythmQuantizer`, then apply all matching rules |
+| `applyRules(decisions, context)` | `GridDecision[]` | Apply each applicable rule to modify grid decisions |
+
+**Rule Interface:**
+
+```typescript
+interface TempoQuantizationRule {
+  id: string;
+  description: string;
+  applies(bpm: number, context: TempoRuleContext): boolean;
+  apply(decisions: GridDecision[], context: TempoRuleContext): GridDecision[];
+}
+
+interface TempoRuleContext {
+  bpm: number;
+  quarterNoteInterval: number;
+  band: 'low' | 'mid' | 'high';
+  transients: TransientResult[];
+}
+```
+
+**Built-in Rule: HighBpmGridRestrictionRule**
+
+Restricts maximum grid subdivision at high tempos for playability:
+
+| BPM Range | Restriction | Applies To |
+|-----------|-------------|------------|
+| > 160 BPM | `straight_16th` → `straight_8th` | `mid`, `high` bands |
+| > 200 BPM | `straight_16th` → `straight_8th`, `triplet_8th` → `straight_8th` | `mid`, `high` bands |
+
+Thresholds are configurable via `HighBpmGridRestrictionConfig`.
+
+**Grid Confidence Handling:** When a rule overrides a grid decision, it sets `confidence: 1.0` and clears `straightAvgOffset`/`tripletAvgOffset`. This ensures the BPM-forced decision wins over auto-detected decisions during `collectGridDecisions()`.
+
+**Default Config:** `DEFAULT_TEMPO_AWARE_CONFIG` exports a ready-to-use config with the built-in high BPM rule at default thresholds.
 
 ### PhraseAnalyzer
 *Location:* *[src/core/analysis/beat/PhraseAnalyzer.ts](src/core/analysis/beat/PhraseAnalyzer.ts)*
@@ -2736,7 +2812,7 @@ Single occurrence of a detected phrase. Timestamps enable pitch analysis of spec
 ### DensityAnalyzer
 *Location:* *[src/core/analysis/beat/DensityAnalyzer.ts](src/core/analysis/beat/DensityAnalyzer.ts)*
 
-Analyzes quantized rhythm streams to measure density and determine natural difficulty. Calculates transients per beat and categorizes streams as sparse, moderate, or dense.
+Analyzes quantized rhythm streams to measure density and determine natural difficulty. Calculates notes per second (tempo-adjusted density) and categorizes streams as sparse, moderate, or dense. Requires BPM to convert per-beat transient counts to a tempo-independent metric.
 
 **For density analysis and natural difficulty detection, see [docs/BEAT_DETECTION.md#natural-difficulty-detection](docs/BEAT_DETECTION.md#natural-difficulty-detection)**
 
@@ -2744,7 +2820,7 @@ Analyzes quantized rhythm streams to measure density and determine natural diffi
 
 | Method | Returns | Description |
 |--------|---------|-------------|
-| `analyze(quantizedStreams)` | `DensityAnalysisResult` | Analyze density of quantized streams |
+| `analyze(quantizedStreams, bpm)` | `DensityAnalysisResult` | Analyze density of quantized streams. BPM is used to convert per-beat counts to notes per second. |
 
 **Density Categories:**
 
@@ -2778,6 +2854,7 @@ constructor(config?: Partial<StreamScorerConfig>)
 | `densityWeight` | `0.15` | Weight for density factor (note count) in scoring |
 | `offbeatGridPositions` | `{ straight_16th: [1, 3], triplet_8th: [1, 2] }` | Grid positions considered "offbeats" for syncopation scoring |
 | `bandBiasWeights` | `{ low: 0.8, mid: 0.95, high: 1.0 }` | Band bias multipliers applied to final section scores (see below) |
+| `bpm` | `undefined` | BPM for notes/sec density calculation. When set, density factor uses a BPM-aware bell curve (optimal ~4.0 notes/sec). Falls back to legacy notes/beat behavior when omitted. |
 
 **Band Bias Weights:**
 
@@ -2807,12 +2884,12 @@ constructor(config?: Partial<StreamScorerConfig>)
 | `ioiVariance` | Inter-Onset Interval variance (timing variety) |
 | `syncopationLevel` | Weighting for offbeat transients |
 | `phraseSignificance` | Significance of detected phrases in section |
-| `densityFactor` | Bell curve for optimal density scoring |
+| `densityFactor` | BPM-aware bell curve for optimal density scoring (notes/sec). Optimal density ~4.0 notes/sec when BPM is configured. |
 
 ### CompositeStreamGenerator
 *Location:* *[src/core/analysis/beat/CompositeStreamGenerator.ts](src/core/analysis/beat/CompositeStreamGenerator.ts)*
 
-Creates a composite stream by slicing together the highest-scoring sections from each band. The composite represents the most interesting rhythm patterns across all frequency bands.
+Creates a composite stream by slicing together the highest-scoring sections from each band. The composite represents the most interesting rhythm patterns across all frequency bands. Derives BPM internally from the beat map's `quarterNoteInterval` for notes/second density calculation.
 
 **For composite stream generation algorithm, see [docs/BEAT_DETECTION.md#composite-stream-generation](docs/BEAT_DETECTION.md#composite-stream-generation)**
 
@@ -2825,7 +2902,7 @@ Creates a composite stream by slicing together the highest-scoring sections from
 ### DifficultyVariantGenerator
 *Location:* *[src/core/analysis/beat/DifficultyVariantGenerator.ts](src/core/analysis/beat/DifficultyVariantGenerator.ts)*
 
-Generates easy/medium/hard difficulty variants from the composite stream, plus a natural variant representing the unedited composite. Uses simplification for harder-to-easier conversions and density enhancement for easier-to-harder conversions.
+Generates easy/medium/hard difficulty variants from the composite stream, plus a natural variant representing the unedited composite. Uses simplification for harder-to-easier conversions and density enhancement for easier-to-harder conversions. Density is measured in notes per second (derived from BPM via `unifiedBeatMap.quarterNoteBpm`).
 
 **For variant generation strategy, simplification rules, and density enhancement, see [docs/BEAT_DETECTION.md#difficulty-variant-generation](docs/BEAT_DETECTION.md#difficulty-variant-generation)**
 
