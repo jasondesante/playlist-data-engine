@@ -617,4 +617,15 @@ export class StreamScorer {
     getConfig(): StreamScorerConfig {
         return { ...this.config };
     }
+
+    /**
+     * Update configuration options.
+     * Merges the provided partial config with the existing config.
+     * Use this to set runtime values like BPM that aren't known at construction time.
+     *
+     * @param partial - Partial config to merge
+     */
+    updateConfig(partial: Partial<StreamScorerConfig>): void {
+        this.config = { ...this.config, ...partial };
+    }
 }

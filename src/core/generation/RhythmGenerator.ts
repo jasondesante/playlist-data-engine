@@ -1098,7 +1098,7 @@ export class RhythmGenerator {
         log('Phase 3', 0, 'Starting scoring and composite generation');
         signal?.throwIfAborted();
 
-        const scoringResult = this.scoreStreams(quantizationResult, phraseAnalysis, densityAnalysis);
+        const scoringResult = this.scoreStreams(quantizationResult, phraseAnalysis, densityAnalysis, unifiedBeatMap.quarterNoteBpm);
         log('Phase 3', 0.2, `Scored ${scoringResult.sectionWinners.length} sections`);
         signal?.throwIfAborted();
 
@@ -1231,13 +1231,16 @@ export class RhythmGenerator {
      * @param streams - Quantized band streams
      * @param phraseAnalysis - Phrase analysis from Phase 2.1
      * @param densityAnalysis - Density analysis from Phase 2.2
+     * @param bpm - BPM for tempo-aware density scoring
      * @returns Stream scoring result
      */
     scoreStreams(
         streams: QuantizedBandStreams,
         phraseAnalysis: PhraseAnalysisResult,
-        densityAnalysis: DensityAnalysisResult
+        densityAnalysis: DensityAnalysisResult,
+        bpm: number
     ): StreamScoringResult {
+        this.streamScorer.updateConfig({ bpm });
         return this.streamScorer.score(streams, phraseAnalysis, densityAnalysis);
     }
 
