@@ -2513,7 +2513,7 @@ constructor(options?: RhythmGenerationOptions)
 | `densityValidation` | `undefined` | Density validation config for quantization (see [RhythmQuantizer](#rhythmquantizer)) |
 | `scoringConfig` | `undefined` | Stream scoring config for composite selection (see [StreamScorer](#streamscorer)) |
 | `phraseAnalyzerConfig` | `undefined` | Phrase analyzer config (see [PhraseAnalyzer](#phraseanalyzer)) |
-| `seed` | `undefined` | Seed for reproducibility |
+| `seed` | `undefined` | Seed for reproducibility. Passed through to DifficultyVariantGenerator for deterministic density rolls and beat-level decisions |
 | `verbose` | `false` | Log progress information |
 | `enableCache` | `true` | Enable caching of intermediate results |
 | `cacheMaxAge` | `1800000` | Maximum cache entry age in ms (30 min) |
@@ -3133,6 +3133,8 @@ new ButtonMapper(config: Partial<ButtonMappingConfig>)
 
 *Location:* *[src/core/types/ButtonMapping.ts](src/core/types/ButtonMapping.ts)*
 
+**Deterministic behavior:** When a `seed` is provided in the config, all random choices (pattern selection, variation button picks) become deterministic via MurmurHash. The same seed + same rhythm + same config always produces identical button assignments. When no seed is provided, `Math.random()` is used (non-deterministic).
+
 #### ButtonMappingConfig Properties
 
 | Property | Type | Default | Description |
@@ -3145,6 +3147,7 @@ new ButtonMapper(config: Partial<ButtonMappingConfig>)
 | `consecutiveSameKeyLimit` | number | 8 | Max consecutive same-key repeats |
 | `patternMemory` | number | 4 | Measures to look back for avoiding repetition |
 | `useRhythmBand` | boolean | true | Use same band that won rhythm slicing |
+| `seed` | `string?` | `undefined` | Optional seed for deterministic pattern selection and variation. When provided, the same seed always produces the same button assignments. When undefined, pattern selection is non-deterministic. |
 
 #### Consecutive Key Limits by Difficulty
 
@@ -3188,7 +3191,7 @@ new LevelGenerator(options: LevelGenerationOptions)
 | `controllerMode` | ControllerMode | 'ddr' | Controller mode |
 | `rhythm` | Partial\<RhythmGenerationOptions\> | {} | Rhythm generation settings |
 | `buttons` | Partial\<ButtonMappingConfig\> | {} | Button mapping settings |
-| `seed` | string | undefined | Seed for reproducibility |
+| `seed` | string | undefined | Seed for reproducibility. Passed through to RhythmGenerator and ButtonMapper for fully deterministic generation |
 
 #### GeneratedLevel Properties
 

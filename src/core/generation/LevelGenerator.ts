@@ -303,6 +303,7 @@ export class LevelGenerator {
             ...this.options.buttons,
             difficulty: this.options.difficulty,
             controllerMode: this.options.controllerMode,
+            seed: this.options.seed,
         });
     }
 

@@ -3675,7 +3675,7 @@ const config = generator.getConfig();
 | `interpolatedBeatIntensity` | `number` | `0.5` | Intensity assigned to interpolated beats (0.0–1.0) |
 | `preferPatternInsertion` | `boolean` | `true` | Prefer pattern insertion over simple interpolation |
 | `maxPatternInsertionSize` | `number` | `4` | Max phrase size (in beats) for pattern insertion |
-| `seed` | `string?` | `undefined` | Deterministic seed for probability rolls |
+| `seed` | `string?` | `undefined` | Deterministic seed for probability rolls. Same seed + same beats always produces the same variant |
 
 ### Simplification Rules
 
@@ -4402,6 +4402,37 @@ const mapper = new ButtonMapper({
 const buttonMap = mapper.map(rhythm, 'easy');
 ```
 
+### Seeded (Deterministic) Generation
+
+Pass a `seed` to `LevelGenerator` for fully deterministic level generation. The same seed + same audio + same settings always produces the same level:
+
+```typescript
+import { LevelGenerator } from 'playlist-data-engine';
+
+// Generate a level with a seed
+const generator = new LevelGenerator({
+  difficulty: 'medium',
+  controllerMode: 'ddr',
+  seed: 'my-level-42',
+});
+
+// This will always produce the same level for the same audio
+const level = await generator.generate(audioBuffer, unifiedBeatMap);
+
+// Regenerating with the same seed produces identical results
+const level2 = await generator.generate(audioBuffer, unifiedBeatMap);
+// level.chart === level2.chart (identical key assignments)
+
+// Different seed = different level
+const altGenerator = new LevelGenerator({ seed: 'my-level-99' });
+const altLevel = await altGenerator.generate(audioBuffer, unifiedBeatMap);
+// altLevel differs from level (different patterns selected)
+```
+
+The seed affects all randomized decisions in the pipeline:
+- **RhythmGenerator**: density rolls, difficulty variant beat-level decisions
+- **ButtonMapper**: pattern selection (when multiple same-sized patterns are valid), variation button picks (for consecutive key limit fixes)
+
 ### Full Workflow: Audio → Rhythm → Pitch → Buttons → ChartedBeatMap
 
 ```typescript
@@ -4645,7 +4676,7 @@ interface ProceduralGenerationMetadata {
   pitchInfluenceWeight: number;    // 0-1, how much pitch affected button mapping
   patternsUsed: string[];          // IDs of button patterns used
   controllerMode: 'ddr' | 'guitar_hero';
-  seed?: string;                   // For reproducibility
+  seed?: string;                   // For reproducibility. When set, same seed + audio + settings = same level
   generatedAt: string;             // ISO timestamp
 
   // Pitch analysis results (absent if pitchInfluenceWeight = 0)

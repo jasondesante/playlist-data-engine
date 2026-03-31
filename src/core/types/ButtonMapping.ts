@@ -136,6 +136,15 @@ export interface ButtonMappingConfig {
      * @default true
      */
     useRhythmBand: boolean;
+
+    /**
+     * Optional seed for deterministic pattern selection and variation.
+     * When provided, the same seed always produces the same button assignments.
+     * When undefined, pattern selection is non-deterministic (Math.random).
+     *
+     * @default undefined
+     */
+    seed?: string;
 }
 
 // =============================================================================

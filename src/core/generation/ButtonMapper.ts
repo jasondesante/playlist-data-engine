@@ -48,6 +48,7 @@ import {
 import type { GeneratedRhythm, RhythmMetadata } from './RhythmGenerator.js';
 import type { DifficultyVariant, DifficultyLevel } from '../analysis/beat/DifficultyVariantGenerator.js';
 import type { PitchAtBeat, IntervalCategory, PitchDirection } from './PitchBeatLinker.js';
+import { deriveSeed, hashSeedToFloat } from '../../utils/hash.js';
 
 // ============================================================================
 // Type Definitions
@@ -589,6 +590,7 @@ export function selectPatternForRun<T extends DDRButton | GuitarHeroButton>(
     patternLibrary: ButtonPattern<T>[],
     maxDifficulty: number,
     recentlyUsedPatternIds?: Set<string>,
+    randomFn?: () => number,
 ): PatternPlacement<T>[] {
     const placements: PatternPlacement<T>[] = [];
 
@@ -616,7 +618,8 @@ export function selectPatternForRun<T extends DDRButton | GuitarHeroButton>(
         const exactCandidates = eligible.filter(p => p.keys.length === remaining);
         selected = findCompatiblePattern(
             exactCandidates, run, posInRun, prevKey, run.nextKey,
-            lastPatternId, lastCategory, recentlyUsedPatternIds
+            lastPatternId, lastCategory, recentlyUsedPatternIds,
+            randomFn
         );
 
         // Strategy 2: Largest compatible pattern (intermediate placement, no exit check)
@@ -624,7 +627,8 @@ export function selectPatternForRun<T extends DDRButton | GuitarHeroButton>(
             const fittingCandidates = eligible.filter(p => p.keys.length <= remaining);
             selected = findCompatiblePattern(
                 fittingCandidates, run, posInRun, prevKey, null,
-                lastPatternId, lastCategory, recentlyUsedPatternIds
+                lastPatternId, lastCategory, recentlyUsedPatternIds,
+                randomFn
             );
         }
 
@@ -633,7 +637,8 @@ export function selectPatternForRun<T extends DDRButton | GuitarHeroButton>(
             const fittingCandidates = eligible.filter(p => p.keys.length <= remaining);
             selected = findCompatiblePattern(
                 fittingCandidates, run, posInRun, prevKey, null,
-                null, null, null
+                null, null, null,
+                randomFn
             );
         }
 
@@ -695,6 +700,7 @@ function findCompatiblePattern<T extends DDRButton | GuitarHeroButton>(
     avoidPatternId: string | null,
     preferDifferentCategory: string | null,
     recentlyUsedPatternIds: Set<string> | null | undefined,
+    randomFn: () => number = Math.random,
 ): ButtonPattern<T> | undefined {
     // Pass 1: strict variety
     const pass1 = candidates.filter(p =>
@@ -703,7 +709,7 @@ function findCompatiblePattern<T extends DDRButton | GuitarHeroButton>(
         p.category !== preferDifferentCategory &&
         !recentlyUsedPatternIds?.has(p.id)
     );
-    if (pass1.length > 0) return pickFromLargestGroup(pass1);
+    if (pass1.length > 0) return pickFromLargestGroup(pass1, randomFn);
 
     // Pass 2: allow same category
     const pass2 = candidates.filter(p =>
@@ -711,20 +717,20 @@ function findCompatiblePattern<T extends DDRButton | GuitarHeroButton>(
         p.id !== avoidPatternId &&
         !recentlyUsedPatternIds?.has(p.id)
     );
-    if (pass2.length > 0) return pickFromLargestGroup(pass2);
+    if (pass2.length > 0) return pickFromLargestGroup(pass2, randomFn);
 
     // Pass 3: allow recently used
     const pass3 = candidates.filter(p =>
         isPatternRunCompatible(p, run, positionInRun, previousKey, nextKey) &&
         p.id !== avoidPatternId
     );
-    if (pass3.length > 0) return pickFromLargestGroup(pass3);
+    if (pass3.length > 0) return pickFromLargestGroup(pass3, randomFn);
 
     // Pass 4: no constraints
     const pass4 = candidates.filter(p =>
         isPatternRunCompatible(p, run, positionInRun, previousKey, nextKey)
     );
-    if (pass4.length > 0) return pickFromLargestGroup(pass4);
+    if (pass4.length > 0) return pickFromLargestGroup(pass4, randomFn);
 
     return undefined;
 }
@@ -737,11 +743,12 @@ function findCompatiblePattern<T extends DDRButton | GuitarHeroButton>(
  * random selection.
  */
 function pickFromLargestGroup<T extends DDRButton | GuitarHeroButton>(
-    patterns: ButtonPattern<T>[]
+    patterns: ButtonPattern<T>[],
+    randomFn: () => number = Math.random
 ): ButtonPattern<T> {
     const maxSize = patterns[0].keys.length;
     const largest = patterns.filter(p => p.keys.length === maxSize);
-    return largest[Math.floor(Math.random() * largest.length)];
+    return largest[Math.floor(randomFn() * largest.length)];
 }
 
 // ============================================================================
@@ -847,7 +854,8 @@ function checkConsecutiveLimit(
 function getVariationButton<T extends DDRButton | GuitarHeroButton>(
     currentKey: T,
     library: ButtonPattern<T>[],
-    maxDifficulty: number
+    maxDifficulty: number,
+    randomFn: () => number = Math.random
 ): T {
     const eligiblePatterns = library.filter(p => p.difficulty <= maxDifficulty);
 
@@ -858,7 +866,7 @@ function getVariationButton<T extends DDRButton | GuitarHeroButton>(
     // Try to find a pattern that starts with a different key
     const differentKeyPatterns = eligiblePatterns.filter(p => p.keys[0] !== currentKey);
     const pool = differentKeyPatterns.length > 0 ? differentKeyPatterns : eligiblePatterns;
-    return pool[Math.floor(Math.random() * pool.length)].keys[0];
+    return pool[Math.floor(randomFn() * pool.length)].keys[0];
 }
 
 // ============================================================================
@@ -1006,6 +1014,18 @@ export class ButtonMapper {
     }
 
     /**
+     * Generate a deterministic random float for a given context.
+     * Uses MurmurHash so the same seed + context always produces the same value.
+     * Falls back to Math.random() when no seed is configured.
+     */
+    private seededRandom(context: string): number {
+        if (!this.config.seed) {
+            return Math.random();
+        }
+        return hashSeedToFloat(deriveSeed(this.config.seed, context));
+    }
+
+    /**
      * Get the current configuration
      */
     getConfig(): ButtonMappingConfig {
@@ -1111,6 +1131,9 @@ export class ButtonMapper {
         // Get max pattern difficulty for this game difficulty
         const maxPatternDifficulty = this.getMaxPatternDifficulty(difficulty);
 
+        // Counter for seeded random calls (ensures deterministic ordering)
+        let pickCounter = 0;
+
         // Step 1: Classify beats as pitch-derived or pattern-needed
         const { pitchKeys, probabilities } = classifyBeats(
             beats,
@@ -1143,12 +1166,13 @@ export class ButtonMapper {
 
         // Step 6: Select patterns for each run, tracking recently used patterns for variety
         const recentlyUsedPatternIds = new Set<string>();
-        const placementsByRun = runs.map(run => {
+        const placementsByRun = runs.map((run, runIdx) => {
             const placements = selectPatternForRun(
                 run,
                 patternLibrary,
                 maxPatternDifficulty,
-                recentlyUsedPatternIds
+                recentlyUsedPatternIds,
+                () => this.seededRandom(`run:${runIdx}:pick:${pickCounter++}`)
             );
             // Update recently used set for cross-run variety
             for (const p of placements) {
@@ -1273,12 +1297,14 @@ export class ButtonMapper {
         const limit = this.config.consecutiveSameKeyLimit;
         const { positions } = checkConsecutiveLimit(keys, limit);
 
-        for (const pos of positions) {
-            // Select a button that provides variation
+        for (let i = 0; i < positions.length; i++) {
+            const pos = positions[i];
+            // Select a button that provides variation (seeded for determinism)
             const newKey = getVariationButton(
                 assignments[pos].key,
                 patternLibrary,
-                maxPatternDifficulty
+                maxPatternDifficulty,
+                () => this.seededRandom(`var:${pos}:${i}`)
             );
 
             if (newKey !== assignments[pos].key) {
