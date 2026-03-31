@@ -135,8 +135,8 @@ const DEFAULT_COMPOSITE_STREAM_CONFIG: CompositeStreamConfig = {
  * Moderate: SPARSE_THRESHOLD - DENSE_THRESHOLD notes/sec → Medium
  * Dense: > DENSE_THRESHOLD notes/sec → Hard
  */
-const SPARSE_THRESHOLD = 0.9;
-const DENSE_THRESHOLD = 1.2;
+const SPARSE_THRESHOLD = 1.0;
+const DENSE_THRESHOLD = 1.5;
 
 // ============================================================================
 // CompositeStreamGenerator Class

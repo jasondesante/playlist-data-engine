@@ -50,10 +50,11 @@ import { deriveSeed, hashSeedToFloat } from '../../../utils/hash.js';
  *
  * - `straight_16th`: Standard 16th note grid (4 positions per beat: 0, 1, 2, 3)
  * - `triplet_8th`: 8th note triplet grid (3 positions per beat: 0, 1, 2)
- * - `straight_8th`: Standard 8th note grid (2 positions per beat: 0, 2) - Easy only
- * - `quarter_triplet`: Quarter note triplet (1 position per beat, triplet feel) - Easy only
+ * - `straight_8th`: Standard 8th note grid (2 positions per beat: 0, 2)
+ * - `quarter_triplet`: Quarter note triplet (1 position per beat, triplet feel)
+ * - `straight_4th`: Quarter note grid (1 position per beat: 0) — Easy at BPM > 120
  */
-export type ExtendedGridType = GridType | 'straight_8th' | 'quarter_triplet';
+export type ExtendedGridType = GridType | 'straight_8th' | 'quarter_triplet' | 'straight_4th';
 
 /**
  * All possible grid types for reference
@@ -63,6 +64,7 @@ export const ALL_GRID_TYPES: ExtendedGridType[] = [
     'triplet_8th',
     'straight_8th',
     'quarter_triplet',
+    'straight_4th',
 ];
 
 // ============================================================================
@@ -72,27 +74,25 @@ export const ALL_GRID_TYPES: ExtendedGridType[] = [
 /**
  * Subdivision limits for each difficulty level
  *
- * This constant defines which grid types are allowed for each difficulty.
+ * This constant defines which grid types are allowed for each difficulty
+ * at slow tempos (BPM < 70). For tempo-aware limits, use
+ * `getTempoAwareAllowedGridTypes()`.
+ *
  * The primary constraint is that Easy difficulty excludes rapid subdivisions
  * (16th notes and 8th note triplets) to ensure appropriate playability.
  *
- * | Difficulty | Max Subdivision | Allowed Grid Types |
- * |------------|-----------------|-------------------|
- * | Easy | 8th notes, quarter triplets | `straight_8th`, `quarter_triplet` |
- * | Medium | 16th notes | All types |
- * | Hard | 16th notes | All types |
+ * | Difficulty | BPM < 70 | 70 ≤ BPM ≤ 120 | BPM > 120 |
+ * |------------|----------|----------------|-----------|
+ * | Easy | `straight_8th`, `quarter_triplet` | same | `straight_4th`, `quarter_triplet` |
+ * | Medium | All types | `straight_8th`, `quarter_triplet` | `straight_8th`, `quarter_triplet` |
+ * | Hard | All types | All types | `straight_8th`, `quarter_triplet` |
+ * | Natural | All types | All types | All types |
  *
  * @example
  * ```typescript
- * // Check if a grid type is allowed for a difficulty
- * const gridType: ExtendedGridType = 'straight_16th';
- * const difficulty: DifficultyLevel = 'easy';
- *
- * if (SUBDIVISION_LIMITS[difficulty].allowedGridTypes.includes(gridType)) {
- *   // Grid type is allowed
- * } else {
- *   // Need to simplify this beat
- * }
+ * // Check if a grid type is allowed for a difficulty at a given BPM
+ * const allowed = getTempoAwareAllowedGridTypes('medium', 120);
+ * // ['straight_8th', 'quarter_triplet'] — 16th notes restricted at ≥70 BPM
  * ```
  */
 export const SUBDIVISION_LIMITS: Record<DifficultyLevel, SubdivisionLimitConfig> = {
@@ -103,13 +103,13 @@ export const SUBDIVISION_LIMITS: Record<DifficultyLevel, SubdivisionLimitConfig>
      * - No 8th note triplets (too rapid for beginners)
      * - 8th notes are the maximum density
      * - Quarter note triplets allowed for swing feel
-     * - Target density: < 0.9 notes/sec (sparse)
+     * - Target density: < 1.0 notes/sec (sparse)
      */
     easy: {
         maxSubdivision: 'eighth',
         allowedGridTypes: ['straight_8th', 'quarter_triplet'],
         description: '8th notes and quarter note triplets only',
-        targetDensityRange: { min: 0, max: 0.9 },
+        targetDensityRange: { min: 0, max: 1.0 },
     },
 
     /**
@@ -118,14 +118,14 @@ export const SUBDIVISION_LIMITS: Record<DifficultyLevel, SubdivisionLimitConfig>
      * - 16th notes allowed
      * - 8th note triplets allowed
      * - All grid types available
-     * - Target density: 0.9 - 1.2 notes/sec (moderate)
+     * - Target density: 1.0 - 1.5 notes/sec (moderate)
      * - Density reduction via moderate simplification (remove weak offbeat 16ths)
      */
     medium: {
         maxSubdivision: 'sixteenth',
         allowedGridTypes: ['straight_16th', 'triplet_8th', 'straight_8th', 'quarter_triplet'],
         description: 'All subdivision types, with density reduction for moderate difficulty',
-        targetDensityRange: { min: 0.9, max: 1.2 },
+        targetDensityRange: { min: 1.0, max: 1.5 },
     },
 
     /**
@@ -135,13 +135,13 @@ export const SUBDIVISION_LIMITS: Record<DifficultyLevel, SubdivisionLimitConfig>
      * - 8th note triplets allowed
      * - All grid types available
      * - Maximum density expected
-     * - Target density: > 1.2 notes/sec (dense)
+     * - Target density: > 1.5 notes/sec (dense)
      */
     hard: {
         maxSubdivision: 'sixteenth',
         allowedGridTypes: ['straight_16th', 'triplet_8th', 'straight_8th', 'quarter_triplet'],
         description: 'All subdivision types including 16th notes',
-        targetDensityRange: { min: 1.2, max: Infinity },
+        targetDensityRange: { min: 1.5, max: Infinity },
     },
 
     /**
@@ -159,6 +159,75 @@ export const SUBDIVISION_LIMITS: Record<DifficultyLevel, SubdivisionLimitConfig>
         targetDensityRange: { min: 0, max: Infinity },
     },
 };
+
+// ============================================================================
+// BPM Thresholds for Subdivision Restrictions
+// ============================================================================
+
+/** BPM threshold: medium restricts 16th/triplet_8th at or above this value */
+export const MEDIUM_RESTRICT_BPM = 70;
+
+/** BPM threshold: hard restricts 16th/triplet_8th above this value */
+export const HARD_RESTRICT_BPM = 120;
+
+/** BPM threshold: easy restricts to quarter notes above this value */
+export const EASY_QUARTER_NOTE_BPM = 120;
+
+// ============================================================================
+// Tempo-Aware Subdivision Limits
+// ============================================================================
+
+/**
+ * Get the allowed grid types for a difficulty at a given BPM.
+ *
+ * This function returns the effective subdivision limits after applying
+ * tempo-based restrictions:
+ *
+ * - **Easy at BPM > 120**: Only `straight_4th` (quarter notes) and `quarter_triplet`.
+ *   At high tempos, even 8th notes are too rapid for beginners.
+ * - **Medium at BPM ≥ 70**: Only `straight_8th` and `quarter_triplet`.
+ *   16th notes and 8th note triplets are reserved for hard/natural.
+ * - **Hard at BPM > 120**: Only `straight_8th` and `quarter_triplet`.
+ *   At high tempos, 16th notes become unplayable.
+ * - **Natural**: Always all types (no restrictions).
+ *
+ * Below 70 BPM, all difficulties except easy use their full subdivision limits.
+ *
+ * @param difficulty - The difficulty level
+ * @param bpm - The tempo in beats per minute
+ * @returns Array of allowed grid types
+ */
+export function getTempoAwareAllowedGridTypes(
+    difficulty: DifficultyLevel,
+    bpm: number
+): ExtendedGridType[] {
+    if (difficulty === 'natural') {
+        return [...SUBDIVISION_LIMITS.natural.allowedGridTypes];
+    }
+
+    if (difficulty === 'easy') {
+        if (bpm > EASY_QUARTER_NOTE_BPM) {
+            return ['straight_4th', 'quarter_triplet'];
+        }
+        return [...SUBDIVISION_LIMITS.easy.allowedGridTypes];
+    }
+
+    if (difficulty === 'medium') {
+        if (bpm >= MEDIUM_RESTRICT_BPM) {
+            return ['straight_8th', 'quarter_triplet'];
+        }
+        return [...SUBDIVISION_LIMITS.medium.allowedGridTypes];
+    }
+
+    if (difficulty === 'hard') {
+        if (bpm > HARD_RESTRICT_BPM) {
+            return ['straight_8th', 'quarter_triplet'];
+        }
+        return [...SUBDIVISION_LIMITS.hard.allowedGridTypes];
+    }
+
+    return [...SUBDIVISION_LIMITS[difficulty].allowedGridTypes];
+}
 
 // ============================================================================
 // Types
@@ -250,6 +319,9 @@ export interface SubdivisionConversionMetadata {
 
     /** Number of beats converted from 8th triplet to quarter triplet */
     tripletToQuarterTriplet: number;
+
+    /** Number of beats converted from 8th to quarter note (straight_8th → straight_4th) */
+    eighthToQuarter: number;
 
     /** Number of beats that were removed entirely */
     beatsRemoved: number;
@@ -376,63 +448,82 @@ const DEFAULT_DIFFICULTY_VARIANT_CONFIG: DifficultyVariantConfig = {
 // ============================================================================
 
 /**
- * Check if a grid type is allowed for a given difficulty
+ * Check if a grid type is allowed for a given difficulty at a given BPM.
  *
  * @param gridType - The grid type to check
  * @param difficulty - The difficulty level
+ * @param bpm - Optional BPM. When omitted, uses static SUBDIVISION_LIMITS (no tempo restrictions).
  * @returns True if the grid type is allowed
  */
-export function isGridTypeAllowed(gridType: GridType, difficulty: DifficultyLevel): boolean {
+export function isGridTypeAllowed(gridType: GridType, difficulty: DifficultyLevel, bpm?: number): boolean {
+    if (bpm !== undefined) {
+        return getTempoAwareAllowedGridTypes(difficulty, bpm).includes(gridType);
+    }
     return SUBDIVISION_LIMITS[difficulty].allowedGridTypes.includes(gridType);
 }
 
 /**
- * Get the allowed grid types for a difficulty level
+ * Get the allowed grid types for a difficulty level at a given BPM.
  *
  * @param difficulty - The difficulty level
+ * @param bpm - Optional BPM. When omitted, uses static SUBDIVISION_LIMITS (no tempo restrictions).
  * @returns Array of allowed grid types
  */
-export function getAllowedGridTypes(difficulty: DifficultyLevel): ExtendedGridType[] {
+export function getAllowedGridTypes(difficulty: DifficultyLevel, bpm?: number): ExtendedGridType[] {
+    if (bpm !== undefined) {
+        return getTempoAwareAllowedGridTypes(difficulty, bpm);
+    }
     return [...SUBDIVISION_LIMITS[difficulty].allowedGridTypes];
 }
 
 /**
- * Convert a grid type to the closest allowed type for a difficulty
+ * Convert a grid type to the closest allowed type for a difficulty at a given BPM.
  *
- * Conversion rules for Easy difficulty:
- * - `straight_16th` → `straight_8th` (snap to nearest 8th note)
- * - `triplet_8th` → `quarter_triplet` (snap to quarter note triplet)
+ * Conversion rules (when grid type is not already allowed):
+ *
+ * - `straight_16th` → `straight_8th` (or `straight_4th` for Easy at BPM > 120)
+ * - `triplet_8th` → `quarter_triplet`
+ * - `straight_8th` → `straight_4th` (Easy at BPM > 120 only)
  *
  * @param gridType - The original grid type (can be extended type)
  * @param difficulty - The target difficulty
+ * @param bpm - Optional BPM. When omitted, uses static SUBDIVISION_LIMITS.
  * @returns The converted grid type (or original if already allowed)
  */
 export function convertToAllowedGridType(
     gridType: ExtendedGridType,
-    difficulty: DifficultyLevel
+    difficulty: DifficultyLevel,
+    bpm?: number
 ): ExtendedGridType {
-    const allowedTypes = SUBDIVISION_LIMITS[difficulty].allowedGridTypes;
+    const allowedTypes = bpm !== undefined
+        ? getTempoAwareAllowedGridTypes(difficulty, bpm)
+        : SUBDIVISION_LIMITS[difficulty].allowedGridTypes;
 
     // If already allowed, return as-is
     if (allowedTypes.includes(gridType)) {
         return gridType;
     }
 
-    // Conversion rules for Easy difficulty
-    if (difficulty === 'easy') {
-        switch (gridType) {
-            case 'straight_16th':
-                return 'straight_8th';
-            case 'triplet_8th':
-                return 'quarter_triplet';
-            default:
-                // For extended types not in base GridType, keep as-is if allowed
-                return gridType;
-        }
-    }
+    // Conversion rules depend on which types are allowed
+    switch (gridType) {
+        case 'straight_16th':
+            // Check if quarter notes are the allowed straight type (Easy at BPM > 120)
+            if (allowedTypes.includes('straight_4th') && !allowedTypes.includes('straight_8th')) {
+                return 'straight_4th';
+            }
+            // Default: snap to 8th notes
+            return 'straight_8th';
 
-    // For Medium and Hard, all types are allowed
-    return gridType;
+        case 'triplet_8th':
+            return 'quarter_triplet';
+
+        case 'straight_8th':
+            // Only conversion: 8th → quarter note (Easy at BPM > 120)
+            return 'straight_4th';
+
+        default:
+            return gridType;
+    }
 }
 
 /**
@@ -446,25 +537,29 @@ export function naturalDifficultyToLevel(naturalDifficulty: NaturalDifficulty): 
 }
 
 /**
- * Validate a list of beats against subdivision limits for a difficulty
+ * Validate a list of beats against subdivision limits for a difficulty at a given BPM.
  *
  * @param beats - The beats to validate (may include extended grid types)
  * @param difficulty - The difficulty level to validate against
+ * @param bpm - Optional BPM. When omitted, uses static SUBDIVISION_LIMITS.
  * @returns Validation result with any violations
  */
 export function validateSubdivisionLimits(
     beats: VariantBeat[],
-    difficulty: DifficultyLevel
+    difficulty: DifficultyLevel,
+    bpm?: number
 ): SubdivisionValidationResult {
     const violations: SubdivisionViolation[] = [];
-    const allowedTypes = SUBDIVISION_LIMITS[difficulty].allowedGridTypes;
+    const allowedTypes = bpm !== undefined
+        ? getTempoAwareAllowedGridTypes(difficulty, bpm)
+        : SUBDIVISION_LIMITS[difficulty].allowedGridTypes;
 
     for (const beat of beats) {
         if (!allowedTypes.includes(beat.gridType)) {
             violations.push({
                 beat,
                 gridType: beat.gridType,
-                suggestedConversion: convertToAllowedGridType(beat.gridType, difficulty),
+                suggestedConversion: convertToAllowedGridType(beat.gridType, difficulty, bpm),
             });
         }
     }
@@ -635,8 +730,8 @@ export class DifficultyVariantGenerator {
         gridDecisions?: Map<number, GridDecision>
     ): DifficultyVariant {
         const isNatural = targetDifficulty === naturalDifficulty;
-        const allowedTypes = SUBDIVISION_LIMITS[targetDifficulty].allowedGridTypes;
         const bpm = unifiedBeatMap?.quarterNoteBpm ?? 120;
+        const allowedTypes = getTempoAwareAllowedGridTypes(targetDifficulty, bpm);
 
         if (isNatural) {
             // Check if all beats already have allowed grid types
@@ -722,12 +817,28 @@ export class DifficultyVariantGenerator {
                 composite.quarterNoteInterval
             );
 
+            // Apply BPM-aware grid type conversion if enhanced beats violate tempo limits
+            let finalBeats = result.beats as VariantBeat[];
+            const hasViolations = finalBeats.some(b => !allowedTypes.includes(b.gridType));
+            if (hasViolations) {
+                const converted: VariantBeat[] = [];
+                for (const beat of finalBeats) {
+                    if (allowedTypes.includes(beat.gridType)) {
+                        converted.push(beat);
+                    } else {
+                        const c = this.convertBeatGridType(beat, targetDifficulty, composite.quarterNoteInterval, bpm);
+                        if (c) converted.push(c);
+                    }
+                }
+                finalBeats = this.deduplicateConvertedBeats(converted);
+            }
+
             // Determine edit type based on what was actually done
             const editType = result.metadata.patternsInserted > 0 ? 'pattern_inserted' : 'interpolated';
 
             return {
                 difficulty: targetDifficulty,
-                beats: result.beats,
+                beats: finalBeats,
                 isUnedited: false,
                 editType,
                 editAmount: result.metadata.totalBeatsBefore > 0
@@ -783,6 +894,7 @@ export class DifficultyVariantGenerator {
         const metadata: SubdivisionConversionMetadata = {
             sixteenthToEighth: 0,
             tripletToQuarterTriplet: 0,
+            eighthToQuarter: 0,
             beatsRemoved: 0,
             totalBeatsBefore: beats.length,
             totalBeatsAfter: 0,
@@ -796,7 +908,7 @@ export class DifficultyVariantGenerator {
         metadata.totalBeatsBefore = cleanedBeats.length;
 
         // If all grid types are allowed, no grid conversion needed, but density reduction may still be required
-        const allowedTypes = SUBDIVISION_LIMITS[targetDifficulty].allowedGridTypes;
+        const allowedTypes = getTempoAwareAllowedGridTypes(targetDifficulty, bpm);
         const allTypesAllowed = cleanedBeats.every(b => allowedTypes.includes(b.gridType));
 
         if (allTypesAllowed && !isHeavySimplification) {
@@ -829,7 +941,7 @@ export class DifficultyVariantGenerator {
             }
 
             // Convert the beat
-            const convertedBeat = this.convertBeatGridType(beat, targetDifficulty, quarterNoteInterval);
+            const convertedBeat = this.convertBeatGridType(beat, targetDifficulty, quarterNoteInterval, bpm);
 
             if (convertedBeat) {
                 convertedBeats.push(convertedBeat);
@@ -838,9 +950,10 @@ export class DifficultyVariantGenerator {
                 if (beat.gridType === 'straight_16th') {
                     metadata.sixteenthToEighth++;
                     if (this.config.logConversions) {
+                        const targetType = convertedBeat.gridType === 'straight_4th' ? 'quarter' : '8th';
                         console.log(
                             `[DifficultyVariantGenerator] Converted 16th note at beat ${beat.beatIndex} ` +
-                            `position ${beat.gridPosition} to 8th note`
+                            `position ${beat.gridPosition} to ${targetType} note`
                         );
                     }
                 } else if (beat.gridType === 'triplet_8th') {
@@ -849,6 +962,14 @@ export class DifficultyVariantGenerator {
                         console.log(
                             `[DifficultyVariantGenerator] Converted 8th triplet at beat ${beat.beatIndex} ` +
                             `position ${beat.gridPosition} to quarter triplet`
+                        );
+                    }
+                } else if (beat.gridType === 'straight_8th') {
+                    metadata.eighthToQuarter++;
+                    if (this.config.logConversions) {
+                        console.log(
+                            `[DifficultyVariantGenerator] Converted 8th note at beat ${beat.beatIndex} ` +
+                            `position ${beat.gridPosition} to quarter note`
                         );
                     }
                 }
@@ -1177,17 +1298,25 @@ export class DifficultyVariantGenerator {
      * - `triplet_8th` (3 positions: 0, 1, 2) → `quarter_triplet` (1 position: 0)
      *   - All positions snap to 0 (quarter triplet)
      *
+     * - `straight_8th` (2 positions: 0, 1) → `straight_4th` (1 position: 0)
+     *   - All positions snap to 0 (quarter note) — Easy at BPM > 120
+     *
+     * - `straight_16th` → `straight_4th` (Easy at BPM > 120)
+     *   - All positions snap to 0 (quarter note)
+     *
      * @param beat - The beat to convert
      * @param targetDifficulty - The target difficulty
      * @param quarterNoteInterval - Duration of a quarter note in seconds
+     * @param bpm - The tempo in BPM (for tempo-aware grid type selection)
      * @returns The converted beat as VariantBeat, or null if the beat should be removed
      */
     private convertBeatGridType(
         beat: CompositeBeat,
         targetDifficulty: DifficultyLevel,
-        quarterNoteInterval: number
+        quarterNoteInterval: number,
+        bpm: number = 120
     ): VariantBeat | null {
-        const targetGridType = convertToAllowedGridType(beat.gridType, targetDifficulty);
+        const targetGridType = convertToAllowedGridType(beat.gridType, targetDifficulty, bpm);
 
         // If no conversion needed, return as-is (but as VariantBeat)
         if (targetGridType === beat.gridType) {
@@ -1204,58 +1333,58 @@ export class DifficultyVariantGenerator {
         // CRITICAL: Calculate the actual beat start timestamp from the beat's own timestamp.
         // We derive the beat start by subtracting the offset contributed by the grid position.
         // This preserves the actual detected timing rather than assuming beat 0 starts at timestamp 0.
-        //
-        // For straight_16th grid (4 positions): each position = quarterInterval/4
-        // For triplet_8th grid (3 positions): each position = quarterInterval/3
         let beatStartTimestamp: number;
 
         switch (beat.gridType) {
             case 'straight_16th': {
-                // Derive actual beat start from the beat's timestamp
-                // Position 0 = beat start, Position 1 = +1/4, Position 2 = +1/2, Position 3 = +3/4
                 const sixteenthNoteInterval = quarterNoteInterval / 4;
                 beatStartTimestamp = beat.timestamp - (beat.gridPosition * sixteenthNoteInterval);
 
-                // 16th → 8th conversion
-                // Positions: 0→0, 1→0 (snap to quarter), 2→2, 3→2 (snap to 8th)
-                if (beat.gridPosition === 1 || beat.gridPosition === 3) {
-                    // These are off-beat 16ths that snap to the previous grid point
-                    newGridPosition = beat.gridPosition === 1 ? 0 : 2;
+                if (targetGridType === 'straight_4th') {
+                    // 16th → quarter note: all positions snap to beat start
+                    newGridPosition = 0;
+                    newTimestamp = beatStartTimestamp;
                 } else {
-                    newGridPosition = beat.gridPosition;
+                    // 16th → 8th conversion
+                    // Positions: 0→0, 1→0 (snap to quarter), 2→2, 3→2 (snap to 8th)
+                    if (beat.gridPosition === 1 || beat.gridPosition === 3) {
+                        newGridPosition = beat.gridPosition === 1 ? 0 : 2;
+                    } else {
+                        newGridPosition = beat.gridPosition;
+                    }
+                    const eighthNoteInterval = quarterNoteInterval / 2;
+                    newTimestamp = beatStartTimestamp + (newGridPosition === 0 ? 0 : eighthNoteInterval);
                 }
-
-                // Calculate new timestamp from the ACTUAL beat start (not theoretical)
-                // 8th note interval = quarterInterval / 2
-                // Position 0 = beat start, Position 2 = beat start + 8th interval
-                const eighthNoteInterval = quarterNoteInterval / 2;
-                newTimestamp = beatStartTimestamp + (newGridPosition === 0 ? 0 : eighthNoteInterval);
                 break;
             }
 
             case 'triplet_8th': {
-                // Derive actual beat start from the beat's timestamp
-                // Position 0 = beat start, Position 1 = +1/3, Position 2 = +2/3
                 const tripletInterval = quarterNoteInterval / 3;
                 beatStartTimestamp = beat.timestamp - (beat.gridPosition * tripletInterval);
 
-                // 8th triplet → quarter triplet conversion
-                // All positions snap to 0 (the quarter triplet)
+                // 8th triplet → quarter triplet: all positions snap to 0
                 newGridPosition = 0;
-                // Quarter triplet is at beat start (using actual detected timing)
+                newTimestamp = beatStartTimestamp;
+                break;
+            }
+
+            case 'straight_8th': {
+                const eighthNoteInterval = quarterNoteInterval / 2;
+                beatStartTimestamp = beat.timestamp - (beat.gridPosition * eighthNoteInterval);
+
+                // 8th → quarter note: all positions snap to 0
+                newGridPosition = 0;
                 newTimestamp = beatStartTimestamp;
                 break;
             }
 
             default:
-                // Unknown grid type, keep as-is (return as VariantBeat)
                 return {
                     ...beat,
                     gridType: beat.gridType as ExtendedGridType,
                 };
         }
 
-        // Return the converted beat with updated grid type, position, and timestamp
         return {
             ...beat,
             gridType: targetGridType,
@@ -1860,7 +1989,9 @@ export class DifficultyVariantGenerator {
 
         const maxPositions = gridType === 'straight_16th' ? 4
             : gridType === 'straight_8th' ? 2
-                : 3;
+                : gridType === 'straight_4th' ? 1
+                    : gridType === 'quarter_triplet' ? 1
+                        : 3;
 
         // Pick positions to fill (prefer downbeat 0, then offbeats)
         const availablePositions: number[] = [];
@@ -1884,7 +2015,9 @@ export class DifficultyVariantGenerator {
 
         const interval = gridType === 'straight_16th' ? quarterNoteInterval / 4
             : gridType === 'straight_8th' ? quarterNoteInterval / 2
-                : quarterNoteInterval / 3;
+                : gridType === 'straight_4th' ? quarterNoteInterval
+                    : gridType === 'quarter_triplet' ? quarterNoteInterval
+                        : quarterNoteInterval / 3;
 
         return positionsToFill.map(gridPosition => ({
             timestamp: beatStartTimestamp + (gridPosition * interval),
@@ -1929,7 +2062,9 @@ export class DifficultyVariantGenerator {
         const getMaxPositions = (gt: string) =>
             gt === 'straight_16th' ? 4
                 : gt === 'straight_8th' ? 2
-                    : 3;
+                    : gt === 'straight_4th' ? 1
+                        : gt === 'quarter_triplet' ? 1
+                            : 3;
         const maxPositions = getMaxPositions(gridType);
 
         // Get existing positions, plus any positions in the global occupied tracker

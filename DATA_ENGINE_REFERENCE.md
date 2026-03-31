@@ -2912,22 +2912,24 @@ Generates easy/medium/hard difficulty variants from the composite stream, plus a
 |--------|---------|-------------|
 | `generate(composite, phraseAnalysis, gridDecisions)` | `DifficultyVariants` | Generate 4 difficulty variants (easy, medium, hard, natural) |
 
-**Subdivision Limits by Difficulty:**
+**Subdivision Limits by Difficulty (tempo-aware):**
 
-| Difficulty | Max Subdivision | Allowed Grid Types |
-|------------|-----------------|-------------------|
-| Easy | 8th notes, quarter note triplets | `straight_8th`, `quarter_triplet` |
-| Medium | 16th notes | `straight_16th`, `triplet_8th`, all types |
-| Hard | 16th notes | `straight_16th`, `triplet_8th`, all types |
-| Natural | No restrictions | All types (unedited composite) |
+| Difficulty | BPM < 70 | 70 ≤ BPM ≤ 120 | BPM > 120 |
+|------------|----------|----------------|-----------|
+| Easy | `straight_8th`, `quarter_triplet` | `straight_8th`, `quarter_triplet` | `straight_4th`, `quarter_triplet` |
+| Medium | All types | `straight_8th`, `quarter_triplet` | `straight_8th`, `quarter_triplet` |
+| Hard | All types | All types | `straight_8th`, `quarter_triplet` |
+| Natural | All types | All types | All types |
+
+**BPM thresholds:** Medium restricts 16th/triplet at ≥70 BPM; Easy/Hard restrict further at >120 BPM. Use `getTempoAwareAllowedGridTypes(difficulty, bpm)` for tempo-aware limits.
 
 **Variant Generation Strategy:**
 
 | Natural Difficulty | Easy Variant | Medium Variant | Hard Variant | Natural Variant |
 |-------------------|--------------|----------------|--------------|----------------|
-| easy | Unedited | Density enhancement | Heavy density enhancement | Unedited composite |
-| medium | Simplification | Unedited | Density enhancement | Unedited composite |
-| hard | Heavy simplification | Simplification | Unedited | Unedited composite |
+| easy | Unedited (+ quarter at >120 BPM) | Density enhancement | Heavy density enhancement | Unedited composite |
+| medium | Simplification | Unedited (+ grid conversion at ≥70 BPM) | Density enhancement | Unedited composite |
+| hard | Heavy simplification | Simplification | Unedited (+ grid conversion at >120 BPM) | Unedited composite |
 
 ---
 

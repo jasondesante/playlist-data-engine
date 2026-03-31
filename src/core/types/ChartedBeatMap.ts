@@ -207,6 +207,7 @@ export function mapGridToSubdivision(gridType: string): SubdivisionType {
         'triplet_8th': 'triplet8',
         'straight_8th': 'eighth',
         'quarter_triplet': 'triplet8',  // Quarter triplets treated same as eighth triplets
+        'straight_4th': 'quarter',
         'quarter': 'quarter',
     };
 

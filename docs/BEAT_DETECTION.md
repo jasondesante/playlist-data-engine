@@ -3468,10 +3468,10 @@ The built-in `HighBpmGridRestrictionRule` applies two thresholds:
 
 BPM-aware rules and difficulty-based subdivision limits are separate pipeline stages:
 
-1. **BPM-aware quantization** (this step) — constrains the grid for fundamental playability at any difficulty. Happens during quantization.
-2. **Difficulty variant generation** — further simplifies the already-constrained grid for easier difficulties. Happens after composite stream generation.
+1. **BPM-aware quantization** (this step) — constrains the grid for fundamental playability at any difficulty. Happens during quantization. Thresholds: 16th restricted at 160 BPM, triplets at 200 BPM.
+2. **Tempo-aware subdivision limits** (DifficultyVariantGenerator) — further constrains grid types per difficulty based on BPM. Thresholds: medium restricts 16th at 70 BPM, hard restricts 16th at 120 BPM, easy restricts to quarters at 120 BPM.
 
-At 180 BPM, the BPM rule converts 16th→8th. Then the Easy difficulty variant passes through unchanged (already on 8th). At 120 BPM, the BPM rule does nothing, but Easy still limits to 8th via difficulty rules.
+At 180 BPM: the BPM rule converts 16th→8th for the base quantization. Then the difficulty variant generator additionally restricts medium (already on 8th) and hard (forced to 8th). At 120 BPM: the BPM rule does nothing, but medium restricts 16th and hard allows all types.
 
 ---
 
@@ -3544,9 +3544,9 @@ The composite's natural difficulty is determined by its density:
 
 | Density | Notes/Second | Natural Difficulty |
 |---------|--------------|-------------------|
-| Sparse | < 0.9 | Easy |
-| Moderate | 0.9 - 1.2 | Medium |
-| Dense | > 1.2 | Hard |
+| Sparse | < 1.0 | Easy |
+| Moderate | 1.0 - 1.5 | Medium |
+| Dense | > 1.5 | Hard |
 
 ### Custom Scoring Configuration
 
@@ -3689,45 +3689,55 @@ Each difficulty level has a target density range (notes per second):
 
 | Difficulty | Target Density | Description |
 |------------|----------------|-------------|
-| **Easy** | 0 - 0.9 notes/sec | Sparse (mostly quarter and 8th notes) |
-| **Medium** | 0.9 - 1.2 notes/sec | Moderate (8th notes, some 16ths) |
-| **Hard** | > 1.2 notes/sec | Dense (16ths, triplets) |
+| **Easy** | 0 - 1.0 notes/sec | Sparse (mostly quarter and 8th notes) |
+| **Medium** | 1.0 - 1.5 notes/sec | Moderate (8th notes, some 16ths) |
+| **Hard** | > 1.5 notes/sec | Dense (16ths, triplets) |
 
 ### Subdivision Limits by Difficulty
 
-| Difficulty | Max Subdivision | Allowed Grid Types |
-|------------|-----------------|-------------------|
-| **Easy** | 8th notes | `straight_8th`, `quarter_triplet` |
-| **Medium** | 16th notes | `straight_16th`, `triplet_8th`, `straight_8th`, `quarter_triplet` |
-| **Hard** | 16th notes | `straight_16th`, `triplet_8th`, `straight_8th`, `quarter_triplet` |
+Subdivision limits are **tempo-aware** — allowed grid types tighten at higher BPMs for playability:
+
+| Difficulty | BPM < 70 | 70 ≤ BPM ≤ 120 | BPM > 120 |
+|------------|----------|----------------|-----------|
+| **Easy** | `straight_8th`, `quarter_triplet` | `straight_8th`, `quarter_triplet` | `straight_4th`, `quarter_triplet` |
+| **Medium** | All types | `straight_8th`, `quarter_triplet` | `straight_8th`, `quarter_triplet` |
+| **Hard** | All types | All types | `straight_8th`, `quarter_triplet` |
+| **Natural** | All types | All types | All types |
+
+**BPM thresholds:**
+- **70 BPM** (Medium): 16th notes and 8th triplets reserved for hard/natural
+- **120 BPM** (Easy): 8th notes → quarter notes
+- **120 BPM** (Hard): 16th notes → 8th notes, 8th triplets → quarter triplets
+
+At slow tempos (< 70 BPM), the static `SUBDIVISION_LIMITS` apply. Use `getTempoAwareAllowedGridTypes(difficulty, bpm)` for tempo-aware limits.
 
 ### Variant Generation Strategy
 
-The strategy depends on the composite's natural difficulty:
+The strategy depends on the composite's natural difficulty and BPM:
 
 #### If Composite is Naturally Hard (Dense)
 
 | Variant | Strategy |
 |---------|----------|
-| **Hard** | Composite unchanged (unedited) |
-| **Medium** | Density-aware reduction to ≤1.2 notes/sec (removes low-priority beats) |
-| **Easy** | Grid conversion (16th→8th) + density reduction to ≤0.9 notes/sec |
+| **Hard** | Composite unchanged (unedited), unless BPM > 120 (then 16th→8th) |
+| **Medium** | Grid conversion (if BPM ≥ 70: 16th→8th, triplet→quarter_triplet) + density reduction to ≤1.5 notes/sec |
+| **Easy** | Grid conversion (16th→8th or →quarter at BPM > 120) + density reduction to ≤1.0 notes/sec |
 
 #### If Composite is Naturally Medium (Moderate)
 
 | Variant | Strategy |
 |---------|----------|
-| **Hard** | Density enhancement using pattern library |
-| **Medium** | Composite unchanged (unedited) |
-| **Easy** | Grid conversion + density reduction to ≤0.9 notes/sec |
+| **Hard** | Density enhancement using pattern library (with BPM-aware grid conversion if BPM > 120) |
+| **Medium** | Composite unchanged (unedited), unless BPM ≥ 70 (then 16th→8th) |
+| **Easy** | Grid conversion + density reduction to ≤1.0 notes/sec |
 
 #### If Composite is Naturally Easy (Sparse)
 
 | Variant | Strategy |
 |---------|----------|
-| **Hard** | Heavy density enhancement |
-| **Medium** | Moderate density enhancement |
-| **Easy** | Composite unchanged (unedited) |
+| **Hard** | Heavy density enhancement (with BPM-aware grid conversion if BPM > 120) |
+| **Medium** | Moderate density enhancement (with BPM-aware grid conversion if BPM ≥ 70) |
+| **Easy** | Composite unchanged (unedited), unless BPM > 120 (then 8th→quarter) |
 
 ### Custom Configuration
 

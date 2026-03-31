@@ -238,6 +238,10 @@ export {
     convertToAllowedGridType,
     naturalDifficultyToLevel,
     validateSubdivisionLimits,
+    getTempoAwareAllowedGridTypes,
+    MEDIUM_RESTRICT_BPM,
+    HARD_RESTRICT_BPM,
+    EASY_QUARTER_NOTE_BPM,
 } from './DifficultyVariantGenerator.js';
 export type {
     ExtendedGridType,

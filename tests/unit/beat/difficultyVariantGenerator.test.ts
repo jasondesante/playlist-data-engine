@@ -17,6 +17,10 @@ import {
     convertToAllowedGridType,
     naturalDifficultyToLevel,
     validateSubdivisionLimits,
+    getTempoAwareAllowedGridTypes,
+    MEDIUM_RESTRICT_BPM,
+    HARD_RESTRICT_BPM,
+    EASY_QUARTER_NOTE_BPM,
     type DifficultyLevel,
     type ExtendedGridType,
     type GridType,
@@ -25,9 +29,54 @@ import {
     type VariantBeat,
 } from '../../../src/core/analysis/beat/index.js';
 
+import type { UnifiedBeatMap } from '../../../src/core/types/BeatMap.js';
+
 // ============================================================================
 // Test Fixtures
 // ============================================================================
+
+/**
+ * Create a minimal mock UnifiedBeatMap for testing.
+ * Only provides the fields used by DifficultyVariantGenerator (quarterNoteBpm).
+ */
+function createMockBeatMap(bpm: number = 60): UnifiedBeatMap {
+    const quarterNoteInterval = 60 / bpm;
+    return {
+        audioId: 'test-audio',
+        duration: 10.0,
+        beats: [],
+        detectedBeatIndices: [],
+        quarterNoteInterval,
+        quarterNoteBpm: bpm,
+        downbeatConfig: {
+            segments: [{
+                startBeat: 0,
+                downbeatBeatIndex: 0,
+                timeSignature: { beatsPerMeasure: 4 },
+            }],
+        },
+        originalMetadata: {
+            algorithm: 'test',
+            version: '1.0.0',
+            minBpm: 40,
+            maxBpm: 200,
+            sensitivity: 1.0,
+            filter: 0.0,
+            noiseFloorThreshold: 0,
+            hopSizeMs: 10,
+            fftSize: 2048,
+            dpAlpha: 680,
+            melBands: 40,
+            highPassCutoff: 80,
+            gaussianSmoothMs: 50,
+            tempoCenter: 0.5,
+            tempoWidth: 1.4,
+            useOctaveResolution: false,
+            useTripleMeter: false,
+            generatedAt: new Date().toISOString(),
+        },
+    };
+}
 
 /**
  * Create a mock composite beat
@@ -127,12 +176,13 @@ describe('SUBDIVISION_LIMITS', () => {
 // ============================================================================
 
 describe('ALL_GRID_TYPES', () => {
-    it('should contain all four grid types', () => {
+    it('should contain all five grid types', () => {
         expect(ALL_GRID_TYPES).toContain('straight_16th');
         expect(ALL_GRID_TYPES).toContain('triplet_8th');
         expect(ALL_GRID_TYPES).toContain('straight_8th');
         expect(ALL_GRID_TYPES).toContain('quarter_triplet');
-        expect(ALL_GRID_TYPES.length).toBe(4);
+        expect(ALL_GRID_TYPES).toContain('straight_4th');
+        expect(ALL_GRID_TYPES.length).toBe(5);
     });
 });
 
@@ -262,6 +312,280 @@ describe('naturalDifficultyToLevel', () => {
 });
 
 // ============================================================================
+// getTempoAwareAllowedGridTypes Tests
+// ============================================================================
+
+describe('getTempoAwareAllowedGridTypes', () => {
+    describe('Natural difficulty', () => {
+        it('should always allow all types regardless of BPM', () => {
+            expect(getTempoAwareAllowedGridTypes('natural', 60)).toContain('straight_16th');
+            expect(getTempoAwareAllowedGridTypes('natural', 120)).toContain('straight_16th');
+            expect(getTempoAwareAllowedGridTypes('natural', 200)).toContain('straight_16th');
+        });
+    });
+
+    describe('Easy difficulty', () => {
+        it('should use straight_8th + quarter_triplet at BPM <= 120', () => {
+            const types = getTempoAwareAllowedGridTypes('easy', 120);
+            expect(types).toContain('straight_8th');
+            expect(types).toContain('quarter_triplet');
+            expect(types).not.toContain('straight_16th');
+            expect(types).not.toContain('straight_4th');
+        });
+
+        it('should use straight_4th + quarter_triplet at BPM > 120', () => {
+            const types = getTempoAwareAllowedGridTypes('easy', 121);
+            expect(types).toContain('straight_4th');
+            expect(types).toContain('quarter_triplet');
+            expect(types).not.toContain('straight_8th');
+            expect(types).not.toContain('straight_16th');
+        });
+    });
+
+    describe('Medium difficulty', () => {
+        it('should allow all types at BPM < 70', () => {
+            const types = getTempoAwareAllowedGridTypes('medium', 69);
+            expect(types).toContain('straight_16th');
+            expect(types).toContain('triplet_8th');
+            expect(types).toContain('straight_8th');
+            expect(types).toContain('quarter_triplet');
+        });
+
+        it('should restrict to straight_8th + quarter_triplet at BPM >= 70', () => {
+            const types = getTempoAwareAllowedGridTypes('medium', 70);
+            expect(types).toContain('straight_8th');
+            expect(types).toContain('quarter_triplet');
+            expect(types).not.toContain('straight_16th');
+            expect(types).not.toContain('triplet_8th');
+        });
+
+        it('should remain restricted at high BPM', () => {
+            const types = getTempoAwareAllowedGridTypes('medium', 200);
+            expect(types).toContain('straight_8th');
+            expect(types).toContain('quarter_triplet');
+            expect(types).not.toContain('straight_16th');
+        });
+    });
+
+    describe('Hard difficulty', () => {
+        it('should allow all types at BPM <= 120', () => {
+            const types = getTempoAwareAllowedGridTypes('hard', 120);
+            expect(types).toContain('straight_16th');
+            expect(types).toContain('triplet_8th');
+            expect(types).toContain('straight_8th');
+            expect(types).toContain('quarter_triplet');
+        });
+
+        it('should restrict to straight_8th + quarter_triplet at BPM > 120', () => {
+            const types = getTempoAwareAllowedGridTypes('hard', 121);
+            expect(types).toContain('straight_8th');
+            expect(types).toContain('quarter_triplet');
+            expect(types).not.toContain('straight_16th');
+            expect(types).not.toContain('triplet_8th');
+        });
+    });
+});
+
+// ============================================================================
+// BPM Threshold Constants Tests
+// ============================================================================
+
+describe('BPM threshold constants', () => {
+    it('should have MEDIUM_RESTRICT_BPM = 70', () => {
+        expect(MEDIUM_RESTRICT_BPM).toBe(70);
+    });
+
+    it('should have HARD_RESTRICT_BPM = 120', () => {
+        expect(HARD_RESTRICT_BPM).toBe(120);
+    });
+
+    it('should have EASY_QUARTER_NOTE_BPM = 120', () => {
+        expect(EASY_QUARTER_NOTE_BPM).toBe(120);
+    });
+});
+
+// ============================================================================
+// isGridTypeAllowed with BPM Tests
+// ============================================================================
+
+describe('isGridTypeAllowed with BPM', () => {
+    it('should use static limits when BPM is omitted', () => {
+        expect(isGridTypeAllowed('straight_16th', 'medium')).toBe(true);
+    });
+
+    it('should restrict 16th notes for medium at BPM >= 70', () => {
+        expect(isGridTypeAllowed('straight_16th', 'medium', 70)).toBe(false);
+        expect(isGridTypeAllowed('straight_16th', 'medium', 69)).toBe(true);
+    });
+
+    it('should restrict 16th notes for hard at BPM > 120', () => {
+        expect(isGridTypeAllowed('straight_16th', 'hard', 121)).toBe(false);
+        expect(isGridTypeAllowed('straight_16th', 'hard', 120)).toBe(true);
+    });
+
+    it('should restrict 8th notes for easy at BPM > 120', () => {
+        expect(isGridTypeAllowed('straight_8th' as GridType, 'easy', 121)).toBe(false);
+        expect(isGridTypeAllowed('straight_8th' as GridType, 'easy', 120)).toBe(true);
+    });
+});
+
+// ============================================================================
+// convertToAllowedGridType with BPM Tests
+// ============================================================================
+
+describe('convertToAllowedGridType with BPM', () => {
+    describe('Medium at BPM >= 70', () => {
+        it('should convert straight_16th to straight_8th', () => {
+            expect(convertToAllowedGridType('straight_16th', 'medium', 70)).toBe('straight_8th');
+        });
+
+        it('should convert triplet_8th to quarter_triplet', () => {
+            expect(convertToAllowedGridType('triplet_8th', 'medium', 70)).toBe('quarter_triplet');
+        });
+
+        it('should keep straight_8th unchanged', () => {
+            expect(convertToAllowedGridType('straight_8th', 'medium', 70)).toBe('straight_8th');
+        });
+    });
+
+    describe('Easy at BPM > 120', () => {
+        it('should convert straight_16th to straight_4th', () => {
+            expect(convertToAllowedGridType('straight_16th', 'easy', 121)).toBe('straight_4th');
+        });
+
+        it('should convert straight_8th to straight_4th', () => {
+            expect(convertToAllowedGridType('straight_8th', 'easy', 121)).toBe('straight_4th');
+        });
+
+        it('should convert triplet_8th to quarter_triplet', () => {
+            expect(convertToAllowedGridType('triplet_8th', 'easy', 121)).toBe('quarter_triplet');
+        });
+
+        it('should keep quarter_triplet unchanged', () => {
+            expect(convertToAllowedGridType('quarter_triplet', 'easy', 121)).toBe('quarter_triplet');
+        });
+    });
+
+    describe('Hard at BPM > 120', () => {
+        it('should convert straight_16th to straight_8th', () => {
+            expect(convertToAllowedGridType('straight_16th', 'hard', 121)).toBe('straight_8th');
+        });
+
+        it('should convert triplet_8th to quarter_triplet', () => {
+            expect(convertToAllowedGridType('triplet_8th', 'hard', 121)).toBe('quarter_triplet');
+        });
+    });
+});
+
+// ============================================================================
+// BPM-Dependent DifficultyVariantGenerator Integration Tests
+// ============================================================================
+
+describe('BPM-dependent variant generation', () => {
+    describe('Medium at BPM >= 70', () => {
+        it('should restrict medium variant to straight_8th and quarter_triplet at BPM 100', () => {
+            const generator = new DifficultyVariantGenerator();
+
+            const beats: CompositeBeat[] = [
+                createMockCompositeBeat(0, 'straight_16th', 0, 0.9),
+                createMockCompositeBeat(0, 'straight_16th', 2, 0.7),
+                createMockCompositeBeat(1, 'triplet_8th', 0, 0.8),
+            ];
+            const composite = createMockCompositeStream(beats, 'medium');
+            const variants = generator.generate(composite, createMockBeatMap(100));
+
+            // Medium variant should NOT have straight_16th or triplet_8th
+            for (const beat of variants.medium.beats) {
+                expect(beat.gridType).not.toBe('straight_16th');
+                expect(beat.gridType).not.toBe('triplet_8th');
+            }
+        });
+
+        it('should allow all types for medium at BPM 60', () => {
+            const generator = new DifficultyVariantGenerator();
+
+            const beats: CompositeBeat[] = [
+                createMockCompositeBeat(0, 'straight_16th', 0, 0.9),
+                createMockCompositeBeat(1, 'triplet_8th', 0, 0.8),
+            ];
+            const composite = createMockCompositeStream(beats, 'medium');
+            const variants = generator.generate(composite, createMockBeatMap(60));
+
+            // At BPM 60, medium is unedited (natural difficulty = medium, all types allowed)
+            expect(variants.medium.isUnedited).toBe(true);
+        });
+    });
+
+    describe('Easy at BPM > 120', () => {
+        it('should restrict easy variant to straight_4th and quarter_triplet at BPM 140', () => {
+            const generator = new DifficultyVariantGenerator();
+
+            const beats: CompositeBeat[] = [
+                createMockCompositeBeat(0, 'straight_16th', 0, 0.9),
+                createMockCompositeBeat(0, 'straight_16th', 2, 0.7),
+                createMockCompositeBeat(1, 'straight_8th' as GridType, 0, 0.8),
+                createMockCompositeBeat(2, 'triplet_8th', 0, 0.9),
+            ];
+            const composite = createMockCompositeStream(beats, 'hard');
+            const variants = generator.generate(composite, createMockBeatMap(140));
+
+            // Easy variant should only have straight_4th and quarter_triplet
+            for (const beat of variants.easy.beats) {
+                expect(['straight_4th', 'quarter_triplet']).toContain(beat.gridType);
+            }
+        });
+
+        it('should use straight_8th for easy at BPM 120', () => {
+            const generator = new DifficultyVariantGenerator();
+
+            const beats: CompositeBeat[] = [
+                createMockCompositeBeat(0, 'straight_16th', 0, 0.9),
+            ];
+            const composite = createMockCompositeStream(beats, 'hard');
+            const variants = generator.generate(composite, createMockBeatMap(120));
+
+            // At BPM 120, easy uses straight_8th (not straight_4th)
+            expect(variants.easy.beats[0].gridType).toBe('straight_8th');
+        });
+    });
+
+    describe('Hard at BPM > 120', () => {
+        it('should restrict hard variant to straight_8th and quarter_triplet at BPM 140', () => {
+            const generator = new DifficultyVariantGenerator();
+
+            const beats: CompositeBeat[] = [
+                createMockCompositeBeat(0, 'straight_16th', 0, 0.9),
+                createMockCompositeBeat(0, 'straight_16th', 1, 0.7),
+                createMockCompositeBeat(1, 'triplet_8th', 0, 0.8),
+                createMockCompositeBeat(1, 'triplet_8th', 1, 0.6),
+            ];
+            const composite = createMockCompositeStream(beats, 'hard');
+            const variants = generator.generate(composite, createMockBeatMap(140));
+
+            // Hard variant at BPM 140 should NOT have straight_16th or triplet_8th
+            for (const beat of variants.hard.beats) {
+                expect(beat.gridType).not.toBe('straight_16th');
+                expect(beat.gridType).not.toBe('triplet_8th');
+            }
+        });
+
+        it('should allow all types for hard at BPM 120', () => {
+            const generator = new DifficultyVariantGenerator();
+
+            const beats: CompositeBeat[] = [
+                createMockCompositeBeat(0, 'straight_16th', 0, 0.9),
+                createMockCompositeBeat(0, 'triplet_8th', 1, 0.7),
+            ];
+            const composite = createMockCompositeStream(beats, 'hard');
+            const variants = generator.generate(composite, createMockBeatMap(120));
+
+            // At BPM 120, hard is unedited (natural = hard, all types allowed)
+            expect(variants.hard.isUnedited).toBe(true);
+        });
+    });
+});
+
+// ============================================================================
 // validateSubdivisionLimits Function Tests
 // ============================================================================
 
@@ -362,7 +686,7 @@ describe('DifficultyVariantGenerator', () => {
                 createMockCompositeBeat(1, 'straight_16th', 2),
             ];
             const composite = createMockCompositeStream(beats, 'medium');
-            const variants = generator.generate(composite);
+            const variants = generator.generate(composite, createMockBeatMap());
 
             expect(variants).toHaveProperty('easy');
             expect(variants).toHaveProperty('medium');
@@ -375,7 +699,7 @@ describe('DifficultyVariantGenerator', () => {
                 createMockCompositeBeat(1, 'straight_16th', 2),
             ];
             const composite = createMockCompositeStream(beats, 'medium');
-            const variants = generator.generate(composite);
+            const variants = generator.generate(composite, createMockBeatMap());
 
             expect(variants.medium.isUnedited).toBe(true);
             expect(variants.medium.editType).toBe('none');
@@ -390,7 +714,7 @@ describe('DifficultyVariantGenerator', () => {
                 createMockCompositeBeat(0, 'straight_16th', 3),
             ];
             const composite = createMockCompositeStream(beats, 'hard');
-            const variants = generator.generate(composite);
+            const variants = generator.generate(composite, createMockBeatMap());
 
             expect(variants.easy.isUnedited).toBe(false);
             expect(variants.easy.editType).toBe('simplified');
@@ -402,7 +726,7 @@ describe('DifficultyVariantGenerator', () => {
                 createMockCompositeBeat(1, 'straight_16th', 2),
             ];
             const composite = createMockCompositeStream(beats, 'easy');
-            const variants = generator.generate(composite);
+            const variants = generator.generate(composite, createMockBeatMap());
 
             expect(variants.medium.isUnedited).toBe(false);
             expect(variants.medium.editType).toBe('interpolated');
@@ -416,7 +740,7 @@ describe('DifficultyVariantGenerator', () => {
                 createMockCompositeBeat(1, 'triplet_8th', 1),
             ];
             const composite = createMockCompositeStream(beats, 'medium');
-            const variants = generator.generate(composite);
+            const variants = generator.generate(composite, createMockBeatMap());
 
             expect(variants.easy.conversionMetadata).toBeDefined();
             expect(variants.easy.conversionMetadata?.sixteenthToEighth).toBe(1);
@@ -429,7 +753,7 @@ describe('DifficultyVariantGenerator', () => {
                 createMockCompositeBeat(1, 'straight_16th', 2),
             ];
             const composite = createMockCompositeStream(beats, 'medium');
-            const variants = generator.generate(composite);
+            const variants = generator.generate(composite, createMockBeatMap());
 
             // Should be a copy, not the same reference
             expect(variants.medium.beats).not.toBe(composite.beats);
@@ -471,7 +795,7 @@ describe('DifficultyVariantGenerator Integration', () => {
         ];
 
         const composite = createMockCompositeStream(beats, 'hard');
-        const variants = generator.generate(composite);
+        const variants = generator.generate(composite, createMockBeatMap());
 
         // Verify all variants exist
         expect(variants.easy).toBeDefined();
@@ -566,7 +890,7 @@ describe('Phrase Boundary Preservation', () => {
             { startBeatIndex: 1, sizeInBeats: 1, significance: 3.0 }, // High significance phrase at beat 1
         ]);
 
-        const variants = generator.generate(composite, phraseAnalysis);
+        const variants = generator.generate(composite, createMockBeatMap(), phraseAnalysis);
 
         // Easy variant should be simplified
         expect(variants.easy.editType).toBe('simplified');
@@ -600,7 +924,7 @@ describe('Phrase Boundary Preservation', () => {
             { startBeatIndex: 1, sizeInBeats: 1, significance: 3.0 },
         ]);
 
-        const variants = generator.generate(composite, phraseAnalysis);
+        const variants = generator.generate(composite, createMockBeatMap(), phraseAnalysis);
 
         // Beat 1 should be completely removed since preservation is disabled
         const beatsAtBeat1 = variants.easy.beats.filter(b => b.beatIndex === 1);
@@ -628,7 +952,7 @@ describe('Phrase Boundary Preservation', () => {
             { startBeatIndex: 1, sizeInBeats: 1, significance: 0.5 }, // Low significance
         ]);
 
-        const variants = generator.generate(composite, phraseAnalysis);
+        const variants = generator.generate(composite, createMockBeatMap(), phraseAnalysis);
 
         // Beat 1 should be removed since the phrase significance is too low
         const beatsAtBeat1 = variants.easy.beats.filter(b => b.beatIndex === 1);
@@ -673,7 +997,7 @@ describe('Easy Variant Grid Type Enforcement', () => {
             ];
 
             const composite = createMockCompositeStream(beats, 'hard');
-            const variants = generator.generate(composite);
+            const variants = generator.generate(composite, createMockBeatMap());
 
             // Verify Easy variant has only allowed grid types
             assertEasyVariantHasOnlyAllowedGridTypes(variants.easy);
@@ -700,7 +1024,7 @@ describe('Easy Variant Grid Type Enforcement', () => {
             ];
 
             const composite = createMockCompositeStream(beats, 'hard');
-            const variants = generator.generate(composite);
+            const variants = generator.generate(composite, createMockBeatMap());
 
             // After deduplication, we should have at most 2 beats per beat index
             const beatsPerIndex = new Map<number, number>();
@@ -734,7 +1058,7 @@ describe('Easy Variant Grid Type Enforcement', () => {
             ];
 
             const composite = createMockCompositeStream(beats, 'medium');
-            const variants = generator.generate(composite);
+            const variants = generator.generate(composite, createMockBeatMap());
 
             // Verify Easy variant has only allowed grid types
             assertEasyVariantHasOnlyAllowedGridTypes(variants.easy);
@@ -759,7 +1083,7 @@ describe('Easy Variant Grid Type Enforcement', () => {
             ];
 
             const composite = createMockCompositeStream(beats, 'medium');
-            const variants = generator.generate(composite);
+            const variants = generator.generate(composite, createMockBeatMap());
 
             // All should deduplicate to a single beat
             const beatsAtBeat0 = variants.easy.beats.filter(b => b.beatIndex === 0);
@@ -795,7 +1119,7 @@ describe('Easy Variant Grid Type Enforcement', () => {
             ];
 
             const composite = createMockCompositeStream(beats, 'hard');
-            const variants = generator.generate(composite);
+            const variants = generator.generate(composite, createMockBeatMap());
 
             // CRITICAL: Easy variant must NEVER have disallowed types
             assertEasyVariantHasOnlyAllowedGridTypes(variants.easy);
@@ -821,7 +1145,7 @@ describe('Easy Variant Grid Type Enforcement', () => {
             ];
 
             const composite = createMockCompositeStream(beats, 'hard');
-            const variants = generator.generate(composite);
+            const variants = generator.generate(composite, createMockBeatMap());
 
             // Easy should have beats from beat 0 and 2, but not beat 1
             const hasBeat0 = variants.easy.beats.some(b => b.beatIndex === 0);
@@ -850,7 +1174,7 @@ describe('Easy Variant Grid Type Enforcement', () => {
             ];
 
             const composite = createMockCompositeStream(beats, 'medium');
-            const variants = generator.generate(composite);
+            const variants = generator.generate(composite, createMockBeatMap());
 
             // All Easy beats must be allowed types
             assertEasyVariantHasOnlyAllowedGridTypes(variants.easy);
@@ -872,7 +1196,7 @@ describe('Easy Variant Grid Type Enforcement', () => {
             ];
 
             const composite = createMockCompositeStream(beats, 'easy');
-            const variants = generator.generate(composite);
+            const variants = generator.generate(composite, createMockBeatMap());
 
             // Easy variant should be unedited
             expect(variants.easy.isUnedited).toBe(true);
@@ -890,7 +1214,7 @@ describe('Easy Variant Grid Type Enforcement', () => {
             const generator = new DifficultyVariantGenerator();
 
             const composite = createMockCompositeStream([], 'medium');
-            const variants = generator.generate(composite);
+            const variants = generator.generate(composite, createMockBeatMap());
 
             expect(variants.easy.beats).toHaveLength(0);
             expect(variants.easy.conversionMetadata?.totalBeatsBefore).toBe(0);
@@ -902,7 +1226,7 @@ describe('Easy Variant Grid Type Enforcement', () => {
 
             const beats = [createMockCompositeBeat(0, 'straight_16th', 0, 0.9)];
             const composite = createMockCompositeStream(beats, 'medium');
-            const variants = generator.generate(composite);
+            const variants = generator.generate(composite, createMockBeatMap());
 
             expect(variants.easy.beats).toHaveLength(1);
             expect(variants.easy.beats[0].gridType).toBe('straight_8th');
@@ -925,7 +1249,7 @@ describe('Easy Variant Grid Type Enforcement', () => {
             ];
 
             const composite = createMockCompositeStream(beats, 'hard');
-            const variants = generator.generate(composite);
+            const variants = generator.generate(composite, createMockBeatMap());
 
             // Easy variant should be empty since all beats were on weak indices with low intensity
             expect(variants.easy.beats).toHaveLength(0);
@@ -953,7 +1277,7 @@ describe('Easy Variant Grid Type Enforcement', () => {
             ];
 
             const composite = createMockCompositeStream(beats, 'hard');
-            const variants = generator.generate(composite);
+            const variants = generator.generate(composite, createMockBeatMap());
 
             // Easy variant should have beats from beat 0 and 2 (strong beats)
             expect(variants.easy.beats.length).toBeGreaterThan(0);
@@ -998,7 +1322,7 @@ describe('Easy Variant Grid Type Enforcement', () => {
 
             for (const beats of testCases) {
                 const composite = createMockCompositeStream(beats, 'hard');
-                const variants = generator.generate(composite);
+                const variants = generator.generate(composite, createMockBeatMap());
 
                 // CRITICAL INVARIANT: Easy must never have straight_16th
                 const has16th = variants.easy.beats.some(b => b.gridType === 'straight_16th');
@@ -1020,7 +1344,7 @@ describe('Easy Variant Grid Type Enforcement', () => {
 
             // Simulate incorrect natural difficulty classification
             const composite = createMockCompositeStream(beats, 'easy');
-            const variants = generator.generate(composite);
+            const variants = generator.generate(composite, createMockBeatMap());
 
             // CRITICAL INVARIANT: Even though natural difficulty is 'easy',
             // the Easy variant must NEVER have disallowed grid types
@@ -1046,7 +1370,7 @@ describe('Easy Variant Grid Type Enforcement', () => {
 
             for (const beats of testCases) {
                 const composite = createMockCompositeStream(beats, 'medium');
-                const variants = generator.generate(composite);
+                const variants = generator.generate(composite, createMockBeatMap());
 
                 // CRITICAL INVARIANT: Easy must never have triplet_8th
                 const hasTriplet8th = variants.easy.beats.some(b => b.gridType === 'triplet_8th');
@@ -1112,7 +1436,7 @@ describe('Timestamp Recalculation After Grid Type Conversion', () => {
                 createBeatWithTimestamp(0, 'straight_16th', 0, 0.0, 0.9),
             ];
             const composite = createCompositeStreamWithInterval(beats, 'hard', 0.5);
-            const variants = generator.generate(composite);
+            const variants = generator.generate(composite, createMockBeatMap());
 
             // After conversion to 8th, position 0 should still have timestamp 0.0
             expect(variants.easy.beats[0].gridType).toBe('straight_8th');
@@ -1128,7 +1452,7 @@ describe('Timestamp Recalculation After Grid Type Conversion', () => {
                 createBeatWithTimestamp(0, 'straight_16th', 1, 0.125, 0.9),
             ];
             const composite = createCompositeStreamWithInterval(beats, 'hard', 0.5);
-            const variants = generator.generate(composite);
+            const variants = generator.generate(composite, createMockBeatMap());
 
             expect(variants.easy.beats[0].gridType).toBe('straight_8th');
             expect(variants.easy.beats[0].gridPosition).toBe(0);
@@ -1143,7 +1467,7 @@ describe('Timestamp Recalculation After Grid Type Conversion', () => {
                 createBeatWithTimestamp(0, 'straight_16th', 2, 0.25, 0.9),
             ];
             const composite = createCompositeStreamWithInterval(beats, 'hard', 0.5);
-            const variants = generator.generate(composite);
+            const variants = generator.generate(composite, createMockBeatMap());
 
             expect(variants.easy.beats[0].gridType).toBe('straight_8th');
             expect(variants.easy.beats[0].gridPosition).toBe(2);
@@ -1158,7 +1482,7 @@ describe('Timestamp Recalculation After Grid Type Conversion', () => {
                 createBeatWithTimestamp(0, 'straight_16th', 3, 0.375, 0.9),
             ];
             const composite = createCompositeStreamWithInterval(beats, 'hard', 0.5);
-            const variants = generator.generate(composite);
+            const variants = generator.generate(composite, createMockBeatMap());
 
             expect(variants.easy.beats[0].gridType).toBe('straight_8th');
             expect(variants.easy.beats[0].gridPosition).toBe(2);
@@ -1175,7 +1499,7 @@ describe('Timestamp Recalculation After Grid Type Conversion', () => {
                 createBeatWithTimestamp(1, 'straight_16th', 1, 0.5, 0.9),
             ];
             const composite = createCompositeStreamWithInterval(beats, 'hard', 0.4);
-            const variants = generator.generate(composite);
+            const variants = generator.generate(composite, createMockBeatMap());
 
             expect(variants.easy.beats[0].gridType).toBe('straight_8th');
             expect(variants.easy.beats[0].gridPosition).toBe(0);
@@ -1192,7 +1516,7 @@ describe('Timestamp Recalculation After Grid Type Conversion', () => {
                 createBeatWithTimestamp(0, 'straight_16th', 1, 0.125, 0.5),
             ];
             const composite = createCompositeStreamWithInterval(beats, 'hard', 0.5);
-            const variants = generator.generate(composite);
+            const variants = generator.generate(composite, createMockBeatMap());
 
             // Only one beat should remain (higher intensity wins)
             expect(variants.easy.beats.length).toBe(1);
@@ -1212,7 +1536,7 @@ describe('Timestamp Recalculation After Grid Type Conversion', () => {
                 createBeatWithTimestamp(0, 'triplet_8th', 2, 0.333, 0.6),
             ];
             const composite = createCompositeStreamWithInterval(beats, 'hard', 0.5);
-            const variants = generator.generate(composite);
+            const variants = generator.generate(composite, createMockBeatMap());
 
             // All should be quarter triplets at position 0
             // But they get deduplicated to just one beat
@@ -1231,7 +1555,7 @@ describe('Timestamp Recalculation After Grid Type Conversion', () => {
                 createBeatWithTimestamp(2, 'triplet_8th', 1, 1.167, 0.9),
             ];
             const composite = createCompositeStreamWithInterval(beats, 'hard', 0.5);
-            const variants = generator.generate(composite);
+            const variants = generator.generate(composite, createMockBeatMap());
 
             expect(variants.easy.beats[0].gridType).toBe('quarter_triplet');
             expect(variants.easy.beats[0].gridPosition).toBe(0);
@@ -1255,7 +1579,7 @@ describe('Probabilistic density scaling', () => {
         stream: CompositeStream,
         difficulty: DifficultyLevel
     ): number {
-        const variants = generator.generate(stream);
+        const variants = generator.generate(stream, createMockBeatMap());
         return (variants as Record<string, { beats: VariantBeat[] }>)[difficulty].beats.length;
     }
 
@@ -1281,8 +1605,8 @@ describe('Probabilistic density scaling', () => {
         const gen1 = new DifficultyVariantGenerator(config);
         const gen2 = new DifficultyVariantGenerator(config);
 
-        const result1 = gen1.generate(stream);
-        const result2 = gen2.generate(stream);
+        const result1 = gen1.generate(stream, createMockBeatMap());
+        const result2 = gen2.generate(stream, createMockBeatMap());
 
         expect(result1.medium.beats.length).toBe(result2.medium.beats.length);
         expect(result1.hard.beats.length).toBe(result2.hard.beats.length);
@@ -1294,8 +1618,8 @@ describe('Probabilistic density scaling', () => {
         const gen1 = new DifficultyVariantGenerator({ seed: 'seed-A', enhancementDensityMultiplier: 1.5 });
         const gen2 = new DifficultyVariantGenerator({ seed: 'seed-B', enhancementDensityMultiplier: 1.5 });
 
-        const result1 = gen1.generate(stream);
-        const result2 = gen2.generate(stream);
+        const result1 = gen1.generate(stream, createMockBeatMap());
+        const result2 = gen2.generate(stream, createMockBeatMap());
 
         // With 50 beat indices and 50% probability, the odds of identical results by chance are astronomically low
         expect(result1.medium.beats.length).not.toBe(result2.medium.beats.length);
@@ -1334,7 +1658,7 @@ describe('Probabilistic density scaling', () => {
             enhancementDensityMultiplier: 1.5, // 50% probability for each index
         });
 
-        const result = gen.generate(stream);
+        const result = gen.generate(stream, createMockBeatMap());
         const mediumBeats = result.medium.beats;
 
         // With 40 indices and 50% probability, we should NOT get all 40 extra beats
@@ -1352,7 +1676,7 @@ describe('Probabilistic density scaling', () => {
             enhancementDensityMultiplier: 1.0,
         });
 
-        const result = gen.generate(stream);
+        const result = gen.generate(stream, createMockBeatMap());
         // Medium should be unedited since it's the natural difficulty
         expect(result.medium.isUnedited).toBe(true);
         expect(result.medium.beats.length).toBe(20);
@@ -1372,7 +1696,7 @@ describe('Probabilistic density scaling', () => {
             enhancementDensityMultiplier: 3.0, // Very high - would try for 6 beats per index
         });
 
-        const result = gen.generate(stream);
+        const result = gen.generate(stream, createMockBeatMap());
 
         // Count beats per beat index in the hard variant
         const beatsByIndex = new Map<number, number>();
@@ -1404,7 +1728,7 @@ describe('Probabilistic density scaling', () => {
                 enhancementDensityMultiplier: 1.5,
             });
 
-            const result = gen.generate(stream);
+            const result = gen.generate(stream, createMockBeatMap());
             const hardBeats = result.hard.beats;
 
             const filledIndices = new Set(hardBeats.map(b => b.beatIndex));
