@@ -767,13 +767,16 @@ export class DifficultyVariantGenerator {
         const medium = this.generateVariant(composite, 'medium', naturalDifficulty, unifiedBeatMap, phraseAnalysis, gridDecisions);
         const hard = this.generateVariant(composite, 'hard', naturalDifficulty, unifiedBeatMap, phraseAnalysis, gridDecisions);
 
-        // Enforce single grid type per beat index across all variants.
-        // Mixed grids (triplet + straight in same beat) are unmusical and hard to read.
-        easy.beats = this.enforceSingleGridPerBeat(easy.beats);
-        medium.beats = this.enforceSingleGridPerBeat(medium.beats);
-        hard.beats = this.enforceSingleGridPerBeat(hard.beats);
+        // Task 1.4.3: Validation-only check for single grid type per beat index.
+        // Since generateVariant now uses grid lock, the variants should already have
+        // consistent grid types per beat index. These checks validate that assumption.
+        // If violations are found, it indicates a bug in the grid lock implementation.
+        this.validateGridLockResult(easy.beats, 'easy');
+        this.validateGridLockResult(medium.beats, 'medium');
+        this.validateGridLockResult(hard.beats, 'hard');
 
         // Generate the natural variant (unedited composite stream)
+        // Natural variant still needs enforcement since it doesn't go through grid lock
         const natural: DifficultyVariant = {
             difficulty: 'natural',
             beats: this.enforceSingleGridPerBeat([...composite.beats]),
@@ -833,6 +836,41 @@ export class DifficultyVariantGenerator {
     }
 
     /**
+     * Validate that a variant's beats have no mixed grid types per beat index
+     *
+     * Task 1.4.3: Validation-only check for grid lock compliance.
+     * When grid lock is used in generateVariant(), this method confirms
+     * that no grid violations exist (assert, don't fix).
+     *
+     * @param beats - The beats to validate
+     * @param difficulty - The difficulty level for logging
+     */
+    private validateGridLockResult(beats: VariantBeat[], difficulty: DifficultyLevel): void {
+        const validation = this.validateSingleGridPerBeat(beats);
+
+        if (!validation.isValid) {
+            // This shouldn't happen if grid lock is working correctly.
+            // Log a warning to alert developers about the bug.
+            console.warn(
+                `[DifficultyVariantGenerator] ${difficulty} variant has ${validation.violations.length} ` +
+                `grid lock violations (mixed grid types at same beat index). ` +
+                `This indicates a bug in the grid lock implementation.`
+            );
+
+            if (this.config.logConversions) {
+                for (const violation of validation.violations.slice(0, 5)) {
+                    console.warn(
+                        `  - Beat index ${violation.beatIndex} has mixed grids: ${violation.gridTypes.join(', ')}`
+                    );
+                }
+                if (validation.violations.length > 5) {
+                    console.warn(`  ... and ${validation.violations.length - 5} more violations`);
+                }
+            }
+        }
+    }
+
+    /**
      * Generate a single difficulty variant
      *
      * @param composite - The composite stream
@@ -854,15 +892,25 @@ export class DifficultyVariantGenerator {
         const bpm = unifiedBeatMap?.quarterNoteBpm ?? 120;
         const allowedTypes = getTempoAwareAllowedGridTypes(targetDifficulty, bpm);
 
+        // Task 1.4.1: Lock grid types per beat index before any density work.
+        // This ensures all subsequent operations (simplify/enhance) use consistent
+        // grid types per beat index, so enforceSingleGridPerBeat never has to discard work.
+        const { beats: lockedBeats, gridLock } = this.lockGridPerBeatIndex(
+            composite.beats,
+            targetDifficulty,
+            bpm,
+            gridDecisions
+        );
+
         if (isNatural) {
             // Check if all beats already have allowed grid types
-            const allTypesAllowed = composite.beats.every(b => allowedTypes.includes(b.gridType));
+            const allTypesAllowed = lockedBeats.every(b => allowedTypes.includes(b.gridType));
 
             if (allTypesAllowed) {
-                // This variant is the unedited composite
+                // This variant is the unedited composite (with grid lock applied)
                 return {
                     difficulty: targetDifficulty,
-                    beats: [...composite.beats],
+                    beats: [...lockedBeats],
                     isUnedited: true,
                     editType: 'none',
                     editAmount: 0,
@@ -872,13 +920,15 @@ export class DifficultyVariantGenerator {
             // Even for "natural" difficulty, we must ensure grid types are allowed
             // This handles edge cases where DensityAnalyzer may misclassify or
             // the composite has mixed grid types
+            // Task 1.4.2: Pass gridLock to simplifyBeats
             const result = this.simplifyBeats(
-                composite.beats,
+                lockedBeats,
                 targetDifficulty,
                 composite.quarterNoteInterval,
                 false,
                 phraseAnalysis,
-                bpm
+                bpm,
+                gridLock
             );
 
             return {
@@ -902,13 +952,15 @@ export class DifficultyVariantGenerator {
             const isHeavySimplification = this.isHeavySimplification(targetDifficulty, naturalDifficulty);
 
             // Simplify beats to meet subdivision limits, respecting phrase boundaries if enabled
+            // Task 1.4.2: Pass lockedBeats and gridLock to simplifyBeats
             const result = this.simplifyBeats(
-                composite.beats,
+                lockedBeats,
                 targetDifficulty,
                 composite.quarterNoteInterval,
                 isHeavySimplification,
                 phraseAnalysis,
-                bpm
+                bpm,
+                gridLock
             );
 
             return {
@@ -928,14 +980,16 @@ export class DifficultyVariantGenerator {
             const enhancementLevel = this.getEnhancementLevel(targetDifficulty, naturalDifficulty);
 
             // Enhance beats using pattern library and interpolation
+            // Task 1.4.2: Pass lockedBeats and gridLock to enhanceBeats
             const result = this.enhanceBeats(
-                composite.beats,
+                lockedBeats,
                 targetDifficulty,
                 enhancementLevel,
                 unifiedBeatMap,
                 phraseAnalysis,
                 gridDecisions,
-                composite.quarterNoteInterval
+                composite.quarterNoteInterval,
+                gridLock
             );
 
             // Apply BPM-aware grid type conversion if enhanced beats violate tempo limits
@@ -972,10 +1026,10 @@ export class DifficultyVariantGenerator {
             };
         }
 
-        // Default: return unedited
+        // Default: return unedited (with grid lock applied)
         return {
             difficulty: targetDifficulty,
-            beats: [...composite.beats],
+            beats: [...lockedBeats],
             isUnedited: true,
             editType: 'none',
             editAmount: 0,
@@ -1640,9 +1694,11 @@ export class DifficultyVariantGenerator {
      * @param beats - The beats to enhance
      * @param targetDifficulty - The target difficulty level
      * @param enhancementLevel - Whether this is moderate or heavy enhancement
+     * @param unifiedBeatMap - The unified beat map for timestamp derivation
      * @param phraseAnalysis - Optional phrase analysis for pattern library
      * @param gridDecisions - Optional grid decisions from quantized streams
      * @param quarterNoteInterval - Duration of a quarter note in seconds for timestamp calculation
+     * @param gridLock - Optional grid lock map (from lockGridPerBeatIndex) - if provided, skips initial enforceSingleGridPerBeat
      * @returns Enhanced beats with metadata
      */
     private enhanceBeats(
@@ -1652,7 +1708,8 @@ export class DifficultyVariantGenerator {
         unifiedBeatMap: UnifiedBeatMap,
         phraseAnalysis?: PhraseAnalysisResult,
         gridDecisions?: Map<number, GridDecision>,
-        quarterNoteInterval: number = 0.5
+        quarterNoteInterval: number = 0.5,
+        gridLock?: Map<number, ExtendedGridType>
     ): { beats: VariantBeat[]; metadata: EnhancementMetadata } {
         const metadata: EnhancementMetadata = {
             totalBeatsBefore: beats.length,
@@ -1676,12 +1733,14 @@ export class DifficultyVariantGenerator {
             return { beats: [], metadata };
         }
 
-        // Resolve mixed grids BEFORE calculating targets.
+        // Task 1.3.2: Skip enforceSingleGridPerBeat() if grid lock is provided.
+        // Grid lock means beats are already cleaned by lockGridPerBeatIndex().
+        // If no grid lock, resolve mixed grids BEFORE calculating targets.
         // If a beat index has both triplet and straight notes, the density calculation
         // counts them all, but enforceSingleGridPerBeat later removes the losers.
         // This causes the final density to fall short of the target. By resolving
         // grids first, all density math and interpolation work with accurate counts.
-        const cleanedBeats = this.enforceSingleGridPerBeat(beats);
+        const cleanedBeats = gridLock ? beats : this.enforceSingleGridPerBeat(beats);
         metadata.totalBeatsBefore = cleanedBeats.length;
 
         // Group beats by beatIndex for analysis
@@ -1734,9 +1793,12 @@ export class DifficultyVariantGenerator {
             const beatsToAdd = targetCount - existingBeats.length;
 
             if (existingBeats.length === 0) {
-                // Empty beat index — create beats from scratch using grid decisions
-                // or neighbor context. interpolateBeats requires an existing reference
-                // beat, so we synthesize one here.
+                // Task 1.3.3: Get locked grid type from gridLock if available
+                const lockedGridForIndex = gridLock?.get(beatIndex);
+
+                // Empty beat index — create beats from scratch using grid lock,
+                // grid decisions, or neighbor context. interpolateBeats requires
+                // an existing reference beat, so we synthesize one here.
                 const createdBeats = this.createBeatsForEmptyIndex(
                     beatIndex,
                     beatsToAdd,
@@ -1744,11 +1806,13 @@ export class DifficultyVariantGenerator {
                     gridDecisions,
                     quarterNoteInterval,
                     beatsByIndex,
-                    occupiedSlots
+                    occupiedSlots,
+                    lockedGridForIndex
                 );
                 // Gate through occupiedSlots — only add beats whose slot is free
                 // AND whose grid type matches this beat index's established grid.
-                const gridForIndex = this.getGridForBeatIndex(beatIndex, createdBeats, gridDecisions);
+                // Task 1.3.3: Use locked grid type if available, otherwise derive from created beats
+                const gridForIndex = lockedGridForIndex ?? this.getGridForBeatIndex(beatIndex, createdBeats, gridDecisions);
                 for (const b of createdBeats) {
                     const key = slotKey(b.beatIndex, b.gridPosition);
                     if (!occupiedSlots.has(key) && b.gridType === gridForIndex) {
@@ -1760,8 +1824,8 @@ export class DifficultyVariantGenerator {
                 continue;
             }
 
-            // Lock grid type for this beat index from existing beats
-            const gridForIndex = existingBeats[0].gridType;
+            // Task 1.3.3: Use locked grid type from gridLock if available, otherwise derive from existing beats
+            const gridForIndex = gridLock?.get(beatIndex) ?? existingBeats[0].gridType;
 
             // Try pattern insertion first (if enabled and phrase analysis available)
             let addedFromPattern = 0;
@@ -1813,12 +1877,25 @@ export class DifficultyVariantGenerator {
             return a.gridPosition - b.gridPosition;
         });
 
-        // Resolve mixed grids BEFORE dedup. If a beat index has both triplet and
-        // straight notes, enforceSingleGridPerBeat picks the winning grid type
-        // and removes the loser. Then dedup collapses any position collisions
-        // within the single remaining grid type.
-        const singleGridBeats = this.enforceSingleGridPerBeat(sortedBeats);
-        const deduplicatedBeats = this.deduplicateEnhancedBeats(singleGridBeats);
+        // Task 1.3.4: When gridLock is provided, validate (assert) instead of fix.
+        // Grid lock should have prevented any mixed grids, so if we find violations,
+        // it indicates a bug in the grid lock implementation.
+        // When no gridLock, use enforcement (legacy behavior).
+        let beatsToDeduplicate: CompositeBeat[];
+        if (gridLock) {
+            // Validation-only: confirm no grid violations exist
+            const validation = this.validateSingleGridPerBeat(sortedBeats);
+            if (!validation.isValid) {
+                // This shouldn't happen if grid lock is working correctly.
+                // Log the warning but continue with the beats as-is.
+                // The deduplication will handle any position collisions.
+            }
+            beatsToDeduplicate = sortedBeats;
+        } else {
+            // Legacy behavior: resolve mixed grids before dedup
+            beatsToDeduplicate = this.enforceSingleGridPerBeat(sortedBeats);
+        }
+        const deduplicatedBeats = this.deduplicateEnhancedBeats(beatsToDeduplicate);
 
         metadata.totalBeatsAfter = deduplicatedBeats.length;
 
@@ -1986,7 +2063,7 @@ export class DifficultyVariantGenerator {
         beatsToAdd: number,
         phraseAnalysis: PhraseAnalysisResult,
         occupiedSlots: Map<string, string>,
-        lockedGridType: GridType
+        lockedGridType: ExtendedGridType
     ): { beatsAdded: number; patternId?: string } {
         const patternLibrary = phraseAnalysis.patternLibrary;
 
@@ -2066,10 +2143,12 @@ export class DifficultyVariantGenerator {
      *
      * @param beatIndex - The beat index to create beats for
      * @param beatsToAdd - Number of beats to create
+     * @param unifiedBeatMap - Optional unified beat map for timestamp derivation
      * @param gridDecisions - Optional grid decisions from quantized streams
      * @param quarterNoteInterval - Duration of a quarter note in seconds
      * @param beatsByIndex - All beats grouped by index (for neighbor lookup)
-     * @param enhancedBeats - Already-enhanced beats (to check for pattern-inserted positions)
+     * @param occupiedSlots - Global occupied slot tracker
+     * @param lockedGridType - Optional locked grid type from gridLock (takes priority over other sources)
      * @returns Array of newly created beats
      */
     private createBeatsForEmptyIndex(
@@ -2079,22 +2158,25 @@ export class DifficultyVariantGenerator {
         gridDecisions?: Map<number, GridDecision>,
         quarterNoteInterval: number = 0.5,
         beatsByIndex?: Map<number, CompositeBeat[]>,
-        occupiedSlots?: Map<string, string>
+        occupiedSlots?: Map<string, string>,
+        lockedGridType?: ExtendedGridType
     ): CompositeBeat[] {
-        // Determine grid type: grid decision > neighbor > default to straight_16th
-        let gridType: ExtendedGridType = 'straight_16th';
+        // Task 1.3.3: Use locked grid type as first priority, then fall back to grid decisions, neighbors, default
+        // Determine grid type: lockedGridType > grid decision > neighbor > default to straight_16th
+        let gridType: ExtendedGridType = lockedGridType ?? 'straight_16th';
         let band: 'low' | 'mid' | 'high' = 'mid';
         let sourceBand: 'low' | 'mid' | 'high' = 'mid';
 
-        if (gridDecisions) {
+        // If no locked grid type, try gridDecisions
+        if (!lockedGridType && gridDecisions) {
             const decision = gridDecisions.get(beatIndex);
             if (decision) {
                 gridType = decision.selectedGrid;
             }
         }
 
-        // Fall back to nearest neighbor's grid type and band
-        if (!gridDecisions?.has(beatIndex) && beatsByIndex) {
+        // Fall back to nearest neighbor's grid type and band (only if no locked grid type and no grid decision)
+        if (!lockedGridType && !gridDecisions?.has(beatIndex) && beatsByIndex) {
             for (const offset of [1, -1, 2, -2, 3, -3]) {
                 const neighborBeats = beatsByIndex.get(beatIndex + offset);
                 if (neighborBeats && neighborBeats.length > 0) {
@@ -2178,7 +2260,7 @@ export class DifficultyVariantGenerator {
      * @param beatsToAdd - Number of beats to add
      * @param quarterNoteInterval - Duration of a quarter note in seconds for timestamp calculation
      * @param occupiedSlots - Global occupied slot tracker
-     * @param lockedGridType - Grid type locked for this beat index
+     * @param lockedGridType - Grid type locked for this beat index (ExtendedGridType for full support)
      * @returns Array of interpolated beats
      */
     private interpolateBeats(
@@ -2187,14 +2269,14 @@ export class DifficultyVariantGenerator {
         beatsToAdd: number,
         quarterNoteInterval: number = 0.5,
         occupiedSlots?: Map<string, string>,
-        lockedGridType?: GridType
+        lockedGridType?: ExtendedGridType
     ): CompositeBeat[] {
         if (beatsToAdd <= 0 || existingBeats.length === 0) {
             return [];
         }
 
         // Use the locked grid type (caller ensures this matches existing beats)
-        const gridType: GridType = lockedGridType ?? existingBeats[0].gridType;
+        const gridType: ExtendedGridType = lockedGridType ?? existingBeats[0].gridType;
         const getMaxPositions = (gt: string) =>
             gt === 'straight_16th' ? 4
                 : gt === 'straight_8th' ? 2
@@ -2241,7 +2323,7 @@ export class DifficultyVariantGenerator {
         const referenceBeat = existingBeats[0];
 
         // Create interpolated beats
-        const interpolatedBeats: CompositeBeat[] = positionsToFill.map(gridPosition => {
+        const interpolatedBeats = positionsToFill.map(gridPosition => {
             // CRITICAL: Use the reference beat's OWN grid type interval to derive the beat start.
             // Then use the target grid type interval for the new grid position.
             // Mixing intervals causes offset errors (32nd-note or 16th-triplet).
@@ -2270,7 +2352,7 @@ export class DifficultyVariantGenerator {
             };
         });
 
-        return interpolatedBeats;
+        return interpolatedBeats as CompositeBeat[];
     }
 
     /**
@@ -2416,6 +2498,62 @@ export class DifficultyVariantGenerator {
         }
 
         return result.sort((a, b) => a.timestamp - b.timestamp);
+    }
+
+    /**
+     * Validate that beats have no mixed grid types per beat index
+     *
+     * Task 1.3.4: Validation-only check for grid lock compliance.
+     * When grid lock is provided to enhanceBeats(), this method confirms
+     * that no grid violations exist (assert, don't fix).
+     *
+     * @param beats - The beats to validate
+     * @returns Validation result with any violations found
+     */
+    private validateSingleGridPerBeat<T extends CompositeBeat | VariantBeat>(
+        beats: T[]
+    ): { isValid: boolean; violations: Array<{ beatIndex: number; gridTypes: ExtendedGridType[] }> } {
+        // Group beats by beatIndex
+        const beatsByIndex = new Map<number, T[]>();
+        for (const beat of beats) {
+            const existing = beatsByIndex.get(beat.beatIndex) ?? [];
+            existing.push(beat);
+            beatsByIndex.set(beat.beatIndex, existing);
+        }
+
+        const violations: Array<{ beatIndex: number; gridTypes: ExtendedGridType[] }> = [];
+
+        for (const [beatIndex, beatsAtIndex] of beatsByIndex) {
+            if (beatsAtIndex.length <= 1) {
+                continue;
+            }
+
+            // Check if this beat index has mixed grid types
+            const gridTypes = new Set(beatsAtIndex.map(b => b.gridType));
+            if (gridTypes.size > 1) {
+                violations.push({
+                    beatIndex,
+                    gridTypes: Array.from(gridTypes),
+                });
+            }
+        }
+
+        if (violations.length > 0 && this.config.logConversions) {
+            console.warn(
+                `[DifficultyVariantGenerator] Grid validation found ${violations.length} violations. ` +
+                `This indicates a bug in grid lock implementation.`
+            );
+            for (const violation of violations.slice(0, 5)) {
+                console.warn(
+                    `  - Beat index ${violation.beatIndex} has mixed grids: ${violation.gridTypes.join(', ')}`
+                );
+            }
+        }
+
+        return {
+            isValid: violations.length === 0,
+            violations,
+        };
     }
 
     /**

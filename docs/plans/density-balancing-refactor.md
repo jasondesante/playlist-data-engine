@@ -40,16 +40,16 @@ The foundational change. Before any density work, lock the grid type for each be
   - [x] 1.2.3: During `convertBeatGridType()`, if the beat's current grid doesn't match the locked grid, use the locked grid instead of deriving from the beat's own `gridType`
   - [x] 1.2.4: N/A - `simplifyBeats()` has no final `enforceSingleGridPerBeat()` call; only the initial one (now conditional)
 
-- [ ] Task 1.3: Refactor `enhanceBeats()` to accept and use the grid lock
-  - [ ] 1.3.1: Accept `gridLock: Map<number, ExtendedGridType>` parameter
-  - [ ] 1.3.2: Skip the initial `enforceSingleGridPerBeat()` call (already done, grid is locked)
-  - [ ] 1.3.3: Pass locked grid type to `createBeatsForEmptyIndex()` and `interpolateBeats()` instead of deriving from existing beats
-  - [ ] 1.3.4: Replace the final `enforceSingleGridPerBeat()` call with a validation-only check that confirms no grid violations exist (assert, don't fix)
+- [x] Task 1.3: Refactor `enhanceBeats()` to accept and use the grid lock
+  - [x] 1.3.1: Accept `gridLock: Map<number, ExtendedGridType>` parameter
+  - [x] 1.3.2: Skip the initial `enforceSingleGridPerBeat()` call (already done, grid is locked)
+  - [x] 1.3.3: Pass locked grid type to `createBeatsForEmptyIndex()` and `interpolateBeats()` instead of deriving from existing beats
+  - [x] 1.3.4: Replace the final `enforceSingleGridPerBeat()` call with a validation-only check that confirms no grid violations exist (assert, don't fix)
 
-- [ ] Task 1.4: Wire grid lock through `generateVariant()`
-  - [ ] 1.4.1: Call `lockGridPerBeatIndex()` once at the top of `generateVariant()` before branching into simplify/enhance
-  - [ ] 1.4.2: Pass the grid lock to `simplifyBeats()` or `enhanceBeats()` as appropriate
-  - [ ] 1.4.3: The `generate()` method's post-variant `enforceSingleGridPerBeat()` calls (lines 653-655) become validation-only
+- [x] Task 1.4: Wire grid lock through `generateVariant()`
+  - [x] 1.4.1: Call `lockGridPerBeatIndex()` once at the top of `generateVariant()` before branching into simplify/enhance
+  - [x] 1.4.2: Pass the grid lock to `simplifyBeats()` or `enhanceBeats()` as appropriate
+  - [x] 1.4.3: The `generate()` method's post-variant `enforceSingleGridPerBeat()` calls (lines 653-655) become validation-only
 
 - [ ] Task 1.5: Write tests for grid lock
   - [ ] 1.5.1: Test that `lockGridPerBeatIndex()` resolves mixed grids and returns correct map
