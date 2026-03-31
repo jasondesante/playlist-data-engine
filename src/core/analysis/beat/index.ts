@@ -172,10 +172,14 @@ export type {
 } from './RhythmQuantizer.js';
 
 // Tempo-Aware Quantization
+export {
+    HighBpmGridRestrictionRule,
+} from './TempoAwareQuantizer.js';
 export type {
     TempoQuantizationRule,
     TempoRuleContext,
     TempoAwareQuantizerConfig,
+    HighBpmGridRestrictionConfig,
 } from './TempoAwareQuantizer.js';
 
 // Phrase Analyzer

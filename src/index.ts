@@ -549,6 +549,15 @@ export {
     type GeneratedRhythmMap,
 } from './core/analysis/beat/RhythmQuantizer.js';
 
+// Tempo-Aware Quantization
+export {
+    HighBpmGridRestrictionRule,
+    type TempoQuantizationRule,
+    type TempoRuleContext,
+    type TempoAwareQuantizerConfig,
+    type HighBpmGridRestrictionConfig,
+} from './core/analysis/beat/TempoAwareQuantizer.js';
+
 // Phrase Analyzer (Phase 2.1)
 export {
     PhraseAnalyzer,
