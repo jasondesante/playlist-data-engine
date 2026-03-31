@@ -2854,7 +2854,7 @@ constructor(config?: Partial<StreamScorerConfig>)
 | `densityWeight` | `0.15` | Weight for density factor (note count) in scoring |
 | `offbeatGridPositions` | `{ straight_16th: [1, 3], triplet_8th: [1, 2] }` | Grid positions considered "offbeats" for syncopation scoring |
 | `bandBiasWeights` | `{ low: 0.8, mid: 0.95, high: 1.0 }` | Band bias multipliers applied to final section scores (see below) |
-| `bpm` | `undefined` | BPM for notes/sec density calculation. When set, density factor uses a BPM-aware bell curve (optimal ~4.0 notes/sec). Falls back to legacy notes/beat behavior when omitted. |
+| `bpm` | `undefined` | BPM for notes/sec density calculation. When set, density factor uses a BPM-aware bell curve (optimal ~1.0 notes/sec). Falls back to legacy notes/beat behavior when omitted. |
 
 **Band Bias Weights:**
 
@@ -2884,7 +2884,7 @@ constructor(config?: Partial<StreamScorerConfig>)
 | `ioiVariance` | Inter-Onset Interval variance (timing variety) |
 | `syncopationLevel` | Weighting for offbeat transients |
 | `phraseSignificance` | Significance of detected phrases in section |
-| `densityFactor` | BPM-aware bell curve for optimal density scoring (notes/sec). Optimal density ~4.0 notes/sec when BPM is configured. |
+| `densityFactor` | BPM-aware bell curve for optimal density scoring (notes/sec). Optimal density ~1.0 notes/sec when BPM is configured. |
 
 ### CompositeStreamGenerator
 *Location:* *[src/core/analysis/beat/CompositeStreamGenerator.ts](src/core/analysis/beat/CompositeStreamGenerator.ts)*

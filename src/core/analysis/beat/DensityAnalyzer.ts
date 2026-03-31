@@ -168,10 +168,10 @@ export interface DensityAnalyzerConfig {
     /** Number of beats per section for section analysis. Default: 8 (2 measures in 4/4 time) */
     beatsPerSection: number;
 
-    /** Threshold for sparse density (notes per second below this = sparse). Default: 2.5 */
+    /** Threshold for sparse density (notes per second below this = sparse). Default: 0.9 */
     sparseThreshold: number;
 
-    /** Threshold for dense density (notes per second above this = dense). Default: 4.5 */
+    /** Threshold for dense density (notes per second above this = dense). Default: 1.2 */
     denseThreshold: number;
 }
 
@@ -181,8 +181,8 @@ export interface DensityAnalyzerConfig {
 
 const DEFAULT_DENSITY_ANALYZER_CONFIG: DensityAnalyzerConfig = {
     beatsPerSection: 8, // 2 measures in 4/4 time
-    sparseThreshold: 2.5,
-    denseThreshold: 4.5,
+    sparseThreshold: 0.9,
+    denseThreshold: 1.2,
 };
 
 // ============================================================================
@@ -192,9 +192,9 @@ const DEFAULT_DENSITY_ANALYZER_CONFIG: DensityAnalyzerConfig = {
 /**
  * Notes per second thresholds for density categorization
  *
- * Sparse: < 2.5 notes/sec (mostly quarter notes at moderate tempo)
- * Moderate: 2.5 - 4.5 notes/sec (eighth notes, some sixteenths)
- * Dense: > 4.5 notes/sec (heavy sixteenth notes, triplets)
+ * Sparse: < 0.9 notes/sec (mostly quarter notes at moderate tempo)
+ * Moderate: 0.9 - 1.2 notes/sec (eighth notes, some sixteenths)
+ * Dense: > 1.2 notes/sec (heavy sixteenth notes, triplets)
  */
 
 // ============================================================================

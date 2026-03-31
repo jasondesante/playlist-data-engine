@@ -3544,9 +3544,9 @@ The composite's natural difficulty is determined by its density:
 
 | Density | Notes/Second | Natural Difficulty |
 |---------|--------------|-------------------|
-| Sparse | < 2.5 | Easy |
-| Moderate | 2.5 - 4.5 | Medium |
-| Dense | > 4.5 | Hard |
+| Sparse | < 0.9 | Easy |
+| Moderate | 0.9 - 1.2 | Medium |
+| Dense | > 1.2 | Hard |
 
 ### Custom Scoring Configuration
 
@@ -3689,9 +3689,9 @@ Each difficulty level has a target density range (notes per second):
 
 | Difficulty | Target Density | Description |
 |------------|----------------|-------------|
-| **Easy** | 0 - 2.5 notes/sec | Sparse (mostly quarter and 8th notes) |
-| **Medium** | 2.5 - 4.5 notes/sec | Moderate (8th notes, some 16ths) |
-| **Hard** | > 4.5 notes/sec | Dense (16ths, triplets) |
+| **Easy** | 0 - 0.9 notes/sec | Sparse (mostly quarter and 8th notes) |
+| **Medium** | 0.9 - 1.2 notes/sec | Moderate (8th notes, some 16ths) |
+| **Hard** | > 1.2 notes/sec | Dense (16ths, triplets) |
 
 ### Subdivision Limits by Difficulty
 
@@ -3710,8 +3710,8 @@ The strategy depends on the composite's natural difficulty:
 | Variant | Strategy |
 |---------|----------|
 | **Hard** | Composite unchanged (unedited) |
-| **Medium** | Density-aware reduction to ≤4.5 notes/sec (removes low-priority beats) |
-| **Easy** | Grid conversion (16th→8th) + density reduction to ≤2.5 notes/sec |
+| **Medium** | Density-aware reduction to ≤1.2 notes/sec (removes low-priority beats) |
+| **Easy** | Grid conversion (16th→8th) + density reduction to ≤0.9 notes/sec |
 
 #### If Composite is Naturally Medium (Moderate)
 
@@ -3719,7 +3719,7 @@ The strategy depends on the composite's natural difficulty:
 |---------|----------|
 | **Hard** | Density enhancement using pattern library |
 | **Medium** | Composite unchanged (unedited) |
-| **Easy** | Grid conversion + density reduction to ≤2.5 notes/sec |
+| **Easy** | Grid conversion + density reduction to ≤0.9 notes/sec |
 
 #### If Composite is Naturally Easy (Sparse)
 

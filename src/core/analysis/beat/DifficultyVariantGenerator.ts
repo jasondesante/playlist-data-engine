@@ -103,13 +103,13 @@ export const SUBDIVISION_LIMITS: Record<DifficultyLevel, SubdivisionLimitConfig>
      * - No 8th note triplets (too rapid for beginners)
      * - 8th notes are the maximum density
      * - Quarter note triplets allowed for swing feel
-     * - Target density: < 2.5 notes/sec (sparse)
+     * - Target density: < 0.9 notes/sec (sparse)
      */
     easy: {
         maxSubdivision: 'eighth',
         allowedGridTypes: ['straight_8th', 'quarter_triplet'],
         description: '8th notes and quarter note triplets only',
-        targetDensityRange: { min: 0, max: 2.5 },
+        targetDensityRange: { min: 0, max: 0.9 },
     },
 
     /**
@@ -118,14 +118,14 @@ export const SUBDIVISION_LIMITS: Record<DifficultyLevel, SubdivisionLimitConfig>
      * - 16th notes allowed
      * - 8th note triplets allowed
      * - All grid types available
-     * - Target density: 2.5 - 4.5 notes/sec (moderate)
+     * - Target density: 0.9 - 1.2 notes/sec (moderate)
      * - Density reduction via moderate simplification (remove weak offbeat 16ths)
      */
     medium: {
         maxSubdivision: 'sixteenth',
         allowedGridTypes: ['straight_16th', 'triplet_8th', 'straight_8th', 'quarter_triplet'],
         description: 'All subdivision types, with density reduction for moderate difficulty',
-        targetDensityRange: { min: 2.5, max: 4.5 },
+        targetDensityRange: { min: 0.9, max: 1.2 },
     },
 
     /**
@@ -135,13 +135,13 @@ export const SUBDIVISION_LIMITS: Record<DifficultyLevel, SubdivisionLimitConfig>
      * - 8th note triplets allowed
      * - All grid types available
      * - Maximum density expected
-     * - Target density: > 4.5 notes/sec (dense)
+     * - Target density: > 1.2 notes/sec (dense)
      */
     hard: {
         maxSubdivision: 'sixteenth',
         allowedGridTypes: ['straight_16th', 'triplet_8th', 'straight_8th', 'quarter_triplet'],
         description: 'All subdivision types including 16th notes',
-        targetDensityRange: { min: 4.5, max: Infinity },
+        targetDensityRange: { min: 1.2, max: Infinity },
     },
 
     /**

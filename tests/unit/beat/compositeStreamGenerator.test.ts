@@ -294,11 +294,12 @@ describe('CompositeStreamGenerator', () => {
 
         it('should set natural difficulty to easy for sparse patterns', async () => {
             // Create a sparse pattern (should be 'easy')
+            // 4 beats across 13 quarter notes = 0.31 t/b → 0.62 n/s at 120 BPM (sparse < 0.9)
             const lowBeats: GeneratedBeat[] = [];
-            for (let i = 0; i < 8; i++) {
+            for (let i = 0; i < 4; i++) {
                 lowBeats.push(createGeneratedBeat({
-                    timestamp: i * 1.0,
-                    beatIndex: i * 2,
+                    timestamp: i * 2.0,
+                    beatIndex: i * 4,
                     gridPosition: 0,
                     intensity: 0.7,
                     band: 'low',
@@ -317,28 +318,17 @@ describe('CompositeStreamGenerator', () => {
 
         it('should set natural difficulty to medium for moderate patterns', async () => {
             // Create a moderate pattern (should be 'medium')
-            // Moderate range: 2.5 - 4.5 notes/sec
-            // We'll create 24 beats across 16 quarter notes = 1.5 t/b → 3.0 notes/sec at 120 BPM (solidly in moderate range)
+            // Moderate range: 0.9 - 1.2 notes/sec
+            // 8 beats across 15 quarter notes = 0.53 t/b → 1.07 n/s at 120 BPM (solidly in moderate range)
             const midBeats: GeneratedBeat[] = [];
-            for (let i = 0; i < 16; i++) {
-                // Every beat gets a downbeat (16 beats)
+            for (let i = 0; i < 8; i++) {
                 midBeats.push(createGeneratedBeat({
-                    timestamp: i * 0.5,
-                    beatIndex: i,
+                    timestamp: i * 1.0,
+                    beatIndex: i * 2,
                     gridPosition: 0,
                     intensity: 0.7,
                     band: 'mid',
                 }));
-                // Only even beats get an offbeat (8 more beats = 24 total)
-                if (i % 2 === 0) {
-                    midBeats.push(createGeneratedBeat({
-                        timestamp: i * 0.5 + 0.25,
-                        beatIndex: i,
-                        gridPosition: 2,
-                        intensity: 0.7,
-                        band: 'mid',
-                    }));
-                }
             }
 
             const streams = createMockStreams([], midBeats, []);
@@ -347,7 +337,7 @@ describe('CompositeStreamGenerator', () => {
             const scoreResult = scorer.score(streams, phraseResult, densityResult);
             const composite = generator.generate(streams, scoreResult, densityResult);
 
-            // Moderate pattern (24 beats / 16 quarter notes = 3.0 notes/sec at 120 BPM) should be 'medium'
+            // Moderate pattern (8 beats / 15 quarter notes ≈ 1.07 notes/sec at 120 BPM) should be 'medium'
             expect(composite.naturalDifficulty).toBe('medium');
         });
     });

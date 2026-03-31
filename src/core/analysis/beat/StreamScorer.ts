@@ -525,7 +525,7 @@ export class StreamScorer {
      *
      * Uses a bell curve - moderate density is ideal.
      * When BPM is configured, density is measured in notes/second for tempo-accurate scoring.
-     * Optimal density is around 4 notes/second (at reference 120 BPM, equivalent to 2 notes/beat).
+     * Optimal density is around 1.0 notes/second.
      * Normalized to 0-1 range.
      */
     private calculateDensityFactor(
@@ -552,16 +552,16 @@ export class StreamScorer {
         const bpmPerSecond = this.config.bpm != null ? this.config.bpm / 60 : 1;
         const avgDensity = avgTransientsPerBeat * bpmPerSecond;
 
-        // Bell curve centered at 4 notes/second (2 notes/beat at 120 BPM reference)
-        // When no BPM is configured, bpmPerSecond=1 so this is equivalent to the old 2 notes/beat
+        // Bell curve centered at 1.0 notes/second
+        // When no BPM is configured, bpmPerSecond=1 so this is equivalent to 1.0 notes/beat
         // Formula: e^(-(x - optimal)^2 / (2 * width^2))
-        // - At 0 notes/sec: ~0.14
-        // - At 2 notes/sec: ~0.61
-        // - At 4 notes/sec: 1.0 (optimal)
-        // - At 6 notes/sec: ~0.61
-        // - At 8 notes/sec: ~0.14
-        const optimalDensity = 4.0;
-        const bellCurveWidth = 3.0; // Controls how quickly the curve drops off
+        // - At 0 notes/sec: ~0.41
+        // - At 0.5 notes/sec: ~0.80
+        // - At 1.0 notes/sec: 1.0 (optimal)
+        // - At 1.5 notes/sec: ~0.80
+        // - At 2.0 notes/sec: ~0.41
+        const optimalDensity = 1.0;
+        const bellCurveWidth = 0.75; // Controls how quickly the curve drops off
 
         const factor = Math.exp(-Math.pow(avgDensity - optimalDensity, 2) / (2 * Math.pow(bellCurveWidth, 2)));
 

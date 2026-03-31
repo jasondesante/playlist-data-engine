@@ -384,11 +384,11 @@ describe('Phrase and Density Analysis Integration Tests', () => {
             const midBeats: GeneratedBeat[] = [];
             const highBeats: GeneratedBeat[] = [];
 
-            // Low band: sparse (0.5 notes/beat = 1.0 notes/sec at 120 BPM)
-            for (let i = 0; i < 8; i++) {
+            // Low band: sparse (0.31 notes/beat = 0.62 notes/sec at 120 BPM)
+            for (let i = 0; i < 4; i++) {
                 lowBeats.push(createGeneratedBeat({
-                    timestamp: i * 1.0,
-                    beatIndex: i * 2,
+                    timestamp: i * 2.0,
+                    beatIndex: i * 4,
                     gridPosition: 0,
                     intensity: 0.9,
                     band: 'low',
@@ -442,7 +442,7 @@ describe('Phrase and Density Analysis Integration Tests', () => {
 
             // Verify per-band density metrics
             expect(densityResult.bandMetrics.low.densityCategory).toBe('sparse');
-            expect(densityResult.bandMetrics.mid.densityCategory).toBe('moderate');
+            expect(densityResult.bandMetrics.mid.densityCategory).toBe('dense');
             expect(densityResult.bandMetrics.high.densityCategory).toBe('dense');
 
             console.log('\n✓ Multi-band analysis:');
@@ -541,12 +541,12 @@ describe('Phrase and Density Analysis Integration Tests', () => {
         });
 
         it('should correctly identify sparse patterns as easy difficulty', async () => {
-            // Create sparse pattern: 1 transient every 2 beats
+            // Create sparse pattern: 1 transient every 4 beats
             const lowBeats: GeneratedBeat[] = [];
-            for (let i = 0; i < 8; i++) {
+            for (let i = 0; i < 4; i++) {
                 lowBeats.push(createGeneratedBeat({
-                    timestamp: i * 1.0,
-                    beatIndex: i * 2,
+                    timestamp: i * 2.0,
+                    beatIndex: i * 4,
                     gridPosition: 0,
                     intensity: 0.7,
                     band: 'low',
@@ -641,8 +641,8 @@ describe('Phrase and Density Analysis Integration Tests', () => {
             // Create a track with varying density sections
             const lowBeats: GeneratedBeat[] = [];
 
-            // Section 1 (beats 0-7): sparse (0.5 notes/beat = 1.0 notes/sec at 120 BPM)
-            for (let i = 0; i < 8; i += 2) {
+            // Section 1 (beats 0-7): sparse (0.375 notes/beat = 0.75 notes/sec at 120 BPM)
+            for (let i = 0; i < 8; i += 3) {
                 lowBeats.push(createGeneratedBeat({
                     timestamp: i * 0.5,
                     beatIndex: i,
