@@ -169,6 +169,7 @@ export type {
     GridDecision,
     GeneratedBeat,
     GeneratedRhythmMap,
+    GridDecider,
 } from './RhythmQuantizer.js';
 
 // Tempo-Aware Quantization

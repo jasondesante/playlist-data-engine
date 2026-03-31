@@ -547,6 +547,7 @@ export {
     type GridDecision,
     type GeneratedBeat,
     type GeneratedRhythmMap,
+    type GridDecider,
 } from './core/analysis/beat/RhythmQuantizer.js';
 
 // Tempo-Aware Quantization

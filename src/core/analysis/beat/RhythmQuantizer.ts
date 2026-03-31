@@ -261,6 +261,26 @@ export interface GeneratedRhythmMap {
 }
 
 // ============================================================================
+// Grid Decider Type
+// ============================================================================
+
+/**
+ * Callback for custom grid decision logic.
+ *
+ * When provided to `quantize()`, replaces the internal `decideGrids()` call
+ * for each band. Used by `TempoAwareQuantizer` to inject BPM-aware grid
+ * decisions into the decide-then-quantize flow without duplicating the
+ * density validation and deduplication logic.
+ *
+ * The returned grid decisions are passed directly to `quantizeToGrids()`.
+ */
+export type GridDecider = (
+    transients: TransientResult[],
+    unifiedBeatMap: UnifiedBeatMap,
+    band: BandType
+) => GridDecision[];
+
+// ============================================================================
 // Default Configuration
 // ============================================================================
 
@@ -357,11 +377,14 @@ export class RhythmQuantizer {
      *
      * @param transientAnalysis - Transient analysis from TransientDetector
      * @param unifiedBeatMap - Unified beat map to quantize against
+     * @param gridDecider - Optional custom grid decider (e.g., TempoAwareQuantizer).
+     *   When provided, replaces the internal `decideGrids()` call for each band.
      * @returns Quantized band streams
      */
     quantize(
         transientAnalysis: TransientAnalysis,
-        unifiedBeatMap: UnifiedBeatMap
+        unifiedBeatMap: UnifiedBeatMap,
+        gridDecider?: GridDecider
     ): QuantizedBandStreams {
         // Split transients by band first
         const transientsByBand = this.splitTransientsByBand(transientAnalysis.transients);
@@ -389,9 +412,9 @@ export class RhythmQuantizer {
 
         // Quantize each band with its filtered transients
         const streams = {
-            low: this.quantizeBand(lowResult.filteredTransients, unifiedBeatMap, 'low'),
-            mid: this.quantizeBand(midResult.filteredTransients, unifiedBeatMap, 'mid'),
-            high: this.quantizeBand(highResult.filteredTransients, unifiedBeatMap, 'high'),
+            low: this.quantizeBand(lowResult.filteredTransients, unifiedBeatMap, 'low', gridDecider),
+            mid: this.quantizeBand(midResult.filteredTransients, unifiedBeatMap, 'mid', gridDecider),
+            high: this.quantizeBand(highResult.filteredTransients, unifiedBeatMap, 'high', gridDecider),
         };
 
         // Calculate total filtered across all bands
@@ -788,10 +811,14 @@ export class RhythmQuantizer {
     private quantizeBand(
         transients: TransientResult[],
         unifiedBeatMap: UnifiedBeatMap,
-        band: BandType
+        band: BandType,
+        gridDecider?: GridDecider
     ): GeneratedRhythmMap {
         // Phase 1: Decide grid types for each beat (no quantization yet)
-        const gridDecisions = this.decideGrids(transients, unifiedBeatMap, band);
+        // Use custom grid decider if provided (e.g., TempoAwareQuantizer)
+        const gridDecisions = gridDecider
+            ? gridDecider(transients, unifiedBeatMap, band)
+            : this.decideGrids(transients, unifiedBeatMap, band);
 
         // Phase 2: Quantize transients using the grid decisions
         const rawBeats = this.quantizeToGrids(transients, unifiedBeatMap, band, gridDecisions);

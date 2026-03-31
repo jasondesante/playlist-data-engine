@@ -14,6 +14,11 @@
 import { MultiBandAnalyzer, type MultiBandResult } from '../analysis/MultiBandAnalyzer.js';
 import { TransientDetector, type TransientAnalysis, type TransientResult, type BandTransientConfigOverrides } from '../analysis/beat/TransientDetector.js';
 import {
+    TempoAwareQuantizer,
+    DEFAULT_TEMPO_AWARE_CONFIG,
+    type TempoAwareQuantizerConfig,
+} from '../analysis/beat/TempoAwareQuantizer.js';
+import {
     RhythmQuantizer,
     type QuantizationConfig,
     type QuantizedBandStreams,
@@ -152,6 +157,13 @@ export interface RhythmGenerationOptions {
      * ```
      */
     phraseAnalyzerConfig?: Partial<PhraseAnalyzerConfig>;
+
+    /**
+     * BPM-aware quantization rules config. When undefined, default rules apply
+     * (HighBpmGridRestrictionRule: 16th notes restricted at 160 BPM, triplets
+     * at 200 BPM). Set `{ enabled: false }` to disable.
+     */
+    tempoQuantizationConfig?: TempoAwareQuantizerConfig;
 
     /** Seed for reproducibility (optional) */
     seed?: string;
@@ -754,6 +766,7 @@ type ResolvedOptions = {
     densityValidation?: DensityValidationConfig;
     scoringConfig?: Partial<StreamScorerConfig>;
     phraseAnalyzerConfig?: Partial<PhraseAnalyzerConfig>;
+    tempoQuantizationConfig?: TempoAwareQuantizerConfig;
     seed: string | undefined;
     verbose: boolean;
     enableCache: boolean;
@@ -825,6 +838,7 @@ export class RhythmGenerator {
     private streamScorer: StreamScorer;
     private compositeGenerator: CompositeStreamGenerator;
     private variantGenerator: DifficultyVariantGenerator;
+    private tempoAwareQuantizer: TempoAwareQuantizer;
 
     // Cache storage
     private cache: Map<string, CacheEntry<unknown>> = new Map();
@@ -860,6 +874,12 @@ export class RhythmGenerator {
         this.compositeGenerator = new CompositeStreamGenerator();
 
         this.variantGenerator = new DifficultyVariantGenerator({ seed: this.options.seed });
+
+        // Tempo-aware quantizer wraps the rhythm quantizer for BPM-based grid rules
+        this.tempoAwareQuantizer = new TempoAwareQuantizer(
+            this.options.tempoQuantizationConfig ?? DEFAULT_TEMPO_AWARE_CONFIG,
+            this.rhythmQuantizer
+        );
     }
 
     // ================================================================
@@ -885,6 +905,7 @@ export class RhythmGenerator {
         const relevantConfig = {
             minimumTransientIntensity: this.options.minimumTransientIntensity,
             measureStartOffset: this.options.measureStartOffset,
+            tempoQuantizationConfig: this.options.tempoQuantizationConfig,
         };
         return JSON.stringify(relevantConfig);
     }
@@ -1180,9 +1201,14 @@ export class RhythmGenerator {
     }
 
     /**
-     * Phase 1.3: Rhythm quantization
+     * Phase 1.3: Rhythm quantization with BPM-aware grid decisions
      *
      * Quantizes transients to the beat map grid with density validation.
+     * When tempo-aware quantization is enabled (default), BPM-based rules
+     * constrain grid decisions before quantization (e.g., restricting 16th
+     * notes at high BPMs).
+     *
+     * Flow: density validation → grid decisions (BPM-aware) → quantize → deduplicate
      *
      * @param transientAnalysis - Transient analysis from Phase 1.2
      * @param unifiedBeatMap - Unified beat map
@@ -1192,7 +1218,12 @@ export class RhythmGenerator {
         transientAnalysis: TransientAnalysis,
         unifiedBeatMap: UnifiedBeatMap
     ): QuantizedBandStreams {
-        return this.rhythmQuantizer.quantize(transientAnalysis, unifiedBeatMap);
+        return this.rhythmQuantizer.quantize(
+            transientAnalysis,
+            unifiedBeatMap,
+            (transients, beatMap, band) =>
+                this.tempoAwareQuantizer.decideGrids(transients, beatMap, band)
+        );
     }
 
     /**
