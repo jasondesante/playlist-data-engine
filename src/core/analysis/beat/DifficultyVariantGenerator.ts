@@ -103,13 +103,13 @@ export const SUBDIVISION_LIMITS: Record<DifficultyLevel, SubdivisionLimitConfig>
      * - No 8th note triplets (too rapid for beginners)
      * - 8th notes are the maximum density
      * - Quarter note triplets allowed for swing feel
-     * - Target density: < 1.0 transients/beat (sparse)
+     * - Target density: < 2.5 notes/sec (sparse)
      */
     easy: {
         maxSubdivision: 'eighth',
         allowedGridTypes: ['straight_8th', 'quarter_triplet'],
         description: '8th notes and quarter note triplets only',
-        targetDensityRange: { min: 0, max: 1.0 },
+        targetDensityRange: { min: 0, max: 2.5 },
     },
 
     /**
@@ -118,14 +118,14 @@ export const SUBDIVISION_LIMITS: Record<DifficultyLevel, SubdivisionLimitConfig>
      * - 16th notes allowed
      * - 8th note triplets allowed
      * - All grid types available
-     * - Target density: 1.0 - 1.75 transients/beat (moderate)
+     * - Target density: 2.5 - 4.5 notes/sec (moderate)
      * - Density reduction via moderate simplification (remove weak offbeat 16ths)
      */
     medium: {
         maxSubdivision: 'sixteenth',
         allowedGridTypes: ['straight_16th', 'triplet_8th', 'straight_8th', 'quarter_triplet'],
         description: 'All subdivision types, with density reduction for moderate difficulty',
-        targetDensityRange: { min: 1.0, max: 1.75 },
+        targetDensityRange: { min: 2.5, max: 4.5 },
     },
 
     /**
@@ -135,13 +135,13 @@ export const SUBDIVISION_LIMITS: Record<DifficultyLevel, SubdivisionLimitConfig>
      * - 8th note triplets allowed
      * - All grid types available
      * - Maximum density expected
-     * - Target density: > 1.75 transients/beat (dense)
+     * - Target density: > 4.5 notes/sec (dense)
      */
     hard: {
         maxSubdivision: 'sixteenth',
         allowedGridTypes: ['straight_16th', 'triplet_8th', 'straight_8th', 'quarter_triplet'],
         description: 'All subdivision types including 16th notes',
-        targetDensityRange: { min: 1.75, max: Infinity },
+        targetDensityRange: { min: 4.5, max: Infinity },
     },
 
     /**
@@ -192,7 +192,7 @@ export interface SubdivisionLimitConfig {
     /** Human-readable description of the limits */
     description: string;
 
-    /** Target density range for this difficulty (transients per beat) */
+    /** Target density range for this difficulty (notes per second, BPM-adjusted) */
     targetDensityRange: { min: number; max: number };
 }
 
@@ -636,6 +636,7 @@ export class DifficultyVariantGenerator {
     ): DifficultyVariant {
         const isNatural = targetDifficulty === naturalDifficulty;
         const allowedTypes = SUBDIVISION_LIMITS[targetDifficulty].allowedGridTypes;
+        const bpm = unifiedBeatMap?.quarterNoteBpm ?? 120;
 
         if (isNatural) {
             // Check if all beats already have allowed grid types
@@ -660,7 +661,8 @@ export class DifficultyVariantGenerator {
                 targetDifficulty,
                 composite.quarterNoteInterval,
                 false,
-                phraseAnalysis
+                phraseAnalysis,
+                bpm
             );
 
             return {
@@ -689,7 +691,8 @@ export class DifficultyVariantGenerator {
                 targetDifficulty,
                 composite.quarterNoteInterval,
                 isHeavySimplification,
-                phraseAnalysis
+                phraseAnalysis,
+                bpm
             );
 
             return {
@@ -774,7 +777,8 @@ export class DifficultyVariantGenerator {
         targetDifficulty: DifficultyLevel,
         quarterNoteInterval: number,
         isHeavySimplification: boolean = false,
-        phraseAnalysis?: PhraseAnalysisResult
+        phraseAnalysis?: PhraseAnalysisResult,
+        bpm: number = 120
     ): { beats: VariantBeat[]; metadata: SubdivisionConversionMetadata } {
         const metadata: SubdivisionConversionMetadata = {
             sixteenthToEighth: 0,
@@ -801,7 +805,8 @@ export class DifficultyVariantGenerator {
                 cleanedBeats as VariantBeat[],
                 targetDifficulty,
                 metadata,
-                phraseMembership
+                phraseMembership,
+                bpm
             );
             metadata.totalBeatsAfter = densityReducedBeats.length;
             return { beats: densityReducedBeats, metadata };
@@ -869,7 +874,8 @@ export class DifficultyVariantGenerator {
             deduplicatedBeats,
             targetDifficulty,
             metadata,
-            phraseMembership
+            phraseMembership,
+            bpm
         );
 
         metadata.totalBeatsAfter = densityReducedBeats.length;
@@ -960,23 +966,24 @@ export class DifficultyVariantGenerator {
     }
 
     /**
-     * Calculate the density (transients per beat) of a beat collection
+     * Calculate the density (notes per second) of a beat collection
+     *
+     * Uses `maxBeatIndex + 1` as the denominator to match DensityAnalyzer's method,
+     * ensuring both analyzers measure density on the same scale.
      *
      * @param beats - The beats to analyze
-     * @returns Transients per beat (0 if no beats)
+     * @param bpm - Tempo in BPM, used to convert notes/beat to notes/second
+     * @returns Notes per second (0 if no beats)
      */
-    private calculateDensity(beats: CompositeBeat[] | VariantBeat[]): number {
+    private calculateDensity(beats: CompositeBeat[] | VariantBeat[], bpm: number): number {
         if (beats.length === 0) return 0;
 
-        // Find the range of beat indices
-        const beatIndices = beats.map(b => b.beatIndex);
-        const minBeat = Math.min(...beatIndices);
-        const maxBeat = Math.max(...beatIndices);
-        const totalBeats = maxBeat - minBeat + 1;
+        const maxBeatIndex = Math.max(...beats.map(b => b.beatIndex));
+        const totalBeats = maxBeatIndex + 1;
 
         if (totalBeats === 0) return 0;
 
-        return beats.length / totalBeats;
+        return (beats.length / totalBeats) * (bpm / 60);
     }
 
     /**
@@ -1007,16 +1014,18 @@ export class DifficultyVariantGenerator {
         beats: T[],
         targetDifficulty: DifficultyLevel,
         metadata: SubdivisionConversionMetadata,
-        phraseMembership: Map<number, RhythmicPhrase[]> = new Map()
+        phraseMembership: Map<number, RhythmicPhrase[]> = new Map(),
+        bpm: number = 120
     ): T[] {
         const targetRange = SUBDIVISION_LIMITS[targetDifficulty].targetDensityRange;
-        let currentDensity = this.calculateDensity(beats);
+        const bpmPerSecond = bpm / 60;
+        let currentDensity = this.calculateDensity(beats, bpm);
 
         // If already within target range, no reduction needed
         if (currentDensity <= targetRange.max) {
             if (this.config.logConversions) {
                 console.log(
-                    `[DifficultyVariantGenerator] Density ${currentDensity.toFixed(2)} already within ` +
+                    `[DifficultyVariantGenerator] Density ${currentDensity.toFixed(2)} notes/sec already within ` +
                     `target range [${targetRange.min}, ${targetRange.max}] for ${targetDifficulty}`
                 );
             }
@@ -1025,8 +1034,8 @@ export class DifficultyVariantGenerator {
 
         if (this.config.logConversions) {
             console.log(
-                `[DifficultyVariantGenerator] Reducing density from ${currentDensity.toFixed(2)} to ` +
-                `target max ${targetRange.max} for ${targetDifficulty}`
+                `[DifficultyVariantGenerator] Reducing density from ${currentDensity.toFixed(2)} notes/sec to ` +
+                `target max ${targetRange.max} notes/sec for ${targetDifficulty}`
             );
         }
 
@@ -1039,19 +1048,17 @@ export class DifficultyVariantGenerator {
         // Sort by priority (ascending - lowest priority first for removal)
         beatsWithPriority.sort((a, b) => a.priority - b.priority);
 
-        // Find beat range for density calculation
-        const beatIndices = beats.map(b => b.beatIndex);
-        const minBeat = Math.min(...beatIndices);
-        const maxBeat = Math.max(...beatIndices);
-        const totalBeats = maxBeat - minBeat + 1;
+        // Find beat range for density calculation (use maxBeatIndex + 1 to match DensityAnalyzer)
+        const maxBeatIndex = Math.max(...beats.map(b => b.beatIndex));
+        const totalBeats = maxBeatIndex + 1;
 
         // Remove beats one at a time until density is within target
         const removedBeats = new Set<T>();
         let remainingCount = beats.length;
 
         for (const { beat, priority } of beatsWithPriority) {
-            // Check if we've reached target density
-            const projectedDensity = (remainingCount - 1) / totalBeats;
+            // Check if we've reached target density (notes/sec)
+            const projectedDensity = ((remainingCount - 1) / totalBeats) * bpmPerSecond;
 
             if (projectedDensity <= targetRange.max) {
                 // We've removed enough beats, stop
@@ -1077,11 +1084,11 @@ export class DifficultyVariantGenerator {
         }
 
         // Check if we couldn't reach target density (all remaining beats are protected)
-        const finalDensity = remainingCount / totalBeats;
+        const finalDensity = (remainingCount / totalBeats) * bpmPerSecond;
         if (finalDensity > targetRange.max && this.config.logConversions) {
             console.warn(
-                `[DifficultyVariantGenerator] Could not reach target density ${targetRange.max} for ${targetDifficulty}. ` +
-                `Final density: ${finalDensity.toFixed(2)} (${remainingCount} beats remaining are all protected)`
+                `[DifficultyVariantGenerator] Could not reach target density ${targetRange.max} notes/sec for ${targetDifficulty}. ` +
+                `Final density: ${finalDensity.toFixed(2)} notes/sec (${remainingCount} beats remaining are all protected)`
             );
         }
 
@@ -1090,7 +1097,8 @@ export class DifficultyVariantGenerator {
         metadata.beatsRemoved += removedBeats.size;
 
         // Ensure we keep at least some beats (don't over-reduce)
-        const minBeatsToKeep = Math.ceil(targetRange.min * totalBeats);
+        // Convert notes/sec target back to beat count: beats = (notesPerSec * totalBeats) / bpmPerSecond
+        const minBeatsToKeep = Math.ceil((targetRange.min * totalBeats) / bpmPerSecond);
         if (keptBeats.length < minBeatsToKeep && beats.length > 0) {
             // Add back the highest priority removed beats
             const removedWithPriority = beatsWithPriority
