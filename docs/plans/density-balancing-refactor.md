@@ -34,11 +34,11 @@ The foundational change. Before any density work, lock the grid type for each be
   - [x] 1.1.4: Return the lock map alongside the cleaned beats
   - [x] 1.1.5: Use the lock map signature: `{ beats: CompositeBeat[], gridLock: Map<number, ExtendedGridType> }`
 
-- [ ] Task 1.2: Refactor `simplifyBeats()` to accept and use the grid lock
-  - [ ] 1.2.1: Accept `gridLock: Map<number, ExtendedGridType>` parameter
-  - [ ] 1.2.2: Skip the initial `enforceSingleGridPerBeat()` call (already done in caller, grid is locked)
-  - [ ] 1.2.3: During `convertBeatGridType()`, if the beat's current grid doesn't match the locked grid, use the locked grid instead of deriving from the beat's own `gridType`
-  - [ ] 1.2.4: Remove the final `enforceSingleGridPerBeat()` call from `simplifyBeats()` — the lock guarantees single-grid compliance
+- [x] Task 1.2: Refactor `simplifyBeats()` to accept and use the grid lock
+  - [x] 1.2.1: Accept `gridLock: Map<number, ExtendedGridType>` parameter
+  - [x] 1.2.2: Skip the initial `enforceSingleGridPerBeat()` call (already done in caller, grid is locked)
+  - [x] 1.2.3: During `convertBeatGridType()`, if the beat's current grid doesn't match the locked grid, use the locked grid instead of deriving from the beat's own `gridType`
+  - [x] 1.2.4: N/A - `simplifyBeats()` has no final `enforceSingleGridPerBeat()` call; only the initial one (now conditional)
 
 - [ ] Task 1.3: Refactor `enhanceBeats()` to accept and use the grid lock
   - [ ] 1.3.1: Accept `gridLock: Map<number, ExtendedGridType>` parameter

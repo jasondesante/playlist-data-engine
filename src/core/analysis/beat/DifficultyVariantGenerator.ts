@@ -667,10 +667,16 @@ export class DifficultyVariantGenerator {
         // 1.1.2: Build Map<number, ExtendedGridType> of beatIndex → dominantGridType
         const gridLock = new Map<number, ExtendedGridType>();
 
+        // Handle empty input - return empty grid lock
+        if (cleanedBeats.length === 0) {
+            return {
+                beats: [],
+                gridLock,
+            };
+        }
+
         // Get max beat index to know the range we need to cover
-        const maxBeatIndex = cleanedBeats.length > 0
-            ? Math.max(...cleanedBeats.map(b => b.beatIndex))
-            : 0;
+        const maxBeatIndex = Math.max(...cleanedBeats.map(b => b.beatIndex));
 
         // Build the lock map from resolved beats
         const beatsByIndex = new Map<number, CompositeBeat[]>();
@@ -1004,7 +1010,8 @@ export class DifficultyVariantGenerator {
         quarterNoteInterval: number,
         isHeavySimplification: boolean = false,
         phraseAnalysis?: PhraseAnalysisResult,
-        bpm: number = 120
+        bpm: number = 120,
+        gridLock?: Map<number, ExtendedGridType>
     ): { beats: VariantBeat[]; metadata: SubdivisionConversionMetadata } {
         const metadata: SubdivisionConversionMetadata = {
             sixteenthToEighth: 0,
@@ -1018,8 +1025,11 @@ export class DifficultyVariantGenerator {
         // Build phrase membership map for boundary preservation
         const phraseMembership = this.buildPhraseMembershipMap(phraseAnalysis);
 
-        // Resolve mixed grids before density calculations for accurate counts
-        const cleanedBeats = this.enforceSingleGridPerBeat(beats);
+        // Task 1.2.2: Skip enforceSingleGridPerBeat() if grid lock is provided
+        // Grid lock means beats are already cleaned by lockGridPerBeatIndex()
+        const cleanedBeats = gridLock
+            ? beats
+            : this.enforceSingleGridPerBeat(beats);
         metadata.totalBeatsBefore = cleanedBeats.length;
 
         // If all grid types are allowed, no grid conversion needed, but density reduction may still be required
@@ -1056,7 +1066,9 @@ export class DifficultyVariantGenerator {
             }
 
             // Convert the beat
-            const convertedBeat = this.convertBeatGridType(beat, targetDifficulty, quarterNoteInterval, bpm);
+            // Task 1.2.3: Pass the locked grid type if available
+            const lockedGridType = gridLock?.get(beat.beatIndex);
+            const convertedBeat = this.convertBeatGridType(beat, targetDifficulty, quarterNoteInterval, bpm, lockedGridType);
 
             if (convertedBeat) {
                 convertedBeats.push(convertedBeat);
@@ -1429,12 +1441,15 @@ export class DifficultyVariantGenerator {
         beat: VariantBeat,
         targetDifficulty: DifficultyLevel,
         quarterNoteInterval: number,
-        bpm: number = 120
+        bpm: number = 120,
+        lockedGridType?: ExtendedGridType
     ): VariantBeat | null {
-        const targetGridType = convertToAllowedGridType(beat.gridType, targetDifficulty, bpm);
+        // Task 1.2.3: Use locked grid type if provided and different from beat's current grid
+        const sourceGridType = lockedGridType ?? beat.gridType;
+        const targetGridType = convertToAllowedGridType(sourceGridType, targetDifficulty, bpm);
 
         // If no conversion needed, return as-is (but as VariantBeat)
-        if (targetGridType === beat.gridType) {
+        if (targetGridType === sourceGridType) {
             return {
                 ...beat,
                 gridType: targetGridType,
@@ -1450,7 +1465,7 @@ export class DifficultyVariantGenerator {
         // This preserves the actual detected timing rather than assuming beat 0 starts at timestamp 0.
         let beatStartTimestamp: number;
 
-        switch (beat.gridType) {
+        switch (sourceGridType) {
             case 'straight_16th': {
                 const sixteenthNoteInterval = quarterNoteInterval / 4;
                 beatStartTimestamp = beat.timestamp - (beat.gridPosition * sixteenthNoteInterval);
