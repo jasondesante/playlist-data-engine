@@ -1863,3 +1863,359 @@ describe('lockGridPerBeatIndex', () => {
         expect(result.gridLock.size).toBe(0);
     });
 });
+
+// ============================================================================
+// Task 1.5.3: Grid Lock with Simplification Tests
+// ============================================================================
+
+/**
+ * Helper function to verify that no beat index has mixed grid types
+ */
+function assertNoMixedGrids(beats: CompositeBeat[], variantName: string): void {
+    const beatsByIndex = new Map<number, Set<string>>();
+
+    for (const beat of beats) {
+        const existing = beatsByIndex.get(beat.beatIndex) ?? new Set<string>();
+        existing.add(beat.gridType);
+        beatsByIndex.set(beat.beatIndex, existing);
+    }
+
+    for (const [beatIndex, gridTypes] of beatsByIndex) {
+        expect(gridTypes.size).toBe(1);
+        if (gridTypes.size > 1) {
+            throw new Error(
+                `${variantName} has mixed grids at beat index ${beatIndex}: ${Array.from(gridTypes).join(', ')}`
+            );
+        }
+    }
+}
+
+describe('Grid Lock with Simplification (Task 1.5.3)', () => {
+    let generator: DifficultyVariantGenerator;
+
+    beforeEach(() => {
+        generator = new DifficultyVariantGenerator();
+    });
+
+    it('should never produce mixed grids when simplifying from hard to easy', () => {
+        // Create a complex hard composite with mixed grid types at same beat indices
+        const beats: CompositeBeat[] = [
+            // Beat 0: Mix of straight_16th and triplet_8th at same index
+            createMockCompositeBeat(0, 'straight_16th', 0, 0.9),
+            createMockCompositeBeat(0, 'straight_16th', 1, 0.7),
+            createMockCompositeBeat(0, 'triplet_8th', 0, 0.5), // Conflicting grid type
+            // Beat 1: Only triplets
+            createMockCompositeBeat(1, 'triplet_8th', 0, 0.8),
+            createMockCompositeBeat(1, 'triplet_8th', 1, 0.6),
+            createMockCompositeBeat(1, 'triplet_8th', 2, 0.7),
+            // Beat 2: Only straight_16th
+            createMockCompositeBeat(2, 'straight_16th', 0, 0.9),
+            createMockCompositeBeat(2, 'straight_16th', 2, 0.8),
+            // Beat 3: Mix again
+            createMockCompositeBeat(3, 'straight_16th', 0, 0.6),
+            createMockCompositeBeat(3, 'triplet_8th', 1, 0.85), // Higher intensity triplet
+        ];
+
+        const composite = createMockCompositeStream(beats, 'hard');
+        const variants = generator.generate(composite, createMockBeatMap(120));
+
+        // Easy variant should never have mixed grids at any beat index
+        assertNoMixedGrids(variants.easy.beats, 'Easy variant');
+
+        // All beats should be allowed grid types for easy
+        for (const beat of variants.easy.beats) {
+            expect(['straight_8th', 'quarter_triplet']).toContain(beat.gridType);
+        }
+    });
+
+    it('should never produce mixed grids when simplifying from hard to medium', () => {
+        // Create a composite with mixed grids
+        const beats: CompositeBeat[] = [
+            createMockCompositeBeat(0, 'straight_16th', 0, 0.9),
+            createMockCompositeBeat(0, 'triplet_8th', 0, 0.5), // Conflicting
+            createMockCompositeBeat(1, 'triplet_8th', 1, 0.8),
+            createMockCompositeBeat(2, 'straight_16th', 2, 0.7),
+            createMockCompositeBeat(2, 'triplet_8th', 2, 0.6), // Conflicting
+        ];
+
+        const composite = createMockCompositeStream(beats, 'hard');
+        const variants = generator.generate(composite, createMockBeatMap(60)); // BPM 60 allows 16th for medium
+
+        // Medium variant should never have mixed grids
+        assertNoMixedGrids(variants.medium.beats, 'Medium variant');
+    });
+
+    it('should never produce mixed grids when simplifying from medium to easy', () => {
+        const beats: CompositeBeat[] = [
+            createMockCompositeBeat(0, 'straight_16th', 0, 0.9),
+            createMockCompositeBeat(0, 'triplet_8th', 1, 0.8),
+            createMockCompositeBeat(1, 'triplet_8th', 0, 0.7),
+            createMockCompositeBeat(1, 'straight_16th', 2, 0.6),
+        ];
+
+        const composite = createMockCompositeStream(beats, 'medium');
+        const variants = generator.generate(composite, createMockBeatMap(120));
+
+        // Easy variant should never have mixed grids
+        assertNoMixedGrids(variants.easy.beats, 'Easy variant');
+
+        // All beats should be allowed grid types
+        for (const beat of variants.easy.beats) {
+            expect(['straight_8th', 'quarter_triplet']).toContain(beat.gridType);
+        }
+    });
+
+    it('should handle heavy simplification (hard -> easy) without mixed grids', () => {
+        const generator = new DifficultyVariantGenerator({
+            heavySimplificationIntensityThreshold: 0.5,
+        });
+
+        // Create many beats with mixed grids across many indices
+        const beats: CompositeBeat[] = [];
+        for (let i = 0; i < 8; i++) {
+            beats.push(createMockCompositeBeat(i, 'straight_16th', 0, 0.7));
+            beats.push(createMockCompositeBeat(i, 'straight_16th', 2, 0.6));
+            // Add conflicting triplet at some indices
+            if (i % 2 === 0) {
+                beats.push(createMockCompositeBeat(i, 'triplet_8th', 1, 0.5));
+            }
+        }
+
+        const composite = createMockCompositeStream(beats, 'hard');
+        const variants = generator.generate(composite, createMockBeatMap(120));
+
+        // Easy variant should never have mixed grids
+        assertNoMixedGrids(variants.easy.beats, 'Easy variant (heavy simplification)');
+
+        // Verify edit type
+        expect(variants.easy.editType).toBe('simplified');
+    });
+
+    it('should maintain grid lock consistency after simplification with BPM restrictions', () => {
+        // Test at high BPM where medium has restrictions
+        const beats: CompositeBeat[] = [
+            createMockCompositeBeat(0, 'straight_16th', 0, 0.9),
+            createMockCompositeBeat(0, 'triplet_8th', 1, 0.7),
+            createMockCompositeBeat(1, 'straight_16th', 2, 0.8),
+            createMockCompositeBeat(1, 'triplet_8th', 0, 0.6),
+        ];
+
+        const composite = createMockCompositeStream(beats, 'hard');
+        // BPM 100 triggers medium restrictions (no 16th allowed)
+        const variants = generator.generate(composite, createMockBeatMap(100));
+
+        // Medium variant should never have mixed grids
+        assertNoMixedGrids(variants.medium.beats, 'Medium variant (BPM restricted)');
+
+        // Easy variant should also not have mixed grids
+        assertNoMixedGrids(variants.easy.beats, 'Easy variant (BPM restricted)');
+    });
+});
+
+// ============================================================================
+// Task 1.5.4: Grid Lock with Enhancement Tests
+// ============================================================================
+
+describe('Grid Lock with Enhancement (Task 1.5.4)', () => {
+    let generator: DifficultyVariantGenerator;
+
+    beforeEach(() => {
+        generator = new DifficultyVariantGenerator();
+    });
+
+    it('should never produce mixed grids when enhancing from easy to medium', () => {
+        // Create a sparse easy composite
+        const beats: CompositeBeat[] = [
+            createMockCompositeBeat(0, 'straight_8th' as GridType, 0, 0.9),
+            createMockCompositeBeat(2, 'straight_8th' as GridType, 0, 0.8),
+            createMockCompositeBeat(4, 'straight_8th' as GridType, 0, 0.7),
+        ];
+
+        const composite = createMockCompositeStream(beats, 'easy');
+        const variants = generator.generate(composite, createMockBeatMap(60));
+
+        // Medium variant should never have mixed grids at any beat index
+        assertNoMixedGrids(variants.medium.beats, 'Medium variant (enhanced)');
+
+        // Hard variant should also not have mixed grids
+        assertNoMixedGrids(variants.hard.beats, 'Hard variant (enhanced)');
+    });
+
+    it('should never produce mixed grids when enhancing from easy to hard', () => {
+        const beats: CompositeBeat[] = [
+            createMockCompositeBeat(0, 'straight_8th' as GridType, 0, 0.9),
+            createMockCompositeBeat(2, 'quarter_triplet' as GridType, 0, 0.8),
+        ];
+
+        const composite = createMockCompositeStream(beats, 'easy');
+        const variants = generator.generate(composite, createMockBeatMap(60));
+
+        // Hard variant should never have mixed grids
+        assertNoMixedGrids(variants.hard.beats, 'Hard variant (2-step enhancement)');
+    });
+
+    it('should never produce mixed grids when enhancing from medium to hard', () => {
+        const beats: CompositeBeat[] = [
+            createMockCompositeBeat(0, 'straight_8th' as GridType, 0, 0.9),
+            createMockCompositeBeat(0, 'straight_8th' as GridType, 2, 0.7),
+            createMockCompositeBeat(1, 'quarter_triplet' as GridType, 0, 0.8),
+            createMockCompositeBeat(2, 'straight_8th' as GridType, 0, 0.6),
+        ];
+
+        const composite = createMockCompositeStream(beats, 'medium');
+        const variants = generator.generate(composite, createMockBeatMap(60));
+
+        // Hard variant should never have mixed grids
+        assertNoMixedGrids(variants.hard.beats, 'Hard variant (medium -> hard)');
+    });
+
+    it('should handle enhancement with existing mixed input grids', () => {
+        // Input has mixed grids at some indices (simulating real-world scenario)
+        const beats: CompositeBeat[] = [
+            createMockCompositeBeat(0, 'straight_8th' as GridType, 0, 0.9),
+            createMockCompositeBeat(0, 'quarter_triplet' as GridType, 0, 0.5), // Conflicting
+            createMockCompositeBeat(1, 'straight_8th' as GridType, 2, 0.8),
+            createMockCompositeBeat(2, 'quarter_triplet' as GridType, 0, 0.7),
+        ];
+
+        const composite = createMockCompositeStream(beats, 'easy');
+        const variants = generator.generate(composite, createMockBeatMap(60));
+
+        // All enhanced variants should have no mixed grids
+        assertNoMixedGrids(variants.easy.beats, 'Easy variant');
+        assertNoMixedGrids(variants.medium.beats, 'Medium variant (enhanced)');
+        assertNoMixedGrids(variants.hard.beats, 'Hard variant (enhanced)');
+    });
+
+    it('should maintain grid consistency when filling empty indices during enhancement', () => {
+        // Create sparse beats with gaps (empty indices)
+        const beats: CompositeBeat[] = [
+            createMockCompositeBeat(0, 'straight_8th' as GridType, 0, 0.9),
+            // Indices 1, 2, 3 are empty
+            createMockCompositeBeat(4, 'straight_8th' as GridType, 0, 0.8),
+            // Indices 5, 6 are empty
+            createMockCompositeBeat(7, 'quarter_triplet' as GridType, 0, 0.7),
+        ];
+
+        const composite = createMockCompositeStream(beats, 'easy');
+        const variants = generator.generate(composite, createMockBeatMap(60));
+
+        // Medium variant - newly filled indices should not create mixed grids
+        assertNoMixedGrids(variants.medium.beats, 'Medium variant (gaps filled)');
+
+        // Hard variant - should also be consistent
+        assertNoMixedGrids(variants.hard.beats, 'Hard variant (gaps filled)');
+
+        // Verify enhancement actually occurred
+        expect(variants.medium.beats.length).toBeGreaterThanOrEqual(beats.length);
+    });
+
+    it('should preserve grid lock when enhancing at high BPM', () => {
+        // At high BPM, restrictions apply
+        const beats: CompositeBeat[] = [
+            createMockCompositeBeat(0, 'straight_8th' as GridType, 0, 0.9),
+            createMockCompositeBeat(1, 'quarter_triplet' as GridType, 0, 0.8),
+        ];
+
+        const composite = createMockCompositeStream(beats, 'easy');
+        // BPM 140 triggers easy restrictions (only straight_4th and quarter_triplet)
+        const variants = generator.generate(composite, createMockBeatMap(140));
+
+        // All variants should have no mixed grids
+        assertNoMixedGrids(variants.easy.beats, 'Easy variant (high BPM)');
+        assertNoMixedGrids(variants.medium.beats, 'Medium variant (high BPM)');
+        assertNoMixedGrids(variants.hard.beats, 'Hard variant (high BPM)');
+    });
+
+    it('should not create mixed grids when interpolating beats for enhancement', () => {
+        // Sparse beats that will require interpolation
+        const beats: CompositeBeat[] = [
+            createMockCompositeBeat(0, 'straight_8th' as GridType, 0, 0.9),
+            createMockCompositeBeat(3, 'straight_8th' as GridType, 0, 0.8),
+            createMockCompositeBeat(6, 'straight_8th' as GridType, 0, 0.7),
+        ];
+
+        const composite = createMockCompositeStream(beats, 'easy');
+        const variants = generator.generate(composite, createMockBeatMap(60));
+
+        // Interpolated beats should respect grid lock - no mixed grids
+        assertNoMixedGrids(variants.medium.beats, 'Medium variant (interpolated)');
+        assertNoMixedGrids(variants.hard.beats, 'Hard variant (interpolated)');
+
+        // Verify that enhancement added beats
+        expect(variants.medium.beats.length).toBeGreaterThan(beats.length);
+    });
+});
+
+// ============================================================================
+// Grid Lock Comprehensive Integration Tests
+// ============================================================================
+
+describe('Grid Lock Comprehensive Integration', () => {
+    it('should maintain grid consistency across all variants for realistic composite', () => {
+        const generator = new DifficultyVariantGenerator();
+
+        // Create a realistic composite with:
+        // - Various grid types
+        // - Some mixed grids at same indices
+        // - Gaps (empty indices)
+        const beats: CompositeBeat[] = [
+            // Beat 0: Dense 16th pattern
+            createMockCompositeBeat(0, 'straight_16th', 0, 0.9),
+            createMockCompositeBeat(0, 'straight_16th', 1, 0.6),
+            createMockCompositeBeat(0, 'straight_16th', 2, 0.7),
+            createMockCompositeBeat(0, 'straight_16th', 3, 0.5),
+            // Beat 1: Mixed grids (should be resolved by grid lock)
+            createMockCompositeBeat(1, 'straight_16th', 0, 0.8),
+            createMockCompositeBeat(1, 'triplet_8th', 1, 0.85), // Higher intensity
+            // Beat 2: Only triplet
+            createMockCompositeBeat(2, 'triplet_8th', 0, 0.9),
+            createMockCompositeBeat(2, 'triplet_8th', 2, 0.6),
+            // Beat 3: Gap (empty - will get grid from neighbor)
+            // Beat 4: Sparse
+            createMockCompositeBeat(4, 'straight_16th', 0, 0.75),
+            // Beat 5-7: Gap
+            // Beat 8: Quarter note
+            createMockCompositeBeat(8, 'straight_8th' as GridType, 0, 0.8),
+        ];
+
+        const composite = createMockCompositeStream(beats, 'hard');
+        const variants = generator.generate(composite, createMockBeatMap(90));
+
+        // ALL variants should have no mixed grids
+        assertNoMixedGrids(variants.easy.beats, 'Easy variant (realistic)');
+        assertNoMixedGrids(variants.medium.beats, 'Medium variant (realistic)');
+        assertNoMixedGrids(variants.hard.beats, 'Hard variant (realistic)');
+
+        // Verify variant types
+        expect(variants.hard.isUnedited).toBe(true);
+        expect(variants.easy.editType).toBe('simplified');
+        expect(variants.medium.editType).toBe('simplified');
+    });
+
+    it('should handle round-trip variant generation without mixed grids', () => {
+        // Start with easy, enhance to hard, then verify all are clean
+        const generator = new DifficultyVariantGenerator();
+
+        const beats: CompositeBeat[] = [
+            createMockCompositeBeat(0, 'straight_8th' as GridType, 0, 0.9),
+            createMockCompositeBeat(1, 'quarter_triplet' as GridType, 0, 0.8),
+            createMockCompositeBeat(2, 'straight_8th' as GridType, 2, 0.7),
+        ];
+
+        const composite = createMockCompositeStream(beats, 'easy');
+        const variants = generator.generate(composite, createMockBeatMap(60));
+
+        // Easy should be unedited (natural)
+        expect(variants.easy.isUnedited).toBe(true);
+
+        // Medium and Hard should be enhanced
+        expect(variants.medium.editType).toBe('interpolated');
+        expect(variants.hard.editType).toBe('interpolated');
+
+        // All should have no mixed grids
+        assertNoMixedGrids(variants.easy.beats, 'Easy variant');
+        assertNoMixedGrids(variants.medium.beats, 'Medium variant');
+        assertNoMixedGrids(variants.hard.beats, 'Hard variant');
+    });
+});
