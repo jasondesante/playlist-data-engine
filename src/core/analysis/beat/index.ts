@@ -202,6 +202,7 @@ export type {
     StreamScoringResult,
     SectionWinner,
     StreamScorerConfig,
+    BandBiasWeights,
 } from './StreamScorer.js';
 
 // Composite Stream Generator

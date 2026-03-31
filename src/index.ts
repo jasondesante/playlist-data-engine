@@ -611,6 +611,7 @@ export {
     type SubdivisionValidationResult,
     type SubdivisionViolation,
     type DifficultyVariantConfig,
+    type VariantBeat,
 } from './core/analysis/beat/DifficultyVariantGenerator.js';
 
 // ============================================================================
