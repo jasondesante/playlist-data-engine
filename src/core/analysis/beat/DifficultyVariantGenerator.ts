@@ -2035,10 +2035,14 @@ export class DifficultyVariantGenerator {
             );
         }
 
+        // Task 4.3.2: Build a map of measureNumber → downbeatCount for structural importance
+        // This allows us to identify beats that are the only downbeat in their measure
+        const downbeatCountByMeasure = this.buildDownbeatCountMap(beats);
+
         // Calculate removal priority for each beat (do this once upfront)
         const beatsWithPriority = beats.map(beat => ({
             beat,
-            priority: this.calculateRemovalPriority(beat, phraseMembership),
+            priority: this.calculateRemovalPriority(beat, phraseMembership, downbeatCountByMeasure),
         }));
 
         // Sort by priority (ascending - lowest priority first for removal)
@@ -2183,33 +2187,81 @@ export class DifficultyVariantGenerator {
     }
 
     /**
+     * Build a map of measureNumber → count of downbeats (gridPosition === 0) in that measure.
+     *
+     * Uses unifiedBeatMap to resolve measureNumber from beatIndex, supporting any time signature.
+     *
+     * @param beats - The beats to scan
+     * @returns Map from measureNumber to downbeat count
+     */
+    private buildDownbeatCountMap(beats: (CompositeBeat | VariantBeat)[]): Map<number, number> {
+        const measureDownbeats = new Map<number, number>();
+        const unifiedBeatMap = this.currentUnifiedBeatMap;
+
+        for (const beat of beats) {
+            if (beat.gridPosition !== 0) continue;
+
+            let measureNumber: number;
+            if (unifiedBeatMap?.beats[beat.beatIndex]) {
+                measureNumber = unifiedBeatMap.beats[beat.beatIndex].measureNumber;
+            } else {
+                // Fallback: derive from beatIndex assuming 4/4
+                measureNumber = Math.floor(beat.beatIndex / 4);
+            }
+
+            measureDownbeats.set(measureNumber, (measureDownbeats.get(measureNumber) ?? 0) + 1);
+        }
+
+        return measureDownbeats;
+    }
+
+    /**
      * Calculate removal priority for a beat (higher = more important to keep)
      *
      * Priority factors:
-     * - Strong beat bonus: +0.3 (beats 1 and 3 of measure)
+     * - Strong beat bonus: +0.3 (zeroed in 'neutral' mode)
      * - Downbeat bonus: +0.2 (gridPosition 0)
+     * - Only-downbeat-in-measure bonus: +0.2 (stacks on downbeat bonus)
      * - Intensity contribution: +intensity * 0.3
      * - Phrase membership bonus: +0.15 (max)
      * - Offbeat penalty: -0.1 (gridPosition 1 or 3)
      *
      * @param beat - The beat to evaluate
      * @param phraseMembership - Map of beat indices to phrase membership
+     * @param downbeatCountByMeasure - Map of measureNumber → downbeat count for structural importance
      * @returns Priority score (0-1 range, higher = keep)
      */
     private calculateRemovalPriority(
         beat: CompositeBeat | VariantBeat,
-        phraseMembership: Map<number, RhythmicPhrase[]>
+        phraseMembership: Map<number, RhythmicPhrase[]>,
+        downbeatCountByMeasure: Map<number, number> = new Map()
     ): number {
+        const emphasis = this.config.rhythmicBalanceConfig?.strongBeatEmphasis ?? 'natural';
         let priority = 0.5; // Base priority
 
-        // Strong beat bonus
-        if (this.isStrongBeat(beat.beatIndex)) {
+        // Strong beat bonus (Task 4.3.4: zeroed in 'neutral' mode)
+        if (emphasis !== 'neutral' && this.isStrongBeat(beat.beatIndex)) {
             priority += 0.3;
         }
 
         // Downbeat bonus
         if (beat.gridPosition === 0) {
             priority += 0.2;
+
+            // Task 4.3.1: Only-downbeat-in-measure bonus (+0.2)
+            // These are the most structurally important beats — highest protection
+            const unifiedBeatMap = this.currentUnifiedBeatMap;
+            let measureNumber: number;
+            if (unifiedBeatMap?.beats[beat.beatIndex]) {
+                measureNumber = unifiedBeatMap.beats[beat.beatIndex].measureNumber;
+            } else {
+                measureNumber = Math.floor(beat.beatIndex / 4);
+            }
+
+            const downbeatCount = downbeatCountByMeasure.get(measureNumber) ?? 0;
+            if (downbeatCount === 1) {
+                priority += 0.2;
+            }
         }
 
         // Intensity contribution

@@ -178,11 +178,11 @@ The density reducer needs to know which beats are structurally important and pre
   - [x] 4.2.5: Resolve `beatsPerMeasure` from `unifiedBeatMap.downbeatConfig.segments` for the given `beatIndex`'s segment
   - [x] 4.2.6: Default to `'natural'` with 4 beats per measure when no config provided (backwards compatible)
 
-- [ ] Task 4.3: Extend `calculateRemovalPriority()` with structural importance
-  - [ ] 4.3.1: Add bonus for beats that are the **only downbeat in their measure**: these are the most structurally important and should get the highest protection (e.g., +0.2)
-  - [ ] 4.3.2: To check this efficiently, build a `Map<number, number>` of `measureNumber → downbeatCount` once before the priority loop. Use `unifiedBeatMap.beats[beatIndex].measureNumber` (not `Math.floor(beatIndex / 4)`) to support any time signature
-  - [ ] 4.3.3: The existing `+0.3 strong beat bonus` and `+0.2 downbeat bonus` remain; the new `+0.2 only-downbeat-in-measure bonus` stacks on top
-  - [ ] 4.3.4: In `'neutral'` mode, the `+0.3 strong beat bonus` is zeroed out but downbeat and only-downbeat bonuses still apply
+- [x] Task 4.3: Extend `calculateRemovalPriority()` with structural importance
+  - [x] 4.3.1: Add bonus for beats that are the **only downbeat in their measure**: these are the most structurally important and should get the highest protection (e.g., +0.2)
+  - [x] 4.3.2: To check this efficiently, build a `Map<number, number>` of `measureNumber → downbeatCount` once before the priority loop. Use `unifiedBeatMap.beats[beatIndex].measureNumber` (not `Math.floor(beatIndex / 4)`) to support any time signature
+  - [x] 4.3.3: The existing `+0.3 strong beat bonus` and `+0.2 downbeat bonus` remain; the new `+0.2 only-downbeat-in-measure bonus` stacks on top
+  - [x] 4.3.4: In `'neutral'` mode, the `+0.3 strong beat bonus` is zeroed out but downbeat and only-downbeat bonuses still apply
 
 - [ ] Task 4.4: Tests for density reduction with strong beat emphasis
   - [ ] 4.4.1: Test `'natural'` mode in 4/4: when reducing density, beats on positions 0 and 2 are preserved over positions 1 and 3
