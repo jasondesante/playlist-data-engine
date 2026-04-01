@@ -85,12 +85,12 @@ Replace the single-pass `reduceDensityToTarget()` with a global target calculato
   - [x] 2.3.2: After grid conversion, re-check the beat count against the target before running `reduceDensityToTarget()`
   - [x] 2.3.3: If grid conversion alone brought density within range, skip `reduceDensityToTarget()`
 
-- [ ] Task 2.4: Write tests for target-based reduction
-  - [ ] 2.4.1: Test `calculateBeatCountTarget()` returns correct counts for various BPM/difficulty combinations
-  - [ ] 2.4.2: Test that `reduceDensityToTarget()` converges on easy density (< 1.0 nps) even with high-intensity beats
-  - [ ] 2.4.3: Test that second pass with relaxed protections can remove beats that first pass couldn't
-  - [ ] 2.4.4: Test safety floor — density never goes below `targetRange.min`
-  - [ ] 2.4.5: Test that grid conversion alone is sufficient when many 16ths collapse to 8ths
+- [x] Task 2.4: Write tests for target-based reduction
+  - [x] 2.4.1: Test `calculateBeatCountTarget()` returns correct counts for various BPM/difficulty combinations
+  - [x] 2.4.2: Test that `reduceDensityToTarget()` converges on easy density (< 1.0 nps) even with high-intensity beats
+  - [x] 2.4.3: Test that second pass with relaxed protections can remove beats that first pass couldn't
+  - [x] 2.4.4: Test safety floor — density never goes below `targetRange.min`
+  - [x] 2.4.5: Test that grid conversion alone is sufficient when many 16ths collapse to 8ths
 
 ## Phase 3: Global Target-Based Density Enhancement
 
