@@ -221,11 +221,11 @@ The density reducer needs to know which beats are structurally important and pre
 
 ## Phase 6: Documentation Updates
 
-- [ ] Task 6.1: Update DATA_ENGINE_REFERENCE.md
-  - [ ] 6.1.1: Add RhythmicBalancer section describing the post-composite balancing step
-  - [ ] 6.1.2: Update the pipeline diagram to show the new step
-  - [ ] 6.1.3: Document `RhythmicBalanceConfig` fields with defaults and examples
-  - [ ] 6.1.4: Update `DifficultyVariantConfig` to document `rhythmicBalanceConfig` and its effect on `isStrongBeat()` and `calculateRemovalPriority()`
+- [x] Task 6.1: Update DATA_ENGINE_REFERENCE.md
+  - [x] 6.1.1: Add RhythmicBalancer section describing the post-composite balancing step
+  - [x] 6.1.2: Update the pipeline diagram to show the new step
+  - [x] 6.1.3: Document `RhythmicBalanceConfig` fields with defaults and examples
+  - [x] 6.1.4: Update `DifficultyVariantConfig` to document `rhythmicBalanceConfig` and its effect on `isStrongBeat()` and `calculateRemovalPriority()`
 
 - [ ] Task 6.2: Update BEAT_DETECTION.md
   - [ ] 6.2.1: Update the procedural rhythm generation pipeline diagram to include RhythmicBalancer

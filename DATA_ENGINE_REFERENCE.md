@@ -28,6 +28,7 @@ Complete API reference for the Playlist Data Engine. Contains all type definitio
    - [DensityAnalyzer](#densityanalyzer)
    - [StreamScorer](#streamscorer)
    - [CompositeStreamGenerator](#compositestreamgenerator)
+   - [RhythmicBalancer](#rhythmicbalancer)
    - [DifficultyVariantGenerator](#difficultyvariantgenerator)
 6. [Pitch Detection & Button Mapping](#pitch-detection--button-mapping)
    - [PitchDetector](#pitchdetector)
@@ -202,6 +203,7 @@ A concise overview of all main exports from the library, organized by category.
 | `DensityAnalyzer` | Measure density (notes/sec) and determine natural difficulty | [Procedural Rhythm Generation](#procedural-rhythm-generation) |
 | `StreamScorer` | Score band streams for rhythmic interest | [Procedural Rhythm Generation](#procedural-rhythm-generation) |
 | `CompositeStreamGenerator` | Create composite stream from best sections | [Procedural Rhythm Generation](#procedural-rhythm-generation) |
+| `RhythmicBalancer` | Enforce metric structure and downbeat anchoring on composite | [Procedural Rhythm Generation](#procedural-rhythm-generation) |
 | `DifficultyVariantGenerator` | Generate easy/medium/hard variants | [Procedural Rhythm Generation](#procedural-rhythm-generation) |
 
 **Preset Functions:** `getRhythmPreset`, `getRhythmPresetNames` — see [Procedural Rhythm Generation](#procedural-rhythm-generation)
@@ -2466,6 +2468,8 @@ Gaussian smoothing determines how much the onset envelope is smoothed. More smoo
 
 System for generating procedural rhythm patterns from audio. Takes a `UnifiedBeatMap` (quarter note grid) and generates 3 difficulty variants (easy/medium/hard) with quantized subdivision patterns derived from multi-band transient detection.
 
+**Pipeline flow:** `MultiBandAnalyzer` → `TransientDetector` → `RhythmQuantizer` → `PhraseAnalyzer` → `DensityAnalyzer` → `StreamScorer` → `CompositeStreamGenerator` → **`RhythmicBalancer`** → `DifficultyVariantGenerator`
+
 **For comprehensive documentation including usage examples, see [docs/AUDIO_ANALYSIS.md](docs/AUDIO_ANALYSIS.md)**
 
 **For algorithm details (multi-band analysis, transient detection strategies, quantization, scoring, phrase detection), see [docs/BEAT_DETECTION.md#procedural-rhythm-generation](docs/BEAT_DETECTION.md#procedural-rhythm-generation)**
@@ -2517,6 +2521,7 @@ constructor(options?: RhythmGenerationOptions)
 | `tempoQuantizationConfig` | `undefined` | BPM-aware quantization rules config. When undefined, default rules apply. Set `{ enabled: false }` to disable. (see [TempoAwareQuantizer](#tempoawarequantizer)) |
 | `phraseAnalyzerConfig` | `undefined` | Phrase analyzer config (see [PhraseAnalyzer](#phraseanalyzer)) |
 | `seed` | `undefined` | Seed for reproducibility. Passed through to DifficultyVariantGenerator for deterministic grid-lock-based distribution |
+| `rhythmicBalanceConfig` | `undefined` | Configuration for rhythmic balancing (see [RhythmicBalancer](#rhythmicbalancer)). When provided, also passed to DifficultyVariantGenerator for density reduction awareness |
 | `verbose` | `false` | Log progress information |
 | `enableCache` | `true` | Enable caching of intermediate results |
 | `cacheMaxAge` | `1800000` | Maximum cache entry age in ms (30 min) |
@@ -2899,12 +2904,81 @@ Creates a composite stream by slicing together the highest-scoring sections from
 |--------|---------|-------------|
 | `generate(streams, scoringResult, densityAnalysis)` | `CompositeStream` | Generate composite from best sections |
 
+### RhythmicBalancer
+*Location:* *[src/core/analysis/beat/RhythmicBalancer.ts](src/core/analysis/beat/RhythmicBalancer.ts)*
+
+Post-processing step that enforces metric structure and downbeat anchoring on the composite stream. Operates between `CompositeStreamGenerator` and `DifficultyVariantGenerator` in the pipeline. Ensures every chart has a solid rhythmic foundation — downbeats where players expect them, and density reduction that preserves structural beats over decorative ones.
+
+**Processing order:**
+1. `shiftLoneSubdivisionNotes()` — Move lone offbeat notes to downbeats
+2. `fillEmptyMeasures()` — Ensure every measure has a beat
+3. `enforceDownbeatProximity()` — Ensure upbeats have nearby downbeats
+
+**Constructor:**
+
+```typescript
+constructor(config?: Partial<RhythmicBalanceConfig>)
+```
+
+**RhythmicBalanceConfig Properties:**
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `strongBeatEmphasis` | `'natural' \| 'backbeat' \| 'neutral'` | `'natural'` | Which beats are "strong" for density reduction priority. Derives grouping from time signature automatically |
+| `downbeatProximityRange` | `number` | `2` | Max distance in quarter-note beats from an upbeat note to the nearest downbeat. 0 = same beat only, 4 = same measure |
+| `fillEmptyMeasures` | `boolean` | `true` | Whether to fill empty measures with a beat on beat 1 downbeat |
+| `addedBeatIntensity` | `number` | `0.45` | Intensity for beats added by the balancer. Lower than detected beats so they're removable during density reduction |
+
+**Strong Beat Emphasis Modes:**
+
+| Mode | 4/4 Example | 9/8 Example | Description |
+|------|-------------|-------------|-------------|
+| `'natural'` | Beats 1, 3 (positions 0, 2) | Beats 1, 4, 7 (positions 0, 3, 6) | Emphasize natural metric accents |
+| `'backbeat'` | Beats 2, 4 (positions 1, 3) | Beats 2, 3, 5, 6, 8, 9 | Emphasize weak positions within metric groups |
+| `'neutral'` | None | None | No positional preference |
+
+**Time Signature Awareness:** Metric grouping is auto-derived from `beatsPerMeasure`: divisible by 3 → groups of 3 (compound meter), otherwise groups of 2 (simple meter). Uses `unifiedBeatMap.beats[beatIndex].measureNumber` and `beatInMeasure` for any time signature including mid-song changes.
+
+**Methods:**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `balance(composite, unifiedBeatMap)` | `CompositeStream` | Balance composite stream to enforce metric structure |
+| `getConfig()` | `RhythmicBalanceConfig` | Get current configuration |
+
+**Helper Functions (exported):**
+
+| Function | Returns | Description |
+|----------|---------|-------------|
+| `getMetricGroupSize(beatsPerMeasure)` | `number` | Returns 3 for compound meter, 2 for simple meter |
+| `isMetricStrongBeat(beatInMeasure, groupSize)` | `boolean` | Check if position is a strong beat in its group |
+| `isMetricWeakBeat(beatInMeasure, groupSize)` | `boolean` | Check if position is a weak beat in its group |
+| `isStrongBeatForEmphasis(beatInMeasure, beatsPerMeasure, emphasis)` | `boolean` | Check if beat is "strong" based on emphasis mode |
+| `findActiveSegment(segments, beatIndex)` | `DownbeatSegment` | Find the active segment for a beat index |
+
 ### DifficultyVariantGenerator
 *Location:* *[src/core/analysis/beat/DifficultyVariantGenerator.ts](src/core/analysis/beat/DifficultyVariantGenerator.ts)*
 
 Generates easy/medium/hard difficulty variants from the composite stream, plus a natural variant representing the unedited composite. Uses **global target-based density control** that calculates the exact beat count needed from the target density range, then distributes across indices. Employs a grid lock mechanism to ensure all density operations respect the single-grid-per-beat rule. Density is measured in notes per second as `beats.length / unifiedBeatMap.duration`.
 
 **For variant generation strategy, simplification rules, and density enhancement, see [docs/BEAT_DETECTION.md#difficulty-variant-generation](docs/BEAT_DETECTION.md#difficulty-variant-generation)**
+
+**Rhythmic Balance Integration:**
+
+When `rhythmicBalanceConfig` is provided, the generator uses it `strongBeatEmphasis` setting to determine which beats are structurally important during density reduction. This affects two key methods:
+
+**`isStrongBeat(beatIndex)`** — Time-signature-aware strong beat detection. Uses `unifiedBeatMap.downbeatConfig.segments` to derive `beatsPerMeasure` for the beat's segment, then applies the emphasis mode:
+- `'natural'`: Emphasize metric strong beats (e.g., 4/4 → positions 0, 2; 9/8 → positions 0, 3, 6)
+- `'backbeat'`: Emphasize metric weak beats (e.g., 4/4 → positions 1, 3)
+- `'neutral'`: No positional preference (all beats return `false`)
+
+**`calculateRemovalPriority()`** — Enhanced with structural importance bonuses:
+- Strong beat bonus: +0.3 (zeroed in `'neutral'` mode)
+- Downbeat bonus: +0.2 (gridPosition 0)
+- **Only-downbeat-in-measure bonus: +0.2** — stacks on downbeat bonus for beats that are the sole downbeat in their measure (highest protection)
+- Intensity contribution: +intensity × 0.3
+- Phrase membership bonus: +0.15 (max)
+- Offbeat penalty: -0.1 (gridPosition 1 or 3)
 
 **Methods:**
 
