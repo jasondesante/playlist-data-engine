@@ -1200,6 +1200,37 @@ export class DifficultyVariantGenerator {
         const deduplicatedBeats = this.deduplicateConvertedBeats(convertedBeats);
         metadata.beatsRemoved += convertedBeats.length - deduplicatedBeats.length;
 
+        // Task 2.3.1: Account for beats that collapsed during grid conversion
+        // When 16ths → 8ths, two 16ths may snap to the same 8th position
+        const beatsCollapsedDuringConversion = convertedBeats.length - deduplicatedBeats.length;
+
+        // Task 2.3.2: After grid conversion, re-check the beat count against the target before running reduceDensityToTarget()
+        // Calculate maxBeatIndex from the deduplicated beats for the target calculation
+        const maxBeatIndex = deduplicatedBeats.length > 0
+            ? Math.max(...deduplicatedBeats.map(b => b.beatIndex))
+            : 0;
+        const beatCountTarget = this.calculateBeatCountTarget(
+            deduplicatedBeats.length,
+            maxBeatIndex + 1,
+            bpm,
+            targetDifficulty
+        );
+        const currentDensity = this.calculateDensity(deduplicatedBeats, bpm);
+        const targetRange = SUBDIVISION_LIMITS[targetDifficulty].targetDensityRange;
+
+        // Task 2.3.3: If grid conversion alone brought density within range, skip reduceDensityToTarget()
+        if (currentDensity <= targetRange.max) {
+            if (this.config.logConversions) {
+                console.log(
+                    `[DifficultyVariantGenerator] Grid conversion achieved target density: ` +
+                    `${currentDensity.toFixed(2)} notes/sec (target max: ${targetRange.max}) for ${targetDifficulty}` +
+                    (beatsCollapsedDuringConversion > 0 ? ` (${beatsCollapsedDuringConversion} beats collapsed)` : '')
+                );
+            }
+            metadata.totalBeatsAfter = deduplicatedBeats.length;
+            return { beats: deduplicatedBeats, metadata };
+        }
+
         // Apply density-aware reduction if still above target
         // This ensures we actually meet the target density range for the difficulty
         const densityReducedBeats = this.reduceDensityToTarget(

@@ -70,20 +70,20 @@ Replace the single-pass `reduceDensityToTarget()` with a global target calculato
   - [x] 2.1.5: Output: `targetBeatCount = Math.round(midpoint * totalBeats / bpmPerSecond)`
   - [x] 2.1.6: Return `{ targetCount: number, maxCount: number, minCount: number }` where max/min are from the range extremes
 
-- [ ] Task 2.2: Refactor `reduceDensityToTarget()` with convergence loop
-  - [ ] 2.2.1: Call `calculateBeatCountTarget()` to get the exact removal target
-  - [ ] 2.2.2: If `beats.length <= targetCount`, return early (already at or below target)
-  - [ ] 2.2.3: First pass: same as current — sort by removal priority, skip protected beats, remove lowest priority until target reached
-  - [ ] 2.2.4: After first pass, check if density is still above `targetRange.max`
-  - [ ] 2.2.5: If still above: second pass with relaxed protections — lower `priorityThreshold` by 0.15, lower `moderateSimplificationIntensityThreshold` by 0.1, and allow removing phrase-protected beats with low significance (< 0.3)
-  - [ ] 2.2.6: Third pass (final fallback): remove remaining beats purely by priority with no protection gates except for strong beats (beatIndex % 4 === 0 or 2)
-  - [ ] 2.2.7: Max 3 passes total — after that, return whatever we have
-  - [ ] 2.2.8: Log each pass and how many beats were removed
+- [x] Task 2.2: Refactor `reduceDensityToTarget()` with convergence loop
+  - [x] 2.2.1: Call `calculateBeatCountTarget()` to get the exact removal target
+  - [x] 2.2.2: If `beats.length <= targetCount`, return early (already at or below target)
+  - [x] 2.2.3: First pass: same as current — sort by removal priority, skip protected beats, remove lowest priority until target reached
+  - [x] 2.2.4: After first pass, check if density is still above `targetRange.max`
+  - [x] 2.2.5: If still above: second pass with relaxed protections — lower `priorityThreshold` by 0.15, lower `moderateSimplificationIntensityThreshold` by 0.1, and allow removing phrase-protected beats with low significance (< 0.3)
+  - [x] 2.2.6: Third pass (final fallback): remove remaining beats purely by priority with no protection gates except for strong beats (beatIndex % 4 === 0 or 2)
+  - [x] 2.2.7: Max 3 passes total — after that, return whatever we have
+  - [x] 2.2.8: Log each pass and how many beats were removed
 
-- [ ] Task 2.3: Add grid-conversion-aware reduction
-  - [ ] 2.3.1: When simplification involves grid conversion (16th → 8th), account for the fact that two 16ths may snap to the same 8th position during `deduplicateConvertedBeats()`
-  - [ ] 2.3.2: After grid conversion, re-check the beat count against the target before running `reduceDensityToTarget()`
-  - [ ] 2.3.3: If grid conversion alone brought density within range, skip `reduceDensityToTarget()`
+- [x] Task 2.3: Add grid-conversion-aware reduction
+  - [x] 2.3.1: When simplification involves grid conversion (16th → 8th), account for the fact that two 16ths may snap to the same 8th position during `deduplicateConvertedBeats()`
+  - [x] 2.3.2: After grid conversion, re-check the beat count against the target before running `reduceDensityToTarget()`
+  - [x] 2.3.3: If grid conversion alone brought density within range, skip `reduceDensityToTarget()`
 
 - [ ] Task 2.4: Write tests for target-based reduction
   - [ ] 2.4.1: Test `calculateBeatCountTarget()` returns correct counts for various BPM/difficulty combinations
