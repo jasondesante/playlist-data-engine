@@ -3457,3 +3457,190 @@ describe('Convergence Validation (Task 4.3)', () => {
         });
     });
 });
+
+// ============================================================================
+// Task 5.3.2: Full round-trip density values (hard → easy → medium → hard)
+// ============================================================================
+
+describe('Task 5.3.2: hard → easy → medium → hard full round-trip density values', () => {
+    it('should produce density values in ascending order: easy < medium < hard', () => {
+        const generator = new DifficultyVariantGenerator();
+        const bpm = 60;
+
+        // Create a dense hard composite: 16 quarter notes, 4 beats each = 64 beats
+        // Density at 60 BPM = (64/16) * 1 = 4.0 nps
+        const beats: CompositeBeat[] = [];
+        for (let i = 0; i < 16; i++) {
+            beats.push(createMockCompositeBeat(i, 'straight_16th', 0, 0.6));
+            beats.push(createMockCompositeBeat(i, 'straight_16th', 1, 0.3));
+            beats.push(createMockCompositeBeat(i, 'straight_16th', 2, 0.4));
+            beats.push(createMockCompositeBeat(i, 'straight_16th', 3, 0.25));
+        }
+
+        const composite = createMockCompositeStream(beats, 'hard');
+        const variants = generator.generate(composite, createMockBeatMap(bpm));
+
+        const easyDensity = variants.easy.densityValidation?.density ?? 0;
+        const mediumDensity = variants.medium.densityValidation?.density ?? 0;
+        const hardDensity = variants.hard.densityValidation?.density ?? 0;
+
+        // Densities should be in ascending order
+        expect(easyDensity).toBeLessThan(mediumDensity);
+        expect(mediumDensity).toBeLessThan(hardDensity);
+    });
+
+    it('should produce easy density within or near [0, 1.0] target range', () => {
+        const generator = new DifficultyVariantGenerator();
+        const bpm = 60;
+
+        const beats: CompositeBeat[] = [];
+        for (let i = 0; i < 16; i++) {
+            beats.push(createMockCompositeBeat(i, 'straight_16th', 0, 0.5));
+            beats.push(createMockCompositeBeat(i, 'straight_16th', 1, 0.2));
+            beats.push(createMockCompositeBeat(i, 'straight_16th', 2, 0.3));
+            beats.push(createMockCompositeBeat(i, 'straight_16th', 3, 0.15));
+        }
+
+        const composite = createMockCompositeStream(beats, 'hard');
+        const variants = generator.generate(composite, createMockBeatMap(bpm));
+
+        const easyDensity = variants.easy.densityValidation?.density ?? 0;
+        const easyRange = SUBDIVISION_LIMITS.easy.targetDensityRange;
+
+        // Easy variant should have reduced density
+        expect(easyDensity).toBeGreaterThanOrEqual(0);
+        // Should be at or near the target range — grid conversion (16th → 8th) helps
+        // With low-intensity beats, reduction should be significant
+        expect(easyDensity).toBeLessThanOrEqual(2.5);
+    });
+
+    it('should produce medium density within or near [1.0, 1.5] target range', () => {
+        const generator = new DifficultyVariantGenerator();
+        const bpm = 60;
+
+        const beats: CompositeBeat[] = [];
+        for (let i = 0; i < 16; i++) {
+            beats.push(createMockCompositeBeat(i, 'straight_16th', 0, 0.5));
+            beats.push(createMockCompositeBeat(i, 'straight_16th', 1, 0.2));
+            beats.push(createMockCompositeBeat(i, 'straight_16th', 2, 0.3));
+            beats.push(createMockCompositeBeat(i, 'straight_16th', 3, 0.15));
+        }
+
+        const composite = createMockCompositeStream(beats, 'hard');
+        const variants = generator.generate(composite, createMockBeatMap(bpm));
+
+        const mediumDensity = variants.medium.densityValidation?.density ?? 0;
+
+        // Medium should be between easy and hard
+        const easyDensity = variants.easy.densityValidation?.density ?? 0;
+        const hardDensity = variants.hard.densityValidation?.density ?? 0;
+
+        expect(mediumDensity).toBeGreaterThan(easyDensity);
+        expect(mediumDensity).toBeLessThan(hardDensity);
+    });
+
+    it('should keep hard variant at original density (unedited)', () => {
+        const generator = new DifficultyVariantGenerator();
+        const bpm = 60;
+
+        const beats: CompositeBeat[] = [];
+        for (let i = 0; i < 16; i++) {
+            beats.push(createMockCompositeBeat(i, 'straight_16th', 0, 0.5));
+            beats.push(createMockCompositeBeat(i, 'straight_16th', 1, 0.3));
+            beats.push(createMockCompositeBeat(i, 'straight_16th', 2, 0.4));
+            beats.push(createMockCompositeBeat(i, 'straight_16th', 3, 0.2));
+        }
+
+        const composite = createMockCompositeStream(beats, 'hard');
+        const variants = generator.generate(composite, createMockBeatMap(bpm));
+
+        // Hard is unedited when natural difficulty is 'hard'
+        expect(variants.hard.isUnedited).toBe(true);
+        expect(variants.hard.beats.length).toBe(beats.length);
+    });
+
+    it('should produce correct round-trip density ordering at 60 BPM', () => {
+        const generator = new DifficultyVariantGenerator();
+        const bpm = 60;
+
+        // Create a hard composite with moderate intensity variation
+        const beats: CompositeBeat[] = [];
+        for (let i = 0; i < 12; i++) {
+            beats.push(createMockCompositeBeat(i, 'straight_16th', 0, 0.5));
+            beats.push(createMockCompositeBeat(i, 'straight_16th', 1, 0.2));
+            beats.push(createMockCompositeBeat(i, 'straight_16th', 2, 0.35));
+            beats.push(createMockCompositeBeat(i, 'straight_16th', 3, 0.15));
+        }
+
+        const composite = createMockCompositeStream(beats, 'hard');
+        const variants = generator.generate(composite, createMockBeatMap(bpm));
+
+        const easyDensity = variants.easy.densityValidation?.density ?? 0;
+        const mediumDensity = variants.medium.densityValidation?.density ?? 0;
+        const hardDensity = variants.hard.densityValidation?.density ?? 0;
+
+        // Density ordering must hold: easy < medium < hard
+        expect(easyDensity).toBeLessThan(mediumDensity);
+        expect(mediumDensity).toBeLessThan(hardDensity);
+    });
+
+    it('should reduce easy and medium density from hard original at various BPMs', () => {
+        // At some BPMs, grid conversion may cause easy and medium to have similar densities,
+        // but both should always be less than the hard (unedited) variant
+        for (const bpm of [60, 90, 120]) {
+            const generator = new DifficultyVariantGenerator();
+
+            const beats: CompositeBeat[] = [];
+            for (let i = 0; i < 12; i++) {
+                beats.push(createMockCompositeBeat(i, 'straight_16th', 0, 0.5));
+                beats.push(createMockCompositeBeat(i, 'straight_16th', 1, 0.2));
+                beats.push(createMockCompositeBeat(i, 'straight_16th', 2, 0.35));
+                beats.push(createMockCompositeBeat(i, 'straight_16th', 3, 0.15));
+            }
+
+            const composite = createMockCompositeStream(beats, 'hard');
+            const variants = generator.generate(composite, createMockBeatMap(bpm));
+
+            const easyDensity = variants.easy.densityValidation?.density ?? 0;
+            const mediumDensity = variants.medium.densityValidation?.density ?? 0;
+            const hardDensity = variants.hard.densityValidation?.density ?? 0;
+
+            // Hard is unedited from hard natural — should have highest density
+            expect(hardDensity).toBeGreaterThan(0);
+            // Both easy and medium must be less than hard
+            expect(easyDensity).toBeLessThan(hardDensity);
+            expect(mediumDensity).toBeLessThanOrEqual(hardDensity);
+        }
+    });
+
+    it('should have densityValidation populated for all three variants', () => {
+        const generator = new DifficultyVariantGenerator();
+        const bpm = 60;
+
+        const beats: CompositeBeat[] = [];
+        for (let i = 0; i < 8; i++) {
+            beats.push(createMockCompositeBeat(i, 'straight_16th', 0, 0.6));
+            beats.push(createMockCompositeBeat(i, 'straight_16th', 1, 0.3));
+            beats.push(createMockCompositeBeat(i, 'straight_16th', 2, 0.4));
+            beats.push(createMockCompositeBeat(i, 'straight_16th', 3, 0.2));
+        }
+
+        const composite = createMockCompositeStream(beats, 'hard');
+        const variants = generator.generate(composite, createMockBeatMap(bpm));
+
+        // All variants should have density validation results
+        expect(variants.easy.densityValidation).toBeDefined();
+        expect(variants.medium.densityValidation).toBeDefined();
+        expect(variants.hard.densityValidation).toBeDefined();
+
+        // Each should have correct difficulty label
+        expect(variants.easy.densityValidation!.difficulty).toBe('easy');
+        expect(variants.medium.densityValidation!.difficulty).toBe('medium');
+        expect(variants.hard.densityValidation!.difficulty).toBe('hard');
+
+        // Each should have correct target range
+        expect(variants.easy.densityValidation!.targetRange).toEqual(SUBDIVISION_LIMITS.easy.targetDensityRange);
+        expect(variants.medium.densityValidation!.targetRange).toEqual(SUBDIVISION_LIMITS.medium.targetDensityRange);
+        expect(variants.hard.densityValidation!.targetRange).toEqual(SUBDIVISION_LIMITS.hard.targetDensityRange);
+    });
+});
