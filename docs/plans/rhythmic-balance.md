@@ -184,38 +184,38 @@ The density reducer needs to know which beats are structurally important and pre
   - [x] 4.3.3: The existing `+0.3 strong beat bonus` and `+0.2 downbeat bonus` remain; the new `+0.2 only-downbeat-in-measure bonus` stacks on top
   - [x] 4.3.4: In `'neutral'` mode, the `+0.3 strong beat bonus` is zeroed out but downbeat and only-downbeat bonuses still apply
 
-- [ ] Task 4.4: Tests for density reduction with strong beat emphasis
-  - [ ] 4.4.1: Test `'natural'` mode in 4/4: when reducing density, beats on positions 0 and 2 are preserved over positions 1 and 3
-  - [ ] 4.4.2: Test `'backbeat'` mode in 4/4: when reducing density, beats on positions 1 and 3 are preserved over positions 0 and 2
-  - [ ] 4.4.3: Test `'natural'` mode in 9/8: when reducing density, beats on positions 0, 3, 6 are preserved (groups of 3)
-  - [ ] 4.4.4: Test `'backbeat'` mode in 9/8: when reducing density, beats on positions 1, 2, 4, 5, 7, 8 are preserved
-  - [ ] 4.4.5: Test `'neutral'` mode: no positional preference, only downbeat and only-downbeat bonuses apply
-  - [ ] 4.4.6: Test that the only downbeat in a measure is always preserved (highest priority)
-  - [ ] 4.4.7: Test backwards compatibility: no config provided → behaves as current `'natural'` with 4/4
+- [x] Task 4.4: tests for density reduction with strong beat emphasis
+  - [x] Task 4.4.1: Test `'natural'` mode in 4/4: when reducing density, beats on positions 0 and 2 are preserved over positions 1 and 3
+    - [x] Task 4.4.2: Test `'backbeat'` mode in 4/4: when reducing density, beats on positions 1 and 3 are preserved over positions 0 and 2)
+    - [x] Task 4.4.3: test `'natural'` mode in 9/8: when reducing density, beats on positions 0, 3, 6 are preserved (groups of 3)
+    - [x] Task 4.4.4: test `'backbeat'` mode in 9/8: when reducing density, beats on positions 1, 2, 4, 5, 7, 8 are preserved
+    - [x] Task 4.4.5: test `'neutral'` mode: no positional preference, only downbeat and only-downbeat bonuses apply
+    - [x] Task 4.4.6: Test that the only downbeat in a measure is always preserved (highest priority)
+    - [x] Task 4.4.7: Test backwards compatibility: no config provided → behaves as current `'natural'` with 4/4
 
 ---
 
 ## Phase 5: Integration Tests
 
-- [ ] Task 5.1: End-to-end test — empty measures
-  - [ ] 5.1.1: Create a composite stream with several empty measures
-  - [ ] 5.1.2: Run `RhythmicBalancer.balance()` and verify every measure has at least 1 beat on beat 1
+- [x] Task 5.1: End-to-end test — empty measures
+  - [x] 5.1.1: Create a composite stream with several empty measures
+  - [x] 5.1.2: Run `RhythmicBalancer.balance()` and verify every measure has at least 1 beat on beat 1
 
-- [ ] Task 5.2: End-to-end test — lone upbeats and proximity
-  - [ ] 5.2.1: Create a composite with measures containing lone subdivision notes
-  - [ ] 5.2.2: Run balancer and verify subdivision notes are shifted to downbeats
-  - [ ] 5.2.3: Create a composite with upbeat notes far from any downbeat, verify they're shifted
+- [x] Task 5.2: End-to-end test — lone upbeats and proximity
+  - [x] 5.2.1: Create a composite with measures containing lone subdivision notes
+  - [x] 5.2.2: Run balancer and verify subdivision notes are shifted to downbeats
+  - [x] 5.2.3: Create a composite with upbeat notes far from any downbeat, verify they're shifted
 
-- [ ] Task 5.3: End-to-end test — density reduction respects emphasis
-  - [ ] 5.3.1: Generate a hard natural composite, apply rhythmic balance, then generate easy variant with `'backbeat'` emphasis in 4/4
-  - [ ] 5.3.2: Verify that the remaining beats after reduction are biased toward positions 1 and 3 within measures
-  - [ ] 5.3.3: Repeat with `'natural'` and verify bias toward positions 0 and 2
+- [x] Task 5.3: End-to-end test — density reduction respects emphasis
+  - [x] 5.3.1: Generate a hard natural composite, apply rhythmic balance, then generate easy variant with `'backbeat'` emphasis in 4/4
+  - [x] 5.3.2: Verify that the remaining beats after reduction are biased toward positions 1 and 3 within measures
+  - [x] 5.3.3: Repeat with `'natural'` and verify bias toward positions 0 and 2
 
-- [ ] Task 5.4: End-to-end test — non-4/4 time signatures
-  - [ ] 5.4.1: Create a composite in 9/8 time (9 beats per measure), apply rhythmic balance, verify empty measures get filled on beat 1's downbeat using `measureNumber` from unifiedBeatMap
-  - [ ] 5.4.2: Generate easy variant with `'natural'` emphasis in 9/8, verify beats at positions 0, 3, 6 are preserved over positions 1, 2, 4, 5, 7, 8
-  - [ ] 5.4.3: Generate easy variant with `'backbeat'` emphasis in 9/8, verify the opposite bias
-  - [ ] 5.4.4: Test mid-song time signature change (4/4 → 9/8) — verify each segment uses the correct grouping
+- [x] Task 5.4: End-to-end test — non-4/4 time signatures
+  - [x] 5.4.1: Create a composite in 9/8 time (9 beats per measure), apply rhythmic balance, verify empty measures get filled on beat 1's downbeat using `measureNumber` from unifiedBeatMap
+  - [x] 5.4.2: Generate easy variant with `'natural'` emphasis in 9/8, verify beats at positions 0, 3, 6 are preserved over positions 1, 2, 4, 5, 7, 8
+  - [x] 5.4.3: Generate easy variant with `'backbeat'` emphasis in 9/8, verify the opposite bias
+  - [x] 5.4.4: Test mid-song time signature change (4/4 → 9/8) — verify each segment uses the correct grouping
 
 ---
 
