@@ -2295,7 +2295,8 @@ export class DifficultyVariantGenerator {
                     beatsToAdd - addedFromPattern,
                     quarterNoteInterval,
                     occupiedSlots,
-                    gridForIndex
+                    gridForIndex,
+                    unifiedBeatMap
                 );
                 // Gate through occupiedSlots
                 for (const b of interpolatedBeats) {
@@ -2703,6 +2704,7 @@ export class DifficultyVariantGenerator {
      * @param quarterNoteInterval - Duration of a quarter note in seconds for timestamp calculation
      * @param occupiedSlots - Global occupied slot tracker
      * @param lockedGridType - Grid type locked for this beat index (ExtendedGridType for full support)
+     * @param unifiedBeatMap - The unified beat map for authoritative timestamp derivation
      * @returns Array of interpolated beats
      */
     private interpolateBeats(
@@ -2711,7 +2713,8 @@ export class DifficultyVariantGenerator {
         beatsToAdd: number,
         quarterNoteInterval: number = 0.5,
         occupiedSlots?: Map<string, string>,
-        lockedGridType?: ExtendedGridType
+        lockedGridType?: ExtendedGridType,
+        unifiedBeatMap?: UnifiedBeatMap
     ): CompositeBeat[] {
         if (beatsToAdd <= 0 || existingBeats.length === 0) {
             return [];
@@ -2761,38 +2764,37 @@ export class DifficultyVariantGenerator {
         // Take the positions we need
         const positionsToFill = availablePositions.slice(0, beatsToAdd);
 
-        // Get reference beat for timestamp calculation
+        // Get reference beat for band/properties
         const referenceBeat = existingBeats[0];
 
-        // Create interpolated beats
-        const interpolatedBeats = positionsToFill.map(gridPosition => {
-            // CRITICAL: Use the reference beat's OWN grid type interval to derive the beat start.
-            // Then use the target grid type interval for the new grid position.
-            // Mixing intervals causes offset errors (32nd-note or 16th-triplet).
-            const referenceInterval = referenceBeat.gridType === 'straight_16th'
-                ? quarterNoteInterval / 4
-                : referenceBeat.gridType === 'straight_8th'
-                    ? quarterNoteInterval / 2
-                    : quarterNoteInterval / 3;
-            const newInterval = gridType === 'straight_16th'
-                ? quarterNoteInterval / 4
-                : gridType === 'straight_8th'
-                    ? quarterNoteInterval / 2
-                    : quarterNoteInterval / 3;
-            const beatStartTimestamp = referenceBeat.timestamp - (referenceBeat.gridPosition * referenceInterval);
-            const timestamp = beatStartTimestamp + (gridPosition * newInterval);
+        // Task 3.4.2: Derive beatStartTimestamp from the unifiedBeatMap —
+        // the authoritative quarter-note grid — NOT from the reference beat's
+        // own timestamp (which drifts after multiple interpolation passes).
+        const beatStartTimestamp = unifiedBeatMap?.beats[beatIndex]?.timestamp
+            ?? beatIndex * quarterNoteInterval;
 
-            return {
-                timestamp,
-                beatIndex,
-                gridPosition,
-                gridType,
-                intensity: this.config.interpolatedBeatIntensity,
-                band: referenceBeat.band,
-                sourceBand: referenceBeat.sourceBand,
-                quantizationError: 0,
-            };
-        });
+        // Task 3.4.3/3.4.4: Single interval based on the locked grid type.
+        // Since the grid is locked per beat index, there is no reference/new split.
+        const gridIntervalMap: Record<ExtendedGridType, number> = {
+            straight_16th: quarterNoteInterval / 4,
+            straight_8th: quarterNoteInterval / 2,
+            triplet_8th: quarterNoteInterval / 3,
+            straight_4th: quarterNoteInterval,
+            quarter_triplet: quarterNoteInterval,
+        };
+        const interval = gridIntervalMap[gridType];
+
+        // Create interpolated beats
+        const interpolatedBeats = positionsToFill.map(gridPosition => ({
+            timestamp: beatStartTimestamp + (gridPosition * interval),
+            beatIndex,
+            gridPosition,
+            gridType,
+            intensity: this.config.interpolatedBeatIntensity,
+            band: referenceBeat.band,
+            sourceBand: referenceBeat.sourceBand,
+            quantizationError: 0,
+        }));
 
         return interpolatedBeats as CompositeBeat[];
     }

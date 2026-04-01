@@ -119,11 +119,11 @@ Replace the probabilistic per-index multiplier with a global target calculator t
   - [x] 3.3.5: Use `interpolateBeats()` for remaining slots, passing the locked grid type
   - [x] 3.3.6: Use `createBeatsForEmptyIndex()` for empty indices, passing the locked grid type
 
-- [ ] Task 3.4: Fix timestamp derivation in `interpolateBeats()`
-  - [ ] 3.4.1: Accept `unifiedBeatMap` parameter
-  - [ ] 3.4.2: Derive `beatStartTimestamp` from `unifiedBeatMap.beats[beatIndex].timestamp` (the authoritative quarter-note position), NOT from the reference beat's timestamp minus its grid offset
-  - [ ] 3.4.3: Calculate `timestamp = beatStartTimestamp + (gridPosition * interval)` where interval is based on the locked grid type
-  - [ ] 3.4.4: Remove the `referenceInterval` / `newInterval` split — since the grid type is locked, there's only one interval
+- [x] Task 3.4: Fix timestamp derivation in `interpolateBeats()`
+  - [x] 3.4.1: Accept `unifiedBeatMap` parameter
+  - [x] 3.4.2: Derive `beatStartTimestamp` from `unifiedBeatMap.beats[beatIndex].timestamp` (the authoritative quarter-note position), NOT from the reference beat's timestamp minus its grid offset
+  - [x] 3.4.3: Calculate `timestamp = beatStartTimestamp + (gridPosition * interval)` where interval is based on the locked grid type
+  - [x] 3.4.4: Remove the `referenceInterval` / `newInterval` split — since the grid type is locked, there's only one interval
 
 - [ ] Task 3.5: Write tests for target-based enhancement
   - [ ] 3.5.1: Test `calculateBeatsToAdd()` returns correct counts
