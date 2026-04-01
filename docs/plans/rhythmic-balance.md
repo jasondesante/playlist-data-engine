@@ -141,20 +141,20 @@ Rules: Every measure needs at least 1 beat, and if it has exactly 1 beat, that b
 
 Rule: Upbeat/subdivision notes need a downbeat note within a configurable range. If no downbeat is nearby, the upbeat note is shifted to the downbeat of its beat index.
 
-- [ ] Task 3.1: Implement `enforceDownbeatProximity()`
-  - [ ] 3.1.1: Build a `Set<number>` of all beat indices that have at least one downbeat (any beat with `gridPosition === 0`)
-  - [ ] 3.1.2: For each beat where `gridPosition !== 0`, search beat indices in `[beatIndex - range, beatIndex + range]` for a downbeat presence
-  - [ ] 3.1.3: If no downbeat found in range, create a replacement beat at the same `beatIndex` with `gridPosition = 0`, preserving `intensity`, `band`, `sourceBand`, `gridType`
-  - [ ] 3.1.4: Recalculate timestamp from `unifiedBeatMap.beats[beatIndex].timestamp`
-  - [ ] 3.1.5: Replace the original beat in the array
+- [x] Task 3.1: Implement `enforceDownbeatProximity()`
+  - [x] 3.1.1: Build a `Set<number>` of all beat indices that have at least one downbeat (any beat with `gridPosition === 0`)
+  - [x] 3.1.2: For each beat where `gridPosition !== 0`, search beat indices in `[beatIndex - range, beatIndex + range]` for a downbeat presence
+  - [x] 3.1.3: If no downbeat found in range, create a replacement beat at the same `beatIndex` with `gridPosition = 0`, preserving `intensity`, `band`, `sourceBand`, `gridType`
+  - [x] 3.1.4: Recalculate timestamp from `unifiedBeatMap.beats[beatIndex].timestamp`
+  - [x] 3.1.5: Replace the original beat in the array
 
-- [ ] Task 3.2: Tests for downbeat proximity
-  - [ ] 3.3.1: Test range=0: upbeat note with downbeat in same beatIndex (gridPosition 0 already present) is kept as-is
-  - [ ] 3.3.2: Test range=0: upbeat note with no downbeat in same beatIndex is shifted
-  - [ ] 3.3.3: Test range=2: upbeat note with downbeat 1 beat away is kept
-  - [ ] 3.3.4: Test range=2: upbeat note with nearest downbeat 3 beats away is shifted
-  - [ ] 3.3.5: Test range=4: upbeat note with downbeat in same measure is kept
-  - [ ] 3.3.6: Test that a downbeat note (gridPosition 0) is never shifted regardless of proximity
+- [x] Task 3.2: Tests for downbeat proximity
+  - [x] 3.3.1: Test range=0: upbeat note with downbeat in same beatIndex (gridPosition 0 already present) is kept as-is
+  - [x] 3.3.2: Test range=0: upbeat note with no downbeat in same beatIndex is shifted
+  - [x] 3.3.3: Test range=2: upbeat note with downbeat 1 beat away is kept
+  - [x] 3.3.4: Test range=2: upbeat note with nearest downbeat 3 beats away is shifted
+  - [x] 3.3.5: Test range=4: upbeat note with downbeat in same measure is kept
+  - [x] 3.3.6: Test that a downbeat note (gridPosition 0) is never shifted regardless of proximity
 
 ---
 

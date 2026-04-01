@@ -686,6 +686,232 @@ describe('RhythmicBalancer', () => {
 });
 
 // ============================================================================
+// Downbeat Proximity Tests (Phase 3 - Task 3.2)
+// ============================================================================
+
+describe('enforceDownbeatProximity (Task 3.2)', () => {
+    // All tests use fillEmptyMeasures: false to isolate proximity behavior
+    // and avoid interference from the fill step.
+
+    it('3.3.1: range=0 - upbeat with downbeat at same beatIndex is kept as-is', () => {
+        const unifiedBeatMap = createMockUnifiedBeatMap({ numMeasures: 4 });
+
+        const beats: CompositeBeat[] = [
+            createMockCompositeBeat({
+                timestamp: 0,
+                beatIndex: 0,
+                gridPosition: 0,
+            }),
+            // Measure 1: downbeat + upbeat at same beatIndex
+            createMockCompositeBeat({
+                timestamp: 2.0,
+                beatIndex: 4,
+                gridPosition: 0, // downbeat
+            }),
+            createMockCompositeBeat({
+                timestamp: 2.25,
+                beatIndex: 4,
+                gridPosition: 1, // upbeat at same beatIndex as downbeat
+                intensity: 0.7,
+            }),
+        ];
+
+        const composite = createMockCompositeStream(beats);
+        const balancer = new RhythmicBalancer({
+            downbeatProximityRange: 0,
+            fillEmptyMeasures: false,
+        });
+        const result = balancer.balance(composite, unifiedBeatMap);
+
+        // The upbeat should be kept — there's a downbeat at the same beatIndex
+        const upbeat = result.beats.find(b => b.beatIndex === 4 && b.gridPosition === 1);
+        expect(upbeat).toBeDefined();
+        expect(upbeat!.intensity).toBe(0.7);
+    });
+
+    it('3.3.2: range=0 - upbeat with no downbeat at same beatIndex is shifted', () => {
+        const unifiedBeatMap = createMockUnifiedBeatMap({ numMeasures: 4 });
+
+        const beats: CompositeBeat[] = [
+            createMockCompositeBeat({
+                timestamp: 0,
+                beatIndex: 0,
+                gridPosition: 0,
+            }),
+            // Measure 1: downbeat at 4, upbeat at 5 (different beatIndex)
+            createMockCompositeBeat({
+                timestamp: 2.0,
+                beatIndex: 4,
+                gridPosition: 0, // downbeat
+            }),
+            createMockCompositeBeat({
+                timestamp: 2.75,
+                beatIndex: 5,
+                gridPosition: 1, // upbeat, no downbeat at beatIndex 5
+                intensity: 0.7,
+                band: 'high',
+                sourceBand: 'high',
+            }),
+        ];
+
+        const composite = createMockCompositeStream(beats);
+        const balancer = new RhythmicBalancer({
+            downbeatProximityRange: 0,
+            fillEmptyMeasures: false,
+        });
+        const result = balancer.balance(composite, unifiedBeatMap);
+
+        // The upbeat should be shifted to gridPosition 0
+        const shiftedBeat = result.beats.find(b => b.beatIndex === 5);
+        expect(shiftedBeat).toBeDefined();
+        expect(shiftedBeat!.gridPosition).toBe(0);
+        expect(shiftedBeat!.intensity).toBe(0.7); // preserved
+        expect(shiftedBeat!.band).toBe('high'); // preserved
+        expect(shiftedBeat!.sourceBand).toBe('high'); // preserved
+    });
+
+    it('3.3.3: range=2 - upbeat with downbeat 1 beat away is kept', () => {
+        const unifiedBeatMap = createMockUnifiedBeatMap({ numMeasures: 4 });
+
+        const beats: CompositeBeat[] = [
+            createMockCompositeBeat({
+                timestamp: 0,
+                beatIndex: 0,
+                gridPosition: 0,
+            }),
+            createMockCompositeBeat({
+                timestamp: 2.0,
+                beatIndex: 4,
+                gridPosition: 0, // downbeat
+            }),
+            createMockCompositeBeat({
+                timestamp: 2.75,
+                beatIndex: 5,
+                gridPosition: 1, // upbeat, downbeat is 1 beat away (beatIndex 4)
+            }),
+        ];
+
+        const composite = createMockCompositeStream(beats);
+        const balancer = new RhythmicBalancer({
+            downbeatProximityRange: 2,
+            fillEmptyMeasures: false,
+        });
+        const result = balancer.balance(composite, unifiedBeatMap);
+
+        // The upbeat should be kept — downbeat is 1 beat away, within range 2
+        const upbeat = result.beats.find(b => b.beatIndex === 5 && b.gridPosition === 1);
+        expect(upbeat).toBeDefined();
+    });
+
+    it('3.3.4: range=2 - upbeat with nearest downbeat >2 beats away is shifted', () => {
+        const unifiedBeatMap = createMockUnifiedBeatMap({ numMeasures: 4 });
+
+        const beats: CompositeBeat[] = [
+            createMockCompositeBeat({
+                timestamp: 0,
+                beatIndex: 0,
+                gridPosition: 0, // only downbeat, at beatIndex 0
+            }),
+            // Measure 1: two upbeats, no downbeats (measure has 2 beats, so
+            // shiftLoneSubdivisionNotes won't touch them)
+            createMockCompositeBeat({
+                timestamp: 2.25,
+                beatIndex: 4,
+                gridPosition: 1, // upbeat, nearest downbeat is 4 beats away
+                intensity: 0.65,
+                band: 'low',
+                sourceBand: 'low',
+            }),
+            createMockCompositeBeat({
+                timestamp: 2.75,
+                beatIndex: 5,
+                gridPosition: 1, // upbeat
+            }),
+        ];
+
+        const composite = createMockCompositeStream(beats);
+        const balancer = new RhythmicBalancer({
+            downbeatProximityRange: 2,
+            fillEmptyMeasures: false,
+        });
+        const result = balancer.balance(composite, unifiedBeatMap);
+
+        // beatIndex 4 should be shifted — nearest original downbeat is at index 0 (4 away)
+        const shiftedBeat = result.beats.find(b => b.beatIndex === 4);
+        expect(shiftedBeat).toBeDefined();
+        expect(shiftedBeat!.gridPosition).toBe(0);
+        expect(shiftedBeat!.intensity).toBe(0.65); // preserved
+        expect(shiftedBeat!.band).toBe('low'); // preserved
+        expect(shiftedBeat!.sourceBand).toBe('low'); // preserved
+    });
+
+    it('3.3.5: range=4 - upbeat with downbeat in same measure is kept', () => {
+        const unifiedBeatMap = createMockUnifiedBeatMap({ numMeasures: 4 });
+
+        const beats: CompositeBeat[] = [
+            createMockCompositeBeat({
+                timestamp: 0,
+                beatIndex: 0,
+                gridPosition: 0,
+            }),
+            // Measure 1: downbeat at 4, upbeat at 7 (3 beats apart)
+            createMockCompositeBeat({
+                timestamp: 2.0,
+                beatIndex: 4,
+                gridPosition: 0, // downbeat
+            }),
+            createMockCompositeBeat({
+                timestamp: 3.5,
+                beatIndex: 7,
+                gridPosition: 2, // upbeat, downbeat is 3 beats away (within range 4)
+            }),
+        ];
+
+        const composite = createMockCompositeStream(beats);
+        const balancer = new RhythmicBalancer({
+            downbeatProximityRange: 4,
+            fillEmptyMeasures: false,
+        });
+        const result = balancer.balance(composite, unifiedBeatMap);
+
+        // The upbeat should be kept — downbeat is 3 beats away, within range 4
+        const upbeat = result.beats.find(b => b.beatIndex === 7 && b.gridPosition === 2);
+        expect(upbeat).toBeDefined();
+    });
+
+    it('3.3.6: downbeat note (gridPosition 0) is never shifted regardless of proximity', () => {
+        const unifiedBeatMap = createMockUnifiedBeatMap({ numMeasures: 4 });
+
+        const beats: CompositeBeat[] = [
+            // Isolated downbeat, no other beats nearby
+            createMockCompositeBeat({
+                timestamp: 6.0,
+                beatIndex: 12,
+                gridPosition: 0, // downbeat
+                intensity: 0.8,
+                band: 'low',
+                sourceBand: 'low',
+            }),
+        ];
+
+        const composite = createMockCompositeStream(beats);
+        const balancer = new RhythmicBalancer({
+            downbeatProximityRange: 0,
+            fillEmptyMeasures: false,
+        });
+        const result = balancer.balance(composite, unifiedBeatMap);
+
+        // The downbeat should be completely unchanged
+        const downbeat = result.beats.find(b => b.beatIndex === 12);
+        expect(downbeat).toBeDefined();
+        expect(downbeat!.gridPosition).toBe(0);
+        expect(downbeat!.intensity).toBe(0.8);
+        expect(downbeat!.band).toBe('low');
+        expect(downbeat!.sourceBand).toBe('low');
+    });
+});
+
+// ============================================================================
 // Non-4/4 Time Signature Tests
 // ============================================================================
 
