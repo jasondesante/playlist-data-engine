@@ -162,10 +162,10 @@ Rule: Upbeat/subdivision notes need a downbeat note within a configurable range.
 
 The density reducer needs to know which beats are structurally important and prefer keeping them.
 
-- [ ] Task 4.1: Pass rhythmic balance config to DifficultyVariantGenerator
-  - [ ] 4.1.1: Add optional `rhythmicBalanceConfig?: RhythmicBalanceConfig` to `DifficultyVariantConfig`
-  - [ ] 4.1.2: Thread it through from `RhythmGenerator.generateDifficultyVariants()` to the `DifficultyVariantGenerator` constructor or `generate()` call
-  - [ ] 4.1.3: DifficultyVariantGenerator needs access to `unifiedBeatMap.downbeatConfig` to resolve `beatsPerMeasure` per segment — it already receives `unifiedBeatMap` in `generate()`
+- [x] Task 4.1: Pass rhythmic balance config to DifficultyVariantGenerator
+  - [x] 4.1.1: Add optional `rhythmicBalanceConfig?: RhythmicBalanceConfig` to `DifficultyVariantConfig`
+  - [x] 4.1.2: Thread it through from `RhythmGenerator.generateDifficultyVariants()` to the `DifficultyVariantGenerator` constructor or `generate()` call
+  - [x] 4.1.3: DifficultyVariantGenerator needs access to `unifiedBeatMap.downbeatConfig` to resolve `beatsPerMeasure` per segment — it already receives `unifiedBeatMap` in `generate()`
 
 - [ ] Task 4.2: Make `isStrongBeat()` time-signature-aware
   - [ ] 4.2.1: Create helper `getMetricGroupSize(beatsPerMeasure: number): number` — returns 3 if `beatsPerMeasure % 3 === 0`, otherwise 2
