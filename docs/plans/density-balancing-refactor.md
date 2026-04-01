@@ -191,19 +191,19 @@ Add a post-generation check that validates all variants are within their density
   - [x] 6.1.6: Update "Variant Metadata" interface if `DifficultyVariant` gains new fields (e.g., density validation result)
   - [x] 6.1.7: Update code examples in "Usage Examples" if the public API surface changes
 
-- [ ] Task 6.2: Update DATA_ENGINE_REFERENCE.md — DifficultyVariantGenerator section (lines ~2905–2932)
-  - [ ] 6.2.1: Update the "Variant Generation Strategy" table (line 2928–2932) — replace "Heavy density enhancement" / "Moderate density enhancement" with "Global target-based enhancement"
-  - [ ] 6.2.2: Update the description paragraph (line 2905) to mention global target calculation instead of fixed multipliers
-  - [ ] 6.2.3: Update the `DifficultyVariantConfig` reference (line 2519 mentions `seed` for "deterministic density rolls" — reword to reflect deterministic grid-lock-based distribution)
+- [x] Task 6.2: Update DATA_ENGINE_REFERENCE.md — DifficultyVariantGenerator section (lines ~2905–2932)
+  - [x] 6.2.1: Update the "Variant Generation Strategy" table (line 2928–2932) — replace "Heavy density enhancement" / "Moderate density enhancement" with "Global target-based enhancement"
+  - [x] 6.2.2: Update the description paragraph (line 2905) to mention global target calculation instead of fixed multipliers
+  - [x] 6.2.3: Update the `DifficultyVariantConfig` reference (line 2519 mentions `seed` for "deterministic density rolls" — reword to reflect deterministic grid-lock-based distribution)
 
-- [ ] Task 6.3: Update DATA_ENGINE_REFERENCE.md — RhythmGenerator config table
-  - [ ] 6.3.1: Line 2519: Update `seed` description from "deterministic density rolls" to "deterministic grid-lock-based distribution"
-  - [ ] 6.3.2: Line 4524: Update "density rolls, difficulty variant beat-level decisions" in the seed description to reflect new behavior
+- [x] Task 6.3: Update DATA_ENGINE_REFERENCE.md — RhythmGenerator config table
+  - [x] 6.3.1: Line 2519: Update `seed` description from "deterministic density rolls" to "deterministic grid-lock-based distribution" — **Already done in Task 6.2.3**
+  - [x] 6.3.2: Line 4524: Update "density rolls, difficulty variant beat-level decisions" in the seed description to reflect new behavior — **N/A: Line 4524 is about PartyAnalyzer, not seed; no other seed references found that need updating**
 
-- [ ] Task 6.4: Minor updates in both docs
-  - [ ] 6.4.1: BEAT_DETECTION.md line 28: Update "Pattern library for density enhancement" in the table of contents link text if the section heading changes
-  - [ ] 6.4.2: BEAT_DETECTION.md lines 3625, 3646, 3799: Update "density enhancement" references to "density enhancement (global target-based)" where helpful for clarity
-  - [ ] 6.4.3: DATA_ENGINE_REFERENCE.md line 2534–2535: No changes needed (StreamScorer/CompositeStreamGenerator are unaffected)
+- [x] Task 6.4: Minor updates in both docs
+  - [x] 6.4.1: BEAT_DETECTION.md line 28: Update "Pattern library for density enhancement" in the table of contents link text if the section heading changes — **N/A: Section heading unchanged**
+  - [x] 6.4.2: BEAT_DETECTION.md lines 3625, 3646, 3799: Update "density enhancement" references to "density enhancement (global target-based)" where helpful for clarity — **N/A: References are clear in context after main documentation update**
+  - [x] 6.4.3: DATA_ENGINE_REFERENCE.md line 2534–2535: No changes needed (StreamScorer/CompositeStreamGenerator are unaffected)
 
 ## Dependencies
 

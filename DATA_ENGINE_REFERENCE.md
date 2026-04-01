@@ -2516,7 +2516,7 @@ constructor(options?: RhythmGenerationOptions)
 | `scoringConfig` | `undefined` | Stream scoring config for composite selection (see [StreamScorer](#streamscorer)) |
 | `tempoQuantizationConfig` | `undefined` | BPM-aware quantization rules config. When undefined, default rules apply. Set `{ enabled: false }` to disable. (see [TempoAwareQuantizer](#tempoawarequantizer)) |
 | `phraseAnalyzerConfig` | `undefined` | Phrase analyzer config (see [PhraseAnalyzer](#phraseanalyzer)) |
-| `seed` | `undefined` | Seed for reproducibility. Passed through to DifficultyVariantGenerator for deterministic density rolls and beat-level decisions |
+| `seed` | `undefined` | Seed for reproducibility. Passed through to DifficultyVariantGenerator for deterministic grid-lock-based distribution |
 | `verbose` | `false` | Log progress information |
 | `enableCache` | `true` | Enable caching of intermediate results |
 | `cacheMaxAge` | `1800000` | Maximum cache entry age in ms (30 min) |
@@ -2902,7 +2902,7 @@ Creates a composite stream by slicing together the highest-scoring sections from
 ### DifficultyVariantGenerator
 *Location:* *[src/core/analysis/beat/DifficultyVariantGenerator.ts](src/core/analysis/beat/DifficultyVariantGenerator.ts)*
 
-Generates easy/medium/hard difficulty variants from the composite stream, plus a natural variant representing the unedited composite. Uses simplification for harder-to-easier conversions and density enhancement for easier-to-harder conversions. Density is measured in notes per second (derived from BPM via `unifiedBeatMap.quarterNoteBpm`).
+Generates easy/medium/hard difficulty variants from the composite stream, plus a natural variant representing the unedited composite. Uses **global target-based density control** that calculates the exact beat count needed from the target density range, then distributes across indices. Employs a grid lock mechanism to ensure all density operations respect the single-grid-per-beat rule. Density is measured in notes per second (derived from BPM via `unifiedBeatMap.quarterNoteBpm`).
 
 **For variant generation strategy, simplification rules, and density enhancement, see [docs/BEAT_DETECTION.md#difficulty-variant-generation](docs/BEAT_DETECTION.md#difficulty-variant-generation)**
 
@@ -2927,9 +2927,9 @@ Generates easy/medium/hard difficulty variants from the composite stream, plus a
 
 | Natural Difficulty | Easy Variant | Medium Variant | Hard Variant | Natural Variant |
 |-------------------|--------------|----------------|--------------|----------------|
-| easy | Unedited (+ quarter at >120 BPM) | Density enhancement | Heavy density enhancement | Unedited composite |
-| medium | Simplification | Unedited (+ grid conversion at ≥70 BPM) | Density enhancement | Unedited composite |
-| hard | Heavy simplification | Simplification | Unedited (+ grid conversion at >120 BPM) | Unedited composite |
+| easy | Unedited (+ quarter at >120 BPM) | Global target-based enhancement | Global target-based enhancement | Unedited composite |
+| medium | Multi-pass reduction | Unedited (+ grid conversion at ≥70 BPM) | Global target-based enhancement | Unedited composite |
+| hard | Multi-pass reduction + grid conversion | Multi-pass reduction + grid conversion | Unedited (+ grid conversion at >120 BPM) | Unedited composite |
 
 ---
 
