@@ -182,14 +182,14 @@ Add a post-generation check that validates all variants are within their density
 
 ## Phase 6: Documentation Updates
 
-- [ ] Task 6.1: Update BEAT_DETECTION.md — Difficulty Variant Generation section (lines ~3684–3813)
-  - [ ] 6.1.1: Rewrite "Variant Generation Strategy" to describe global target-based approach (calculate exact beat count from density range, distribute across indices)
-  - [ ] 6.1.2: Update "Custom Configuration" table — remove `enhancementDensityMultiplier`, add `densityTargetStrategy` and `maxReductionPasses`
-  - [ ] 6.1.3: Update "Simplification Rules" to describe convergence loop (first pass with full protections, second pass with relaxed protections, third pass as last resort)
-  - [ ] 6.1.4: Update "Density Enhancement" to describe empty-index-first greedy distribution (no probabilistic rolls) and grid lock per beat index
-  - [ ] 6.1.5: Add note about grid lock mechanism — `enforceSingleGridPerBeat()` runs once before density work, locks the winner per index, all subsequent operations respect the lock
-  - [ ] 6.1.6: Update "Variant Metadata" interface if `DifficultyVariant` gains new fields (e.g., density validation result)
-  - [ ] 6.1.7: Update code examples in "Usage Examples" if the public API surface changes
+- [x] Task 6.1: Update BEAT_DETECTION.md — Difficulty Variant Generation section (lines ~3684–3813)
+  - [x] 6.1.1: Rewrite "Variant Generation Strategy" to describe global target-based approach (calculate exact beat count from density range, distribute across indices)
+  - [x] 6.1.2: Update "Custom Configuration" table — remove `enhancementDensityMultiplier`, add `densityTargetStrategy` and `maxReductionPasses`
+  - [x] 6.1.3: Update "Simplification Rules" to describe convergence loop (first pass with full protections, second pass with relaxed protections, third pass as last resort)
+  - [x] 6.1.4: Update "Density Enhancement" to describe empty-index-first greedy distribution (no probabilistic rolls) and grid lock per beat index
+  - [x] 6.1.5: Add note about grid lock mechanism — `enforceSingleGridPerBeat()` runs once before density work, locks the winner per index, all subsequent operations respect the lock
+  - [x] 6.1.6: Update "Variant Metadata" interface if `DifficultyVariant` gains new fields (e.g., density validation result)
+  - [x] 6.1.7: Update code examples in "Usage Examples" if the public API surface changes
 
 - [ ] Task 6.2: Update DATA_ENGINE_REFERENCE.md — DifficultyVariantGenerator section (lines ~2905–2932)
   - [ ] 6.2.1: Update the "Variant Generation Strategy" table (line 2928–2932) — replace "Heavy density enhancement" / "Moderate density enhancement" with "Global target-based enhancement"
