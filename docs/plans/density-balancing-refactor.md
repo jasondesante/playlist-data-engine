@@ -144,10 +144,10 @@ Add a post-generation check that validates all variants are within their density
   - [x] 4.1.3: Log warnings for variants that are out of range (but don't throw — some edge cases like very short songs may not be able to hit exact targets)
   - [x] 4.1.4: Return a validation result per variant: `{ inRange: boolean, density: number, targetRange: { min, max } }`
 
-- [ ] Task 4.2: Wire validation into `generate()`
-  - [ ] 4.2.1: After generating all variants, run `validateDensityInRange()` on each
-  - [ ] 4.2.2: Log a summary: `easy: 0.8 nps (target [0, 1.0]) ✓`
-  - [ ] 4.2.3: Include density validation info in the returned structure for downstream consumers
+- [x] Task 4.2: Wire validation into `generate()`
+  - [x] 4.2.1: After generating all variants, run `validateDensityInRange()` on each
+  - [x] 4.2.2: Log a summary: `easy: 0.8 nps (target [0, 1.0]) ✓`
+  - [x] 4.2.3: Include density validation info in the returned structure for downstream consumers
 
 - [ ] Task 4.3: Write tests for convergence validation
   - [ ] 4.3.1: Test that easy variant density is <= 1.0 nps for a hard natural composite at various BPMs

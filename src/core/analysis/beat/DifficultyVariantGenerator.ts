@@ -323,6 +323,9 @@ export interface DifficultyVariant {
 
     /** Metadata about density enhancement */
     enhancementMetadata?: EnhancementMetadata;
+
+    /** Task 4.2.3: Density validation result for downstream consumers */
+    densityValidation?: VariantDensityValidationResult;
 }
 
 /**
@@ -866,6 +869,28 @@ export class DifficultyVariantGenerator {
         this.validateVariant(medium, 'medium');
         this.validateVariant(hard, 'hard');
         // Note: natural variant is not validated since it has no restrictions
+
+        // Task 4.2.1: Validate density ranges for each variant
+        const bpm = unifiedBeatMap?.quarterNoteBpm ?? 120;
+        easy.densityValidation = this.validateDensityInRange(easy, bpm);
+        medium.densityValidation = this.validateDensityInRange(medium, bpm);
+        hard.densityValidation = this.validateDensityInRange(hard, bpm);
+
+        // Task 4.2.2: Log density validation summary
+        if (this.config.logConversions) {
+            const summarize = (v: DifficultyVariant) => {
+                const d = v.densityValidation!;
+                const maxDisplay = d.targetRange.max === Infinity ? '∞' : d.targetRange.max.toFixed(1);
+                const mark = d.inRange ? '✓' : '✗';
+                return `${v.difficulty}: ${d.density.toFixed(2)} nps (target [${d.targetRange.min}, ${maxDisplay}]) ${mark}`;
+            };
+            console.log(
+                `[DifficultyVariantGenerator] Density validation summary:\n` +
+                `  ${summarize(easy)}\n` +
+                `  ${summarize(medium)}\n` +
+                `  ${summarize(hard)}`
+            );
+        }
 
         return { easy, medium, hard, natural };
     }
