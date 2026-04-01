@@ -3775,7 +3775,7 @@ const config = generator.getConfig();
 | `moderateSimplificationIntensityThreshold` | `number` | `0.4` | Threshold for removing offbeat 16ths (hard→medium) |
 | `densityReductionMinIntensity` | `number` | `0.25` | Min intensity for density reduction removal |
 | `densityTargetStrategy` | `'midpoint' \| 'lower' \| 'upper'` | `'midpoint'` | Where in the density range to target (midpoint=center, lower=conservative, upper=aggressive) |
-| `maxReductionPasses` | `number` | `3` | Maximum passes for density reduction with progressively relaxed protections |
+| `maxReductionPasses` | `number` | `3` | Safety limit for density reduction passes (normally stops earlier once midpoint beat count is reached) |
 | `interpolatedBeatIntensity` | `number` | `0.5` | Intensity assigned to interpolated beats (0.0–1.0) |
 | `preferPatternInsertion` | `boolean` | `true` | Prefer pattern insertion over simple interpolation |
 | `maxPatternInsertionSize` | `number` | `4` | Max phrase size (in beats) for pattern insertion |
@@ -3807,7 +3807,7 @@ This ensures offbeats with low intensity are removed first, preserving musical s
 
 #### Multi-Pass Reduction with Convergence Loop
 
-The reduction algorithm uses a convergence loop to reliably hit target density:
+The reduction algorithm targets a **specific beat count** calculated from the midpoint density (e.g., 0.9 nps for easy, 1.25 nps for medium, 1.75 nps for hard), not just the ceiling of the target range. `calculateBeatCountTarget()` converts the midpoint density into an exact beat count, and the loop removes beats until that count is reached.
 
 | Pass | Protections | Purpose |
 |------|-------------|---------|
@@ -3815,7 +3815,7 @@ The reduction algorithm uses a convergence loop to reliably hit target density:
 | **Pass 2** | Relaxed (intensity threshold -0.1, priority threshold -0.15, allow low-significance phrase beats) | Reach targets that Pass 1 can't hit |
 | **Pass 3** | Minimal (only strong beats at beatIndex % 4 === 0 or 2 protected) | Last resort fallback |
 
-After each pass, the algorithm checks if density is within the target range. If so, it stops. Maximum 3 passes by default (configurable via `maxReductionPasses`).
+After each pass, the algorithm checks if the remaining beat count has reached the midpoint target. If so, it stops. Maximum 3 passes by default (configurable via `maxReductionPasses`). The number of passes used is recorded in `SubdivisionConversionMetadata.reductionPasses`.
 
 ### Density Enhancement
 
@@ -3857,7 +3857,7 @@ interface DifficultyVariant {
   editType: 'none' | 'simplified' | 'interpolated' | 'pattern_inserted';
   editAmount: number;              // 0-1, how much was changed
   patternsInserted?: string[];     // IDs of patterns inserted (if any)
-  conversionMetadata?: SubdivisionConversionMetadata;  // Metadata about subdivision conversions
+  conversionMetadata?: SubdivisionConversionMetadata;  // Metadata about subdivision conversions (includes reductionPasses)
 }
 ```
 

@@ -2928,8 +2928,8 @@ Generates easy/medium/hard difficulty variants from the composite stream, plus a
 | Natural Difficulty | Easy Variant | Medium Variant | Hard Variant | Natural Variant |
 |-------------------|--------------|----------------|--------------|----------------|
 | easy | Unedited (+ quarter at >120 BPM) | Global target-based enhancement | Global target-based enhancement | Unedited composite |
-| medium | Multi-pass reduction | Unedited (+ grid conversion at ≥70 BPM) | Global target-based enhancement | Unedited composite |
-| hard | Multi-pass reduction + grid conversion | Multi-pass reduction + grid conversion | Unedited (+ grid conversion at >120 BPM) | Unedited composite |
+| medium | Target-count reduction | Unedited (+ grid conversion at ≥70 BPM) | Global target-based enhancement | Unedited composite |
+| hard | Target-count reduction + grid conversion | Target-count reduction + grid conversion | Unedited (+ grid conversion at >120 BPM) | Unedited composite |
 
 ---
 

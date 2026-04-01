@@ -349,6 +349,9 @@ export interface SubdivisionConversionMetadata {
 
     /** Total beats after conversion */
     totalBeatsAfter: number;
+
+    /** Number of reduction passes used to reach target density */
+    reductionPasses?: number;
 }
 
 /**
@@ -1240,13 +1243,23 @@ export class DifficultyVariantGenerator {
         const allTypesAllowed = cleanedBeats.every(b => allowedTypes.includes(b.gridType));
 
         if (allTypesAllowed && !isHeavySimplification) {
+            // Calculate target beat count from midpoint density
+            const maxBeatIndex = cleanedBeats.length > 0
+                ? Math.max(...cleanedBeats.map(b => b.beatIndex))
+                : 0;
+            const totalQuarterNotes = maxBeatIndex + 1;
+            const { targetCount } = this.calculateBeatCountTarget(
+                cleanedBeats.length, totalQuarterNotes, bpm, targetDifficulty
+            );
+
             // Even though grid types are allowed, check if density reduction is needed
             const densityReducedBeats = this.reduceDensityToTarget(
                 cleanedBeats as VariantBeat[],
                 targetDifficulty,
                 metadata,
                 phraseMembership,
-                bpm
+                bpm,
+                targetCount
             );
             metadata.totalBeatsAfter = densityReducedBeats.length;
             return { beats: densityReducedBeats, metadata };
@@ -1325,14 +1338,20 @@ export class DifficultyVariantGenerator {
 
         // Task 2.3.2: After grid conversion, re-check the beat count against the target before running reduceDensityToTarget()
         const currentDensity = this.calculateDensity(deduplicatedBeats, bpm);
-        const targetRange = SUBDIVISION_LIMITS[targetDifficulty].targetDensityRange;
+        const maxBeatIndex = deduplicatedBeats.length > 0
+            ? Math.max(...deduplicatedBeats.map(b => b.beatIndex))
+            : 0;
+        const totalQuarterNotes = maxBeatIndex + 1;
+        const { targetCount, targetDensity } = this.calculateBeatCountTarget(
+            deduplicatedBeats.length, totalQuarterNotes, bpm, targetDifficulty
+        );
 
-        // Task 2.3.3: If grid conversion alone brought density within range, skip reduceDensityToTarget()
-        if (currentDensity <= targetRange.max) {
+        // Task 2.3.3: If grid conversion alone brought density to or below midpoint target, skip reduceDensityToTarget()
+        if (deduplicatedBeats.length <= targetCount) {
             if (this.config.logConversions) {
                 console.log(
                     `[DifficultyVariantGenerator] Grid conversion achieved target density: ` +
-                    `${currentDensity.toFixed(2)} notes/sec (target max: ${targetRange.max}) for ${targetDifficulty}` +
+                    `${currentDensity.toFixed(2)} notes/sec (target midpoint ${targetDensity.toFixed(2)} nps, ${targetCount} beats) for ${targetDifficulty}` +
                     (beatsCollapsedDuringConversion > 0 ? ` (${beatsCollapsedDuringConversion} beats collapsed)` : '')
                 );
             }
@@ -1341,13 +1360,14 @@ export class DifficultyVariantGenerator {
         }
 
         // Apply density-aware reduction if still above target
-        // This ensures we actually meet the target density range for the difficulty
+        // This ensures we actually meet the midpoint target density for the difficulty
         const densityReducedBeats = this.reduceDensityToTarget(
             deduplicatedBeats,
             targetDifficulty,
             metadata,
             phraseMembership,
-            bpm
+            bpm,
+            targetCount
         );
 
         metadata.totalBeatsAfter = densityReducedBeats.length;
@@ -1842,14 +1862,26 @@ export class DifficultyVariantGenerator {
         targetDifficulty: DifficultyLevel,
         metadata: SubdivisionConversionMetadata,
         phraseMembership: Map<number, RhythmicPhrase[]> = new Map(),
-        bpm: number = 120
+        bpm: number = 120,
+        targetCount?: number
     ): T[] {
         const targetRange = SUBDIVISION_LIMITS[targetDifficulty].targetDensityRange;
         const bpmPerSecond = bpm / 60;
         const initialDensity = this.calculateDensity(beats, bpm);
 
-        // If already within target range, no reduction needed
-        if (initialDensity <= targetRange.max) {
+        // If already at or below the midpoint target count, no reduction needed
+        if (targetCount !== undefined && beats.length <= targetCount) {
+            if (this.config.logConversions) {
+                console.log(
+                    `[DifficultyVariantGenerator] Density ${initialDensity.toFixed(2)} notes/sec already at or below ` +
+                    `target midpoint (${targetCount} beats) for ${targetDifficulty}`
+                );
+            }
+            return beats;
+        }
+
+        // Fallback: if no targetCount provided, use range max (legacy behavior)
+        if (initialDensity <= targetRange.max && targetCount === undefined) {
             if (this.config.logConversions) {
                 console.log(
                     `[DifficultyVariantGenerator] Density ${initialDensity.toFixed(2)} notes/sec already within ` +
@@ -1883,9 +1915,11 @@ export class DifficultyVariantGenerator {
         const removedBeats = new Set<T>();
         let remainingCount = beats.length;
         const maxPasses = this.config.maxReductionPasses;
+        let passesUsed = 0;
 
         // Multi-pass convergence loop (Task 2.2.5-2.2.8)
         for (let pass = 1; pass <= maxPasses; pass++) {
+            passesUsed = pass;
             let beatsRemovedThisPass = 0;
             const isFinalPass = pass === maxPasses;
 
@@ -1913,12 +1947,20 @@ export class DifficultyVariantGenerator {
                 // Skip already removed beats
                 if (removedBeats.has(beat)) continue;
 
-                // Check if we've reached target density (notes/sec)
-                const projectedDensity = ((remainingCount - 1) / totalBeats) * bpmPerSecond;
-
-                if (projectedDensity <= targetRange.max) {
-                    // We've removed enough beats, stop this pass
-                    break;
+                // Check if we've reached target density
+                if (targetCount !== undefined) {
+                    // Use midpoint target count as primary stopping condition
+                    if (remainingCount - 1 <= targetCount) {
+                        // We've reached the midpoint target, stop this pass
+                        break;
+                    }
+                } else {
+                    // Fallback: use range max (legacy behavior)
+                    const projectedDensity = ((remainingCount - 1) / totalBeats) * bpmPerSecond;
+                    if (projectedDensity <= targetRange.max) {
+                        // We've removed enough beats, stop this pass
+                        break;
+                    }
                 }
 
                 // Check protection rules for this pass
@@ -1955,24 +1997,37 @@ export class DifficultyVariantGenerator {
                 );
             }
 
-            // Check if we've reached the target (Task 2.2.4)
-            const currentDensity = (remainingCount / totalBeats) * bpmPerSecond;
-            if (currentDensity <= targetRange.max) {
-                break; // Target reached, stop convergence loop
+            // Check if we've reached the target
+            if (targetCount !== undefined) {
+                if (remainingCount <= targetCount) {
+                    break; // Midpoint target reached, stop convergence loop
+                }
+            } else {
+                const currentDensity = (remainingCount / totalBeats) * bpmPerSecond;
+                if (currentDensity <= targetRange.max) {
+                    break; // Target reached, stop convergence loop
+                }
             }
         }
 
         // Check if we couldn't reach target density after all passes
         const finalDensity = (remainingCount / totalBeats) * bpmPerSecond;
-        if (finalDensity > targetRange.max && this.config.logConversions) {
+        const missedTarget = targetCount !== undefined
+            ? remainingCount > targetCount
+            : finalDensity > targetRange.max;
+        if (missedTarget && this.config.logConversions) {
+            const targetLabel = targetCount !== undefined
+                ? `${targetCount} beats (midpoint ${(targetCount / totalBeats * bpmPerSecond).toFixed(2)} nps)`
+                : `${targetRange.max} notes/sec`;
             console.warn(
-                `[DifficultyVariantGenerator] Could not reach target density ${targetRange.max} notes/sec for ${targetDifficulty} after ${maxPasses} passes. ` +
+                `[DifficultyVariantGenerator] Could not reach target density ${targetLabel} for ${targetDifficulty} after ${maxPasses} passes. ` +
                 `Final density: ${finalDensity.toFixed(2)} notes/sec (${remainingCount} beats remaining)`
             );
         }
 
         // Filter out removed beats
         const keptBeats = beats.filter(b => !removedBeats.has(b));
+        metadata.reductionPasses = passesUsed;
         metadata.beatsRemoved += removedBeats.size;
 
         // Ensure we keep at least some beats (don't over-reduce)
