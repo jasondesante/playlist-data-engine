@@ -138,11 +138,11 @@ Replace the probabilistic per-index multiplier with a global target calculator t
 
 Add a post-generation check that validates all variants are within their density ranges.
 
-- [ ] Task 4.1: Create `validateDensityInRange()` method
-  - [ ] 4.1.1: Calculate final density for each variant using `calculateDensity()`
-  - [ ] 4.1.2: Compare against `SUBDIVISION_LIMITS[difficulty].targetDensityRange`
-  - [ ] 4.1.3: Log warnings for variants that are out of range (but don't throw — some edge cases like very short songs may not be able to hit exact targets)
-  - [ ] 4.1.4: Return a validation result per variant: `{ inRange: boolean, density: number, targetRange: { min, max } }`
+- [x] Task 4.1: Create `validateDensityInRange()` method
+  - [x] 4.1.1: Calculate final density for each variant using `calculateDensity()`
+  - [x] 4.1.2: Compare against `SUBDIVISION_LIMITS[difficulty].targetDensityRange`
+  - [x] 4.1.3: Log warnings for variants that are out of range (but don't throw — some edge cases like very short songs may not be able to hit exact targets)
+  - [x] 4.1.4: Return a validation result per variant: `{ inRange: boolean, density: number, targetRange: { min, max } }`
 
 - [ ] Task 4.2: Wire validation into `generate()`
   - [ ] 4.2.1: After generating all variants, run `validateDensityInRange()` on each

@@ -458,6 +458,25 @@ export interface BeatsToAddResult {
 }
 
 /**
+ * Result of validating variant density against target range
+ *
+ * Task 4.1: Created for convergence validation
+ */
+export interface VariantDensityValidationResult {
+    /** Whether the variant's density is within the target range */
+    inRange: boolean;
+
+    /** The calculated density (notes per second) */
+    density: number;
+
+    /** The target density range for this difficulty */
+    targetRange: { min: number; max: number };
+
+    /** The difficulty level that was validated */
+    difficulty: DifficultyLevel;
+}
+
+/**
  * Configuration for difficulty variant generation
  */
 export interface DifficultyVariantConfig {
@@ -927,11 +946,64 @@ export class DifficultyVariantGenerator {
         }
     }
 
+
+    /**
+     * Validate that a variant's density falls within the target range for its difficulty
+     *
+     * Task 4.1: Convergence validation - check final density against target range
+     *
+     * This method calculates the final density of a variant and compares it against
+     * the target density range defined in SUBDIVISION_LIMITS. It logs warnings for
+     * out-of-range variants but does NOT throw, since edge cases (very short songs,
+     * extreme tempos) may not be able to hit exact targets.
+     *
+     * @param variant - The variant to validate
+     * @param bpm - The tempo in beats per minute
+     * @returns DensityValidationResult with inRange status, density, and target range
+     */
+    private validateDensityInRange(
+        variant: DifficultyVariant,
+        bpm: number
+    ): VariantDensityValidationResult {
+        // Task 4.1.1: Calculate final density for the variant
+        const density = this.calculateDensity(variant.beats, bpm);
+
+        // Task 4.1.2: Compare against SUBDIVISION_LIMITS[difficulty].targetDensityRange
+        const targetRange = SUBDIVISION_LIMITS[variant.difficulty].targetDensityRange;
+
+        // Check if density is within range (handle Infinity for hard difficulty max)
+        const inRange = density >= targetRange.min &&
+            (targetRange.max === Infinity || density <= targetRange.max);
+
+        // Task 4.1.3: Log warnings for variants that are out of range
+        if (!inRange) {
+            const maxDisplay = targetRange.max === Infinity ? '∞' : targetRange.max.toFixed(2);
+            console.warn(
+                `[DifficultyVariantGenerator] ${variant.difficulty} variant density ${density.toFixed(2)} nps ` +
+                `is OUTSIDE target range [${targetRange.min.toFixed(2)}, ${maxDisplay}]. ` +
+                `This may occur for edge cases (short songs, extreme tempos).`
+            );
+        } else if (this.config.logConversions) {
+            const maxDisplay = targetRange.max === Infinity ? '∞' : targetRange.max.toFixed(2);
+            console.log(
+                `[DifficultyVariantGenerator] ${variant.difficulty} variant density ${density.toFixed(2)} nps ` +
+                `is within target range [${targetRange.min.toFixed(2)}, ${maxDisplay}] ✓`
+            );
+        }
+
+        // Task 4.1.4: Return validation result
+        return {
+            inRange,
+            density,
+            targetRange,
+            difficulty: variant.difficulty,
+        };
+    }
     /**
      * Generate a single difficulty variant
      *
-     * @param composite - The composite stream
      * @param targetDifficulty - The target difficulty level
+     * @param composite - The composite stream
      * @param naturalDifficulty - The natural difficulty of the composite
      * @param phraseAnalysis - Optional phrase analysis for pattern library access
      * @param gridDecisions - Optional grid decisions from quantized streams

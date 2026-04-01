@@ -257,6 +257,7 @@ export type {
     DifficultyVariantConfig,
     DensityTargetStrategy,
     BeatCountTarget,
+    VariantDensityValidationResult,
 } from './DifficultyVariantGenerator.js';
 
 // Beat Key Helpers (for rhythm game chart creation)
