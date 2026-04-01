@@ -3026,6 +3026,7 @@ The system produces a `GeneratedRhythm` containing:
 | **DensityAnalyzer** | [src/core/analysis/beat/DensityAnalyzer.ts](../src/core/analysis/beat/DensityAnalyzer.ts) |
 | **StreamScorer** | [src/core/analysis/beat/StreamScorer.ts](../src/core/analysis/beat/StreamScorer.ts) |
 | **CompositeStreamGenerator** | [src/core/analysis/beat/CompositeStreamGenerator.ts](../src/core/analysis/beat/CompositeStreamGenerator.ts) |
+| **RhythmicBalancer** | [src/core/analysis/beat/RhythmicBalancer.ts](../src/core/analysis/beat/RhythmicBalancer.ts) |
 | **DifficultyVariantGenerator** | [src/core/analysis/beat/DifficultyVariantGenerator.ts](../src/core/analysis/beat/DifficultyVariantGenerator.ts) |
 
 ---
@@ -3038,16 +3039,16 @@ The system produces a `GeneratedRhythm` containing:
 └─────────────┘     └──────────────────┘     └───────────────────┘
                                                     │
                                                     ▼
-┌─────────────────┐     ┌──────────────────┐     ┌───────────────────┐
-│ GeneratedRhythm │ ◀── │ DifficultyVariant │ ◀── │ CompositeStream   │
-│ (final output)  │     │ Generator         │     │ Generator         │
-└─────────────────┘     └──────────────────┘     └───────────────────┘
-                              ▲                        ▲
-                              │                        │
-                    ┌─────────────────┐     ┌─────────────────┐
-                    │  StreamScorer   │ ◀── │  PhraseAnalyzer │
-                    └─────────────────┘     │  DensityAnalyzer│
-                                            └─────────────────┘
+┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐     ┌───────────────────┐
+│ GeneratedRhythm │ ◀── │ DifficultyVariant │ ◀── │ RhythmicBalancer │ ◀── │ CompositeStream   │
+│ (final output)  │     │ Generator         │     │                  │     │ Generator         │
+└─────────────────┘     └──────────────────┘     └─────────────────┘     └───────────────────┘
+                              ▲                                                   ▲
+                              │                                                   │
+                    ┌─────────────────┐                                 ┌─────────────────┐
+                    │  StreamScorer   │ ◀────────────────────────────── │  PhraseAnalyzer │
+                    └─────────────────┘                                 │  DensityAnalyzer│
+                                                                        └─────────────────┘
 ```
 
 ---

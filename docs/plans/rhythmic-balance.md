@@ -227,8 +227,8 @@ The density reducer needs to know which beats are structurally important and pre
   - [x] 6.1.3: Document `RhythmicBalanceConfig` fields with defaults and examples
   - [x] 6.1.4: Update `DifficultyVariantConfig` to document `rhythmicBalanceConfig` and its effect on `isStrongBeat()` and `calculateRemovalPriority()`
 
-- [ ] Task 6.2: Update BEAT_DETECTION.md
-  - [ ] 6.2.1: Update the procedural rhythm generation pipeline diagram to include RhythmicBalancer
+- [x] Task 6.2: Update BEAT_DETECTION.md
+  - [x] 6.2.1: Update the procedural rhythm generation pipeline diagram to include RhythmicBalancer
 
 ---
 
