@@ -1108,7 +1108,7 @@ export class RhythmGenerator {
         log('Phase 2', 0.3, `Detected ${phraseAnalysis.phrases.length} rhythmic phrases`);
         signal?.throwIfAborted();
 
-        const densityAnalysis = this.analyzeDensity(quantizationResult, unifiedBeatMap.quarterNoteBpm);
+        const densityAnalysis = this.analyzeDensity(quantizationResult, unifiedBeatMap.quarterNoteBpm, unifiedBeatMap.duration);
         log('Phase 2', 0.7, `Density category: ${densityAnalysis.combinedMetrics.densityCategory}`);
         log('Phase 2', 1, 'Phase 2 complete');
         signal?.throwIfAborted();
@@ -1123,7 +1123,7 @@ export class RhythmGenerator {
         log('Phase 3', 0.2, `Scored ${scoringResult.sectionWinners.length} sections`);
         signal?.throwIfAborted();
 
-        const composite = this.generateComposite(quantizationResult, scoringResult, densityAnalysis);
+        const composite = this.generateComposite(quantizationResult, scoringResult, densityAnalysis, unifiedBeatMap.duration);
         log('Phase 3', 0.4, `Generated composite with ${composite.beats.length} beats, ` +
             `natural difficulty: ${composite.naturalDifficulty}`);
         signal?.throwIfAborted();
@@ -1250,8 +1250,8 @@ export class RhythmGenerator {
      * @param quantizedStreams - Quantized band streams
      * @returns Density analysis result
      */
-    analyzeDensity(quantizedStreams: QuantizedBandStreams, bpm: number): DensityAnalysisResult {
-        return this.densityAnalyzer.analyze(quantizedStreams, bpm);
+    analyzeDensity(quantizedStreams: QuantizedBandStreams, bpm: number, trackDurationSeconds?: number): DensityAnalysisResult {
+        return this.densityAnalyzer.analyze(quantizedStreams, bpm, trackDurationSeconds);
     }
 
     /**
@@ -1288,9 +1288,10 @@ export class RhythmGenerator {
     generateComposite(
         streams: QuantizedBandStreams,
         scoringResult: StreamScoringResult,
-        densityAnalysis: DensityAnalysisResult
+        densityAnalysis: DensityAnalysisResult,
+        trackDurationSeconds?: number
     ): CompositeStream {
-        return this.compositeGenerator.generate(streams, scoringResult, densityAnalysis);
+        return this.compositeGenerator.generate(streams, scoringResult, densityAnalysis, trackDurationSeconds);
     }
 
     /**

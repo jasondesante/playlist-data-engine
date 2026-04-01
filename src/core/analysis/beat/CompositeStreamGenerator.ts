@@ -196,7 +196,8 @@ export class CompositeStreamGenerator {
     generate(
         streams: QuantizedBandStreams,
         scoringResult: StreamScoringResult,
-        densityAnalysis: DensityAnalysisResult
+        densityAnalysis: DensityAnalysisResult,
+        trackDurationSeconds?: number
     ): CompositeStream {
         const sectionWinners = scoringResult.sectionWinners;
         const beatsPerBand = { low: 0, mid: 0, high: 0 };
@@ -260,7 +261,8 @@ export class CompositeStreamGenerator {
         const naturalDifficulty = this.determineNaturalDifficulty(
             deduplicatedBeats,
             densityAnalysis,
-            bpm
+            bpm,
+            trackDurationSeconds
         );
 
         // Build metadata
@@ -335,7 +337,8 @@ export class CompositeStreamGenerator {
     private determineNaturalDifficulty(
         beats: CompositeBeat[],
         densityAnalysis: DensityAnalysisResult,
-        bpm: number
+        bpm: number,
+        trackDurationSeconds?: number
     ): NaturalDifficulty {
         // Calculate density from the composite (merged) beats
         // This represents what the player actually hits
@@ -343,12 +346,16 @@ export class CompositeStreamGenerator {
             return 'easy';
         }
 
-        // Find the total number of quarter note beats (max beatIndex + 1)
-        const maxBeatIndex = Math.max(...beats.map(b => b.beatIndex));
-        const totalQuarterNotes = maxBeatIndex + 1;
-
-        // Calculate notes per second: notes/beat * beats/second
-        const notesPerSecond = (beats.length / totalQuarterNotes) * (bpm / 60);
+        // Calculate notes per second using actual track duration when available
+        let notesPerSecond: number;
+        if (trackDurationSeconds && trackDurationSeconds > 0) {
+            notesPerSecond = beats.length / trackDurationSeconds;
+        } else {
+            // Fallback: derive from beat span (less accurate)
+            const maxBeatIndex = Math.max(...beats.map(b => b.beatIndex));
+            const totalQuarterNotes = maxBeatIndex + 1;
+            notesPerSecond = (beats.length / totalQuarterNotes) * (bpm / 60);
+        }
 
         // Determine natural difficulty based on density thresholds
         if (notesPerSecond < SPARSE_THRESHOLD) {

@@ -261,14 +261,14 @@ export class DensityAnalyzer {
      * @param bpm - Tempo in beats per minute, used to convert to notes/second
      * @returns Complete density analysis result
      */
-    analyze(streams: QuantizedBandStreams, bpm: number): DensityAnalysisResult {
+    analyze(streams: QuantizedBandStreams, bpm: number, trackDurationSeconds?: number): DensityAnalysisResult {
         const bpmPerSecond = bpm / 60;
 
         // Analyze each band
         const bandMetrics = {
-            low: this.analyzeBand(streams.streams.low, 'low', bpmPerSecond),
-            mid: this.analyzeBand(streams.streams.mid, 'mid', bpmPerSecond),
-            high: this.analyzeBand(streams.streams.high, 'high', bpmPerSecond),
+            low: this.analyzeBand(streams.streams.low, 'low', bpmPerSecond, trackDurationSeconds),
+            mid: this.analyzeBand(streams.streams.mid, 'mid', bpmPerSecond, trackDurationSeconds),
+            high: this.analyzeBand(streams.streams.high, 'high', bpmPerSecond, trackDurationSeconds),
         };
 
         // Combine all beats for combined analysis
@@ -286,10 +286,10 @@ export class DensityAnalyzer {
         );
 
         // Calculate combined metrics
-        const combinedMetrics = this.calculateCombinedMetrics(perBeatDensity, bpmPerSecond);
+        const combinedMetrics = this.calculateCombinedMetrics(perBeatDensity, bpmPerSecond, trackDurationSeconds);
 
         // Calculate section-based metrics
-        const sections = this.calculateSectionMetrics(perBeatDensity, bpmPerSecond);
+        const sections = this.calculateSectionMetrics(perBeatDensity, bpmPerSecond, trackDurationSeconds);
 
         return {
             bandMetrics,
@@ -302,7 +302,7 @@ export class DensityAnalyzer {
     /**
      * Analyze a single band for density metrics
      */
-    private analyzeBand(rhythmMap: GeneratedRhythmMap, band: 'low' | 'mid' | 'high', bpmPerSecond: number): BandDensityMetrics {
+    private analyzeBand(rhythmMap: GeneratedRhythmMap, band: 'low' | 'mid' | 'high', bpmPerSecond: number, trackDurationSeconds?: number): BandDensityMetrics {
         const beats = rhythmMap.beats;
 
         // Find the maximum beat index to determine total beats
@@ -348,7 +348,12 @@ export class DensityAnalyzer {
 
         // Calculate statistics in notes per second
         const countsArray = perBeatDensity.map(b => b.transientCount);
-        const notesPerSecond = totalBeats > 0 ? (totalTransients / totalBeats) * bpmPerSecond : 0;
+        let notesPerSecond: number;
+        if (trackDurationSeconds && trackDurationSeconds > 0) {
+            notesPerSecond = totalTransients / trackDurationSeconds;
+        } else {
+            notesPerSecond = totalBeats > 0 ? (totalTransients / totalBeats) * bpmPerSecond : 0;
+        }
         const minNotesPerSecond = countsArray.length > 0 ? Math.min(...countsArray) * bpmPerSecond : 0;
         const maxNotesPerSecond = countsArray.length > 0 ? Math.max(...countsArray) * bpmPerSecond : 0;
 
@@ -464,15 +469,20 @@ export class DensityAnalyzer {
     /**
      * Calculate combined metrics from per-beat density
      */
-    private calculateCombinedMetrics(perBeatDensity: BeatDensityMetrics[], bpmPerSecond: number): {
+    private calculateCombinedMetrics(perBeatDensity: BeatDensityMetrics[], bpmPerSecond: number, trackDurationSeconds?: number): {
         totalTransients: number;
         notesPerSecond: number;
         densityCategory: DensityCategory;
         naturalDifficulty: NaturalDifficulty;
     } {
         const totalTransients = perBeatDensity.reduce((sum, b) => sum + b.transientCount, 0);
-        const totalBeats = perBeatDensity.length;
-        const notesPerSecond = totalBeats > 0 ? (totalTransients / totalBeats) * bpmPerSecond : 0;
+        let notesPerSecond: number;
+        if (trackDurationSeconds && trackDurationSeconds > 0) {
+            notesPerSecond = totalTransients / trackDurationSeconds;
+        } else {
+            const totalBeats = perBeatDensity.length;
+            notesPerSecond = totalBeats > 0 ? (totalTransients / totalBeats) * bpmPerSecond : 0;
+        }
 
         const densityCategory = this.categorizeDensity(notesPerSecond);
         const naturalDifficulty = this.determineNaturalDifficulty(densityCategory);
@@ -488,7 +498,7 @@ export class DensityAnalyzer {
     /**
      * Calculate section-based metrics
      */
-    private calculateSectionMetrics(perBeatDensity: BeatDensityMetrics[], bpmPerSecond: number): SectionDensityMetrics[] {
+    private calculateSectionMetrics(perBeatDensity: BeatDensityMetrics[], bpmPerSecond: number, _trackDurationSeconds?: number): SectionDensityMetrics[] {
         const sections: SectionDensityMetrics[] = [];
         const beatsPerSection = this.config.beatsPerSection;
         const totalBeats = perBeatDensity.length;

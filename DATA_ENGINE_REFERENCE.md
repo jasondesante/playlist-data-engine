@@ -2889,7 +2889,7 @@ constructor(config?: Partial<StreamScorerConfig>)
 ### CompositeStreamGenerator
 *Location:* *[src/core/analysis/beat/CompositeStreamGenerator.ts](src/core/analysis/beat/CompositeStreamGenerator.ts)*
 
-Creates a composite stream by slicing together the highest-scoring sections from each band. The composite represents the most interesting rhythm patterns across all frequency bands. Derives BPM internally from the beat map's `quarterNoteInterval` for notes/second density calculation.
+Creates a composite stream by slicing together the highest-scoring sections from each band. The composite represents the most interesting rhythm patterns across all frequency bands. Density is calculated as `totalBeats / trackDurationSeconds` using the actual audio duration from `unifiedBeatMap.duration`.
 
 **For composite stream generation algorithm, see [docs/BEAT_DETECTION.md#composite-stream-generation](docs/BEAT_DETECTION.md#composite-stream-generation)**
 
@@ -2902,7 +2902,7 @@ Creates a composite stream by slicing together the highest-scoring sections from
 ### DifficultyVariantGenerator
 *Location:* *[src/core/analysis/beat/DifficultyVariantGenerator.ts](src/core/analysis/beat/DifficultyVariantGenerator.ts)*
 
-Generates easy/medium/hard difficulty variants from the composite stream, plus a natural variant representing the unedited composite. Uses **global target-based density control** that calculates the exact beat count needed from the target density range, then distributes across indices. Employs a grid lock mechanism to ensure all density operations respect the single-grid-per-beat rule. Density is measured in notes per second (derived from BPM via `unifiedBeatMap.quarterNoteBpm`).
+Generates easy/medium/hard difficulty variants from the composite stream, plus a natural variant representing the unedited composite. Uses **global target-based density control** that calculates the exact beat count needed from the target density range, then distributes across indices. Employs a grid lock mechanism to ensure all density operations respect the single-grid-per-beat rule. Density is measured in notes per second as `beats.length / unifiedBeatMap.duration`.
 
 **For variant generation strategy, simplification rules, and density enhancement, see [docs/BEAT_DETECTION.md#difficulty-variant-generation](docs/BEAT_DETECTION.md#difficulty-variant-generation)**
 
