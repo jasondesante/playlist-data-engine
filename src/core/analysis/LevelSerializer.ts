@@ -841,6 +841,12 @@ export class LevelSerializer {
                 measureStartOffset: 0,
                 minimumTransientIntensity: 0.1,
                 transientConfig: undefined,
+                rhythmicBalanceConfig: {
+                    strongBeatEmphasis: 'natural',
+                    downbeatProximityRange: 2,
+                    fillEmptyMeasures: true,
+                    addedBeatIntensity: 0.45,
+                },
                 seed: genMeta?.seed,
                 verbose: false,
                 enableCache: true,

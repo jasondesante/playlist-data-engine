@@ -45,6 +45,11 @@ import {
     type SubdivisionConversionMetadata,
     type EnhancementMetadata,
 } from '../analysis/beat/DifficultyVariantGenerator.js';
+import {
+    RhythmicBalancer,
+    type RhythmicBalanceConfig,
+    DEFAULT_RHYTHMIC_BALANCE_CONFIG,
+} from '../analysis/beat/RhythmicBalancer.js';
 import type { UnifiedBeatMap, DifficultyPreset } from '../types/BeatMap.js';
 
 // ============================================================================
@@ -164,6 +169,25 @@ export interface RhythmGenerationOptions {
      * at 200 BPM). Set `{ enabled: false }` to disable.
      */
     tempoQuantizationConfig?: TempoAwareQuantizerConfig;
+
+    /**
+     * Rhythmic balance configuration for enforcing metric structure on the
+     * composite stream before difficulty variants are generated.
+     *
+     * Controls downbeat anchoring, empty measure filling, and which beats
+     * are considered "strong" for density reduction priority.
+     *
+     * @default DEFAULT_RHYTHMIC_BALANCE_CONFIG
+     * @example
+     * ```typescript
+     * rhythmicBalanceConfig: {
+     *   strongBeatEmphasis: 'natural', // or 'backbeat', 'neutral'
+     *   fillEmptyMeasures: true,
+     *   downbeatProximityRange: 2,
+     * }
+     * ```
+     */
+    rhythmicBalanceConfig?: Partial<RhythmicBalanceConfig>;
 
     /** Seed for reproducibility (optional) */
     seed?: string;
@@ -767,6 +791,7 @@ type ResolvedOptions = {
     scoringConfig?: Partial<StreamScorerConfig>;
     phraseAnalyzerConfig?: Partial<PhraseAnalyzerConfig>;
     tempoQuantizationConfig?: TempoAwareQuantizerConfig;
+    rhythmicBalanceConfig: RhythmicBalanceConfig;
     seed: string | undefined;
     verbose: boolean;
     enableCache: boolean;
@@ -781,6 +806,7 @@ const DEFAULT_OPTIONS: ResolvedOptions = {
     transientConfig: undefined,
     scoringConfig: undefined,
     phraseAnalyzerConfig: undefined,
+    rhythmicBalanceConfig: DEFAULT_RHYTHMIC_BALANCE_CONFIG,
     seed: undefined,
     verbose: false,
     enableCache: true,
@@ -839,6 +865,7 @@ export class RhythmGenerator {
     private compositeGenerator: CompositeStreamGenerator;
     private variantGenerator: DifficultyVariantGenerator;
     private tempoAwareQuantizer: TempoAwareQuantizer;
+    private rhythmicBalancer: RhythmicBalancer;
 
     // Cache storage
     private cache: Map<string, CacheEntry<unknown>> = new Map();
@@ -851,7 +878,17 @@ export class RhythmGenerator {
      * @param options - Configuration options (all optional, defaults provided)
      */
     constructor(options: RhythmGenerationOptions = {}) {
-        this.options = { ...DEFAULT_OPTIONS, ...options };
+        // Merge rhythmicBalanceConfig specially since it's a partial object
+        const rhythmicBalanceConfig: RhythmicBalanceConfig = {
+            ...DEFAULT_RHYTHMIC_BALANCE_CONFIG,
+            ...options.rhythmicBalanceConfig,
+        };
+
+        this.options = {
+            ...DEFAULT_OPTIONS,
+            ...options,
+            rhythmicBalanceConfig,
+        };
 
         // Initialize pipeline components with appropriate configurations
         this.multiBandAnalyzer = new MultiBandAnalyzer();
@@ -874,6 +911,9 @@ export class RhythmGenerator {
         this.compositeGenerator = new CompositeStreamGenerator();
 
         this.variantGenerator = new DifficultyVariantGenerator({ seed: this.options.seed });
+
+        // Rhythmic balancer enforces metric structure on composite streams
+        this.rhythmicBalancer = new RhythmicBalancer(this.options.rhythmicBalanceConfig);
 
         // Tempo-aware quantizer wraps the rhythm quantizer for BPM-based grid rules
         this.tempoAwareQuantizer = new TempoAwareQuantizer(
@@ -1128,7 +1168,12 @@ export class RhythmGenerator {
             `natural difficulty: ${composite.naturalDifficulty}`);
         signal?.throwIfAborted();
 
-        const difficultyVariants = this.generateDifficultyVariants(composite, phraseAnalysis, quantizationResult, unifiedBeatMap);
+        // Apply rhythmic balancing to enforce metric structure and downbeat anchoring
+        const balancedComposite = this.rhythmicBalancer.balance(composite, unifiedBeatMap);
+        log('Phase 3', 0.6, `Balanced composite: ${balancedComposite.beats.length} beats ` +
+            `(added ${balancedComposite.beats.length - composite.beats.length} beats for rhythmic structure)`);
+
+        const difficultyVariants = this.generateDifficultyVariants(balancedComposite, phraseAnalysis, quantizationResult, unifiedBeatMap);
         log('Phase 3', 0.8, 'Generated easy/medium/hard difficulty variants');
         log('Phase 3', 1, 'Phase 3 complete');
 
@@ -1146,7 +1191,7 @@ export class RhythmGenerator {
             densityValidationRetries: quantizationResult.metadata.densityValidation.maxRetryCount,
             phrasesDetected: phraseAnalysis.phrases.length,
             averageDensity: densityAnalysis.combinedMetrics.notesPerSecond,
-            naturalDifficulty: composite.naturalDifficulty,
+            naturalDifficulty: balancedComposite.naturalDifficulty,
             generationConfig: this.options,
             duration: audioBuffer.duration,
             totalBeats: unifiedBeatMap.beats.length,
@@ -1155,7 +1200,7 @@ export class RhythmGenerator {
         const result: GeneratedRhythm = {
             difficultyVariants,
             bandStreams: quantizationResult.streams,
-            composite,
+            composite: balancedComposite,
             analysis: {
                 transientAnalysis,
                 quantizationResult,

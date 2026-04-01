@@ -272,3 +272,18 @@ export {
     type KeyAssignableBeatMap,
     type KeyAssignment,
 } from './beatKeyHelpers.js';
+
+// Rhythmic Balancer
+export { RhythmicBalancer } from './RhythmicBalancer.js';
+export type {
+    RhythmicBalanceConfig,
+    StrongBeatEmphasis,
+} from './RhythmicBalancer.js';
+export {
+    DEFAULT_RHYTHMIC_BALANCE_CONFIG,
+    getMetricGroupSize,
+    isMetricStrongBeat,
+    isMetricWeakBeat,
+    findActiveSegment,
+    isStrongBeatForEmphasis,
+} from './RhythmicBalancer.js';

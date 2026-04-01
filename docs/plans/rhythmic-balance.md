@@ -78,9 +78,9 @@ private isStrongBeat(beatIndex: number): boolean {
 
 ## Phase 1: RhythmicBalancer Foundation
 
-- [ ] Task 1.1: Create `RhythmicBalanceConfig` interface
-  - [ ] 1.1.1: New file `src/core/analysis/beat/RhythmicBalancer.ts`
-  - [ ] 1.1.2: Interface with fields:
+- [x] Task 1.1: Create `RhythmicBalanceConfig` interface
+  - [x] 1.1.1: New file `src/core/analysis/beat/RhythmicBalancer.ts`
+  - [x] 1.1.2: Interface with fields:
     - `strongBeatEmphasis: 'natural' | 'backbeat' | 'neutral'` (default `'natural'`) — which beats are "strong" for density reduction priority. Derives grouping from time signature (see "Time Signature Awareness" above):
       - `'natural'` — emphasize the natural metric accents (e.g., 4/4 → beats 1, 3; 9/8 → beats 1, 4, 7)
       - `'backbeat'` — emphasize the weak positions within each metric group (e.g., 4/4 → beats 2, 4; 9/8 → beats 2, 3, 5, 6, 8, 9)
@@ -88,21 +88,21 @@ private isStrongBeat(beatIndex: number): boolean {
     - `downbeatProximityRange: number` (default `2`) — max distance in quarter-note beats from an upbeat note to the nearest downbeat note. 0 = same beat only, 4 = same measure
     - `fillEmptyMeasures: boolean` (default `true`) — whether to fill empty measures with a beat on beat 1 downbeat
     - `addedBeatIntensity: number` (default `0.45`) — intensity for beats added by the balancer. Lower than detected beats so they're removable during density reduction if needed
-  - [ ] 1.1.3: Export default config constant `DEFAULT_RHYTHMIC_BALANCE_CONFIG`
+  - [x] 1.1.3: Export default config constant `DEFAULT_RHYTHMIC_BALANCE_CONFIG`
 
-- [ ] Task 1.2: Create `RhythmicBalancer` class
-  - [ ] 1.2.1: Constructor accepts `RhythmicBalanceConfig` (optional, defaults to `DEFAULT_RHYTHMIC_BALANCE_CONFIG`)
-  - [ ] 1.2.2: `balance(composite: CompositeStream, unifiedBeatMap: UnifiedBeatMap): CompositeStream` — main entry point, returns new CompositeStream with updated beats array and metadata
-  - [ ] 1.2.3: Method order: `shiftLoneSubdivisionNotes()` → `fillEmptyMeasures()` → `enforceDownbeatProximity()`
-  - [ ] 1.2.4: Return value preserves `sections`, `naturalDifficulty`, `quarterNoteInterval`; updates `metadata.totalBeats`
+- [x] Task 1.2: Create `RhythmicBalancer` class
+  - [x] 1.2.1: Constructor accepts `RhythmicBalanceConfig` (optional, defaults to `DEFAULT_RHYTHMIC_BALANCE_CONFIG`)
+  - [x] 1.2.2: `balance(composite: CompositeStream, unifiedBeatMap: UnifiedBeatMap): CompositeStream` — main entry point, returns new CompositeStream with updated beats array and metadata
+  - [x] 1.2.3: Method order: `shiftLoneSubdivisionNotes()` → `fillEmptyMeasures()` → `enforceDownbeatProximity()`
+  - [x] 1.2.4: Return value preserves `sections`, `naturalDifficulty`, `quarterNoteInterval`; updates `metadata.totalBeats`
 
-- [ ] Task 1.3: Add `rhythmicBalanceConfig` to `RhythmGeneratorConfig`
-  - [ ] 1.3.1: Add optional `rhythmicBalanceConfig?: RhythmicBalanceConfig` field to the config interface in `RhythmGenerator.ts`
-  - [ ] 1.3.2: Instantiate `RhythmicBalancer` in `RhythmGenerator` constructor
+- [x] Task 1.3: Add `rhythmicBalanceConfig` to `RhythmGeneratorConfig`
+  - [x] 1.3.1: Add optional `rhythmicBalanceConfig?: RhythmicBalanceConfig` field to the config interface in `RhythmGenerator.ts`
+  - [x] 1.3.2: Instantiate `RhythmicBalancer` in `RhythmGenerator` constructor
 
-- [ ] Task 1.4: Wire into pipeline
-  - [ ] 1.4.1: Call `rhythmicBalancer.balance(composite, unifiedBeatMap)` after composite generation (line ~1126) and before difficulty variants (line ~1131)
-  - [ ] 1.4.2: Pass the balanced composite to `generateDifficultyVariants()`
+- [x] Task 1.4: Wire into pipeline
+  - [x] 1.4.1: Call `rhythmicBalancer.balance(composite, unifiedBeatMap)` after composite generation (line ~1126) and before difficulty variants (line ~1131)
+  - [x] 1.4.2: Pass the balanced composite to `generateDifficultyVariants()`
   - [ ] 1.4.3: Pass `rhythmicBalanceConfig` (or just `strongBeatEmphasis`) to `DifficultyVariantGenerator` for density reduction awareness
 
 ---

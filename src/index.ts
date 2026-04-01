@@ -630,6 +630,19 @@ export {
     type VariantBeat,
 } from './core/analysis/beat/DifficultyVariantGenerator.js';
 
+// Rhythmic Balancer (between Phase 3.2 and 3.3)
+export {
+    RhythmicBalancer,
+    DEFAULT_RHYTHMIC_BALANCE_CONFIG,
+    getMetricGroupSize,
+    isMetricStrongBeat,
+    isMetricWeakBeat,
+    findActiveSegment,
+    isStrongBeatForEmphasis,
+    type RhythmicBalanceConfig,
+    type StrongBeatEmphasis,
+} from './core/analysis/beat/RhythmicBalancer.js';
+
 // ============================================================================
 // PITCH DETECTION
 // ============================================================================
