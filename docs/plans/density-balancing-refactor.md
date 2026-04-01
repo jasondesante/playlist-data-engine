@@ -96,11 +96,11 @@ Replace the single-pass `reduceDensityToTarget()` with a global target calculato
 
 Replace the probabilistic per-index multiplier with a global target calculator that fills empty indices first.
 
-- [ ] Task 3.1: Create `calculateBeatsToAdd()` helper
-  - [ ] 3.1.1: Input: current beat count, total quarter-note span, BPM, target difficulty
-  - [ ] 3.1.2: Calculate target density per difficulty: easy=0.9, medium=1.25, hard=1.75 (same as Phase 2 Task 2.1)
-  - [ ] 3.1.3: Output: `beatsToAdd = max(0, targetCount - currentCount)`
-  - [ ] 3.1.4: Also return `maxBeatsPerIndex` based on the target difficulty's allowed grid types (e.g., straight_8th → max 2, straight_16th → max 4)
+- [x] Task 3.1: Create `calculateBeatsToAdd()` helper
+  - [x] 3.1.1: Input: current beat count, total quarter-note span, BPM, target difficulty
+  - [x] 3.1.2: Calculate target density per difficulty: easy=0.9, medium=1.25, hard=1.75 (same as Phase 2 Task 2.1)
+  - [x] 3.1.3: Output: `beatsToAdd = max(0, targetCount - currentCount)`
+  - [x] 3.1.4: Also return `maxBeatsPerIndex` based on the target difficulty's allowed grid types (e.g., straight_8th → max 2, straight_16th → max 4)
 
 - [ ] Task 3.2: Rewrite `calculateProbabilisticTargetBeatsPerBeat()` → `distributeBeatsAcrossIndices()`
   - [ ] 3.2.1: Input: `beatsToAdd` (global count), `beatsByIndex` (current occupancy), `gridLock` (per-index grid types), `maxBeatsPerIndex` per grid type

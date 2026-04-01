@@ -431,6 +431,20 @@ export interface BeatCountTarget {
 }
 
 /**
+ * Result of calculating how many beats to add for enhancement
+ */
+export interface BeatsToAddResult {
+    /** Number of beats to add to reach target */
+    beatsToAdd: number;
+
+    /** Target beat count to aim for */
+    targetCount: number;
+
+    /** Maximum beats per index based on allowed grid types */
+    maxBeatsPerIndex: number;
+}
+
+/**
  * Configuration for difficulty variant generation
  */
 export interface DifficultyVariantConfig {
@@ -1441,6 +1455,81 @@ export class DifficultyVariantGenerator {
             minCount,
             targetDensity,
         };
+    }
+
+    /**
+     * Calculate how many beats to add for density enhancement
+     *
+     * This method calculates the exact number of beats to add to reach the target
+     * density for a given difficulty level. It uses the same target density midpoints
+     * as calculateBeatCountTarget() for consistency.
+     *
+     * Task 3.1: Global target-based density enhancement helper
+     *
+     * @param currentBeatCount - Current number of beats
+     * @param totalQuarterNotes - Total quarter-note span (maxBeatIndex + 1)
+     * @param bpm - Beats per minute
+     * @param targetDifficulty - Target difficulty level
+     * @returns BeatsToAddResult with beatsToAdd, targetCount, and maxBeatsPerIndex
+     */
+    private calculateBeatsToAdd(
+        currentBeatCount: number,
+        totalQuarterNotes: number,
+        bpm: number,
+        targetDifficulty: DifficultyLevel
+    ): BeatsToAddResult {
+        // Get target count from the existing helper (Task 2.1)
+        const target = this.calculateBeatCountTarget(
+            currentBeatCount,
+            totalQuarterNotes,
+            bpm,
+            targetDifficulty
+        );
+
+        // Calculate how many beats to add (never negative)
+        const beatsToAdd = Math.max(0, target.targetCount - currentBeatCount);
+
+        // Determine max beats per index based on allowed grid types
+        // The max is determined by the most complex allowed grid type
+        const allowedTypes = getTempoAwareAllowedGridTypes(targetDifficulty, bpm);
+        const maxBeatsPerIndex = this.getMaxBeatsPerIndexFromGridTypes(allowedTypes);
+
+        return {
+            beatsToAdd,
+            targetCount: target.targetCount,
+            maxBeatsPerIndex,
+        };
+    }
+
+    /**
+     * Get max beats per index from a set of allowed grid types
+     *
+     * Returns the maximum number of beats that can fit at a single beat index
+     * based on the most complex grid type in the allowed set.
+     *
+     * @param allowedTypes - Array of allowed grid types
+     * @returns Maximum beats per index
+     */
+    private getMaxBeatsPerIndexFromGridTypes(allowedTypes: ExtendedGridType[]): number {
+        // Grid type to max positions mapping
+        const gridPositionsMap: Record<ExtendedGridType, number> = {
+            straight_16th: 4,
+            straight_8th: 2,
+            triplet_8th: 3,
+            straight_4th: 1,
+            quarter_triplet: 1,
+        };
+
+        // Find the max among allowed types
+        let maxPositions = 1;
+        for (const gridType of allowedTypes) {
+            const positions = gridPositionsMap[gridType];
+            if (positions > maxPositions) {
+                maxPositions = positions;
+            }
+        }
+
+        return maxPositions;
     }
 
     /**
