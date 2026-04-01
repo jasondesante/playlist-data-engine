@@ -111,29 +111,29 @@ private isStrongBeat(beatIndex: number): boolean {
 
 Rules: Every measure needs at least 1 beat, and if it has exactly 1 beat, that beat must be on a downbeat.
 
-- [ ] Task 2.1: Implement `shiftLoneSubdivisionNotes()`
-  - [ ] 2.1.1: Group beats by measure using `unifiedBeatMap.beats[beatIndex].measureNumber` (not `beatIndex % 4` — supports any time signature)
-  - [ ] 2.1.2: For each measure with exactly 1 beat where `gridPosition !== 0`, create a replacement beat at the same `beatIndex` with `gridPosition = 0`
-  - [ ] 2.1.3: Preserve the original beat's `intensity`, `band`, `sourceBand`, `gridType` — only change `gridPosition` and recalculate `timestamp`
-  - [ ] 2.1.4: Recalculate timestamp: `unifiedBeatMap.beats[beatIndex].timestamp + (0 * interval)` = just the beat start (gridPosition 0 is always the quarter-note position regardless of grid type)
-  - [ ] 2.1.5: Replace the original beat in the array with the shifted beat
+- [x] Task 2.1: Implement `shiftLoneSubdivisionNotes()`
+  - [x] 2.1.1: Group beats by measure using `unifiedBeatMap.beats[beatIndex].measureNumber` (not `beatIndex % 4` — supports any time signature)
+  - [x] 2.1.2: For each measure with exactly 1 beat where `gridPosition !== 0`, create a replacement beat at the same `beatIndex` with `gridPosition = 0`
+  - [x] 2.1.3: Preserve the original beat's `intensity`, `band`, `sourceBand`, `gridType` — only change `gridPosition` and recalculate `timestamp`
+  - [x] 2.1.4: Recalculate timestamp: `unifiedBeatMap.beats[beatIndex].timestamp + (0 * interval)` = just the beat start (gridPosition 0 is always the quarter-note position regardless of grid type)
+  - [x] 2.1.5: Replace the original beat in the array with the shifted beat
 
-- [ ] Task 2.2: Implement `fillEmptyMeasures()`
-  - [ ] 2.2.1: Determine the measure range from `unifiedBeatMap`: iterate `unifiedBeatMap.beats[]` to find min/max `measureNumber`
-  - [ ] 2.2.2: For each measure with 0 beats, find the downbeat beatIndex by scanning `unifiedBeatMap.beats[]` for the beat where `measureNumber === targetMeasure && isDownbeat === true`
-  - [ ] 2.2.3: Create a new `CompositeBeat` at that beatIndex with `gridPosition = 0`
-  - [ ] 2.2.4: Use `config.addedBeatIntensity` for intensity, `band = 'mid'`, `sourceBand = 'mid'`
-  - [ ] 2.2.5: Derive timestamp from `unifiedBeatMap.beats[beatIndex].timestamp`
-  - [ ] 2.2.6: Determine grid type from neighbor context (check adjacent measures for an existing beat's grid type), fall back to `straight_8th`
-  - [ ] 2.2.7: Guard: skip if no downbeat beat exists in unifiedBeatMap for that measure (track may not extend that far)
+- [x] Task 2.2: Implement `fillEmptyMeasures()`
+  - [x] 2.2.1: Determine the measure range from `unifiedBeatMap`: iterate `unifiedBeatMap.beats[]` to find min/max `measureNumber`
+  - [x] 2.2.2: For each measure with 0 beats, find the downbeat beatIndex by scanning `unifiedBeatMap.beats[]` for the beat where `measureNumber === targetMeasure && isDownbeat === true`
+  - [x] 2.2.3: Create a new `CompositeBeat` at that beatIndex with `gridPosition = 0`
+  - [x] 2.2.4: Use `config.addedBeatIntensity` for intensity, `band = 'mid'`, `sourceBand = 'mid'`
+  - [x] 2.2.5: Derive timestamp from `unifiedBeatMap.beats[beatIndex].timestamp`
+  - [x] 2.2.6: Determine grid type from neighbor context (check adjacent measures for an existing beat's grid type), fall back to `straight_8th`
+  - [x] 2.2.7: Guard: skip if no downbeat beat exists in unifiedBeatMap for that measure (track may not extend that far)
 
-- [ ] Task 2.3: Tests for measure coverage
-  - [ ] 2.3.1: Test that a measure with a lone "e" (gridPosition 1) note gets shifted to downbeat (gridPosition 0)
-  - [ ] 2.3.2: Test that a measure with a lone "+" (gridPosition 2) note gets shifted to downbeat
-  - [ ] 2.3.3: Test that a measure with a lone downbeat is left unchanged
-  - [ ] 2.3.4: Test that an empty measure gets a new beat on beat 1's downbeat
-  - [ ] 2.3.5: Test that a measure with 2+ beats is not modified by shift rules
-  - [ ] 2.3.6: Test edge case: track doesn't extend to end of last measure (partial final measure)
+- [x] Task 2.3: Tests for measure coverage
+  - [x] 2.3.1: Test that a measure with a lone "e" (gridPosition 1) note gets shifted to downbeat (gridPosition 0)
+  - [x] 2.3.2: Test that a measure with a lone "+" (gridPosition 2) note gets shifted to downbeat
+  - [x] 2.3.3: Test that a measure with a lone downbeat is left unchanged
+  - [x] 2.3.4: Test that an empty measure gets a new beat on beat 1's downbeat
+  - [x] 2.3.5: Test that a measure with 2+ beats is not modified by shift rules
+  - [x] 2.3.6: Test edge case: track doesn't extend to end of last measure (partial final measure)
 
 ---
 
