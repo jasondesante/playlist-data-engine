@@ -103,7 +103,7 @@ private isStrongBeat(beatIndex: number): boolean {
 - [x] Task 1.4: Wire into pipeline
   - [x] 1.4.1: Call `rhythmicBalancer.balance(composite, unifiedBeatMap)` after composite generation (line ~1126) and before difficulty variants (line ~1131)
   - [x] 1.4.2: Pass the balanced composite to `generateDifficultyVariants()`
-  - [ ] 1.4.3: Pass `rhythmicBalanceConfig` (or just `strongBeatEmphasis`) to `DifficultyVariantGenerator` for density reduction awareness
+  - [x] 1.4.3: Pass `rhythmicBalanceConfig` (or just `strongBeatEmphasis`) to `DifficultyVariantGenerator` for density reduction awareness
 
 ---
 

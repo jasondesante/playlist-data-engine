@@ -39,6 +39,7 @@ import type { NaturalDifficulty } from './DensityAnalyzer.js';
 import type { GridType, GridDecision } from './RhythmQuantizer.js';
 import type { PhraseAnalysisResult, RhythmicPhrase } from './PhraseAnalyzer.js';
 import type { UnifiedBeatMap } from '../../types/BeatMap.js';
+import type { RhythmicBalanceConfig } from './RhythmicBalancer.js';
 import { deriveSeed, hashSeedToFloat } from '../../../utils/hash.js';
 
 // ============================================================================
@@ -518,6 +519,16 @@ export interface DifficultyVariantConfig {
 
     /** Seed for deterministic probability rolls in beat enhancement. If not provided, falls back to a hash of beat data. */
     seed?: string;
+
+    /**
+     * Rhythmic balance configuration for density reduction awareness.
+     * When provided, the density reduction will use the strongBeatEmphasis setting
+     * to determine which beats are structurally important.
+     *
+     * This config is passed from RhythmGenerator to ensure density reduction
+     * respects the same rhythmic taste rules as the RhythmicBalancer.
+     */
+    rhythmicBalanceConfig?: RhythmicBalanceConfig;
 }
 
 // ============================================================================
@@ -537,6 +548,7 @@ const DEFAULT_DIFFICULTY_VARIANT_CONFIG: DifficultyVariantConfig = {
     densityTargetStrategy: 'midpoint',
     maxReductionPasses: 3,
     seed: undefined,
+    rhythmicBalanceConfig: undefined,
 };
 
 // ============================================================================

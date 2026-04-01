@@ -910,7 +910,10 @@ export class RhythmGenerator {
 
         this.compositeGenerator = new CompositeStreamGenerator();
 
-        this.variantGenerator = new DifficultyVariantGenerator({ seed: this.options.seed });
+        this.variantGenerator = new DifficultyVariantGenerator({
+            seed: this.options.seed,
+            rhythmicBalanceConfig,
+        });
 
         // Rhythmic balancer enforces metric structure on composite streams
         this.rhythmicBalancer = new RhythmicBalancer(this.options.rhythmicBalanceConfig);
