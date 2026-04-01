@@ -369,9 +369,6 @@ export interface EnhancementMetadata {
 
     /** IDs of patterns that were inserted */
     insertedPatternIds: string[];
-
-    /** Target density multiplier that was applied */
-    densityMultiplier: number;
 }
 
 /**
@@ -501,9 +498,6 @@ export interface DifficultyVariantConfig {
     /** Minimum intensity threshold for removing beats during density reduction. Default: 0.25 */
     densityReductionMinIntensity: number;
 
-    /** Target density multiplier for enhancement (1.0 = no change, 1.5 = 50% more beats). Default: 1.5 */
-    enhancementDensityMultiplier: number;
-
     /** Intensity for interpolated beats (0.0 - 1.0). Default: 0.5 */
     interpolatedBeatIntensity: number;
 
@@ -531,7 +525,6 @@ const DEFAULT_DIFFICULTY_VARIANT_CONFIG: DifficultyVariantConfig = {
     heavySimplificationIntensityThreshold: 0.5,
     moderateSimplificationIntensityThreshold: 0.4,
     densityReductionMinIntensity: 0.25,
-    enhancementDensityMultiplier: 1.5,
     interpolatedBeatIntensity: 0.5,
     preferPatternInsertion: true,
     maxPatternInsertionSize: 4,
@@ -1644,8 +1637,7 @@ export class DifficultyVariantGenerator {
     /**
      * Distribute beats across indices to reach a global target count
      *
-     * Task 3.2: Replaces calculateProbabilisticTargetBeatsPerBeat() with deterministic
-     * global target-based distribution.
+     * Uses deterministic global target-based distribution.
      *
      * Strategy:
      * - Phase A: Fill empty indices first (prioritize gaps in rhythm)
@@ -2197,25 +2189,6 @@ export class DifficultyVariantGenerator {
     }
 
     /**
-     * Get the enhancement level based on how many steps up we're going
-     *
-     * @param targetDifficulty - The target difficulty
-     * @param naturalDifficulty - The natural difficulty of the composite
-     * @returns 'moderate' for 1 step up, 'heavy' for 2 steps up
-     */
-    private getEnhancementLevel(
-        targetDifficulty: DifficultyLevel,
-        naturalDifficulty: NaturalDifficulty
-    ): 'moderate' | 'heavy' {
-        const difficultyOrder: DifficultyLevel[] = ['easy', 'medium', 'hard'];
-        const targetIndex = difficultyOrder.indexOf(targetDifficulty);
-        const naturalIndex = difficultyOrder.indexOf(naturalDifficulty);
-        const stepsUp = targetIndex - naturalIndex;
-
-        return stepsUp >= 2 ? 'heavy' : 'moderate';
-    }
-
-    /**
      * Enhance beats by adding density through pattern insertion and interpolation
      *
      * ## Algorithm Overview
@@ -2256,7 +2229,6 @@ export class DifficultyVariantGenerator {
             patternsInserted: 0,
             interpolatedBeats: 0,
             insertedPatternIds: [],
-            densityMultiplier: this.config.enhancementDensityMultiplier, // Task 3.3.3: kept as legacy, no longer drives logic
         };
 
         // If no beats to enhance, return empty
@@ -2493,97 +2465,6 @@ export class DifficultyVariantGenerator {
                     targetMap.set(beatIndex, virtualCount);
                 }
             }
-        }
-
-        return targetMap;
-    }
-
-    /**
-     * Calculate target beats per beat index using probabilistic density scaling.
-     *
-     * Instead of deterministic Math.ceil() which causes all beat indices to jump
-     * simultaneously at threshold boundaries, each beat index independently rolls
-     * against a probability derived from the fractional part of (count * multiplier).
-     *
-     * This produces smooth, gradual density changes:
-     * - 1 beat * 1.3 multiplier = 1.3 → base 1 + 30% chance of 2nd
-     * - 1 beat * 1.8 multiplier = 1.8 → base 1 + 80% chance of 2nd
-     * - 2 beats * 1.3 multiplier = 2.6 → base 2 + 60% chance of 3rd
-     *
-     * Empty beat indices are treated as having 1 virtual beat, scaled by 0.7,
-     * allowing gradual gap filling instead of binary fill/skip behavior.
-     *
-     * Deterministic via MurmurHash: same seed + beat index always produces the same roll.
-     */
-    private calculateProbabilisticTargetBeatsPerBeat(
-        beatsByIndex: Map<number, CompositeBeat[]>,
-        densityMultiplier: number,
-        maxBeatIndex: number,
-        seed: string
-    ): Map<number, number> {
-        const targetMap = new Map<number, number>();
-        const maxTarget = 4;
-
-        for (let beatIndex = 0; beatIndex <= maxBeatIndex; beatIndex++) {
-            const beats = beatsByIndex.get(beatIndex);
-
-            let rawTarget: number;
-            let baseCount: number;
-            let fractionalPart: number;
-
-            if (beats && beats.length > 0) {
-                // Occupied beat index: scale from actual count
-                rawTarget = beats.length * densityMultiplier;
-                baseCount = Math.floor(rawTarget);
-                fractionalPart = rawTarget - baseCount;
-            } else {
-                // Empty beat index: purely probabilistic with no guaranteed floor.
-                // The probability of getting at least 1 beat scales with the multiplier.
-                // Scale of 0.5 means: M=1.0 → 50%, M=1.5 → 75%, M=2.0 → 100%.
-                rawTarget = densityMultiplier * 0.5;
-                baseCount = 0;
-                // Two independent rolls: first for the initial beat, second for extras
-                const roll1Seed = deriveSeed(seed, `beat:${beatIndex}:r1`);
-                const roll2Seed = deriveSeed(seed, `beat:${beatIndex}:r2`);
-                const roll1 = hashSeedToFloat(roll1Seed);
-                const roll2 = hashSeedToFloat(roll2Seed);
-
-                let targetCount = 0;
-                // First beat: probability = min(rawTarget, 1.0)
-                if (roll1 < Math.min(rawTarget, 1.0)) {
-                    targetCount = 1;
-                }
-                // Second beat: probability = max(0, rawTarget - 1.0)
-                if (targetCount === 1 && roll2 < Math.max(0, rawTarget - 1.0)) {
-                    targetCount = 2;
-                }
-
-                if (targetCount === 0) continue;
-                targetMap.set(beatIndex, Math.min(targetCount, maxTarget));
-                continue;
-            }
-
-            if (baseCount >= maxTarget) {
-                targetMap.set(beatIndex, maxTarget);
-                continue;
-            }
-
-            // Deterministic roll using MurmurHash of (seed + beatIndex)
-            const rollSeed = deriveSeed(seed, `beat:${beatIndex}`);
-            const roll = hashSeedToFloat(rollSeed);
-
-            // If roll lands below the probability threshold, add one extra beat
-            const targetCount = Math.min(
-                baseCount + (roll < fractionalPart ? 1 : 0),
-                maxTarget
-            );
-
-            // For empty indices: if target is 0, don't fill
-            if (!beats && targetCount === 0) {
-                continue;
-            }
-
-            targetMap.set(beatIndex, targetCount);
         }
 
         return targetMap;

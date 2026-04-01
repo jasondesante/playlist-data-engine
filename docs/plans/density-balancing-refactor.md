@@ -157,11 +157,11 @@ Add a post-generation check that validates all variants are within their density
 
 ## Phase 5: Cleanup and Polish
 
-- [ ] Task 5.1: Remove dead code
-  - [ ] 5.1.1: Remove `calculateProbabilisticTargetBeatsPerBeat()` (replaced by `distributeBeatsAcrossIndices()`)
-  - [ ] 5.1.2: Remove `enhancementDensityMultiplier` from config (replaced by global target calculation)
-  - [ ] 5.1.3: Remove `enhancementLevel` parameter from `enhanceBeats()` signature
-  - [ ] 5.1.4: Remove `getEnhancementLevel()` helper
+- [x] Task 5.1: Remove dead code
+  - [x] 5.1.1: Remove `calculateProbabilisticTargetBeatsPerBeat()` (replaced by `distributeBeatsAcrossIndices()`)
+  - [x] 5.1.2: Remove `enhancementDensityMultiplier` from config (replaced by global target calculation)
+  - [x] 5.1.3: Remove `enhancementLevel` parameter from `enhanceBeats()` signature
+  - [x] 5.1.4: Remove `getEnhancementLevel()` helper
 
 - [ ] Task 5.2: Update config interface
   - [ ] 5.2.1: Add optional `densityTargetStrategy` field: `'midpoint' | 'lower' | 'upper'` (default `'midpoint'`) to control where in the target range to aim
