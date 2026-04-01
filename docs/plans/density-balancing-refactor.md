@@ -102,14 +102,14 @@ Replace the probabilistic per-index multiplier with a global target calculator t
   - [x] 3.1.3: Output: `beatsToAdd = max(0, targetCount - currentCount)`
   - [x] 3.1.4: Also return `maxBeatsPerIndex` based on the target difficulty's allowed grid types (e.g., straight_8th → max 2, straight_16th → max 4)
 
-- [ ] Task 3.2: Rewrite `calculateProbabilisticTargetBeatsPerBeat()` → `distributeBeatsAcrossIndices()`
-  - [ ] 3.2.1: Input: `beatsToAdd` (global count), `beatsByIndex` (current occupancy), `gridLock` (per-index grid types), `maxBeatsPerIndex` per grid type
-  - [ ] 3.2.2: **Phase A — Fill empty indices first**: For each empty index (no existing beats), if the locked grid type allows it, assign 1-2 beats at preferred positions (position 0, then offbeats). Continue until either all empty indices have beats or `beatsToAdd` is exhausted.
+- [x] Task 3.2: Rewrite `calculateProbabilisticTargetBeatsPerBeat()` → `distributeBeatsAcrossIndices()`
+  - [x] 3.2.1: Input: `beatsToAdd` (global count), `beatsByIndex` (current occupancy), `gridLock` (per-index grid types), `maxBeatsPerIndex` per grid type
+  - [x] 3.2.2: **Phase A — Fill empty indices first**: For each empty index (no existing beats), if the locked grid type allows it, assign 1-2 beats at preferred positions (position 0, then offbeats). Continue until either all empty indices have beats or `beatsToAdd` is exhausted.
     - Small gaps (1-2 consecutive empty indices): prefer pattern insertion where neighboring beat context is available for pattern matching.
     - Large gaps (3+ consecutive empty indices): use simple half-note or quarter-note beats to maintain the beat over the longer span, avoiding overly busy patterns in sparse sections.
-  - [ ] 3.2.3: **Phase B — Fill partially occupied indices**: For each occupied index, calculate how many slots are still available (`maxPositions - currentCount`). Add beats at the empty positions. Continue until `beatsToAdd` is exhausted.
-  - [ ] 3.2.4: **No probabilistic rolls** — the distribution is deterministic and greedy. Empty indices are always prioritized. Use the seed only for tiebreaking when multiple indices are equally good candidates (for reproducibility).
-  - [ ] 3.2.5: Return `Map<number, number>` of `beatIndex → targetCount`
+  - [x] 3.2.3: **Phase B — Fill partially occupied indices**: For each occupied index, calculate how many slots are still available (`maxPositions - currentCount`). Add beats at the empty positions. Continue until `beatsToAdd` is exhausted.
+  - [x] 3.2.4: **No probabilistic rolls** — the distribution is deterministic and greedy. Empty indices are always prioritized. Use the seed only for tiebreaking when multiple indices are equally good candidates (for reproducibility).
+  - [x] 3.2.5: Return `Map<number, number>` of `beatIndex → targetCount`
 
 - [ ] Task 3.3: Refactor `enhanceBeats()` to use new distribution
   - [ ] 3.3.1: Replace call to `calculateProbabilisticTargetBeatsPerBeat()` with `distributeBeatsAcrossIndices()`

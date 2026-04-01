@@ -67,6 +67,19 @@ export const ALL_GRID_TYPES: ExtendedGridType[] = [
     'straight_4th',
 ];
 
+/**
+ * Maximum positions per beat for each grid type
+ *
+ * This defines how many beats can fit at a single beat index for each grid type.
+ */
+const GRID_TYPE_MAX_POSITIONS: Record<ExtendedGridType, number> = {
+    straight_16th: 4,
+    straight_8th: 2,
+    triplet_8th: 3,
+    straight_4th: 1,
+    quarter_triplet: 1,
+};
+
 // ============================================================================
 // Subdivision Limits by Difficulty
 // ============================================================================
@@ -1511,25 +1524,212 @@ export class DifficultyVariantGenerator {
      * @returns Maximum beats per index
      */
     private getMaxBeatsPerIndexFromGridTypes(allowedTypes: ExtendedGridType[]): number {
-        // Grid type to max positions mapping
-        const gridPositionsMap: Record<ExtendedGridType, number> = {
-            straight_16th: 4,
-            straight_8th: 2,
-            triplet_8th: 3,
-            straight_4th: 1,
-            quarter_triplet: 1,
-        };
-
         // Find the max among allowed types
         let maxPositions = 1;
         for (const gridType of allowedTypes) {
-            const positions = gridPositionsMap[gridType];
+            const positions = GRID_TYPE_MAX_POSITIONS[gridType];
             if (positions > maxPositions) {
                 maxPositions = positions;
             }
         }
 
         return maxPositions;
+    }
+
+    /**
+     * Get max beats for a single grid type
+     *
+     * @param gridType - The grid type
+     * @returns Maximum beats per index for this grid type
+     */
+    private getMaxBeatsForGridType(gridType: ExtendedGridType): number {
+        return GRID_TYPE_MAX_POSITIONS[gridType] ?? 1;
+    }
+
+    /**
+     * Distribute beats across indices to reach a global target count
+     *
+     * Task 3.2: Replaces calculateProbabilisticTargetBeatsPerBeat() with deterministic
+     * global target-based distribution.
+     *
+     * Strategy:
+     * - Phase A: Fill empty indices first (prioritize gaps in rhythm)
+     * - Phase B: Fill partially occupied indices (add to existing beats)
+     *
+     * The distribution is deterministic and greedy. Empty indices are always prioritized.
+     * Seed is only used for tiebreaking when multiple indices are equally good candidates.
+     *
+     * @param beatsToAdd - Global count of beats to add
+     * @param beatsByIndex - Current beat occupancy per index
+     * @param gridLock - Per-index grid types (from lockGridPerBeatIndex)
+     * @param maxBeatIndex - The highest beat index in the song
+     * @param seed - Seed for deterministic tiebreaking
+     * @returns Map of beatIndex → targetCount (how many beats should be at each index after distribution)
+     */
+    private distributeBeatsAcrossIndices(
+        beatsToAdd: number,
+        beatsByIndex: Map<number, CompositeBeat[]>,
+        gridLock: Map<number, ExtendedGridType>,
+        maxBeatIndex: number,
+        seed: string
+    ): Map<number, number> {
+        const targetMap = new Map<number, number>();
+        let remainingBeats = beatsToAdd;
+
+        // Initialize target map with current counts
+        for (let i = 0; i <= maxBeatIndex; i++) {
+            const currentBeats = beatsByIndex.get(i) ?? [];
+            targetMap.set(i, currentBeats.length);
+        }
+
+        if (remainingBeats <= 0) {
+            return targetMap;
+        }
+
+        // Identify empty and partially occupied indices
+        const emptyIndices: number[] = [];
+        const partiallyOccupiedIndices: number[] = [];
+
+        for (let i = 0; i <= maxBeatIndex; i++) {
+            const currentCount = targetMap.get(i) ?? 0;
+            const lockedGrid = gridLock.get(i);
+            const maxForIndex = lockedGrid
+                ? this.getMaxBeatsForGridType(lockedGrid)
+                : 4; // Default to 4 if no grid lock
+
+            if (currentCount === 0) {
+                emptyIndices.push(i);
+            } else if (currentCount < maxForIndex) {
+                partiallyOccupiedIndices.push(i);
+            }
+        }
+
+        // Phase A: Fill empty indices first
+        // Group consecutive empty indices to identify gap sizes
+        const gaps = this.groupConsecutiveEmptyIndices(emptyIndices, maxBeatIndex);
+
+        // Sort gaps by priority:
+        // 1. Small gaps (1-2 indices) first - they benefit most from pattern continuity
+        // 2. Then larger gaps
+        // Use seed for deterministic ordering when gaps are same size
+        gaps.sort((a, b) => {
+            const sizeDiff = a.length - b.length;
+            if (sizeDiff !== 0) return sizeDiff;
+            // Tiebreak by first index using hash
+            const hashA = hashSeedToFloat(deriveSeed(seed, `gap:${a[0]}`));
+            const hashB = hashSeedToFloat(deriveSeed(seed, `gap:${b[0]}`));
+            return hashA - hashB;
+        });
+
+        // Fill gaps in order
+        for (const gap of gaps) {
+            if (remainingBeats <= 0) break;
+
+            const isSmallGap = gap.length <= 2;
+
+            for (const beatIndex of gap) {
+                if (remainingBeats <= 0) break;
+
+                const lockedGrid = gridLock.get(beatIndex);
+                const maxForIndex = lockedGrid
+                    ? this.getMaxBeatsForGridType(lockedGrid)
+                    : 4;
+
+                // Determine how many beats to add at this index
+                let beatsHere: number;
+                if (isSmallGap) {
+                    // Small gaps: add 1-2 beats for musical interest
+                    // Prioritize position 0 (downbeat), then offbeats
+                    beatsHere = Math.min(maxForIndex, remainingBeats, 2);
+                } else {
+                    // Large gaps: add just 1 beat to maintain the beat
+                    // without making sparse sections too busy
+                    beatsHere = Math.min(maxForIndex, remainingBeats, 1);
+                }
+
+                if (beatsHere > 0) {
+                    targetMap.set(beatIndex, beatsHere);
+                    remainingBeats -= beatsHere;
+                }
+            }
+        }
+
+        // Phase B: Fill partially occupied indices
+        // Sort by how many slots are available (more slots = higher priority)
+        partiallyOccupiedIndices.sort((a, b) => {
+            const currentA = targetMap.get(a) ?? 0;
+            const currentB = targetMap.get(b) ?? 0;
+            const lockedGridA = gridLock.get(a);
+            const lockedGridB = gridLock.get(b);
+            const maxA = lockedGridA ? this.getMaxBeatsForGridType(lockedGridA) : 4;
+            const maxB = lockedGridB ? this.getMaxBeatsForGridType(lockedGridB) : 4;
+            const availableA = maxA - currentA;
+            const availableB = maxB - currentB;
+
+            // Prioritize indices with more available slots
+            const availableDiff = availableB - availableA;
+            if (availableDiff !== 0) return availableDiff;
+
+            // Tiebreak using hash
+            const hashA = hashSeedToFloat(deriveSeed(seed, `partial:${a}`));
+            const hashB = hashSeedToFloat(deriveSeed(seed, `partial:${b}`));
+            return hashA - hashB;
+        });
+
+        // Fill partially occupied indices
+        for (const beatIndex of partiallyOccupiedIndices) {
+            if (remainingBeats <= 0) break;
+
+            const currentCount = targetMap.get(beatIndex) ?? 0;
+            const lockedGrid = gridLock.get(beatIndex);
+            const maxForIndex = lockedGrid
+                ? this.getMaxBeatsForGridType(lockedGrid)
+                : 4;
+
+            const available = maxForIndex - currentCount;
+            if (available > 0) {
+                const toAdd = Math.min(available, remainingBeats);
+                targetMap.set(beatIndex, currentCount + toAdd);
+                remainingBeats -= toAdd;
+            }
+        }
+
+        return targetMap;
+    }
+
+    /**
+     * Group consecutive empty indices into gaps
+     *
+     * @param emptyIndices - Array of empty beat indices (sorted)
+     * @param maxBeatIndex - Maximum beat index
+     * @returns Array of gap arrays, each containing consecutive empty indices
+     */
+    private groupConsecutiveEmptyIndices(
+        emptyIndices: number[],
+        maxBeatIndex: number
+    ): number[][] {
+        if (emptyIndices.length === 0) return [];
+
+        const gaps: number[][] = [];
+        let currentGap: number[] = [emptyIndices[0]];
+
+        for (let i = 1; i < emptyIndices.length; i++) {
+            const prev = emptyIndices[i - 1];
+            const curr = emptyIndices[i];
+
+            // Check if indices are consecutive
+            if (curr === prev + 1) {
+                currentGap.push(curr);
+            } else {
+                gaps.push(currentGap);
+                currentGap = [curr];
+            }
+        }
+
+        // Don't forget the last gap
+        gaps.push(currentGap);
+
+        return gaps;
     }
 
     /**
