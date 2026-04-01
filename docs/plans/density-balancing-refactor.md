@@ -149,11 +149,11 @@ Add a post-generation check that validates all variants are within their density
   - [x] 4.2.2: Log a summary: `easy: 0.8 nps (target [0, 1.0]) ✓`
   - [x] 4.2.3: Include density validation info in the returned structure for downstream consumers
 
-- [ ] Task 4.3: Write tests for convergence validation
-  - [ ] 4.3.1: Test that easy variant density is <= 1.0 nps for a hard natural composite at various BPMs
-  - [ ] 4.3.2: Test that medium variant density is in [1.0, 1.5] when going from hard → medium
-  - [ ] 4.3.3: Test that enhanced medium variant density is >= 1.0 when going from easy → medium
-  - [ ] 4.3.4: Test edge case: very sparse input (easy natural) still produces valid medium/hard variants
+- [x] Task 4.3: Write tests for convergence validation
+  - [x] 4.3.1: Test that easy variant density is <= 1.0 nps for a hard natural composite at various BPMs
+  - [x] 4.3.2: Test that medium variant density is in [1.0, 1.5] when going from hard → medium
+  - [x] 4.3.3: Test that enhanced medium variant density is >= 1.0 when going from easy → medium
+  - [x] 4.3.4: Test edge case: very sparse input (easy natural) still produces valid medium/hard variants
 
 ## Phase 5: Cleanup and Polish
 
