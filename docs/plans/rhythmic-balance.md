@@ -167,16 +167,16 @@ The density reducer needs to know which beats are structurally important and pre
   - [x] 4.1.2: Thread it through from `RhythmGenerator.generateDifficultyVariants()` to the `DifficultyVariantGenerator` constructor or `generate()` call
   - [x] 4.1.3: DifficultyVariantGenerator needs access to `unifiedBeatMap.downbeatConfig` to resolve `beatsPerMeasure` per segment — it already receives `unifiedBeatMap` in `generate()`
 
-- [ ] Task 4.2: Make `isStrongBeat()` time-signature-aware
-  - [ ] 4.2.1: Create helper `getMetricGroupSize(beatsPerMeasure: number): number` — returns 3 if `beatsPerMeasure % 3 === 0`, otherwise 2
-  - [ ] 4.2.2: Create helper `isMetricStrongBeat(beatInMeasure: number, groupSize: number): boolean` — returns `true` if `beatInMeasure % groupSize === 0`
-  - [ ] 4.2.3: Create helper `isMetricWeakBeat(beatInMeasure: number, groupSize: number): boolean` — returns `true` if `beatInMeasure % groupSize !== 0`
-  - [ ] 4.2.4: Replace `isStrongBeat(beatIndex)` with `isStrongBeat(beatIndex, beatsPerMeasure)`:
+- [x] Task 4.2: Make `isStrongBeat()` time-signature-aware
+  - [x] 4.2.1: Create helper `getMetricGroupSize(beatsPerMeasure: number): number` — returns 3 if `beatsPerMeasure % 3 === 0`, otherwise 2
+  - [x] 4.2.2: Create helper `isMetricStrongBeat(beatInMeasure: number, groupSize: number): boolean` — returns `true` if `beatInMeasure % groupSize === 0`
+  - [x] 4.2.3: Create helper `isMetricWeakBeat(beatInMeasure: number, groupSize: number): boolean` — returns `true` if `beatInMeasure % groupSize !== 0`
+  - [x] 4.2.4: Replace `isStrongBeat(beatIndex)` with `isStrongBeat(beatIndex, beatsPerMeasure)`:
     - `'natural'` → uses `isMetricStrongBeat(beatInMeasure, groupSize)` (auto-derived from time signature)
     - `'backbeat'` → uses `isMetricWeakBeat(beatInMeasure, groupSize)`
     - `'neutral'` → return `false` for all (no strong/weak distinction)
-  - [ ] 4.2.5: Resolve `beatsPerMeasure` from `unifiedBeatMap.downbeatConfig.segments` for the given `beatIndex`'s segment
-  - [ ] 4.2.6: Default to `'natural'` with 4 beats per measure when no config provided (backwards compatible)
+  - [x] 4.2.5: Resolve `beatsPerMeasure` from `unifiedBeatMap.downbeatConfig.segments` for the given `beatIndex`'s segment
+  - [x] 4.2.6: Default to `'natural'` with 4 beats per measure when no config provided (backwards compatible)
 
 - [ ] Task 4.3: Extend `calculateRemovalPriority()` with structural importance
   - [ ] 4.3.1: Add bonus for beats that are the **only downbeat in their measure**: these are the most structurally important and should get the highest protection (e.g., +0.2)

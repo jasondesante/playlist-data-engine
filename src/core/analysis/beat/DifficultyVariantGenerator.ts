@@ -40,6 +40,10 @@ import type { GridType, GridDecision } from './RhythmQuantizer.js';
 import type { PhraseAnalysisResult, RhythmicPhrase } from './PhraseAnalyzer.js';
 import type { UnifiedBeatMap } from '../../types/BeatMap.js';
 import type { RhythmicBalanceConfig } from './RhythmicBalancer.js';
+import {
+    findActiveSegment,
+    isStrongBeatForEmphasis,
+} from './RhythmicBalancer.js';
 import { deriveSeed, hashSeedToFloat } from '../../../utils/hash.js';
 
 // ============================================================================
@@ -720,6 +724,11 @@ export function validateSubdivisionLimits(
  */
 export class DifficultyVariantGenerator {
     private config: DifficultyVariantConfig;
+    /**
+     * Current unifiedBeatMap for time-signature-aware strong beat detection.
+     * Set during generate() and used by isStrongBeat().
+     */
+    private currentUnifiedBeatMap: UnifiedBeatMap | null = null;
 
     constructor(config: Partial<DifficultyVariantConfig> = {}) {
         this.config = { ...DEFAULT_DIFFICULTY_VARIANT_CONFIG, ...config };
@@ -851,6 +860,9 @@ export class DifficultyVariantGenerator {
         hard: DifficultyVariant;
         natural: DifficultyVariant;
     } {
+        // Task 4.2: Store unifiedBeatMap for time-signature-aware strong beat detection
+        this.currentUnifiedBeatMap = unifiedBeatMap;
+
         const naturalDifficulty = composite.naturalDifficulty;
 
         // Generate variants based on natural difficulty
@@ -1516,18 +1528,58 @@ export class DifficultyVariantGenerator {
     }
 
     /**
-     * Determine if a beat index is on a strong beat (beat 1 or 3 of a measure)
+     * Determine if a beat index is on a strong beat, based on time signature and emphasis mode
      *
-     * In 4/4 time with 0-indexed beats:
-     * - Beat indices 0, 4, 8, 12... are beat 1 of their measure
-     * - Beat indices 2, 6, 10, 14... are beat 3 of their measure
+     * This method uses the rhythmicBalanceConfig.strongBeatEmphasis to determine
+     * which beats are "strong" for density reduction priority. It is
+     * time-signature-aware: derives beatsPerMeasure from the active downbeat segment.
      *
      * @param beatIndex - The beat index (0-indexed)
      * @returns True if this is a strong beat
      */
     private isStrongBeat(beatIndex: number): boolean {
-        const positionInMeasure = beatIndex % 4;
-        return positionInMeasure === 0 || positionInMeasure === 2;
+        // Get the emphasis mode from config, default to 'natural'
+        const emphasis = this.config.rhythmicBalanceConfig?.strongBeatEmphasis ?? 'natural';
+
+        // If neutral mode, no beats are considered strong
+        if (emphasis === 'neutral') {
+            return false;
+        }
+
+        // Get the unified beat map
+        const unifiedBeatMap = this.currentUnifiedBeatMap;
+        if (!unifiedBeatMap) {
+            // No unified beat map available, fall back to 4/4 natural behavior (backwards compatible)
+            const positionInMeasure = beatIndex % 4;
+            return positionInMeasure === 0 || positionInMeasure === 2;
+        }
+
+        // Get beat info from unified beat map
+        const beatInfo = unifiedBeatMap.beats[beatIndex];
+        if (!beatInfo) {
+            // Beat index out of range, fall back to 4/4 behavior
+            const positionInMeasure = beatIndex % 4;
+            return positionInMeasure === 0 || positionInMeasure === 2;
+        }
+
+        // Get beats per measure from the active segment
+        const segments = unifiedBeatMap.downbeatConfig?.segments;
+        if (!segments || segments.length === 0) {
+            // No segments available, fall back to 4/4 behavior
+            const positionInMeasure = beatIndex % 4;
+            return positionInMeasure === 0 || positionInMeasure === 2;
+        }
+
+        // Find the active segment for this beat index
+        const activeSegment = findActiveSegment(segments, beatIndex);
+        const beatsPerMeasure = activeSegment.timeSignature.beatsPerMeasure;
+
+        // Use the helper function from RhythmicBalancer
+        return isStrongBeatForEmphasis(
+            beatInfo.beatInMeasure,
+            beatsPerMeasure,
+            emphasis
+        );
     }
 
     /**
