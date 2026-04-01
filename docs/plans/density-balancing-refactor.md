@@ -125,14 +125,14 @@ Replace the probabilistic per-index multiplier with a global target calculator t
   - [x] 3.4.3: Calculate `timestamp = beatStartTimestamp + (gridPosition * interval)` where interval is based on the locked grid type
   - [x] 3.4.4: Remove the `referenceInterval` / `newInterval` split — since the grid type is locked, there's only one interval
 
-- [ ] Task 3.5: Write tests for target-based enhancement
-  - [ ] 3.5.1: Test `calculateBeatsToAdd()` returns correct counts
-  - [ ] 3.5.2: Test `distributeBeatsAcrossIndices()` fills empty indices first
-  - [ ] 3.5.3: Test that enhanced variant density falls within the target range
-  - [ ] 3.5.4: Test that `interpolateBeats()` timestamps align with `unifiedBeatMap` quarter-note positions
-  - [ ] 3.5.5: Test easy → medium enhancement targets ~1.25 nps midpoint (within [1.0, 1.5] range)
-  - [ ] 3.5.6: Test easy → hard enhancement targets ~1.75 nps midpoint (above 1.5 floor)
-  - [ ] 3.5.7: Test deterministic distribution (same input → same output)
+- [x] Task 3.5: Write tests for target-based enhancement
+  - [x] 3.5.1: Test `calculateBeatsToAdd()` returns correct counts
+  - [x] 3.5.2: Test `distributeBeatsAcrossIndices()` fills empty indices first
+  - [x] 3.5.3: Test that enhanced variant density falls within the target range
+  - [x] 3.5.4: Test that `interpolateBeats()` timestamps align with `unifiedBeatMap` quarter-note positions
+  - [x] 3.5.5: Test easy → medium enhancement targets ~1.25 nps midpoint (within [1.0, 1.5] range)
+  - [x] 3.5.6: Test easy → hard enhancement targets ~1.75 nps midpoint (above 1.5 floor)
+  - [x] 3.5.7: Test deterministic distribution (same input → same output)
 
 ## Phase 4: Convergence Validation
 

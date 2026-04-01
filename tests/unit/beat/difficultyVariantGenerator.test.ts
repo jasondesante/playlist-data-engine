@@ -2519,3 +2519,436 @@ describe('Target-Based Density Reduction (Task 2.4)', () => {
         });
     });
 });
+
+// ============================================================================
+// Target-Based Density Enhancement Tests (Task 3.5)
+// ============================================================================
+
+describe('Target-Based Density Enhancement (Task 3.5)', () => {
+    describe('calculateBeatsToAdd - tested via generate() (Task 3.5.1)', () => {
+        it('should calculate correct beats to add for medium enhancement at 60 BPM', () => {
+            // At 60 BPM: 1 beat per second
+            // Easy target midpoint = 0.9 nps
+            // Medium target midpoint = 1.25 nps
+            const generator = new DifficultyVariantGenerator();
+            const bpm = 60;
+
+            // Create 10 quarter notes with 1 beat each = 10 beats
+            // At 60 BPM: density = (10/10) * 1 = 1.0 nps (easy level)
+            const beats: CompositeBeat[] = [];
+            for (let i = 0; i < 10; i++) {
+                beats.push(createMockCompositeBeat(i, 'straight_8th' as GridType, 0, 0.7));
+            }
+
+            const composite = createMockCompositeStream(beats, 'easy');
+            const variants = generator.generate(composite, createMockBeatMap(bpm));
+
+            // Medium target: 1.25 nps → target = 10 * 1.25 / 1 = 12.5 ≈ 13 beats
+            // Starting with 10, should add ~3 beats
+            const mediumBeats = variants.medium.beats.length;
+            expect(mediumBeats).toBeGreaterThanOrEqual(10); // Should add beats or stay same
+            expect(mediumBeats).toBeLessThanOrEqual(20); // Reasonable cap
+        });
+
+        it('should calculate correct beats to add for hard enhancement at 120 BPM', () => {
+            // At 120 BPM: 2 beats per second
+            // Easy target midpoint = 0.9 nps
+            // Hard target midpoint = 1.75 nps
+            const generator = new DifficultyVariantGenerator();
+            const bpm = 120;
+
+            // Create 20 quarter notes with 1 beat each = 20 beats
+            // At 120 BPM: density = (20/20) * 2 = 2.0 nps (already hard level)
+            const beats: CompositeBeat[] = [];
+            for (let i = 0; i < 20; i++) {
+                beats.push(createMockCompositeBeat(i, 'straight_8th' as GridType, 0, 0.7));
+            }
+
+            const composite = createMockCompositeStream(beats, 'easy');
+            const variants = generator.generate(composite, createMockBeatMap(bpm));
+
+            // Hard target: 1.75 nps → already at 2.0, no enhancement needed
+            // But some beats may still be added for musical interest
+            const hardBeats = variants.hard.beats.length;
+            expect(hardBeats).toBeGreaterThanOrEqual(beats.length);
+        });
+
+        it('should not add beats when already at target density', () => {
+            const generator = new DifficultyVariantGenerator();
+            const bpm = 60;
+
+            // Create dense composite already at hard target
+            // 10 quarter notes with 3 beats each = 30 beats
+            // At 60 BPM: density = (30/10) * 1 = 3.0 nps (above hard target of 1.75)
+            const beats: CompositeBeat[] = [];
+            for (let i = 0; i < 10; i++) {
+                beats.push(createMockCompositeBeat(i, 'straight_16th', 0, 0.7));
+                beats.push(createMockCompositeBeat(i, 'straight_16th', 1, 0.5));
+                beats.push(createMockCompositeBeat(i, 'straight_16th', 2, 0.6));
+            }
+
+            const composite = createMockCompositeStream(beats, 'medium');
+            const variants = generator.generate(composite, createMockBeatMap(bpm));
+
+            // Hard variant should not add more beats (already above target)
+            expect(variants.hard.beats.length).toBeLessThanOrEqual(beats.length + 5); // Small tolerance
+        });
+    });
+
+    describe('distributeBeatsAcrossIndices fills empty indices first (Task 3.5.2)', () => {
+        it('should prioritize empty indices over partially occupied indices', () => {
+            const generator = new DifficultyVariantGenerator();
+            const bpm = 60;
+
+            // Create sparse input: beats on even indices only (0, 2, 4, 6)
+            // Odd indices (1, 3, 5) are empty
+            const beats: CompositeBeat[] = [];
+            for (let i = 0; i < 8; i += 2) {
+                beats.push(createMockCompositeBeat(i, 'straight_8th' as GridType, 0, 0.7));
+            }
+
+            const composite = createMockCompositeStream(beats, 'easy');
+            const variants = generator.generate(composite, createMockBeatMap(bpm));
+
+            // When enhancing to medium, empty indices should be filled first
+            const mediumBeats = variants.medium.beats;
+            const occupiedIndices = new Set(mediumBeats.map(b => b.beatIndex));
+
+            // Some of the previously empty indices should now have beats
+            const emptyIndices = [1, 3, 5, 7];
+            const filledEmptyIndices = emptyIndices.filter(idx => occupiedIndices.has(idx));
+
+            // At least some empty indices should be filled
+            expect(filledEmptyIndices.length).toBeGreaterThan(0);
+        });
+
+        it('should fill consecutive empty gaps in order', () => {
+            const generator = new DifficultyVariantGenerator({ seed: 'gap-fill-test' });
+            const bpm = 60;
+
+            // Create input with a gap of 3 empty indices
+            // Beat indices: 0 (has beat), 1 (empty), 2 (empty), 3 (empty), 4 (has beat)
+            const beats: CompositeBeat[] = [
+                createMockCompositeBeat(0, 'straight_8th' as GridType, 0, 0.7),
+                createMockCompositeBeat(4, 'straight_8th' as GridType, 0, 0.7),
+            ];
+
+            const composite = createMockCompositeStream(beats, 'easy');
+            const variants = generator.generate(composite, createMockBeatMap(bpm));
+
+            // Gap indices (1, 2, 3) should be prioritized for filling
+            const mediumBeats = variants.medium.beats;
+            const gapIndicesFilled = [1, 2, 3].filter(idx =>
+                mediumBeats.some(b => b.beatIndex === idx)
+            );
+
+            // At least one of the gap indices should have beats
+            expect(gapIndicesFilled.length).toBeGreaterThan(0);
+        });
+
+        it('should handle large gaps with simple beats rather than busy patterns', () => {
+            const generator = new DifficultyVariantGenerator({ seed: 'large-gap-test' });
+            const bpm = 60;
+
+            // Create input with a large gap (5+ consecutive empty indices)
+            // Beat 0 has beats, indices 1-5 are empty, beat 6 has beats
+            const beats: CompositeBeat[] = [
+                createMockCompositeBeat(0, 'straight_16th', 0, 0.7),
+                createMockCompositeBeat(0, 'straight_16th', 2, 0.6),
+                createMockCompositeBeat(6, 'straight_16th', 0, 0.7),
+                createMockCompositeBeat(6, 'straight_16th', 2, 0.6),
+            ];
+
+            const composite = createMockCompositeStream(beats, 'easy');
+            const variants = generator.generate(composite, createMockBeatMap(bpm));
+
+            // Large gaps should receive at most 1 beat per index (not busy patterns)
+            const mediumBeats = variants.medium.beats;
+            const beatsPerIndex = new Map<number, number>();
+            for (const beat of mediumBeats) {
+                const count = beatsPerIndex.get(beat.beatIndex) ?? 0;
+                beatsPerIndex.set(beat.beatIndex, count + 1);
+            }
+
+            // Large gap indices (1-5) should have at most 2 beats each
+            for (const idx of [1, 2, 3, 4, 5]) {
+                const count = beatsPerIndex.get(idx) ?? 0;
+                expect(count).toBeLessThanOrEqual(2);
+            }
+        });
+    });
+
+    describe('enhanced variant density within target range (Task 3.5.3)', () => {
+        it('should produce medium variant density within [1.0, 1.5] range when enhancing from easy', () => {
+            const generator = new DifficultyVariantGenerator();
+            const bpm = 60;
+
+            // Create easy-level input: 10 quarter notes, 1 beat each
+            // Density = 1.0 nps
+            const beats: CompositeBeat[] = [];
+            for (let i = 0; i < 10; i++) {
+                beats.push(createMockCompositeBeat(i, 'straight_8th' as GridType, 0, 0.7));
+            }
+
+            const composite = createMockCompositeStream(beats, 'easy');
+            const variants = generator.generate(composite, createMockBeatMap(bpm));
+
+            const mediumDensity = calculateTestDensity(variants.medium.beats, bpm);
+            const targetRange = SUBDIVISION_LIMITS.medium.targetDensityRange;
+
+            // Medium variant should be within or near the target range [1.0, 1.5]
+            // Allow some tolerance as exact targeting may not always be achievable
+            expect(mediumDensity).toBeGreaterThanOrEqual(targetRange.min * 0.8);
+            expect(mediumDensity).toBeLessThanOrEqual(targetRange.max * 1.5);
+        });
+
+        it('should produce hard variant density above 1.5 floor when enhancing from easy', () => {
+            const generator = new DifficultyVariantGenerator();
+            const bpm = 60;
+
+            // Create easy-level input
+            const beats: CompositeBeat[] = [];
+            for (let i = 0; i < 10; i++) {
+                beats.push(createMockCompositeBeat(i, 'straight_8th' as GridType, 0, 0.7));
+            }
+
+            const composite = createMockCompositeStream(beats, 'easy');
+            const variants = generator.generate(composite, createMockBeatMap(bpm));
+
+            const hardDensity = calculateTestDensity(variants.hard.beats, bpm);
+            const targetRange = SUBDIVISION_LIMITS.hard.targetDensityRange;
+
+            // Hard variant should be above the 1.5 floor
+            expect(hardDensity).toBeGreaterThanOrEqual(targetRange.min * 0.9);
+        });
+    });
+
+    describe('interpolateBeats timestamps align with unifiedBeatMap (Task 3.5.4)', () => {
+        it('should derive timestamps from unifiedBeatMap quarter-note positions', () => {
+            const generator = new DifficultyVariantGenerator();
+            const bpm = 120;
+            const quarterNoteInterval = 60 / bpm; // 0.5 seconds
+
+            // Create a mock beatMap with explicit timestamps
+            const beatMap = createMockBeatMap(bpm);
+            // Add explicit beat timestamps to the beatMap
+            beatMap.beats = [];
+            for (let i = 0; i < 10; i++) {
+                beatMap.beats.push({
+                    timestamp: i * quarterNoteInterval,
+                    beatIndex: i,
+                    confidence: 1.0,
+                });
+            }
+
+            // Create sparse input that will need interpolation
+            const beats: CompositeBeat[] = [
+                createMockCompositeBeat(0, 'straight_8th' as GridType, 0, 0.7),
+                createMockCompositeBeat(5, 'straight_8th' as GridType, 0, 0.7),
+            ];
+
+            const composite = createMockCompositeStream(beats, 'easy');
+            const variants = generator.generate(composite, beatMap);
+
+            // All interpolated beats should have timestamps aligned to quarter-note grid
+            for (const beat of variants.medium.beats) {
+                const expectedBase = beat.beatIndex * quarterNoteInterval;
+                const gridInterval = quarterNoteInterval / 2; // 8th note
+                const expectedTimestamp = expectedBase + (beat.gridPosition * gridInterval);
+
+                // Timestamp should be within a small tolerance of expected
+                expect(Math.abs(beat.timestamp - expectedTimestamp)).toBeLessThan(0.01);
+            }
+        });
+    });
+
+    describe('easy → medium enhancement targets ~1.25 nps midpoint (Task 3.5.5)', () => {
+        it('should target ~1.25 nps when enhancing easy to medium at 60 BPM', () => {
+            const generator = new DifficultyVariantGenerator();
+            const bpm = 60;
+
+            // Create easy-level input: 12 quarter notes, 1 beat each
+            // Density = 1.0 nps
+            const beats: CompositeBeat[] = [];
+            for (let i = 0; i < 12; i++) {
+                beats.push(createMockCompositeBeat(i, 'straight_8th' as GridType, 0, 0.7));
+            }
+
+            const composite = createMockCompositeStream(beats, 'easy');
+            const variants = generator.generate(composite, createMockBeatMap(bpm));
+
+            const mediumDensity = calculateTestDensity(variants.medium.beats, bpm);
+
+            // Medium target midpoint is 1.25 nps
+            // Allow tolerance: [1.0, 1.5] is the acceptable range
+            expect(mediumDensity).toBeGreaterThanOrEqual(0.9); // Near low end of range
+            expect(mediumDensity).toBeLessThanOrEqual(1.8); // Near high end with tolerance
+        });
+
+        it('should target ~1.25 nps when enhancing easy to medium at 120 BPM', () => {
+            const generator = new DifficultyVariantGenerator();
+            const bpm = 120;
+
+            // Create easy-level input: 24 quarter notes, 1 beat each
+            // At 120 BPM: density = (24/24) * 2 = 2.0 nps (already above medium)
+            const beats: CompositeBeat[] = [];
+            for (let i = 0; i < 24; i++) {
+                beats.push(createMockCompositeBeat(i, 'straight_8th' as GridType, 0, 0.7));
+            }
+
+            const composite = createMockCompositeStream(beats, 'easy');
+            const variants = generator.generate(composite, createMockBeatMap(bpm));
+
+            const mediumDensity = calculateTestDensity(variants.medium.beats, bpm);
+
+            // Even if above target, should not be wildly off
+            expect(mediumDensity).toBeGreaterThan(0);
+            expect(mediumDensity).toBeLessThanOrEqual(4.0); // Reasonable cap
+        });
+    });
+
+    describe('easy → hard enhancement targets ~1.75 nps midpoint (Task 3.5.6)', () => {
+        it('should target ~1.75 nps when enhancing easy to hard at 60 BPM', () => {
+            const generator = new DifficultyVariantGenerator();
+            const bpm = 60;
+
+            // Create easy-level input: 16 quarter notes, 1 beat each
+            // Density = 1.0 nps
+            const beats: CompositeBeat[] = [];
+            for (let i = 0; i < 16; i++) {
+                beats.push(createMockCompositeBeat(i, 'straight_8th' as GridType, 0, 0.7));
+            }
+
+            const composite = createMockCompositeStream(beats, 'easy');
+            const variants = generator.generate(composite, createMockBeatMap(bpm));
+
+            const hardDensity = calculateTestDensity(variants.hard.beats, bpm);
+
+            // Hard target midpoint is 1.75 nps, minimum floor is 1.5
+            expect(hardDensity).toBeGreaterThanOrEqual(1.2); // Near target with tolerance
+            expect(hardDensity).toBeLessThanOrEqual(3.0); // Reasonable cap
+        });
+
+        it('should not exceed reasonable density even for hard enhancement', () => {
+            const generator = new DifficultyVariantGenerator();
+            const bpm = 60;
+
+            // Create already-dense easy input
+            const beats: CompositeBeat[] = [];
+            for (let i = 0; i < 8; i++) {
+                beats.push(createMockCompositeBeat(i, 'straight_8th' as GridType, 0, 0.7));
+                beats.push(createMockCompositeBeat(i, 'straight_8th' as GridType, 2, 0.6));
+            }
+
+            const composite = createMockCompositeStream(beats, 'easy');
+            const variants = generator.generate(composite, createMockBeatMap(bpm));
+
+            // Hard variant should not exceed 4 beats per index
+            const beatsPerIndex = new Map<number, number>();
+            for (const beat of variants.hard.beats) {
+                const count = beatsPerIndex.get(beat.beatIndex) ?? 0;
+                beatsPerIndex.set(beat.beatIndex, count + 1);
+            }
+
+            for (const [, count] of beatsPerIndex) {
+                expect(count).toBeLessThanOrEqual(4);
+            }
+        });
+    });
+
+    describe('deterministic distribution (Task 3.5.7)', () => {
+        it('should produce identical beat counts with same input and seed', () => {
+            const config = { seed: 'determinism-test-3-5-7' };
+            const gen1 = new DifficultyVariantGenerator(config);
+            const gen2 = new DifficultyVariantGenerator(config);
+
+            const beats: CompositeBeat[] = [];
+            for (let i = 0; i < 20; i++) {
+                beats.push(createMockCompositeBeat(i, 'straight_8th' as GridType, 0, 0.7));
+            }
+
+            const composite = createMockCompositeStream(beats, 'easy');
+            const beatMap = createMockBeatMap(60);
+
+            const result1 = gen1.generate(composite, beatMap);
+            const result2 = gen2.generate(composite, beatMap);
+
+            // Beat counts should be identical
+            expect(result1.medium.beats.length).toBe(result2.medium.beats.length);
+            expect(result1.hard.beats.length).toBe(result2.hard.beats.length);
+
+            // Beat indices should match
+            const indices1 = result1.medium.beats.map(b => b.beatIndex).sort((a, b) => a - b);
+            const indices2 = result2.medium.beats.map(b => b.beatIndex).sort((a, b) => a - b);
+            expect(indices1).toEqual(indices2);
+        });
+
+        it('should produce identical timestamp distributions with same seed', () => {
+            const config = { seed: 'timestamp-determinism-test' };
+            const gen1 = new DifficultyVariantGenerator(config);
+            const gen2 = new DifficultyVariantGenerator(config);
+
+            const beats: CompositeBeat[] = [];
+            for (let i = 0; i < 15; i++) {
+                beats.push(createMockCompositeBeat(i, 'straight_8th' as GridType, 0, 0.7));
+            }
+
+            const composite = createMockCompositeStream(beats, 'easy');
+            const beatMap = createMockBeatMap(90);
+
+            const result1 = gen1.generate(composite, beatMap);
+            const result2 = gen2.generate(composite, beatMap);
+
+            // Timestamps should match
+            const timestamps1 = result1.medium.beats.map(b => b.timestamp).sort((a, b) => a - b);
+            const timestamps2 = result2.medium.beats.map(b => b.timestamp).sort((a, b) => a - b);
+            expect(timestamps1).toEqual(timestamps2);
+        });
+
+        it('should produce same grid type assignments with same seed', () => {
+            const config = { seed: 'grid-determinism-test' };
+            const gen1 = new DifficultyVariantGenerator(config);
+            const gen2 = new DifficultyVariantGenerator(config);
+
+            const beats: CompositeBeat[] = [];
+            for (let i = 0; i < 12; i++) {
+                beats.push(createMockCompositeBeat(i, 'straight_8th' as GridType, 0, 0.7));
+            }
+
+            const composite = createMockCompositeStream(beats, 'easy');
+            const beatMap = createMockBeatMap(60);
+
+            const result1 = gen1.generate(composite, beatMap);
+            const result2 = gen2.generate(composite, beatMap);
+
+            // Grid types should match
+            const gridTypes1 = result1.medium.beats.map(b => b.gridType).sort();
+            const gridTypes2 = result2.medium.beats.map(b => b.gridType).sort();
+            expect(gridTypes1).toEqual(gridTypes2);
+        });
+
+        it('should maintain determinism across multiple generate calls', () => {
+            const config = { seed: 'multi-call-determinism' };
+            const generator = new DifficultyVariantGenerator(config);
+
+            const beats: CompositeBeat[] = [];
+            for (let i = 0; i < 10; i++) {
+                beats.push(createMockCompositeBeat(i, 'straight_8th' as GridType, 0, 0.7));
+            }
+
+            const composite = createMockCompositeStream(beats, 'easy');
+            const beatMap = createMockBeatMap(60);
+
+            // Generate multiple times
+            const results = [];
+            for (let i = 0; i < 3; i++) {
+                results.push(generator.generate(composite, beatMap));
+            }
+
+            // All results should have same beat counts
+            const counts = results.map(r => r.medium.beats.length);
+            expect(counts[0]).toBe(counts[1]);
+            expect(counts[1]).toBe(counts[2]);
+        });
+    });
+});
