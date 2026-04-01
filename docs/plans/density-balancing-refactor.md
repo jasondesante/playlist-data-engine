@@ -111,13 +111,13 @@ Replace the probabilistic per-index multiplier with a global target calculator t
   - [x] 3.2.4: **No probabilistic rolls** — the distribution is deterministic and greedy. Empty indices are always prioritized. Use the seed only for tiebreaking when multiple indices are equally good candidates (for reproducibility).
   - [x] 3.2.5: Return `Map<number, number>` of `beatIndex → targetCount`
 
-- [ ] Task 3.3: Refactor `enhanceBeats()` to use new distribution
-  - [ ] 3.3.1: Replace call to `calculateProbabilisticTargetBeatsPerBeat()` with `distributeBeatsAcrossIndices()`
-  - [ ] 3.3.2: Remove `enhancementLevel` ('moderate'/'heavy') — the target density range is now the sole driver of how many beats to add
-  - [ ] 3.3.3: Remove the density multiplier from config (or keep as legacy, unused)
-  - [ ] 3.3.4: Keep pattern insertion as the first strategy for filling occupied indices (it produces more musical results)
-  - [ ] 3.3.5: Use `interpolateBeats()` for remaining slots, passing the locked grid type
-  - [ ] 3.3.6: Use `createBeatsForEmptyIndex()` for empty indices, passing the locked grid type
+- [x] Task 3.3: Refactor `enhanceBeats()` to use new distribution
+  - [x] 3.3.1: Replace call to `calculateProbabilisticTargetBeatsPerBeat()` with `distributeBeatsAcrossIndices()`
+  - [x] 3.3.2: Remove `enhancementLevel` ('moderate'/'heavy') — the target density range is now the sole driver of how many beats to add
+  - [x] 3.3.3: Remove the density multiplier from config (or keep as legacy, unused)
+  - [x] 3.3.4: Keep pattern insertion as the first strategy for filling occupied indices (it produces more musical results)
+  - [x] 3.3.5: Use `interpolateBeats()` for remaining slots, passing the locked grid type
+  - [x] 3.3.6: Use `createBeatsForEmptyIndex()` for empty indices, passing the locked grid type
 
 - [ ] Task 3.4: Fix timestamp derivation in `interpolateBeats()`
   - [ ] 3.4.1: Accept `unifiedBeatMap` parameter

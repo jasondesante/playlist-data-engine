@@ -1033,15 +1033,13 @@ export class DifficultyVariantGenerator {
         }
 
         if (needsEnhancement) {
-            // Determine enhancement level based on how many steps up we're going
-            const enhancementLevel = this.getEnhancementLevel(targetDifficulty, naturalDifficulty);
-
-            // Enhance beats using pattern library and interpolation
+            // Task 3.3.2: enhancementLevel removed — target density range drives beat count now.
+            // Enhance beats using global target-based distribution.
             // Task 1.4.2: Pass lockedBeats and gridLock to enhanceBeats
             const result = this.enhanceBeats(
                 lockedBeats,
                 targetDifficulty,
-                enhancementLevel,
+                bpm,
                 unifiedBeatMap,
                 phraseAnalysis,
                 gridDecisions,
@@ -2137,7 +2135,7 @@ export class DifficultyVariantGenerator {
      *
      * @param beats - The beats to enhance
      * @param targetDifficulty - The target difficulty level
-     * @param enhancementLevel - Whether this is moderate or heavy enhancement
+     * @param bpm - BPM for calculating global target beat count
      * @param unifiedBeatMap - The unified beat map for timestamp derivation
      * @param phraseAnalysis - Optional phrase analysis for pattern library
      * @param gridDecisions - Optional grid decisions from quantized streams
@@ -2148,7 +2146,7 @@ export class DifficultyVariantGenerator {
     private enhanceBeats(
         beats: CompositeBeat[],
         targetDifficulty: DifficultyLevel,
-        enhancementLevel: 'moderate' | 'heavy',
+        bpm: number,
         unifiedBeatMap: UnifiedBeatMap,
         phraseAnalysis?: PhraseAnalysisResult,
         gridDecisions?: Map<number, GridDecision>,
@@ -2161,15 +2159,8 @@ export class DifficultyVariantGenerator {
             patternsInserted: 0,
             interpolatedBeats: 0,
             insertedPatternIds: [],
-            densityMultiplier: this.config.enhancementDensityMultiplier,
+            densityMultiplier: this.config.enhancementDensityMultiplier, // Task 3.3.3: kept as legacy, no longer drives logic
         };
-
-        // Adjust density multiplier based on enhancement level
-        const densityMultiplier = enhancementLevel === 'heavy'
-            ? this.config.enhancementDensityMultiplier * 1.2
-            : this.config.enhancementDensityMultiplier;
-
-        metadata.densityMultiplier = densityMultiplier;
 
         // If no beats to enhance, return empty
         if (beats.length === 0) {
@@ -2190,17 +2181,24 @@ export class DifficultyVariantGenerator {
         // Group beats by beatIndex for analysis
         const beatsByIndex = this.groupBeatsByIndex(cleanedBeats);
 
-        // Calculate target beats per beat index using probabilistic density scaling.
-        // Each beat index independently rolls against a probability derived from the
-        // fractional part of (count * multiplier), producing gradual density changes
-        // instead of all indices jumping at once.
+        // Task 3.3.1: Use global target-based distribution instead of probabilistic scaling.
+        // Calculate exactly how many beats to add from the density target range,
+        // then distribute that count across indices deterministically.
         const maxBeatIndex = Math.max(...Array.from(beatsByIndex.keys()));
-        const densitySeed = this.config.seed ?? `${densityMultiplier}:${maxBeatIndex}:${cleanedBeats.length}`;
-        const targetBeatsPerBeat = this.calculateProbabilisticTargetBeatsPerBeat(
+        const totalQuarterNotes = maxBeatIndex + 1;
+        const { beatsToAdd } = this.calculateBeatsToAdd(
+            cleanedBeats.length,
+            totalQuarterNotes,
+            bpm,
+            targetDifficulty
+        );
+        const densitySeed = this.config.seed ?? `enhance:${maxBeatIndex}:${cleanedBeats.length}`;
+        const targetBeatsPerBeat = this.distributeBeatsAcrossIndices(
+            beatsToAdd,
             beatsByIndex,
-            densityMultiplier,
+            gridLock ?? new Map(),
             maxBeatIndex,
-            `${densitySeed}:${targetDifficulty}`
+            densitySeed
         );
 
         // Create enhanced beats array
