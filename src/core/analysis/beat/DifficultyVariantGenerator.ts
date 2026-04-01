@@ -510,6 +510,9 @@ export interface DifficultyVariantConfig {
     /** Strategy for where to target within the density range. Default: 'midpoint' */
     densityTargetStrategy: DensityTargetStrategy;
 
+    /** Maximum number of passes for density reduction with progressively relaxed protections. Default: 3 */
+    maxReductionPasses: number;
+
     /** Seed for deterministic probability rolls in beat enhancement. If not provided, falls back to a hash of beat data. */
     seed?: string;
 }
@@ -529,6 +532,7 @@ const DEFAULT_DIFFICULTY_VARIANT_CONFIG: DifficultyVariantConfig = {
     preferPatternInsertion: true,
     maxPatternInsertionSize: 4,
     densityTargetStrategy: 'midpoint',
+    maxReductionPasses: 3,
     seed: undefined,
 };
 
@@ -1320,16 +1324,6 @@ export class DifficultyVariantGenerator {
         const beatsCollapsedDuringConversion = convertedBeats.length - deduplicatedBeats.length;
 
         // Task 2.3.2: After grid conversion, re-check the beat count against the target before running reduceDensityToTarget()
-        // Calculate maxBeatIndex from the deduplicated beats for the target calculation
-        const maxBeatIndex = deduplicatedBeats.length > 0
-            ? Math.max(...deduplicatedBeats.map(b => b.beatIndex))
-            : 0;
-        const beatCountTarget = this.calculateBeatCountTarget(
-            deduplicatedBeats.length,
-            maxBeatIndex + 1,
-            bpm,
-            targetDifficulty
-        );
         const currentDensity = this.calculateDensity(deduplicatedBeats, bpm);
         const targetRange = SUBDIVISION_LIMITS[targetDifficulty].targetDensityRange;
 
@@ -1526,11 +1520,12 @@ export class DifficultyVariantGenerator {
                 // Aim 75% toward the minimum from the midpoint
                 targetDensity = midpoint * 0.75 + targetRange.min * 0.25;
                 break;
-            case 'upper':
+            case 'upper': {
                 // Aim 75% toward the maximum from the midpoint
                 const maxDensity = targetRange.max === Infinity ? midpoint * 1.5 : targetRange.max;
                 targetDensity = midpoint * 0.75 + maxDensity * 0.25;
                 break;
+            }
             case 'midpoint':
             default:
                 targetDensity = midpoint;
@@ -1693,7 +1688,7 @@ export class DifficultyVariantGenerator {
 
         // Phase A: Fill empty indices first
         // Group consecutive empty indices to identify gap sizes
-        const gaps = this.groupConsecutiveEmptyIndices(emptyIndices, maxBeatIndex);
+        const gaps = this.groupConsecutiveEmptyIndices(emptyIndices);
 
         // Sort gaps by priority:
         // 1. Small gaps (1-2 indices) first - they benefit most from pattern continuity
@@ -1788,12 +1783,10 @@ export class DifficultyVariantGenerator {
      * Group consecutive empty indices into gaps
      *
      * @param emptyIndices - Array of empty beat indices (sorted)
-     * @param maxBeatIndex - Maximum beat index
      * @returns Array of gap arrays, each containing consecutive empty indices
      */
     private groupConsecutiveEmptyIndices(
-        emptyIndices: number[],
-        maxBeatIndex: number
+        emptyIndices: number[]
     ): number[][] {
         if (emptyIndices.length === 0) return [];
 
@@ -1834,8 +1827,9 @@ export class DifficultyVariantGenerator {
      * - Strong beats (beats 1, 3 of measure) - kept as long as possible
      *
      * Protected beats (not removed):
-     * - Beats with priority >= (1 - densityReductionMinIntensity)
-     * - Beats with intensity >= moderateSimplificationIntensityThreshold
+     * - Pass 1: Beats with priority >= (1 - densityReductionMinIntensity) or intensity >= moderateSimplificationIntensityThreshold
+     * - Pass 2: Relaxed thresholds (priority threshold lowered by 0.15, intensity threshold lowered by 0.1)
+     * - Pass 3+: Only strong beats (beatIndex % 4 === 0 or 2) are protected
      *
      * @param beats - The beats to potentially reduce
      * @param targetDifficulty - The target difficulty level
@@ -1852,13 +1846,13 @@ export class DifficultyVariantGenerator {
     ): T[] {
         const targetRange = SUBDIVISION_LIMITS[targetDifficulty].targetDensityRange;
         const bpmPerSecond = bpm / 60;
-        let currentDensity = this.calculateDensity(beats, bpm);
+        const initialDensity = this.calculateDensity(beats, bpm);
 
         // If already within target range, no reduction needed
-        if (currentDensity <= targetRange.max) {
+        if (initialDensity <= targetRange.max) {
             if (this.config.logConversions) {
                 console.log(
-                    `[DifficultyVariantGenerator] Density ${currentDensity.toFixed(2)} notes/sec already within ` +
+                    `[DifficultyVariantGenerator] Density ${initialDensity.toFixed(2)} notes/sec already within ` +
                     `target range [${targetRange.min}, ${targetRange.max}] for ${targetDifficulty}`
                 );
             }
@@ -1867,12 +1861,12 @@ export class DifficultyVariantGenerator {
 
         if (this.config.logConversions) {
             console.log(
-                `[DifficultyVariantGenerator] Reducing density from ${currentDensity.toFixed(2)} notes/sec to ` +
+                `[DifficultyVariantGenerator] Reducing density from ${initialDensity.toFixed(2)} notes/sec to ` +
                 `target max ${targetRange.max} notes/sec for ${targetDifficulty}`
             );
         }
 
-        // Calculate removal priority for each beat
+        // Calculate removal priority for each beat (do this once upfront)
         const beatsWithPriority = beats.map(beat => ({
             beat,
             priority: this.calculateRemovalPriority(beat, phraseMembership),
@@ -1885,43 +1879,95 @@ export class DifficultyVariantGenerator {
         const maxBeatIndex = Math.max(...beats.map(b => b.beatIndex));
         const totalBeats = maxBeatIndex + 1;
 
-        // Remove beats one at a time until density is within target
+        // Track removed beats across all passes
         const removedBeats = new Set<T>();
         let remainingCount = beats.length;
+        const maxPasses = this.config.maxReductionPasses;
 
-        for (const { beat, priority } of beatsWithPriority) {
-            // Check if we've reached target density (notes/sec)
-            const projectedDensity = ((remainingCount - 1) / totalBeats) * bpmPerSecond;
+        // Multi-pass convergence loop (Task 2.2.5-2.2.8)
+        for (let pass = 1; pass <= maxPasses; pass++) {
+            let beatsRemovedThisPass = 0;
+            const isFinalPass = pass === maxPasses;
 
-            if (projectedDensity <= targetRange.max) {
-                // We've removed enough beats, stop
-                break;
+            // Calculate thresholds for this pass
+            let priorityThreshold: number;
+            let intensityThreshold: number;
+            let protectStrongBeatsOnly = false;
+
+            if (pass === 1) {
+                // Pass 1: Full protections (Task 2.2.3)
+                priorityThreshold = 1 - this.config.densityReductionMinIntensity;
+                intensityThreshold = this.config.moderateSimplificationIntensityThreshold;
+            } else if (pass === 2) {
+                // Pass 2: Relaxed protections (Task 2.2.5)
+                priorityThreshold = (1 - this.config.densityReductionMinIntensity) - 0.15;
+                intensityThreshold = this.config.moderateSimplificationIntensityThreshold - 0.1;
+            } else {
+                // Pass 3+: Final fallback - only protect strong beats (Task 2.2.6)
+                protectStrongBeatsOnly = true;
+                priorityThreshold = 0;
+                intensityThreshold = 0;
             }
 
-            // Don't remove if it's a critical beat (very high priority) or has high intensity
-            const priorityThreshold = 1 - this.config.densityReductionMinIntensity;
-            if (priority >= priorityThreshold || beat.intensity >= this.config.moderateSimplificationIntensityThreshold) {
-                continue;
-            }
+            for (const { beat, priority } of beatsWithPriority) {
+                // Skip already removed beats
+                if (removedBeats.has(beat)) continue;
 
-            // Remove this beat
-            removedBeats.add(beat);
-            remainingCount--;
+                // Check if we've reached target density (notes/sec)
+                const projectedDensity = ((remainingCount - 1) / totalBeats) * bpmPerSecond;
+
+                if (projectedDensity <= targetRange.max) {
+                    // We've removed enough beats, stop this pass
+                    break;
+                }
+
+                // Check protection rules for this pass
+                if (protectStrongBeatsOnly) {
+                    // Pass 3: Only protect strong beats (beatIndex % 4 === 0 or 2)
+                    if (this.isStrongBeat(beat.beatIndex)) {
+                        continue;
+                    }
+                } else {
+                    // Pass 1 & 2: Use priority and intensity thresholds
+                    if (priority >= priorityThreshold || beat.intensity >= intensityThreshold) {
+                        continue;
+                    }
+                }
+
+                // Remove this beat
+                removedBeats.add(beat);
+                remainingCount--;
+                beatsRemovedThisPass++;
+
+                if (this.config.logConversions) {
+                    console.log(
+                        `[DifficultyVariantGenerator] Pass ${pass}: Removed beat at index ${beat.beatIndex} ` +
+                        `position ${beat.gridPosition} (priority: ${priority.toFixed(2)}, intensity: ${beat.intensity.toFixed(2)})`
+                    );
+                }
+            }
 
             if (this.config.logConversions) {
                 console.log(
-                    `[DifficultyVariantGenerator] Removed beat at index ${beat.beatIndex} ` +
-                    `position ${beat.gridPosition} (priority: ${priority.toFixed(2)}, intensity: ${beat.intensity.toFixed(2)})`
+                    `[DifficultyVariantGenerator] Pass ${pass}${isFinalPass ? ' (final)' : ''}: ` +
+                    `Removed ${beatsRemovedThisPass} beats, ` +
+                    `density now: ${((remainingCount / totalBeats) * bpmPerSecond).toFixed(2)} notes/sec`
                 );
+            }
+
+            // Check if we've reached the target (Task 2.2.4)
+            const currentDensity = (remainingCount / totalBeats) * bpmPerSecond;
+            if (currentDensity <= targetRange.max) {
+                break; // Target reached, stop convergence loop
             }
         }
 
-        // Check if we couldn't reach target density (all remaining beats are protected)
+        // Check if we couldn't reach target density after all passes
         const finalDensity = (remainingCount / totalBeats) * bpmPerSecond;
         if (finalDensity > targetRange.max && this.config.logConversions) {
             console.warn(
-                `[DifficultyVariantGenerator] Could not reach target density ${targetRange.max} notes/sec for ${targetDifficulty}. ` +
-                `Final density: ${finalDensity.toFixed(2)} notes/sec (${remainingCount} beats remaining are all protected)`
+                `[DifficultyVariantGenerator] Could not reach target density ${targetRange.max} notes/sec for ${targetDifficulty} after ${maxPasses} passes. ` +
+                `Final density: ${finalDensity.toFixed(2)} notes/sec (${remainingCount} beats remaining)`
             );
         }
 
