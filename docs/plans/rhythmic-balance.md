@@ -87,7 +87,7 @@ private isStrongBeat(beatIndex: number): boolean {
       - `'neutral'` — no positional preference
     - `downbeatProximityRange: number` (default `2`) — max distance in quarter-note beats from an upbeat note to the nearest downbeat note. 0 = same beat only, 4 = same measure
     - `fillEmptyMeasures: boolean` (default `true`) — whether to fill empty measures with a beat on beat 1 downbeat
-    - `addedBeatIntensity: number` (default `0.35`) — intensity for beats added by the balancer. Lower than detected beats so they're removable during density reduction if needed
+    - `addedBeatIntensity: number` (default `0.45`) — intensity for beats added by the balancer. Lower than detected beats so they're removable during density reduction if needed
   - [ ] 1.1.3: Export default config constant `DEFAULT_RHYTHMIC_BALANCE_CONFIG`
 
 - [ ] Task 1.2: Create `RhythmicBalancer` class
