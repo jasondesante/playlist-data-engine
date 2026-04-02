@@ -2591,7 +2591,11 @@ export class DifficultyVariantGenerator {
 
             if (existingBeats.length === 0) {
                 // Task 1.3.3: Get locked grid type from gridLock if available
-                const lockedGridForIndex = gridLock?.get(beatIndex);
+                // Convert to allowed type for the target difficulty before using it
+                const rawLockedGrid = gridLock?.get(beatIndex);
+                const lockedGridForIndex = rawLockedGrid
+                    ? convertToAllowedGridType(rawLockedGrid, targetDifficulty, bpm)
+                    : undefined;
 
                 // Empty beat index — create beats from scratch using grid lock,
                 // grid decisions, or neighbor context. interpolateBeats requires
@@ -2622,7 +2626,9 @@ export class DifficultyVariantGenerator {
             }
 
             // Task 1.3.3: Use locked grid type from gridLock if available, otherwise derive from existing beats
-            const gridForIndex = gridLock?.get(beatIndex) ?? existingBeats[0].gridType;
+            // Convert to allowed type for the target difficulty
+            const rawGridForIndex = gridLock?.get(beatIndex) ?? existingBeats[0].gridType;
+            const gridForIndex = convertToAllowedGridType(rawGridForIndex, targetDifficulty, bpm);
 
             // Try pattern insertion first (if enabled and phrase analysis available)
             let addedFromPattern = 0;
