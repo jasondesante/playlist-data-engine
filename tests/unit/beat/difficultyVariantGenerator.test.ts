@@ -27,7 +27,6 @@ import {
     type CompositeBeat,
     type CompositeStream,
     type VariantBeat,
-    type GridLockResult,
 } from '../../../src/core/analysis/beat/index.js';
 
 import type { UnifiedBeatMap } from '../../../src/core/types/BeatMap.js';
@@ -1900,7 +1899,7 @@ describe('lockGridPerBeatIndex', () => {
 /**
  * Helper function to verify that no beat index has mixed grid types
  */
-function assertNoMixedGrids(beats: CompositeBeat[], variantName: string): void {
+function assertNoMixedGrids(beats: VariantBeat[], variantName: string): void {
     const beatsByIndex = new Map<number, Set<string>>();
 
     for (const beat of beats) {
