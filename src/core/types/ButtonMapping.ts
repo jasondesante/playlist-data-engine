@@ -22,8 +22,11 @@ import type { DifficultyPreset } from './BeatMap.js';
  *
  * - **Guitar Hero**: 5 fret buttons (1-5), 1-axis pitch expression
  *   Fretboard metaphor: 1 = lowest pitch, 5 = highest pitch
+ *
+ * - **Tap**: No button assignment — all beats are simple taps.
+ *   Skips pitch detection and button mapping entirely. Fastest generation mode.
  */
-export type ControllerMode = 'ddr' | 'guitar_hero';
+export type ControllerMode = 'ddr' | 'guitar_hero' | 'tap';
 
 /**
  * DDR directional buttons.
@@ -39,9 +42,14 @@ export type DDRButton = 'up' | 'down' | 'left' | 'right';
 export type GuitarHeroButton = 1 | 2 | 3 | 4 | 5;
 
 /**
+ * Tap button — single button for tap controller mode.
+ */
+export type TapButton = 'tap';
+
+/**
  * Union of all possible button types across controller modes.
  */
-export type Button = DDRButton | GuitarHeroButton;
+export type Button = DDRButton | GuitarHeroButton | TapButton;
 
 // =============================================================================
 // BUTTON MAPPING CONFIGURATION
@@ -239,9 +247,9 @@ export function validateButtonMappingConfig(
     }
 
     if (config.controllerMode !== undefined) {
-        if (config.controllerMode !== 'ddr' && config.controllerMode !== 'guitar_hero') {
+        if (config.controllerMode !== 'ddr' && config.controllerMode !== 'guitar_hero' && config.controllerMode !== 'tap') {
             errors.push(
-                `controllerMode must be 'ddr' or 'guitar_hero', got '${config.controllerMode}'`
+                `controllerMode must be 'ddr', 'guitar_hero', or 'tap', got '${config.controllerMode}'`
             );
         }
     }

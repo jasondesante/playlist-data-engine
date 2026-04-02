@@ -156,6 +156,7 @@ export type {
     ControllerMode,
     DDRButton,
     GuitarHeroButton,
+    TapButton,
     Button,
     ButtonMappingConfig,
     ButtonMappingConfigValidationResult,

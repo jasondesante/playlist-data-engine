@@ -23,7 +23,7 @@ import type { Band } from '../generation/RhythmGenerator.js';
  * - 'ddr': 4-key dance pad style (up, down, left, right)
  * - 'guitar': 5-fret guitar hero style (1, 2, 3, 4, 5)
  */
-export type ChartStyle = 'ddr' | 'guitar';
+export type ChartStyle = 'ddr' | 'guitar' | 'tap';
 
 // ============================================================================
 // Detected Beat Types (for export)
@@ -251,7 +251,7 @@ export interface ProceduralGenerationMetadata {
     patternsUsed: string[];
 
     /** Controller mode used */
-    controllerMode: 'ddr' | 'guitar_hero';
+    controllerMode: 'ddr' | 'guitar_hero' | 'tap';
 
     /** Seed used for reproducibility */
     seed?: string;

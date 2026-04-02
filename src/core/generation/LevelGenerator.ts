@@ -533,7 +533,7 @@ export class LevelGenerator {
         // Phase 2: Analyze pitch (if enabled, with caching)
         let pitchAnalysis: MelodyContourAnalysisResult | null = null;
 
-        if (this.buttonConfig.pitchInfluenceWeight > 0) {
+        if (this.buttonConfig.pitchInfluenceWeight > 0 && this.buttonConfig.controllerMode !== 'tap') {
             const pitchCacheKey = this.generateCacheKey(
                 audioId,
                 'pitch',
@@ -644,7 +644,7 @@ export class LevelGenerator {
         // Analyze pitch once (shared across difficulties, with caching)
         let pitchAnalysis: MelodyContourAnalysisResult | null = null;
 
-        if (this.buttonConfig.pitchInfluenceWeight > 0) {
+        if (this.buttonConfig.pitchInfluenceWeight > 0 && this.buttonConfig.controllerMode !== 'tap') {
             const pitchCacheKey = this.generateCacheKey(
                 audioId,
                 'pitch',

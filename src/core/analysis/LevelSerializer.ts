@@ -275,7 +275,7 @@ export class LevelSerializer {
         }
 
         return {
-            style: metadata.controllerMode === 'ddr' ? 'ddr' : 'guitar',
+            style: metadata.controllerMode === 'ddr' ? 'ddr' : metadata.controllerMode === 'guitar_hero' ? 'guitar' : 'tap',
             keyCount: uniqueKeys.length,
             usedKeys: uniqueKeys,
         };

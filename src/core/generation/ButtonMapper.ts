@@ -82,7 +82,7 @@ export interface MappedLevelResult {
  */
 export interface ButtonMappingMetadata {
     /** Controller mode used for mapping */
-    controllerMode: 'ddr' | 'guitar_hero';
+    controllerMode: 'ddr' | 'guitar_hero' | 'tap';
 
     /** All unique keys used in the chart */
     keysUsed: string[];
@@ -1126,6 +1126,19 @@ export class ButtonMapper {
         difficulty: DifficultyLevel
     ): ButtonAssignment[] {
         const beats = variant.beats;
+
+        // Tap mode: every beat gets a single tap key, skip all pitch/pattern logic
+        if (this.config.controllerMode === 'tap') {
+            return beats.map((beat, i) => ({
+                beatIndex: i,
+                timestamp: beat.timestamp,
+                key: 'tap' as DDRButton | GuitarHeroButton,
+                source: 'pattern' as const,
+                patternId: undefined,
+                probability: undefined,
+            }));
+        }
+
         const assignments: ButtonAssignment[] = [];
 
         // Get max pattern difficulty for this game difficulty
@@ -1138,7 +1151,7 @@ export class ButtonMapper {
         const { pitchKeys, probabilities } = classifyBeats(
             beats,
             pitchAnalysis,
-            this.config.controllerMode,
+            this.config.controllerMode as 'ddr' | 'guitar_hero',
             difficulty,
         );
 

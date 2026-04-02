@@ -3053,12 +3053,13 @@ This section covers pitch detection, melody analysis, button mapping, and level 
 
 ### Controller Modes
 
-The button mapper supports two controller styles:
+The button mapper supports three controller styles:
 
 | Mode | Buttons | Axes | Pitch Expression | See Details |
 |------|---------|------|------------------|-------------|
 | DDR | up, down, left, right | 2 (vertical + horizontal) | Vertical: up→high, down→low; Horizontal: left→low, right→high | [BEAT_DETECTION.md#ddr-mode](docs/BEAT_DETECTION.md#ddr-mode) |
 | Guitar Hero | 1, 2, 3, 4, 5 | 1 (horizontal only) | Fretboard metaphor: 1→lowest pitch, 5→highest pitch | [BEAT_DETECTION.md#guitar-hero-mode](docs/BEAT_DETECTION.md#guitar-hero-mode) |
+| Tap | tap | 0 | None — skips pitch detection entirely, all beats are simple taps | [BEAT_DETECTION.md#tap-mode](docs/BEAT_DETECTION.md#tap-mode) |
 
 ### PitchDetector
 
@@ -3301,7 +3302,7 @@ new ButtonMapper(config: Partial<ButtonMappingConfig>)
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `controllerMode` | string | Controller mode used ('ddr' or 'guitar_hero') |
+| `controllerMode` | string | Controller mode used ('ddr', 'guitar_hero', or 'tap') |
 | `keysUsed` | string[] | All unique keys used in the chart |
 | `pitchInfluencedBeats` | number | Number of beats influenced by pitch |
 | `patternInfluencedBeats` | number | Number of beats from pattern library |
@@ -3323,7 +3324,7 @@ new ButtonMapper(config: Partial<ButtonMappingConfig>)
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
 | `difficulty` | DifficultyPreset | 'medium' | Difficulty preset |
-| `controllerMode` | ControllerMode | 'ddr' | Controller mode ('ddr' or 'guitar_hero') |
+| `controllerMode` | ControllerMode | 'ddr' | Controller mode ('ddr', 'guitar_hero', or 'tap') |
 | `pitchInfluenceWeight` | number | 1.0 | How strongly pitch affects buttons (0-1) |
 | `emphasizeDownbeats` | boolean | true | Emphasize downbeats with specific patterns |
 | `emphasizeSyncopation` | boolean | false | Emphasize syncopated beats |

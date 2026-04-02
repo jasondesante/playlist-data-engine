@@ -35,7 +35,7 @@ The Playlist Data Engine provides beat detection and rhythm analysis features fo
 
 - [Pitch Detection](#pitch-detection) — pYIN algorithm, Essentia.js alternatives, and multi-band analysis
 - [Melody Contour Analysis](#melody-contour-analysis) — Pitch direction and interval tracking
-- [Button Mapping Strategies](#button-mapping-strategies) — DDR and Guitar Hero modes
+- [Button Mapping Strategies](#button-mapping-strategies) — DDR, Guitar Hero, and Tap modes
 - [Level Generation Examples](#level-generation-examples) — Complete workflows
 - [Serialization Format](#serialization-format) — FullBeatMapExportData structure and compatibility
 
@@ -950,7 +950,7 @@ This function:
 
 ## Chart Creation with Required Keys
 
-The beat detection system supports rhythm game chart creation through the `requiredKey` property on beats. This enables Guitar Hero/DDR-style gameplay where specific keys must be pressed for specific beats.
+The beat detection system supports rhythm game chart creation through the `requiredKey` property on beats. This enables Guitar Hero/DDR-style gameplay where specific keys must be pressed for specific beats. In Tap mode, no key assignment is used — all beats are simple taps.
 
 ### Overview
 
@@ -4394,12 +4394,13 @@ interface MelodySegment {
 
 ### Controller Mode Overview
 
-The engine supports two controller modes with different button mapping philosophies:
+The engine supports three controller modes with different button mapping philosophies:
 
 | Mode | Buttons | Axes | Best For |
 |------|---------|------|----------|
 | **DDR** | up, down, left, right | 2 (circular) | Dance pads, circular motion games |
 | **Guitar Hero** | 1, 2, 3, 4, 5 | 1 (horizontal) | Fret-based games, linear pitch mapping |
+| **Tap** | tap | 0 | Simple rhythm games, no pitch mapping needed |
 
 Mode selection is via the `controllerMode` config option.
 
@@ -4469,6 +4470,24 @@ This creates continuous, flowing patterns even at the extremes.
 #### Example
 
 "Descending large interval from fret 3 → fret 1" (down 2 positions)
+
+### Tap Mode Strategy (Single Button, No Pitch)
+
+Tap mode is the simplest controller mode — every beat is assigned a single `tap` button regardless of pitch, pattern, or difficulty. It is designed for rhythm games where the challenge comes from timing alone.
+
+**Key characteristics:**
+
+- **No pitch detection**: When `controllerMode` is `'tap'`, pitch analysis is skipped entirely during level generation, making it the fastest generation mode.
+- **No button mapping logic**: All pitch classification, pattern selection, and probability-based blending are bypassed. Each beat simply gets `key: 'tap'`.
+- **No `pitchAnalysis` required**: The `ButtonMapper.map()` call does not need a pitch analysis result for tap mode.
+
+**Example:**
+
+```typescript
+const mapper = new ButtonMapper({ controllerMode: 'tap' });
+const buttons = mapper.map(rhythm, 'medium', null);
+// All beats assigned key: 'tap'
+```
 
 ### Probability-Based Blending
 
@@ -4603,17 +4622,20 @@ const rhythmGenerator = new RhythmGenerator({
 });
 const rhythm = await rhythmGenerator.generate(audioBuffer, beatMap, interpolated);
 
-// Step 5: Link pitch to composite stream beats
+// Step 5: Link pitch to composite stream beats (skip for tap mode)
 const linker = new PitchBeatLinker();
 const compositePitches = await linker.linkWithComposite(
   rhythm.composite,
   audioBuffer
 );
 
-// Step 6: Derive pitches for all difficulty variants
+// Step 6: Derive pitches for all difficulty variants (skip for tap mode)
 const variantPitches = linker.deriveAllVariantPitches(rhythm.difficultyVariants, compositePitches);
 
 // Step 7: Map buttons for each difficulty
+// For tap mode, skip Steps 5-6 and pass null for pitch analysis:
+//   const mapper = new ButtonMapper({ controllerMode: 'tap' });
+//   const buttons = mapper.map(rhythm, 'easy', null);
 const mapper = new ButtonMapper({ controllerMode: 'ddr', pitchInfluenceWeight: 0.8 });
 const easyButtons = mapper.map(rhythm, 'easy', variantPitches.easy);
 const mediumButtons = mapper.map(rhythm, 'medium', variantPitches.medium);
@@ -4815,7 +4837,7 @@ interface ProceduralGenerationMetadata {
   difficulty: string;              // 'easy', 'medium', or 'hard'
   pitchInfluenceWeight: number;    // 0-1, how much pitch affected button mapping
   patternsUsed: string[];          // IDs of button patterns used
-  controllerMode: 'ddr' | 'guitar_hero';
+  controllerMode: 'ddr' | 'guitar_hero' | 'tap';
   seed?: string;                   // For reproducibility. When set, same seed + audio + settings = same level
   generatedAt: string;             // ISO timestamp
 
