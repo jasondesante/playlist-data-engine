@@ -91,8 +91,8 @@ function createMockAudioBuffer(
         sampleRate,
         numberOfChannels,
         getChannelData: (channel: number) => channels[channel],
-        copyFromChannel: () => {},
-        copyToChannel: () => {},
+        copyFromChannel: () => { },
+        copyToChannel: () => { },
     } as AudioBuffer;
 }
 
@@ -149,9 +149,9 @@ function createMockUnifiedBeatMap(
             gaussianSmoothMs: 20,
             tempoCenter: 0.5,
             tempoWidth: 1.4,
-            hopSizeMode: { mode: 'standard' },
-            melBandsMode: { mode: 'standard' },
-            gaussianSmoothMode: { mode: 'standard' },
+            filter: 0.0,
+            useOctaveResolution: false,
+            useTripleMeter: false,
             generatedAt: new Date().toISOString(),
         },
     }
@@ -335,11 +335,12 @@ describe('RhythmGenerator Performance Tests', () => {
 
             // Memory delta should be reasonable (less than 100MB for a 3-minute song)
             expect(memoryDelta).toBeLessThan(100);
-        });
+        }, PERFORMANCE_THRESHOLD_MS);
     })
 
     describe('Performance Summary', () => {
         it('should provide overall performance summary', async () => {
+            // Timeout matches the 3-minute generation threshold
             const durationSeconds = 180; // 3 minutes
             const audioBuffer = createMockAudioBuffer(durationSeconds);
             const beatMap = createMockUnifiedBeatMap(durationSeconds)
@@ -365,6 +366,6 @@ describe('RhythmGenerator Performance Tests', () => {
             console.log('');
 
             expect(totalTime).toBeLessThan(PERFORMANCE_THRESHOLD_MS);
-        });
+        }, PERFORMANCE_THRESHOLD_MS);
     });
 });
