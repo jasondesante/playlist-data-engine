@@ -2791,7 +2791,10 @@ describe('Target-Based Density Enhancement (Task 3.5)', () => {
             for (let i = 0; i < 10; i++) {
                 beatMap.beats.push({
                     timestamp: i * quarterNoteInterval,
-                    beatIndex: i,
+                    beatInMeasure: 0,
+                    measureNumber: i,
+                    isDownbeat: true,
+                    intensity: 1.0,
                     confidence: 1.0,
                 });
             }
