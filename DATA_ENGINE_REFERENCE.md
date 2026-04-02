@@ -2882,6 +2882,22 @@ constructor(config?: Partial<StreamScorerConfig>)
 |--------|---------|-------------|
 | `score(streams, phraseAnalysis, densityAnalysis)` | `StreamScoringResult` | Score band streams for rhythmic interest |
 
+**Exported Functions:**
+
+| Function | Returns | Description |
+|----------|---------|-------------|
+| `getControllerModeScoringDefaults(controllerMode)` | `StreamScorerConfig` | Get default scoring config for a controller mode. Returns mode-specific factor weights with shared band bias defaults |
+
+**Controller Mode Scoring Defaults:**
+
+Factor weights vary per controller mode (band bias weights are shared):
+
+| Controller Mode | `ioiVarianceWeight` | `syncopationWeight` | `phraseSignificanceWeight` | `densityWeight` |
+|-----------------|--------------------:|--------------------:|---------------------------:|----------------:|
+| DDR | 0.20 | 0.15 | 0.35 | 0.30 |
+| Guitar Hero | 0.30 | 0.30 | 0.25 | 0.15 |
+| Tap | 0.30 | 0.20 | 0.30 | 0.20 |
+
 **Scoring Factors:**
 
 | Factor | Description |
@@ -2927,7 +2943,7 @@ constructor(config?: Partial<RhythmicBalanceConfig>)
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
 | `strongBeatEmphasis` | `'natural' \| 'backbeat' \| 'neutral'` | `'natural'` | Which beats are "strong" for density reduction priority. Derives grouping from time signature automatically |
-| `downbeatProximityRange` | `number` | `2` | Max distance in quarter-note beats from an upbeat note to the nearest downbeat. 0 = same beat only, 4 = same measure |
+| `downbeatProximityRange` | `number` | `2` | Max distance in quarter-note beats from an upbeat note to the nearest downbeat. 0 = same beat only, 1 = one beat, 1.5 = one beat (half-beat increments supported), 4 = same measure. Supports whole beats and 0.5 increments; intermediate fractional values are rounded down to the nearest supported step (e.g., 1.7 behaves like 1.5) |
 | `fillEmptyMeasures` | `boolean` | `true` | Whether to fill empty measures with a beat on beat 1 downbeat |
 | `addedBeatIntensity` | `number` | `0.45` | Intensity for beats added by the balancer. Lower than detected beats so they're removable during density reduction |
 
@@ -2985,6 +3001,15 @@ Describes what action the balancer took on a beat (tagged on `CompositeBeat.bala
 | `isMetricWeakBeat(beatInMeasure, groupSize)` | `boolean` | Check if position is a weak beat in its group |
 | `isStrongBeatForEmphasis(beatInMeasure, beatsPerMeasure, emphasis)` | `boolean` | Check if beat is "strong" based on emphasis mode |
 | `findActiveSegment(segments, beatIndex)` | `DownbeatSegment` | Find the active segment for a beat index |
+| `getControllerModeBalanceDefaults(controllerMode)` | `RhythmicBalanceConfig` | Get default balance config for a controller mode (`'ddr'`, `'guitar_hero'`, `'tap'`). Each mode has tailored `downbeatProximityRange`: DDR=1, Guitar Hero=2, Tap=1.5 |
+
+**Controller Mode Balance Defaults:**
+
+| Controller Mode | `strongBeatEmphasis` | `downbeatProximityRange` | `fillEmptyMeasures` | `addedBeatIntensity` |
+|-----------------|---------------------|--------------------------|---------------------|----------------------|
+| DDR | `'natural'` | `1` | `true` | `0.45` |
+| Guitar Hero | `'natural'` | `2` | `true` | `0.45` |
+| Tap | `'natural'` | `1.5` | `true` | `0.45` |
 
 ### DifficultyVariantGenerator
 *Location:* *[src/core/analysis/beat/DifficultyVariantGenerator.ts](src/core/analysis/beat/DifficultyVariantGenerator.ts)*

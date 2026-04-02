@@ -593,6 +593,7 @@ export {
     type SectionWinner,
     type StreamScorerConfig,
     type BandBiasWeights,
+    getControllerModeScoringDefaults,
 } from './core/analysis/beat/StreamScorer.js';
 
 // Composite Stream Generator (Phase 3.2)
@@ -640,6 +641,7 @@ export {
     isMetricWeakBeat,
     findActiveSegment,
     isStrongBeatForEmphasis,
+    getControllerModeBalanceDefaults,
     type RhythmicBalanceConfig,
     type StrongBeatEmphasis,
     type BalancerAction,

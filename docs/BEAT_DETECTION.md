@@ -3026,7 +3026,7 @@ The system produces a `GeneratedRhythm` containing:
 | **DensityAnalyzer** | [src/core/analysis/beat/DensityAnalyzer.ts](../src/core/analysis/beat/DensityAnalyzer.ts) |
 | **StreamScorer** | [src/core/analysis/beat/StreamScorer.ts](../src/core/analysis/beat/StreamScorer.ts) |
 | **CompositeStreamGenerator** | [src/core/analysis/beat/CompositeStreamGenerator.ts](../src/core/analysis/beat/CompositeStreamGenerator.ts) |
-| **RhythmicBalancer** | [src/core/analysis/beat/RhythmicBalancer.ts](../src/core/analysis/beat/RhythmicBalancer.ts) |
+| **RhythmicBalancer** | [src/core/analysis/beat/RhythmicBalancer.ts](../src/core/analysis/beat/RhythmicBalancer.ts) | Balance config varies by controller mode via `getControllerModeBalanceDefaults()` (DDR: proximity 1, Guitar Hero: 2, Tap: 1.5) |
 | **DifficultyVariantGenerator** | [src/core/analysis/beat/DifficultyVariantGenerator.ts](../src/core/analysis/beat/DifficultyVariantGenerator.ts) |
 
 ---
@@ -3570,6 +3570,16 @@ Control how much each scoring factor contributes to band selection. Weights shou
 | `syncopationWeight` | 0.30 | 0.0-1.0 | Offbeat emphasis importance |
 | `phraseSignificanceWeight` | 0.25 | 0.0-1.0 | Pattern detection importance |
 | `densityWeight` | 0.15 | 0.0-1.0 | Note count importance |
+
+**Note**: The defaults above are for Guitar Hero mode. DDR and Tap modes use different factor weight profiles. Use `getControllerModeScoringDefaults(controllerMode)` to get mode-specific defaults:
+
+| Controller Mode | `ioiVarianceWeight` | `syncopationWeight` | `phraseSignificanceWeight` | `densityWeight` |
+|-----------------|--------------------:|--------------------:|---------------------------:|----------------:|
+| DDR | 0.20 | 0.15 | 0.35 | 0.30 |
+| Guitar Hero | 0.30 | 0.30 | 0.25 | 0.15 |
+| Tap | 0.30 | 0.20 | 0.30 | 0.20 |
+
+Band bias weights (`low: 0.8, mid: 0.95, high: 1.0`) are shared across all controller modes.
 
 #### Band Bias Weights
 

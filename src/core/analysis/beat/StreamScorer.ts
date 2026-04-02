@@ -33,6 +33,7 @@
 import type { GeneratedBeat, GeneratedRhythmMap, QuantizedBandStreams } from './RhythmQuantizer.js';
 import type { PhraseAnalysisResult, RhythmicPhrase } from './PhraseAnalyzer.js';
 import type { DensityAnalysisResult } from './DensityAnalyzer.js';
+import type { ControllerMode } from '../../types/ButtonMapping.js';
 
 // ============================================================================
 // Types
@@ -212,7 +213,69 @@ const DEFAULT_STREAM_SCORER_CONFIG: StreamScorerConfig = {
 };
 
 // ============================================================================
-// StreamScorer Class
+// Controller Mode Defaults
+// ============================================================================
+
+/**
+ * Default band bias weights (shared across all controller modes).
+ */
+const DEFAULT_BAND_BIAS: BandBiasWeights = {
+    low: 0.8,
+    mid: 0.95,
+    high: 1.0,
+};
+
+/**
+ * Scoring factor weight defaults per controller mode.
+ *
+ * - **DDR**: Dancing-oriented — lower syncopation, higher density, strong phrase following.
+ * - **Guitar Hero**: Standard — balanced variety and syncopation, moderate phrase emphasis.
+ * - **Tap**: Simple taps — lower syncopation, moderate density, balanced phrase following.
+ */
+const CONTROLLER_MODE_SCORING_DEFAULTS: Record<ControllerMode, {
+    ioiVarianceWeight: number;
+    syncopationWeight: number;
+    phraseSignificanceWeight: number;
+    densityWeight: number;
+}> = {
+    ddr: {
+        ioiVarianceWeight: 0.20,
+        syncopationWeight: 0.15,
+        phraseSignificanceWeight: 0.35,
+        densityWeight: 0.30,
+    },
+    guitar_hero: {
+        ioiVarianceWeight: 0.30,
+        syncopationWeight: 0.30,
+        phraseSignificanceWeight: 0.25,
+        densityWeight: 0.15,
+    },
+    tap: {
+        ioiVarianceWeight: 0.30,
+        syncopationWeight: 0.20,
+        phraseSignificanceWeight: 0.30,
+        densityWeight: 0.20,
+    },
+};
+
+/**
+ * Get the default scoring factor weights for a controller mode.
+ *
+ * Returns the mode-specific defaults for the 4 scoring factors (ioiVarianceWeight,
+ * syncopationWeight, phraseSignificanceWeight, densityWeight). Band bias weights
+ * are the same across all modes.
+ *
+ * @param controllerMode - The controller mode to get defaults for
+ * @returns Full StreamScorerConfig with mode-specific factor weights
+ */
+export function getControllerModeScoringDefaults(controllerMode: ControllerMode): StreamScorerConfig {
+    const modeWeights = CONTROLLER_MODE_SCORING_DEFAULTS[controllerMode];
+    return {
+        ...DEFAULT_STREAM_SCORER_CONFIG,
+        ...modeWeights,
+        bandBiasWeights: { ...DEFAULT_BAND_BIAS },
+    };
+}
 // ============================================================================
 
 /**

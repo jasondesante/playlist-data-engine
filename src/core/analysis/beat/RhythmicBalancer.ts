@@ -15,6 +15,7 @@
 
 import type { CompositeBeat, CompositeStream } from './CompositeStreamGenerator.js';
 import type { UnifiedBeatMap, DownbeatSegment } from '../../types/BeatMap.js';
+import type { ControllerMode } from '../../types/ButtonMapping.js';
 
 // ============================================================================
 // Balancer Action Type
@@ -91,7 +92,11 @@ export interface RhythmicBalanceConfig {
 
     /**
      * Max distance in quarter-note beats from an upbeat note to the nearest downbeat note.
-     * 0 = same beat only, 4 = same measure.
+     * 0 = same beat only, 1 = one beat, 1.5 = one beat (half-beat increments supported),
+     * 4 = same measure.
+     *
+     * Supports whole beats and 0.5 increments. Intermediate fractional values are
+     * rounded down to the nearest supported step (e.g., 1.7 behaves like 1.5).
      *
      * If an upbeat note has no downbeat within this range, it gets shifted to the
      * downbeat of its beat index.
@@ -129,6 +134,48 @@ export const DEFAULT_RHYTHMIC_BALANCE_CONFIG: RhythmicBalanceConfig = {
     fillEmptyMeasures: true,
     addedBeatIntensity: 0.45,
 };
+
+// ============================================================================
+// Controller Mode Defaults
+// ============================================================================
+
+/**
+ * Rhythmic balance defaults per controller mode.
+ *
+ * - **DDR**: Dancing-oriented — tight downbeat proximity, natural emphasis on 1 and 3.
+ * - **Guitar Hero**: Fret-based — standard proximity, natural emphasis.
+ * - **Tap**: Simple taps — tightest proximity, natural emphasis.
+ */
+const CONTROLLER_MODE_BALANCE_DEFAULTS: Record<ControllerMode, RhythmicBalanceConfig> = {
+    ddr: {
+        strongBeatEmphasis: 'natural',
+        downbeatProximityRange: 1,
+        fillEmptyMeasures: true,
+        addedBeatIntensity: 0.45,
+    },
+    guitar_hero: {
+        strongBeatEmphasis: 'natural',
+        downbeatProximityRange: 2,
+        fillEmptyMeasures: true,
+        addedBeatIntensity: 0.45,
+    },
+    tap: {
+        strongBeatEmphasis: 'natural',
+        downbeatProximityRange: 1.5,
+        fillEmptyMeasures: true,
+        addedBeatIntensity: 0.45,
+    },
+};
+
+/**
+ * Get the default rhythmic balance config for a controller mode.
+ *
+ * @param controllerMode - The controller mode to get defaults for
+ * @returns RhythmicBalanceConfig with mode-specific values
+ */
+export function getControllerModeBalanceDefaults(controllerMode: ControllerMode): RhythmicBalanceConfig {
+    return { ...CONTROLLER_MODE_BALANCE_DEFAULTS[controllerMode] };
+}
 
 // ============================================================================
 // Helper Functions
@@ -521,9 +568,13 @@ export class RhythmicBalancer {
                 continue;
             }
 
-            // Search for a downbeat in range
+            // Search for a downbeat in range.
+            // Supports half-beat increments: range 1.5 checks offsets 0 and 1
+            // (since ±2 would be distance 2, outside the 1.5 range).
             let hasDownbeatNearby = false;
-            for (let offset = 0; offset <= range; offset++) {
+            const maxOffset = Math.ceil(range);
+            for (let offset = 0; offset <= maxOffset; offset++) {
+                if (offset > range) break; // half-beat boundary
                 if (offset === 0) {
                     if (downbeatIndices.has(beat.beatIndex)) {
                         hasDownbeatNearby = true;
