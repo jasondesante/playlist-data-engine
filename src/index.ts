@@ -641,6 +641,9 @@ export {
     isStrongBeatForEmphasis,
     type RhythmicBalanceConfig,
     type StrongBeatEmphasis,
+    type BalancerAction,
+    type BalanceStats,
+    type BalanceResult,
 } from './core/analysis/beat/RhythmicBalancer.js';
 
 // ============================================================================

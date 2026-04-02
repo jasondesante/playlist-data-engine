@@ -278,6 +278,9 @@ export { RhythmicBalancer } from './RhythmicBalancer.js';
 export type {
     RhythmicBalanceConfig,
     StrongBeatEmphasis,
+    BalancerAction,
+    BalanceStats,
+    BalanceResult,
 } from './RhythmicBalancer.js';
 export {
     DEFAULT_RHYTHMIC_BALANCE_CONFIG,

@@ -48,6 +48,7 @@ import {
 import {
     RhythmicBalancer,
     type RhythmicBalanceConfig,
+    type BalanceStats,
     DEFAULT_RHYTHMIC_BALANCE_CONFIG,
 } from '../analysis/beat/RhythmicBalancer.js';
 import type { UnifiedBeatMap, DifficultyPreset } from '../types/BeatMap.js';
@@ -296,6 +297,9 @@ export interface RhythmMetadata {
 
     /** Total beats in the unified beat map */
     totalBeats: number;
+
+    /** Statistics from the rhythmic balancing step */
+    balanceStats?: BalanceStats;
 }
 
 // ============================================================================
@@ -341,6 +345,7 @@ interface CompositeBeatJSON {
     band: 'low' | 'mid' | 'high';
     quantizationError?: number;
     sourceBand: 'low' | 'mid' | 'high';
+    balancerAction?: 'shifted_to_downbeat' | 'empty_measure_fill' | 'proximity_shift';
 }
 
 /**
@@ -1172,9 +1177,11 @@ export class RhythmGenerator {
         signal?.throwIfAborted();
 
         // Apply rhythmic balancing to enforce metric structure and downbeat anchoring
-        const balancedComposite = this.rhythmicBalancer.balance(composite, unifiedBeatMap);
+        const balanceResult = this.rhythmicBalancer.balance(composite, unifiedBeatMap);
+        const balancedComposite = balanceResult.composite;
+        const balanceStats = balanceResult.stats;
         log('Phase 3', 0.6, `Balanced composite: ${balancedComposite.beats.length} beats ` +
-            `(added ${balancedComposite.beats.length - composite.beats.length} beats for rhythmic structure)`);
+            `(${balanceStats.beatsAdded} added, ${balanceStats.beatsShifted} shifted for rhythmic structure)`);
 
         const difficultyVariants = this.generateDifficultyVariants(balancedComposite, phraseAnalysis, quantizationResult, unifiedBeatMap);
         log('Phase 3', 0.8, 'Generated easy/medium/hard difficulty variants');
@@ -1198,6 +1205,7 @@ export class RhythmGenerator {
             generationConfig: this.options,
             duration: audioBuffer.duration,
             totalBeats: unifiedBeatMap.beats.length,
+            balanceStats,
         };
 
         const result: GeneratedRhythm = {
@@ -1664,6 +1672,7 @@ export class RhythmGenerator {
             band: beat.band,
             quantizationError: beat.quantizationError,
             sourceBand: beat.sourceBand,
+            balancerAction: beat.balancerAction,
         };
     }
     private static deserializeCompositeBeat(json: CompositeBeatJSON): CompositeBeat {
@@ -1676,6 +1685,7 @@ export class RhythmGenerator {
             band: json.band,
             quantizationError: json.quantizationError,
             sourceBand: json.sourceBand,
+            balancerAction: json.balancerAction,
         };
     }
 

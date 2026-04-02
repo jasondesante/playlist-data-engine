@@ -62,6 +62,13 @@ export interface CompositeSection {
 export interface CompositeBeat extends GeneratedBeat {
     /** Which band this beat originated from */
     sourceBand: Band;
+
+    /**
+     * What action the RhythmicBalancer took on this beat, if any.
+     * undefined = balancer did not modify this beat.
+     * Set during the balance() step.
+     */
+    balancerAction?: 'shifted_to_downbeat' | 'empty_measure_fill' | 'proximity_shift';
 }
 
 /**

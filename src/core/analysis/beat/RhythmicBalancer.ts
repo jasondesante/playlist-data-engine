@@ -17,6 +17,48 @@ import type { CompositeBeat, CompositeStream } from './CompositeStreamGenerator.
 import type { UnifiedBeatMap, DownbeatSegment } from '../../types/BeatMap.js';
 
 // ============================================================================
+// Balancer Action Type
+// ============================================================================
+
+/**
+ * Describes what action the RhythmicBalancer took on a beat (if any).
+ *
+ * Used to tag beats in the balanced composite so the UI can visually
+ * distinguish balancer-modified beats from naturally detected ones.
+ */
+export type BalancerAction =
+    | 'none'               // Beat was not modified by the balancer
+    | 'shifted_to_downbeat' // Lone offbeat note moved to the downbeat position
+    | 'empty_measure_fill' // Beat added to fill an otherwise empty measure
+    | 'proximity_shift';   // Upbeat note shifted to downbeat (no nearby downbeat)
+
+/**
+ * Summary statistics from the rhythmic balancing step.
+ */
+export interface BalanceStats {
+    /** Number of lone offbeat notes shifted to downbeats */
+    shiftedToDownbeat: number;
+    /** Number of empty measures filled with a downbeat */
+    emptyMeasuresFilled: number;
+    /** Number of upbeat notes shifted due to missing nearby downbeat */
+    proximityShifts: number;
+    /** Total beats added by the balancer (filled measures only) */
+    beatsAdded: number;
+    /** Total beats modified by the balancer (shifts) */
+    beatsShifted: number;
+}
+
+/**
+ * Result of the balance() operation, including the balanced stream and stats.
+ */
+export interface BalanceResult {
+    /** The balanced composite stream with tagged beats */
+    composite: CompositeStream;
+    /** Statistics about what the balancer did */
+    stats: BalanceStats;
+}
+
+// ============================================================================
 // Types
 // ============================================================================
 
@@ -224,37 +266,50 @@ export class RhythmicBalancer {
      * 2. fillEmptyMeasures() - Ensure every measure has a beat
      * 3. enforceDownbeatProximity() - Ensure upbeats have nearby downbeats
      *
+     * Each modified beat is tagged with a `balancerAction` field so the UI
+     * can visually distinguish balancer-modified beats from detected ones.
+     *
      * @param composite - The composite stream to balance
      * @param unifiedBeatMap - The unified beat map with measure/position info
-     * @returns A new balanced composite stream
+     * @returns A BalanceResult with the balanced composite and statistics
      */
     balance(
         composite: CompositeStream,
         unifiedBeatMap: UnifiedBeatMap
-    ): CompositeStream {
+    ): BalanceResult {
+        const stats: BalanceStats = {
+            shiftedToDownbeat: 0,
+            emptyMeasuresFilled: 0,
+            proximityShifts: 0,
+            beatsAdded: 0,
+            beatsShifted: 0,
+        };
+
         // Start with the original beats
         let beats = [...composite.beats];
 
         // Phase 1: Shift lone subdivision notes to downbeats
-        beats = this.shiftLoneSubdivisionNotes(beats, unifiedBeatMap);
+        beats = this.shiftLoneSubdivisionNotes(beats, unifiedBeatMap, stats);
 
         // Phase 2: Fill empty measures
-        beats = this.fillEmptyMeasures(beats, unifiedBeatMap);
+        beats = this.fillEmptyMeasures(beats, unifiedBeatMap, stats);
 
         // Phase 3: Enforce downbeat proximity
-        beats = this.enforceDownbeatProximity(beats, unifiedBeatMap);
+        beats = this.enforceDownbeatProximity(beats, unifiedBeatMap, stats);
 
         // Sort by timestamp to ensure correct order
         beats.sort((a, b) => a.timestamp - b.timestamp);
 
-        // Return new composite with updated beats
         return {
-            ...composite,
-            beats,
-            metadata: {
-                ...composite.metadata,
-                totalBeats: beats.length,
+            composite: {
+                ...composite,
+                beats,
+                metadata: {
+                    ...composite.metadata,
+                    totalBeats: beats.length,
+                },
             },
+            stats,
         };
     }
 
@@ -270,7 +325,8 @@ export class RhythmicBalancer {
      */
     private shiftLoneSubdivisionNotes(
         beats: CompositeBeat[],
-        unifiedBeatMap: UnifiedBeatMap
+        unifiedBeatMap: UnifiedBeatMap,
+        stats: BalanceStats
     ): CompositeBeat[] {
         if (!unifiedBeatMap.downbeatConfig?.segments) {
             return beats;
@@ -304,13 +360,15 @@ export class RhythmicBalancer {
 
             // If this is the only beat in the measure and it's not on a downbeat
             if (measureBeats.length === 1 && beat.gridPosition !== 0) {
-                // Create a shifted beat at the downbeat
                 const shiftedBeat: CompositeBeat = {
                     ...beat,
                     gridPosition: 0,
                     timestamp: unifiedBeatMap.beats[beat.beatIndex].timestamp,
+                    balancerAction: 'shifted_to_downbeat',
                 };
                 shiftedBeats.push(shiftedBeat);
+                stats.shiftedToDownbeat++;
+                stats.beatsShifted++;
             } else {
                 shiftedBeats.push(beat);
             }
@@ -328,7 +386,8 @@ export class RhythmicBalancer {
      */
     private fillEmptyMeasures(
         beats: CompositeBeat[],
-        unifiedBeatMap: UnifiedBeatMap
+        unifiedBeatMap: UnifiedBeatMap,
+        stats: BalanceStats
     ): CompositeBeat[] {
         if (!this.config.fillEmptyMeasures) {
             return beats;
@@ -402,7 +461,6 @@ export class RhythmicBalancer {
                         }
                     }
 
-                    // Create a new beat at the downbeat
                     const newBeat: CompositeBeat = {
                         timestamp: unifiedBeatMap.beats[downbeatBeatIndex].timestamp,
                         beatIndex: downbeatBeatIndex,
@@ -411,9 +469,12 @@ export class RhythmicBalancer {
                         intensity: this.config.addedBeatIntensity,
                         band: 'mid',
                         sourceBand: 'mid',
+                        balancerAction: 'empty_measure_fill',
                     };
 
                     addedBeats.push(newBeat);
+                    stats.emptyMeasuresFilled++;
+                    stats.beatsAdded++;
                 }
             }
         }
@@ -433,7 +494,8 @@ export class RhythmicBalancer {
      */
     private enforceDownbeatProximity(
         beats: CompositeBeat[],
-        unifiedBeatMap: UnifiedBeatMap
+        unifiedBeatMap: UnifiedBeatMap,
+        stats: BalanceStats
     ): CompositeBeat[] {
         const range = this.config.downbeatProximityRange;
 
@@ -463,13 +525,11 @@ export class RhythmicBalancer {
             let hasDownbeatNearby = false;
             for (let offset = 0; offset <= range; offset++) {
                 if (offset === 0) {
-                    // Check same beat index (already have downbeat there)
                     if (downbeatIndices.has(beat.beatIndex)) {
                         hasDownbeatNearby = true;
                         break;
                     }
                 } else {
-                    // Check nearby beat indices
                     if (
                         downbeatIndices.has(beat.beatIndex - offset) ||
                         downbeatIndices.has(beat.beatIndex + offset)
@@ -483,16 +543,16 @@ export class RhythmicBalancer {
             if (hasDownbeatNearby) {
                 result.push(beat);
             } else {
-                // Shift to downbeat
                 const shiftedBeat: CompositeBeat = {
                     ...beat,
                     gridPosition: 0,
                     timestamp: unifiedBeatMap.beats[beat.beatIndex]?.timestamp ?? beat.timestamp,
+                    balancerAction: 'proximity_shift',
                 };
                 result.push(shiftedBeat);
-
-                // Update the downbeat set for subsequent beats
                 downbeatIndices.add(beat.beatIndex);
+                stats.proximityShifts++;
+                stats.beatsShifted++;
             }
         }
 

@@ -276,7 +276,7 @@ All TypeScript types are exported, including:
 
 **OSE Parameter Mode Types:** `HopSizeMode`, `HopSizeConfig`, `MelBandsMode`, `MelBandsConfig`, `GaussianSmoothMode`, `GaussianSmoothConfig` — see [OSE Parameter Modes](#ose-parameter-modes)
 
-**Rhythm Generation Types:** `GeneratedRhythm`, `RhythmGenerationOptions`, `RhythmMetadata`, `OutputMode`, `Band`, `RhythmPresetName`, `RhythmPresetConfig`, `DifficultyVariant`, `DifficultyLevel`, `VariantBeat`, `CompositeStream`, `CompositeBeat`, `CompositeSection`, `GeneratedRhythmMap`, `GeneratedBeat`, `GridType`, `GridDecision`, `QuantizedBandStreams`, `QuantizationConfig`, `DensityValidationConfig`, `DensityValidationResult`, `BandDensityValidationResult`, `TransientAnalysis`, `TransientResult`, `TransientDetectionMethod`, `TransientDetectorConfig`, `BandTransientConfig`, `BandTransientConfigOverrides`, `MultiBandResult`, `BandAnalysis`, `MultiBandAnalyzerConfig`, `PhraseAnalysisResult`, `RhythmicPhrase`, `PhraseOccurrence`, `BandPhraseAnalysis`, `PhraseAnalyzerConfig`, `DensityAnalysisResult`, `BandDensityMetrics`, `SectionDensityMetrics`, `BeatDensityMetrics`, `DensityCategory`, `NaturalDifficulty`, `StreamScoringResult`, `SectionScore`, `SectionWinner`, `ScoringFactors` — see [Procedural Rhythm Generation](#procedural-rhythm-generation)
+**Rhythm Generation Types:** `GeneratedRhythm`, `RhythmGenerationOptions`, `RhythmMetadata`, `OutputMode`, `Band`, `RhythmPresetName`, `RhythmPresetConfig`, `DifficultyVariant`, `DifficultyLevel`, `VariantBeat`, `CompositeStream`, `CompositeBeat`, `CompositeSection`, `GeneratedRhythmMap`, `GeneratedBeat`, `GridType`, `GridDecision`, `QuantizedBandStreams`, `QuantizationConfig`, `DensityValidationConfig`, `DensityValidationResult`, `BandDensityValidationResult`, `TransientAnalysis`, `TransientResult`, `TransientDetectionMethod`, `TransientDetectorConfig`, `BandTransientConfig`, `BandTransientConfigOverrides`, `MultiBandResult`, `BandAnalysis`, `MultiBandAnalyzerConfig`, `PhraseAnalysisResult`, `RhythmicPhrase`, `PhraseOccurrence`, `BandPhraseAnalysis`, `PhraseAnalyzerConfig`, `DensityAnalysisResult`, `BandDensityMetrics`, `SectionDensityMetrics`, `BeatDensityMetrics`, `DensityCategory`, `NaturalDifficulty`, `StreamScoringResult`, `SectionScore`, `SectionWinner`, `ScoringFactors`, `BalancerAction`, `BalanceStats`, `BalanceResult` — see [Procedural Rhythm Generation](#procedural-rhythm-generation)
 
 **Pitch Detection Types:** `PitchDetectorConfig`, `PitchResult` — see [Pitch Detection & Button Mapping](#pitch-detection--button-mapping) and [docs/BEAT_DETECTION.md](docs/BEAT_DETECTION.md#pitch-detection)
 
@@ -2914,6 +2914,8 @@ Post-processing step that enforces metric structure and downbeat anchoring on th
 2. `fillEmptyMeasures()` — Ensure every measure has a beat
 3. `enforceDownbeatProximity()` — Ensure upbeats have nearby downbeats
 
+Modified beats are tagged with a `balancerAction` field so the UI can visually distinguish balancer-modified beats from naturally detected ones.
+
 **Constructor:**
 
 ```typescript
@@ -2943,8 +2945,36 @@ constructor(config?: Partial<RhythmicBalanceConfig>)
 
 | Method | Returns | Description |
 |--------|---------|-------------|
-| `balance(composite, unifiedBeatMap)` | `CompositeStream` | Balance composite stream to enforce metric structure |
+| `balance(composite, unifiedBeatMap)` | `BalanceResult` | Balance composite stream to enforce metric structure; returns balanced composite with statistics |
 | `getConfig()` | `RhythmicBalanceConfig` | Get current configuration |
+
+**BalancerAction Type:**
+
+Describes what action the balancer took on a beat (tagged on `CompositeBeat.balancerAction`).
+
+| Value | Description |
+|-------|-------------|
+| `undefined` | Beat was not modified by the balancer |
+| `'shifted_to_downbeat'` | Lone offbeat note moved to the downbeat position |
+| `'empty_measure_fill'` | Beat added to fill an otherwise empty measure |
+| `'proximity_shift'` | Upbeat note shifted to downbeat (no nearby downbeat) |
+
+**BalanceStats Properties:**
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `shiftedToDownbeat` | `number` | Number of lone offbeat notes shifted to downbeats |
+| `emptyMeasuresFilled` | `number` | Number of empty measures filled with a downbeat |
+| `proximityShifts` | `number` | Number of upbeat notes shifted due to missing nearby downbeat |
+| `beatsAdded` | `number` | Total beats added by the balancer (filled measures only) |
+| `beatsShifted` | `number` | Total beats modified by the balancer (shifts) |
+
+**BalanceResult Properties:**
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `composite` | `CompositeStream` | The balanced composite stream with tagged beats |
+| `stats` | `BalanceStats` | Statistics about what the balancer did |
 
 **Helper Functions (exported):**
 
