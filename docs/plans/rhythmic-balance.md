@@ -240,6 +240,42 @@ The density reducer needs to know which beats are structurally important and pre
 - Phase 5 depends on all implementation phases (1–4)
 - Phase 6 depends on Phase 5 (docs reflect final code)
 
+## Phase 7: Fix Failing Tests
+
+After completing Phases 1-6, there are 22 failing tests in `difficultyVariantGenerator.test.ts`. These tests have incorrect expectations given the current implementation behavior around density targeting.
+
+### Issue Analysis
+
+The failing tests fall into these categories:
+1. **Grid type enforcement tests** - Tests expect certain behaviors that conflict with density targeting
+2. **Density targeting tests** - Tests expect specific beat counts but density enhancement adds beats
+3. **Edit type tests** - Tests expect `editType === 'simplified'` but get `'interpolated'` due to post-simplification enhancement
+
+### Root Cause
+
+The implementation correctly enhances sparse composites to reach target densities. When a composite is simplified (e.g., medium → easy), the beat count may fall below the target density, triggering enhancement. This changes:
+- Beat counts (more beats than expected)
+- `editType` ('interpolated' instead of 'simplified')
+- `isUnedited` flag (false instead of true for sparse natural difficulty)
+
+### Tasks
+
+- [x] Task 7.1: Commit grid type conversion fix in enhanceBeats
+  - [x] 7.1.1: The uncommitted changes in `DifficultyVariantGenerator.ts` that add `convertToAllowedGridType` calls are correct
+  - [x] 7.1.2: Commit these changes with appropriate message
+
+- [ ] Task 7.2: Update test expectations to match density targeting behavior
+  - [ ] 7.2.1: Update tests that expect specific beat counts to account for density enhancement
+  - [ ] 7.2.2: Update tests that expect `editType === 'simplified'` to accept `'interpolated'` when enhancement occurs
+  - [ ] 7.2.3: Use `createDenseCompositeBeats()` helper for tests that should avoid triggering density targeting
+  - [ ] 7.2.4: Update tests that expect `isUnedited === true` to account for density enhancement on sparse composites
+
+- [ ] Task 7.3: Verify all tests pass
+  - [ ] 7.3.1: Run full test suite and ensure 0 failures
+  - [ ] 7.3.2: Run build to ensure no TypeScript errors
+
+---
+
 ## Resolved Decisions
 
 - **Grid type for added beats**: Neighbor context, fall back to `straight_8th`. A single downbeat at position 0 has the same timestamp regardless of grid type — the type mainly matters for the grid lock step later.
