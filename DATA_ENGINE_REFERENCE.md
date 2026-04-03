@@ -30,6 +30,7 @@ Complete API reference for the Playlist Data Engine. Contains all type definitio
    - [CompositeStreamGenerator](#compositestreamgenerator)
    - [RhythmicBalancer](#rhythmicbalancer)
    - [DifficultyVariantGenerator](#difficultyvariantgenerator)
+   - [Density-Based Generation](#density-based-generation)
 6. [Pitch Detection & Button Mapping](#pitch-detection--button-mapping)
    - [PitchDetector](#pitchdetector)
    - [EssentiaPitchDetector](#essentiapitchdetector)
@@ -204,7 +205,9 @@ A concise overview of all main exports from the library, organized by category.
 | `StreamScorer` | Score band streams for rhythmic interest | [Procedural Rhythm Generation](#procedural-rhythm-generation) |
 | `CompositeStreamGenerator` | Create composite stream from best sections | [Procedural Rhythm Generation](#procedural-rhythm-generation) |
 | `RhythmicBalancer` | Enforce metric structure and downbeat anchoring on composite | [Procedural Rhythm Generation](#procedural-rhythm-generation) |
-| `DifficultyVariantGenerator` | Generate easy/medium/hard variants | [Procedural Rhythm Generation](#procedural-rhythm-generation) |
+| `DifficultyVariantGenerator` | Generate preset and density-based difficulty variants | [Procedural Rhythm Generation](#procedural-rhythm-generation) |
+
+**Density Generation Helpers:** `deriveAllowedGridTypes`, `calculateMaxAchievableDensity` — see [Density-Based Generation](#density-based-generation)
 
 **Preset Functions:** `getRhythmPreset`, `getRhythmPresetNames` — see [Procedural Rhythm Generation](#procedural-rhythm-generation)
 
@@ -220,6 +223,7 @@ A concise overview of all main exports from the library, organized by category.
 | `MelodyContourAnalyzer` | Analyze pitch data for melodic contour information | [Pitch Detection & Button Mapping](#pitch-detection--button-mapping) |
 | `ButtonMapper` | Map pitch analysis to button assignments for rhythm games | [Pitch Detection & Button Mapping](#pitch-detection--button-mapping) |
 | `LevelGenerator` | Main orchestrator for complete rhythm game level generation | [Pitch Detection & Button Mapping](#pitch-detection--button-mapping) |
+| `DensityGenerationConfig` | Configuration for density-based difficulty generation | [Density-Based Generation](#density-based-generation) |
 | `BeatConverter` | Convert procedural output to ChartedBeatMap format | [Pitch Detection & Button Mapping](#pitch-detection--button-mapping) |
 | `LevelSerializer` | Serialize/deserialize generated levels to/from export formats | [Pitch Detection & Button Mapping](#pitch-detection--button-mapping) |
 
@@ -276,7 +280,7 @@ All TypeScript types are exported, including:
 
 **OSE Parameter Mode Types:** `HopSizeMode`, `HopSizeConfig`, `MelBandsMode`, `MelBandsConfig`, `GaussianSmoothMode`, `GaussianSmoothConfig` — see [OSE Parameter Modes](#ose-parameter-modes)
 
-**Rhythm Generation Types:** `GeneratedRhythm`, `RhythmGenerationOptions`, `RhythmMetadata`, `OutputMode`, `Band`, `RhythmPresetName`, `RhythmPresetConfig`, `DifficultyVariant`, `DifficultyLevel`, `VariantBeat`, `CompositeStream`, `CompositeBeat`, `CompositeSection`, `GeneratedRhythmMap`, `GeneratedBeat`, `GridType`, `GridDecision`, `QuantizedBandStreams`, `QuantizationConfig`, `DensityValidationConfig`, `DensityValidationResult`, `BandDensityValidationResult`, `TransientAnalysis`, `TransientResult`, `TransientDetectionMethod`, `TransientDetectorConfig`, `BandTransientConfig`, `BandTransientConfigOverrides`, `MultiBandResult`, `BandAnalysis`, `MultiBandAnalyzerConfig`, `PhraseAnalysisResult`, `RhythmicPhrase`, `PhraseOccurrence`, `BandPhraseAnalysis`, `PhraseAnalyzerConfig`, `DensityAnalysisResult`, `BandDensityMetrics`, `SectionDensityMetrics`, `BeatDensityMetrics`, `DensityCategory`, `NaturalDifficulty`, `StreamScoringResult`, `SectionScore`, `SectionWinner`, `ScoringFactors`, `BalancerAction`, `BalanceStats`, `BalanceResult` — see [Procedural Rhythm Generation](#procedural-rhythm-generation)
+**Rhythm Generation Types:** `GeneratedRhythm`, `RhythmGenerationOptions`, `RhythmMetadata`, `OutputMode`, `Band`, `RhythmPresetName`, `RhythmPresetConfig`, `DifficultyVariant`, `DifficultyLevel`, `PresetDifficultyLevel`, `VariantBeat`, `CompositeStream`, `CompositeBeat`, `CompositeSection`, `GeneratedRhythmMap`, `GeneratedBeat`, `GridType`, `GridDecision`, `QuantizedBandStreams`, `QuantizationConfig`, `DensityGenerationConfig`, `DensityValidationConfig`, `DensityValidationResult`, `BandDensityValidationResult`, `TransientAnalysis`, `TransientResult`, `TransientDetectionMethod`, `TransientDetectorConfig`, `BandTransientConfig`, `BandTransientConfigOverrides`, `MultiBandResult`, `BandAnalysis`, `MultiBandAnalyzerConfig`, `PhraseAnalysisResult`, `RhythmicPhrase`, `PhraseOccurrence`, `BandPhraseAnalysis`, `PhraseAnalyzerConfig`, `DensityAnalysisResult`, `BandDensityMetrics`, `SectionDensityMetrics`, `BeatDensityMetrics`, `DensityCategory`, `NaturalDifficulty`, `StreamScoringResult`, `SectionScore`, `SectionWinner`, `ScoringFactors`, `BalancerAction`, `BalanceStats`, `BalanceResult` — see [Procedural Rhythm Generation](#procedural-rhythm-generation)
 
 **Pitch Detection Types:** `PitchDetectorConfig`, `PitchResult` — see [Pitch Detection & Button Mapping](#pitch-detection--button-mapping) and [docs/BEAT_DETECTION.md](docs/BEAT_DETECTION.md#pitch-detection)
 
@@ -3014,9 +3018,11 @@ Describes what action the balancer took on a beat (tagged on `CompositeBeat.bala
 ### DifficultyVariantGenerator
 *Location:* *[src/core/analysis/beat/DifficultyVariantGenerator.ts](src/core/analysis/beat/DifficultyVariantGenerator.ts)*
 
-Generates easy/medium/hard difficulty variants from the composite stream, plus a natural variant representing the unedited composite. Uses **global target-based density control** that calculates the exact beat count needed from the target density range, then distributes across indices. Employs a grid lock mechanism to ensure all density operations respect the single-grid-per-beat rule. Density is measured in notes per second as `beats.length / unifiedBeatMap.duration`.
+Generates preset difficulty variants (easy/medium/hard/natural) and density-based custom variants from the composite stream. Uses **global target-based density control** that calculates the exact beat count needed from the target density range, then distributes across indices. Employs a grid lock mechanism to ensure all density operations respect the single-grid-per-beat rule. Density is measured in notes per second as `beats.length / unifiedBeatMap.duration`.
 
 **For variant generation strategy, simplification rules, and density enhancement, see [docs/BEAT_DETECTION.md#difficulty-variant-generation](docs/BEAT_DETECTION.md#difficulty-variant-generation)**
+
+**For density-based generation, see [Density-Based Generation](#density-based-generation)**
 
 **Rhythmic Balance Integration:**
 
@@ -3035,11 +3041,32 @@ When `rhythmicBalanceConfig` is provided, the generator uses it `strongBeatEmpha
 - Phrase membership bonus: +0.15 (max)
 - Offbeat penalty: -0.1 (gridPosition 1 or 3)
 
-**Methods:**
+#### Preset Variant Methods
 
 | Method | Returns | Description |
 |--------|---------|-------------|
 | `generate(composite, phraseAnalysis, gridDecisions)` | `DifficultyVariants` | Generate 4 difficulty variants (easy, medium, hard, natural) |
+
+#### Density-Based Variant Methods
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `generateAtDensity(composite, config, unifiedBeatMap, phraseAnalysis?, gridDecisions?)` | `DifficultyVariant` | Generate a single variant at a target density with independent quantization control |
+| `generateAtDensities(composite, configs, unifiedBeatMap, phraseAnalysis?, gridDecisions?)` | `Map<string, DifficultyVariant>` | Generate multiple density-based variants in one call |
+
+#### Helper Functions (exported)
+
+| Function | Returns | Description |
+|----------|---------|-------------|
+| `deriveAllowedGridTypes(config, bpm)` | `ExtendedGridType[]` | Derive effective allowed grid types from a `DensityGenerationConfig` and BPM |
+| `calculateMaxAchievableDensity(allowedGridTypes, bpm)` | `number` | Calculate theoretical max notes/second for given grid types and BPM |
+
+#### Difficulty Levels
+
+`DifficultyLevel` is `'easy' | 'medium' | 'hard' | 'natural' | 'custom'`.
+
+- **Preset levels** (`PresetDifficultyLevel`): `'easy' | 'medium' | 'hard' | 'natural'` — used by `generate()` with tightly coupled subdivision limits and density targets.
+- **Custom level** (`'custom'`): used by `generateAtDensity()` for density-based variants. Parameters come from `DensityGenerationConfig` at generation time, not from static `SUBDIVISION_LIMITS`.
 
 **Subdivision Limits by Difficulty (tempo-aware):**
 
@@ -3049,16 +3076,155 @@ When `rhythmicBalanceConfig` is provided, the generator uses it `strongBeatEmpha
 | Medium | All types | `straight_8th`, `quarter_triplet` | `straight_8th`, `quarter_triplet` |
 | Hard | All types | All types | `straight_8th`, `quarter_triplet` |
 | Natural | All types | All types | All types |
+| Custom | *From `DensityGenerationConfig`* | *From `DensityGenerationConfig`* | *From `DensityGenerationConfig`* |
 
 **BPM thresholds:** Medium restricts 16th/triplet at ≥70 BPM; Easy/Hard restrict further at >120 BPM. Use `getTempoAwareAllowedGridTypes(difficulty, bpm)` for tempo-aware limits.
 
-**Variant Generation Strategy:**
+#### Variant Generation Strategy (Presets)
 
 | Natural Difficulty | Easy Variant | Medium Variant | Hard Variant | Natural Variant |
 |-------------------|--------------|----------------|--------------|----------------|
 | easy | Unedited (+ quarter at >120 BPM) | Global target-based enhancement | Global target-based enhancement | Unedited composite |
 | medium | Target-count reduction | Unedited (+ grid conversion at ≥70 BPM) | Global target-based enhancement | Unedited composite |
 | hard | Target-count reduction + grid conversion | Target-count reduction + grid conversion | Unedited (+ grid conversion at >120 BPM) | Unedited composite |
+
+### Density-Based Generation
+
+Generates a single difficulty variant at a time with granular, independent control over **target density** (notes/second) and **max quantization grid**. Provides a continuous spectrum of difficulty alongside the existing easy/medium/hard/natural presets.
+
+#### DensityGenerationConfig
+
+```typescript
+interface DensityGenerationConfig {
+    /** Target density in notes per second */
+    targetDensity: number;
+
+    /** Maximum quantization grid allowed (independent of density) */
+    maxGridType: ExtendedGridType;
+
+    /**
+     * When true, apply BPM-based restrictions on top of maxGridType.
+     * Uses medium's thresholds (default: 70 BPM):
+     *   - At BPM >= restrictBpm: straight_16th and triplet_8th restricted to straight_8th
+     * When false, only maxGridType is enforced regardless of BPM.
+     * Default: false
+     */
+    bpmBasedQuantization?: boolean;
+
+    /** BPM threshold for restricting 16th/triplet_8th to 8ths. Default: 70 */
+    restrictBpm?: number;
+
+    /** BPM threshold for restricting 8ths to quarter notes. Default: 120 */
+    quarterNoteBpm?: number;
+}
+```
+
+#### maxGridType Hierarchy
+
+The `maxGridType` parameter determines which grid types are allowed. Each level permits itself and all coarser grid types:
+
+| `maxGridType` | Positions/Beat | Derived Allowed Grid Types |
+|---------------|---------------|---------------------------|
+| `straight_4th` | 1 | `[straight_4th]` |
+| `straight_8th` | 2 | `[straight_8th, quarter_triplet]` |
+| `quarter_triplet` | 1 | `[quarter_triplet, straight_8th]` |
+| `triplet_8th` | 3 | `[triplet_8th, straight_8th, quarter_triplet]` |
+| `straight_16th` | 4 | `[straight_16th, triplet_8th, straight_8th, quarter_triplet]` |
+
+Computed by `deriveAllowedGridTypes(config, bpm)`.
+
+#### BPM-Based Quantization (optional)
+
+When `bpmBasedQuantization: true`, additional BPM thresholds restrict the derived grid types:
+
+| BPM Range | Restriction |
+|-----------|-------------|
+| `BPM >= restrictBpm` (default 70) | Remove `straight_16th` and `triplet_8th` |
+| `BPM > quarterNoteBpm` (default 120) | Remove `straight_8th` (only `straight_4th` and `quarter_triplet` remain) |
+
+When `bpmBasedQuantization: false` (default), only `maxGridType` is enforced regardless of BPM.
+
+#### Density Adjustment Strategy
+
+`generateAtDensity()` compares the composite's current density (`beats.length / durationSeconds`) to the target:
+
+| Current vs Target | Action | Method Used |
+|-------------------|--------|-------------|
+| Current > target | Simplification | `simplifyBeats()` with `allowedGridTypes` + `targetDensity` overrides |
+| Current < target | Enhancement | `enhanceBeats()` with `allowedGridTypes` + `targetDensity` overrides |
+| Within 10% | Grid restriction only | `simplifyBeats()` to remove disallowed grid types |
+| Target > max achievable | Best-effort clamping | Target clamped to `calculateMaxAchievableDensity()`, `densityClamped` warning set |
+
+Max achievable density is calculated as `maxPositionsPerBeat / quarterNoteInterval` where `quarterNoteInterval = 60 / bpm`.
+
+#### API Surface
+
+**DifficultyVariantGenerator:**
+
+```typescript
+// Single density variant
+generateAtDensity(
+    composite: CompositeStream,
+    config: DensityGenerationConfig,
+    unifiedBeatMap: UnifiedBeatMap,
+    phraseAnalysis?: PhraseAnalysisResult,
+    gridDecisions?: Map<number, GridDecision>
+): DifficultyVariant
+
+// Batch: multiple density variants (shared rhythm/pitch, independent variants)
+generateAtDensities(
+    composite: CompositeStream,
+    configs: { label: string; config: DensityGenerationConfig }[],
+    unifiedBeatMap: UnifiedBeatMap,
+    phraseAnalysis?: PhraseAnalysisResult,
+    gridDecisions?: Map<number, GridDecision>
+): Map<string, DifficultyVariant>
+```
+
+**ButtonMapper:**
+
+```typescript
+// Accept a variant directly (for custom variants not stored on GeneratedRhythm)
+mapVariant(
+    variant: DifficultyVariant,
+    rhythmMetadata: RhythmMetadata,
+    pitchAnalysis?: PitchAtBeat[]
+): MappedLevelResult
+```
+
+The existing `map()` method delegates to `mapVariant()` internally. For `'custom'` difficulty variants, pattern selection defaults to `'medium'` pattern difficulty.
+
+**LevelGenerator:**
+
+```typescript
+// Single density level
+async generateAtDensity(
+    audioBuffer: AudioBuffer,
+    unifiedBeatMap: UnifiedBeatMap,
+    config: DensityGenerationConfig,
+    progressCallback?: LevelProgressCallback,
+    signal?: AbortSignal
+): Promise<GeneratedLevel>
+
+// Batch: multiple density levels (shared rhythm/pitch)
+async generateAtDensities(
+    audioBuffer: AudioBuffer,
+    unifiedBeatMap: UnifiedBeatMap,
+    configs: { label: string; config: DensityGenerationConfig }[],
+    progressCallback?: LevelProgressCallback,
+    signal?: AbortSignal
+): Promise<Map<string, GeneratedLevel>>
+```
+
+Both methods reuse the existing rhythm and pitch analysis pipeline. Rhythm is generated once and shared across all configs in the batch method. The returned `GeneratedLevel` is fully compatible with all downstream consumers — no new types needed.
+
+#### Custom Variant Properties
+
+Density-based variants return a standard `DifficultyVariant` with `difficulty: 'custom'`. Key behaviors:
+- `editType`: `'simplified'` (density reduced), `'interpolated'` (density increased), or `'none'` (grid restriction only)
+- `editAmount`: 0–1 indicating how much was changed
+- Strong beat protection always applies during simplification (structural backbone preserved)
+- `enforceSingleGridPerBeat()` runs on the result to ensure single-grid consistency
 
 ---
 
@@ -3310,7 +3476,8 @@ new ButtonMapper(config: Partial<ButtonMappingConfig>)
 
 | Method | Returns | Description |
 |--------|---------|-------------|
-| `map(generatedRhythm, difficulty, pitchAnalysis?)` | `MappedLevelResult` | Map buttons for a difficulty variant |
+| `map(generatedRhythm, difficulty, pitchAnalysis?)` | `MappedLevelResult` | Map buttons for a preset difficulty variant (delegates to `mapVariant()`) |
+| `mapVariant(variant, rhythmMetadata, pitchAnalysis?)` | `MappedLevelResult` | Map buttons for any variant directly (including `'custom'` density variants) |
 
 #### MappedLevelResult Properties
 
@@ -3389,6 +3556,8 @@ new LevelGenerator(options: LevelGenerationOptions)
 |--------|---------|-------------|
 | `generate(audioBuffer, unifiedBeatMap, progressCallback?)` | Promise\<GeneratedLevel\> | Generate a complete level |
 | `generateAllDifficulties(audioBuffer, unifiedBeatMap, progressCallback?)` | Promise\<AllDifficultiesResult\> | Generate levels for all 3 difficulties |
+| `generateAtDensity(audioBuffer, unifiedBeatMap, config, progressCallback?, signal?)` | Promise\<GeneratedLevel\> | Generate a level at a specific density with independent quantization control |
+| `generateAtDensities(audioBuffer, unifiedBeatMap, configs, progressCallback?, signal?)` | Promise\<Map<string, GeneratedLevel\>\> | Generate multiple density-based levels in one call |
 | `clearCache()` | void | Clear cached intermediate results |
 | `getCacheStats()` | LevelCacheStats | Get cache statistics |
 

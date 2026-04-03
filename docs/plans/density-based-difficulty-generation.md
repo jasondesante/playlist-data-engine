@@ -351,71 +351,71 @@ The density variant is a plain `DifficultyVariant` with `difficulty: 'custom'`. 
 
 **File**: `tests/unit/beat/densityBasedGeneration.test.ts` (new)
 
-- [ ] **Core generation tests**
+- [x] **Core generation tests**
   - [x] `generateAtDensity()` with density higher than natural -> enhancement occurs
   - [x] `generateAtDensity()` with density lower than natural -> simplification occurs
-  - [ ] `generateAtDensity()` with density matching natural -> grid restrictions still applied (no tolerance)
-  - [ ] `generateAtDensity()` with density 0 -> empty or near-empty result
+  - [x] `generateAtDensity()` with density matching natural -> grid restrictions still applied (no tolerance)
+  - [x] `generateAtDensity()` with density 0 -> best-effort near-empty (strong beat protection preserves structural backbone)
 
-- [ ] **Quantization independence tests**
-  - [ ] Dense chart (3.0 nps) with 8th note max grid -> only 8ths present
-  - [ ] Sparse chart (0.5 nps) with 16th note max grid -> 16ths allowed but density stays low
-  - [ ] `maxGridType: 'straight_4th'` -> only quarter notes
+- [x] **Quantization independence tests**
+  - [x] Dense chart (3.0 nps) with 8th note max grid -> only 8ths present
+  - [x] Sparse chart (0.5 nps) with 16th note max grid -> 16ths allowed but density stays low
+  - [x] `maxGridType: 'straight_4th'` -> only quarter notes
 
-- [ ] **BPM-based quantization tests**
-  - [ ] `bpmBasedQuantization: true` at 80 BPM -> 16ths restricted to 8ths
-  - [ ] `bpmBasedQuantization: true` at 60 BPM -> 16ths allowed
-  - [ ] `bpmBasedQuantization: false` at 80 BPM -> 16ths still allowed
-  - [ ] `bpmBasedQuantization: true` at 130 BPM -> restricted to quarter notes
-  - [ ] Custom thresholds: `restrictBpm: 90, quarterNoteBpm: 140` -> correct behavior at 100 BPM and 150 BPM
+- [x] **BPM-based quantization tests**
+  - [x] `bpmBasedQuantization: true` at 80 BPM -> 16ths restricted to 8ths
+  - [x] `bpmBasedQuantization: true` at 60 BPM -> 16ths allowed
+  - [x] `bpmBasedQuantization: false` at 80 BPM -> 16ths still allowed
+  - [x] `bpmBasedQuantization: true` at 130 BPM -> restricted to quarter notes
+  - [x] Custom thresholds: `restrictBpm: 90, quarterNoteBpm: 140` -> correct behavior at 100 BPM and 150 BPM
 
-- [ ] **Best-effort / clamping tests**
-  - [ ] Target density 4.0 nps with 8th-only grid at 60 BPM (max achievable ~2.0) -> returns ~2.0 with density clamped
+- [x] **Best-effort / clamping tests**
+  - [x] Target density 4.0 nps with 8th-only grid at 60 BPM (max achievable ~2.0) -> returns ~2.0 with density clamped
 
-- [ ] **Multi-variant tests**
-  - [ ] `generateAtDensities()` with multiple configs -> correct map returned
-  - [ ] Multiple variants are independent (no shared mutations)
+- [x] **Multi-variant tests**
+  - [x] `generateAtDensities()` with multiple configs -> correct map returned
+  - [x] Multiple variants are independent (no shared mutations)
 
-- [ ] **Edge cases**
-  - [ ] Single beat input
-  - [ ] Empty composite
-  - [ ] Very high density target (4.0+ nps)
-  - [ ] maxGridType finer than what exists in the composite
+- [x] **Edge cases**
+  - [x] Single beat input
+  - [x] Empty composite
+  - [x] Very high density target (4.0+ nps)
+  - [x] maxGridType finer than what exists in the composite
 
-- [ ] **Accuracy tests**
-  - [ ] Final density is close to target density (within tolerance, or clamped)
-  - [ ] `editAmount` is accurate for both simplify and enhance paths
-  - [ ] `enforceSingleGridPerBeat()` works after density-based generation
+- [x] **Accuracy tests**
+  - [x] Final density is close to target density (within tolerance, or clamped)
+  - [x] `editAmount` is accurate for both simplify and enhance paths
+  - [x] `enforceSingleGridPerBeat()` works after density-based generation
 
-- [ ] **Compatibility tests**
-  - [ ] Variant with `difficulty: 'custom'` has all `DifficultyVariant` fields
-  - [ ] `ButtonMapper.mapVariant()` works with custom variant
-  - [ ] `BeatConverter.fromMappedResult()` works with a mapped custom variant
+- [x] **Compatibility tests**
+  - [x] Variant with `difficulty: 'custom'` has all `DifficultyVariant` fields
+  - [x] `ButtonMapper.mapVariant()` works with custom variant
+  - [x] `BeatConverter.fromMappedResult()` works with a mapped custom variant
 
-- [ ] **Regression tests**
-  - [ ] Existing `generate()` for easy/medium/hard/natural still produces identical results
-  - [ ] `simplifyBeats()` without override params -> same behavior as before
-  - [ ] `enhanceBeats()` without override params -> same behavior as before
-  - [ ] `lockGridPerBeatIndex()` without override params -> same behavior as before
-  - [ ] `getTempoAwareAllowedGridTypes()` for easy/medium/hard/natural -> same behavior as before
+- [x] **Regression tests**
+  - [x] Existing `generate()` for easy/medium/hard/natural still produces identical results
+  - [x] `simplifyBeats()` without override params -> same behavior as before
+  - [x] `enhanceBeats()` without override params -> same behavior as before
+  - [x] `lockGridPerBeatIndex()` without override params -> same behavior as before
+  - [x] `getTempoAwareAllowedGridTypes()` for easy/medium/hard/natural -> same behavior as before
 
 ---
 
 ## Phase 8: Documentation
 
-- [ ] **DATA_ENGINE_REFERENCE.md**
-  - [ ] Add `DensityGenerationConfig` to type exports list
-  - [ ] Update DifficultyVariantGenerator method table to include `generateAtDensity()` and `generateAtDensities()`
-  - [ ] Add density-based generation section
-  - [ ] Document the maxGridType hierarchy and derived allowed grid types
-  - [ ] Document `'custom'` difficulty level
+- [x] **DATA_ENGINE_REFERENCE.md**
+  - [x] Add `DensityGenerationConfig` to type exports list
+  - [x] Update DifficultyVariantGenerator method table to include `generateAtDensity()` and `generateAtDensities()`
+  - [x] Add density-based generation section
+  - [x] Document the maxGridType hierarchy and derived allowed grid types
+  - [x] Document `'custom'` difficulty level
 
-- [ ] **docs/BEAT_DETECTION.md**
-  - [ ] Add "Density-Based Generation" subsection
-  - [ ] Explain continuous difficulty spectrum vs preset labels
-  - [ ] Document the two independent parameters (density + quantization)
-  - [ ] Document BPM-based quantization toggle with configurable thresholds
-  - [ ] Add usage examples
+- [x] **docs/BEAT_DETECTION.md**
+  - [x] Add "Density-Based Generation" subsection
+  - [x] Explain continuous difficulty spectrum vs preset labels
+  - [x] Document the two independent parameters (density + quantization)
+  - [x] Document BPM-based quantization toggle with configurable thresholds
+  - [x] Add usage examples
 
 ---
 

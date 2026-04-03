@@ -131,15 +131,16 @@ describe('validateButtonMappingConfig', () => {
 
     it('should reject invalid controllerMode', () => {
         const result = validateButtonMappingConfig({
-            controllerMode: 'invalid' as 'ddr' | 'guitar_hero',
+            controllerMode: 'invalid' as 'ddr' | 'guitar_hero' | 'tap',
         });
         expect(result.valid).toBe(false);
-        expect(result.errors[0]).toContain("controllerMode must be 'ddr' or 'guitar_hero'");
+        expect(result.errors[0]).toContain("controllerMode must be 'ddr', 'guitar_hero', or 'tap'");
     });
 
-    it('should accept both valid controller modes', () => {
+    it('should accept all valid controller modes', () => {
         expect(validateButtonMappingConfig({ controllerMode: 'ddr' }).valid).toBe(true);
         expect(validateButtonMappingConfig({ controllerMode: 'guitar_hero' }).valid).toBe(true);
+        expect(validateButtonMappingConfig({ controllerMode: 'tap' }).valid).toBe(true);
     });
 
     it('should accumulate multiple errors', () => {

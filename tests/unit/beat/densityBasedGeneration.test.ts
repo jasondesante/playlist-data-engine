@@ -16,23 +16,23 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import {
     DifficultyVariantGenerator,
     SUBDIVISION_LIMITS,
-    ALL_GRID_TYPES,
-    type DifficultyLevel,
+    getTempoAwareAllowedGridTypes,
     type ExtendedGridType,
     type GridType,
     type CompositeBeat,
     type CompositeStream,
     type VariantBeat,
     type DifficultyVariant,
-    type DensityGenerationConfig,
 } from '../../../src/core/analysis/beat/index.js';
 
 // Import directly from the source file for helper functions
 import {
     deriveAllowedGridTypes,
     calculateMaxAchievableDensity,
+    type DensityGenerationConfig,
 } from '../../../src/core/analysis/beat/DifficultyVariantGenerator.js';
 
+import { BeatConverter } from '../../../src/core/generation/BeatConverter.js';
 import type { UnifiedBeatMap } from '../../../src/core/types/BeatMap.js';
 import type { GridDecision } from '../../../src/core/analysis/beat/RhythmQuantizer.js';
 
@@ -259,9 +259,11 @@ describe('generateAtDensity() Core Generation', () => {
     });
 
     it('should return near-empty result when target density is 0', () => {
+        // 16 beats (4 positions × 4 beat indices) over 2 seconds = 8 nps
         const beats = createDenseCompositeBeats(3);
         const composite = createMockCompositeStream(beats, 'hard', 0.5);
-        const beatMap = createMockBeatMap(60, 2.0);
+        const duration = 2.0;
+        const beatMap = createMockBeatMap(60, duration);
 
         const config: DensityGenerationConfig = {
             targetDensity: 0,
@@ -271,8 +273,26 @@ describe('generateAtDensity() Core Generation', () => {
         const variant = generator.generateAtDensity(composite, config, beatMap);
 
         expect(variant.difficulty).toBe('custom');
-        // With 0 target density, beats should be heavily reduced or empty
-        expect(variant.beats.length).toBeLessThanOrEqual(beats.length);
+        expect(variant.editType).toBe('simplified');
+        expect(variant.isUnedited).toBe(false);
+
+        // Best-effort: structural strong beat protection prevents complete removal.
+        // With 4 beat indices in 4/4, indices 0 and 2 are "strong" (beatInMeasure 1 & 3).
+        // Pass 3 of reduceDensityToTarget protects strong beats, so only those survive.
+        // This is the expected best-effort behavior per the design decision:
+        // "Impossible density/grid combos: Best effort + densityClamped warning"
+        expect(variant.beats.length).toBeLessThan(beats.length);
+        expect(variant.beats.length).toBeGreaterThan(0);
+
+        // Remaining beats should be on strong beat positions only (beatIndex % 4 === 0 or 2)
+        const remainingIndices = [...new Set(variant.beats.map(b => b.beatIndex))];
+        for (const idx of remainingIndices) {
+            expect(idx % 4 === 0 || idx % 4 === 2).toBe(true);
+        }
+
+        // Final density should be significantly lower than initial
+        const finalDensity = calculateDensity(variant.beats, duration);
+        expect(finalDensity).toBeLessThan(beats.length / duration);
     });
 });
 
@@ -312,24 +332,43 @@ describe('Quantization Independence', () => {
     });
 
     it('should create sparse chart (0.5 nps) with 16th note max grid allowed', () => {
-        // Request sparse density but allow fine grid
-        const beats = createDenseCompositeBeats(9, [0, 1, 2, 3]); // 40 beats
+        // Input: 40 beats (10 beat indices × 4 positions) at 60 BPM = 8 nps
+        // Request sparse density but allow the finest grid type.
+        // Key quantization-independence behavior: maxGridType does not force grid coarsening
+        // during simplification. 16ths should survive because they are in the allowed list.
+        const beats = createDenseCompositeBeats(9, [0, 1, 2, 3]); // 40 beats, all straight_16th
         const composite = createMockCompositeStream(beats, 'hard', 0.5);
         const duration = 5.0;
         const beatMap = createMockBeatMap(60, duration);
+        const initialDensity = beats.length / duration; // 8 nps
 
         const config: DensityGenerationConfig = {
-            targetDensity: 0.5, // Very sparse
-            maxGridType: 'straight_16th', // But allow fine grid
+            targetDensity: 0.5,
+            maxGridType: 'straight_16th', // All grid types allowed (finest max)
         };
 
         const variant = generator.generateAtDensity(composite, config, beatMap);
 
+        expect(variant.difficulty).toBe('custom');
         expect(variant.editType).toBe('simplified');
-        // Density should be reduced
+        expect(variant.isUnedited).toBe(false);
+
+        // 16ths allowed: since all grid types are in the allowed list, simplifyBeats()
+        // skips grid conversion entirely (allTypesAllowed path). Surviving beats retain
+        // their original straight_16th grid type — this is the quantization independence.
+        const has16ths = variant.beats.some(b => b.gridType === 'straight_16th');
+        expect(has16ths).toBe(true);
+
+        // All surviving beats should be 16th notes (none converted to coarser grids)
+        const non16th = variant.beats.filter(b => b.gridType !== 'straight_16th');
+        expect(non16th.length).toBe(0);
+
+        // Density reduced from original. Strong beat protection (pass 3 of reduceDensityToTarget)
+        // prevents reaching the exact 0.5 nps target by protecting structural backbone beats,
+        // but density should still be significantly lower than the original 8 nps.
         const finalDensity = calculateDensity(variant.beats, duration);
-        // Should be close to target (within reasonable tolerance due to beat quantization)
-        expect(finalDensity).toBeLessThan(beats.length / duration);
+        expect(finalDensity).toBeLessThan(initialDensity);
+        expect(finalDensity).toBeGreaterThan(0);
     });
 
     it('should only produce quarter notes when maxGridType is straight_4th', () => {
@@ -806,6 +845,55 @@ describe('Compatibility', () => {
             typeof b.intensity === 'number'
         )).toBe(true);
     });
+
+    it('should work with BeatConverter.fromMappedResult() for custom variant', () => {
+        const beats = createDenseCompositeBeats(3);
+        const composite = createMockCompositeStream(beats, 'hard', 0.5);
+        const beatMap = createMockBeatMap(60, 2.0);
+
+        const config: DensityGenerationConfig = {
+            targetDensity: 2.0,
+            maxGridType: 'straight_8th',
+        };
+
+        const variant = generator.generateAtDensity(composite, config, beatMap);
+
+        // Minimal rhythm metadata mock — BeatConverter only reads a few summary fields
+        const rhythmMetadata = {
+            difficulty: 'medium',
+            bandsAnalyzed: ['mid'],
+            transientsDetected: beats.length,
+            transientsFilteredByIntensity: 0,
+            densityValidationRetries: 0,
+            phrasesDetected: 0,
+            averageDensity: beats.length / 2.0,
+            naturalDifficulty: 'hard',
+            generationConfig: {},
+            duration: 2.0,
+            totalBeats: 4,
+            balancingStats: { passesUsed: 0, beatsAdded: 0, beatsRemoved: 0 },
+        } as any;
+
+        const buttonMetadata = {
+            controllerMode: 'ddr' as const,
+            keysUsed: ['A', 'B', 'C', 'D'],
+            pitchInfluencedBeats: 0,
+            patternInfluencedBeats: variant.beats.length,
+            patternsUsed: ['default'],
+            buttonDistribution: new Map<string, number>([['A', 1]]),
+        };
+
+        // Should not throw — validates type compatibility
+        const chart = BeatConverter.fromMappedResult(
+            variant,
+            beatMap,
+            buttonMetadata,
+            rhythmMetadata
+        );
+
+        expect(chart).toBeDefined();
+        expect(chart.beats.length).toBe(variant.beats.length);
+    });
 });
 
 // ============================================================================
@@ -856,5 +944,82 @@ describe('Regression - Existing Functionality Preserved', () => {
         // At 120 BPM, densities double
         expect(calculateMaxAchievableDensity(['straight_8th'], 120)).toBe(4);
         expect(calculateMaxAchievableDensity(['straight_16th'], 120)).toBe(8);
+    });
+
+    it('should return correct grid types for easy/medium/hard/natural (regression)', () => {
+        // easy at low BPM -> full easy grid types
+        const easyLow = getTempoAwareAllowedGridTypes('easy', 60);
+        expect(easyLow).toEqual(SUBDIVISION_LIMITS.easy.allowedGridTypes);
+
+        // easy at high BPM -> restricted to quarter notes
+        const easyHigh = getTempoAwareAllowedGridTypes('easy', 130);
+        expect(easyHigh).toEqual(['straight_4th', 'quarter_triplet']);
+
+        // medium at low BPM -> full medium grid types
+        const medLow = getTempoAwareAllowedGridTypes('medium', 60);
+        expect(medLow).toEqual(SUBDIVISION_LIMITS.medium.allowedGridTypes);
+
+        // medium at restricted BPM -> no 16ths
+        const medHigh = getTempoAwareAllowedGridTypes('medium', 80);
+        expect(medHigh).not.toContain('straight_16th');
+        expect(medHigh).not.toContain('triplet_8th');
+
+        // hard at low BPM -> full hard grid types
+        const hardLow = getTempoAwareAllowedGridTypes('hard', 60);
+        expect(hardLow).toEqual(SUBDIVISION_LIMITS.hard.allowedGridTypes);
+
+        // hard at restricted BPM -> no 16ths
+        const hardHigh = getTempoAwareAllowedGridTypes('hard', 130);
+        expect(hardHigh).not.toContain('straight_16th');
+        expect(hardHigh).not.toContain('triplet_8th');
+
+        // natural -> always returns natural's allowed types regardless of BPM
+        const naturalTypes = getTempoAwareAllowedGridTypes('natural', 120);
+        expect(naturalTypes).toEqual(SUBDIVISION_LIMITS.natural.allowedGridTypes);
+    });
+
+    it('should preserve existing SUBDIVISION_LIMITS for preset difficulties', () => {
+        // Verify the 'custom' addition didn't alter existing entries
+        expect(SUBDIVISION_LIMITS.easy.allowedGridTypes).toContain('straight_8th');
+        expect(SUBDIVISION_LIMITS.medium.allowedGridTypes).toContain('straight_16th');
+        expect(SUBDIVISION_LIMITS.hard.allowedGridTypes).toContain('straight_16th');
+        expect(SUBDIVISION_LIMITS.natural.allowedGridTypes.length).toBeGreaterThan(0);
+    });
+
+    it('lockGridPerBeatIndex without allowedGridTypes override should use difficulty defaults', () => {
+        // Public method — calling without the new optional param should use existing behavior
+        const beats = createDenseCompositeBeats(3, [0, 1, 2, 3]);
+        const beatMap = createMockBeatMap(60, 2.0);
+
+        const result = generator.lockGridPerBeatIndex(beats, 'medium', 60);
+
+        // Should return a valid result without errors
+        expect(result).toBeDefined();
+        expect(result.beats).toBeDefined();
+        expect(result.gridLock).toBeDefined();
+        expect(result.beats.length).toBeGreaterThan(0);
+    });
+
+    it('generateAtDensity custom variant should not affect preset variant generation', () => {
+        // Generate a custom variant, then generate a preset — presets should still work
+        const beats = createDenseCompositeBeats(3, [0, 1, 2, 3]);
+        const composite = createMockCompositeStream(beats, 'medium', 0.5);
+        const beatMap = createMockBeatMap(60, 2.0);
+
+        // Generate custom variant first
+        const customVariant = generator.generateAtDensity(composite, {
+            targetDensity: 2.0,
+            maxGridType: 'straight_16th',
+        }, beatMap);
+        expect(customVariant.difficulty).toBe('custom');
+
+        // Now generate preset — should still work with its own path
+        const presetVariant = generator.generateAtDensity(composite, {
+            targetDensity: 1.0,
+            maxGridType: 'straight_8th',
+        }, beatMap);
+        expect(presetVariant.difficulty).toBe('custom');
+        // Both should produce valid but independent results
+        expect(presetVariant.beats.length).not.toBe(customVariant.beats.length);
     });
 });

@@ -27,6 +27,7 @@ The Playlist Data Engine provides beat detection and rhythm analysis features fo
 - [Scoring and Composite Generation](#scoring-and-composite-generation) — Band selection and stream creation
 - [Phrase Detection](#phrase-detection) — Pattern library for density enhancement
 - [Difficulty Variant Generation](#difficulty-variant-generation) — Easy/Medium/Hard variants
+- [Density-Based Generation](#density-based-generation) — Continuous density/quantization control
 - [Usage Examples](#usage-examples) — Common workflows for rhythm generation
 
 ### Automatic Level Generation — Pitch Detection & Button Mapping
@@ -3862,14 +3863,199 @@ All enhancement operations respect the locked grid type per index:
 
 ```typescript
 interface DifficultyVariant {
-  difficulty: 'easy' | 'medium' | 'hard';
+  difficulty: 'easy' | 'medium' | 'hard' | 'natural' | 'custom';
   beats: VariantBeat[];            // The beats in this variant (may include converted grid types)
   isUnedited: boolean;             // true for the composite's natural difficulty
   editType: 'none' | 'simplified' | 'interpolated' | 'pattern_inserted';
   editAmount: number;              // 0-1, how much was changed
   patternsInserted?: string[];     // IDs of patterns inserted (if any)
   conversionMetadata?: SubdivisionConversionMetadata;  // Metadata about subdivision conversions (includes reductionPasses)
+  densityClamped?: boolean;        // true if target density exceeded max achievable (density-based only)
 }
+```
+
+---
+
+## Density-Based Generation
+
+The preset difficulty variants (easy/medium/hard/natural) couple density targets with subdivision limits — each difficulty level specifies both how many notes per second to aim for and which grid types are allowed. Density-based generation **decouples these controls**, providing a continuous spectrum of difficulty alongside the existing presets.
+
+### Continuous Spectrum vs Preset Labels
+
+| Approach | Density Control | Grid Control | Best For |
+|----------|----------------|-------------|----------|
+| **Preset variants** (`generate()`) | Fixed per difficulty (easy: ≤1.0, medium: 1.0–1.5, hard: ≥1.5) | Coupled to difficulty + BPM | Standard difficulty selection UIs |
+| **Density-based** (`generateAtDensity()`) | Any value (notes/sec) | Independent `maxGridType` | Fine-grained difficulty sliders, per-player tuning |
+
+Density-based variants produce a standard `DifficultyVariant` with `difficulty: 'custom'`. They flow through `ButtonMapper`, `BeatConverter`, and the rest of the pipeline without changes.
+
+### The Two Independent Parameters
+
+#### `targetDensity` (notes/second)
+
+Controls how many notes appear per second of audio. The generator either simplifies (removes beats) or enhances (inserts beats) to reach the target:
+
+- **Below natural density**: removes low-priority beats (offbeats, low-intensity) via the simplification path
+- **Above natural density**: adds beats at empty grid positions via the enhancement path
+- **Matching natural density**: only applies grid restrictions (no density changes)
+
+Density is absolute — the caller knows the BPM context and understands how subdivision interacts with tempo.
+
+#### `maxGridType` (quantization ceiling)
+
+Controls the finest subdivision allowed, independent of density. Uses a grid hierarchy where specifying a max grid type implicitly allows all coarser types:
+
+| `maxGridType` | Positions/beat | Derived allowed types |
+|---------------|----------------|----------------------|
+| `straight_4th` | 1 | `[straight_4th]` |
+| `straight_8th` | 2 | `[straight_8th, quarter_triplet]` |
+| `quarter_triplet` | 1 | `[quarter_triplet, straight_8th]` |
+| `triplet_8th` | 3 | `[triplet_8th, straight_8th, quarter_triplet]` |
+| `straight_16th` | 4 | `[straight_16th, triplet_8th, straight_8th, quarter_triplet]` |
+
+This means you can request a **dense but simple** chart (e.g., 3.0 nps with 8th note max) or a **sparse but complex** chart (e.g., 0.5 nps with 16th notes allowed).
+
+### Configuration Interface
+
+```typescript
+interface DensityGenerationConfig {
+  targetDensity: number;              // Target notes per second
+  maxGridType: ExtendedGridType;      // Maximum quantization grid
+  bpmBasedQuantization?: boolean;     // Apply BPM-based restrictions (default: false)
+  restrictBpm?: number;               // BPM threshold for 16th→8th restriction (default: 70)
+  quarterNoteBpm?: number;            // BPM threshold for 8th→quarter restriction (default: 120)
+}
+```
+
+### BPM-Based Quantization Toggle
+
+By default, `maxGridType` is enforced regardless of BPM. When `bpmBasedQuantization: true`, additional playability restrictions are layered on top:
+
+| BPM Range | Restriction Applied |
+|-----------|-------------------|
+| BPM ≥ `restrictBpm` (default 70) | Remove `straight_16th` and `triplet_8th` |
+| BPM > `quarterNoteBpm` (default 120) | Remove `straight_8th` too (only quarter notes remain) |
+
+Both thresholds are configurable. This uses the same thresholds as medium difficulty's tempo-aware restrictions, but applies them to any grid type you specify.
+
+### Impossible Configurations
+
+When the target density exceeds what's achievable with the allowed grid types at the current BPM, the generator clamps to the max achievable density and sets `densityClamped: true` on the variant. It does not throw — it returns the best-effort result with a console warning.
+
+Max achievable density formula:
+```
+quarterNoteInterval = 60 / bpm
+maxPositionsPerBeat = max(allowedGridTypes.map(g => GRID_TYPE_MAX_POSITIONS[g]))
+maxDensity = maxPositionsPerBeat / quarterNoteInterval
+```
+
+Example: requesting 4.0 nps with `maxGridType: 'straight_8th'` at 60 BPM gives max achievable = 2 / 1.0 = 2.0 nps. The variant is clamped to 2.0.
+
+### API Surface
+
+**DifficultyVariantGenerator** (standalone, no full pipeline needed):
+
+```typescript
+// Single variant
+const variant = generator.generateAtDensity(
+    composite,                    // CompositeStream from RhythmGenerator
+    { targetDensity: 2.0, maxGridType: 'straight_8th' },
+    unifiedBeatMap                // For BPM and timing
+);
+
+// Multiple variants in one call (deep copies, independent mutations)
+const variants = generator.generateAtDensities(
+    composite,
+    [
+        { label: 'beginner', config: { targetDensity: 0.5, maxGridType: 'straight_4th' } },
+        { label: 'intermediate', config: { targetDensity: 1.5, maxGridType: 'straight_8th' } },
+        { label: 'expert', config: { targetDensity: 3.0, maxGridType: 'straight_16th' } },
+    ],
+    unifiedBeatMap
+);
+const expertVariant = variants.get('expert');
+```
+
+**LevelGenerator** (full pipeline: rhythm → variant → pitch → buttons → chart):
+
+```typescript
+// Single level
+const level = await generator.generateAtDensity(
+    audioBuffer,
+    beatMap,
+    { targetDensity: 2.0, maxGridType: 'straight_8th' }
+);
+
+// Multiple levels (rhythm generated once, shared across all)
+const levels = await generator.generateAtDensities(
+    audioBuffer,
+    beatMap,
+    [
+        { label: 'easy', config: { targetDensity: 1.0, maxGridType: 'straight_8th' } },
+        { label: 'hard', config: { targetDensity: 2.5, maxGridType: 'straight_16th' } },
+    ]
+);
+```
+
+**ButtonMapper** (map a standalone variant to buttons):
+
+```typescript
+// Map a custom variant directly (no need for GeneratedRhythm lookup)
+const mapped = buttonMapper.mapVariant(variant, rhythmMetadata, pitchAnalysis);
+```
+
+### Usage Examples
+
+```typescript
+import {
+  DifficultyVariantGenerator,
+  LevelGenerator,
+  ButtonMapper,
+  deriveAllowedGridTypes,
+} from 'playlist-data-engine';
+
+// 1. Dense chart with only 8th notes (no 16ths, no triplets)
+const variant = variantGenerator.generateAtDensity(
+    composite,
+    { targetDensity: 3.0, maxGridType: 'straight_8th' },
+    unifiedBeatMap
+);
+// Result: ~3.0 nps, all beats on 8th-note or coarser grids
+
+// 2. Sparse chart with 16th notes allowed but BPM restrictions
+const variant = variantGenerator.generateAtDensity(
+    composite,
+    {
+        targetDensity: 0.5,
+        maxGridType: 'straight_16th',
+        bpmBasedQuantization: true,   // At 80 BPM, restricts to 8ths
+    },
+    unifiedBeatMap
+);
+
+// 3. Custom BPM thresholds
+const variant = variantGenerator.generateAtDensity(
+    composite,
+    {
+        targetDensity: 2.5,
+        maxGridType: 'straight_16th',
+        bpmBasedQuantization: true,
+        restrictBpm: 90,             // Only restrict above 90 BPM
+        quarterNoteBpm: 140,         // Only restrict to quarters above 140 BPM
+    },
+    unifiedBeatMap
+);
+
+// 4. Full pipeline with LevelGenerator
+const level = await levelGenerator.generateAtDensity(
+    audioBuffer,
+    beatMap,
+    { targetDensity: 2.0, maxGridType: 'straight_8th' }
+);
+
+// 5. Pre-check if a config is achievable
+const allowedTypes = deriveAllowedGridTypes(config, bpm);
+// allowedTypes tells you exactly what grids are permitted
 ```
 
 ---
