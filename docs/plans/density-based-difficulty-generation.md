@@ -110,9 +110,9 @@ The density variant is a plain `DifficultyVariant` with `difficulty: 'custom'`. 
 
 **File**: `src/core/analysis/beat/DifficultyVariantGenerator.ts`
 
-- [ ] **2.1 Add `deriveAllowedGridTypes()` helper**
-  - [ ] Takes a `DensityGenerationConfig` and BPM, returns the effective `ExtendedGridType[]`
-  - [ ] Implement grid hierarchy (from coarsest to finest):
+- [x] **2.1 Add `deriveAllowedGridTypes()` helper**
+  - [x] Takes a `DensityGenerationConfig` and BPM, returns the effective `ExtendedGridType[]`
+  - [x] Implement grid hierarchy (from coarsest to finest):
 
     | maxGridType | Positions/beat | Derived allowed types |
     |-------------|---------------|-----------------------|
@@ -122,7 +122,7 @@ The density variant is a plain `DifficultyVariant` with `difficulty: 'custom'`. 
     | `triplet_8th` | 3 | `[triplet_8th, straight_8th, quarter_triplet]` |
     | `straight_16th` | 4 | `[straight_16th, triplet_8th, straight_8th, quarter_triplet]` |
 
-  - [ ] After deriving base types from `maxGridType`, if `bpmBasedQuantization` is true, apply thresholds:
+  - [x] After deriving base types from `maxGridType`, if `bpmBasedQuantization` is true, apply thresholds:
     ```
     BPM >= restrictBpm (default 70):
       - Remove straight_16th and triplet_8th from allowed types
@@ -131,17 +131,17 @@ The density variant is a plain `DifficultyVariant` with `difficulty: 'custom'`. 
       - Remove straight_8th from allowed types (only straight_4th and quarter_triplet remain)
     ```
 
-- [ ] **2.2 Add `calculateMaxAchievableDensity()` helper**
-  - [ ] Given allowed grid types and BPM, calculate theoretical max notes/second:
+- [x] **2.2 Add `calculateMaxAchievableDensity()` helper**
+  - [x] Given allowed grid types and BPM, calculate theoretical max notes/second:
     ```
     quarterNoteInterval = 60 / bpm
     maxPositionsPerBeat = max(allowedGridTypes.map(g => GRID_TYPE_MAX_POSITIONS[g]))
     maxDensity = maxPositionsPerBeat / quarterNoteInterval
     ```
-  - [ ] Used to detect impossible configurations and apply best-effort clamping
+  - [x] Used to detect impossible configurations and apply best-effort clamping
 
-- [ ] **2.3 Handle `'custom'` in existing methods**
-  - [ ] Add `'custom'` branch to `getTempoAwareAllowedGridTypes()` (line 218) — before the exhaustive check at line 248:
+- [x] **2.3 Handle `'custom'` in existing methods**
+  - [x] Add `'custom'` branch to `getTempoAwareAllowedGridTypes()` (line 218) — before the exhaustive check at line 248:
     ```typescript
     if (difficulty === 'custom') {
         // Caller must pass allowed grid types directly via the density config.
@@ -150,7 +150,7 @@ The density variant is a plain `DifficultyVariant` with `difficulty: 'custom'`. 
         return [...SUBDIVISION_LIMITS.custom.allowedGridTypes];
     }
     ```
-  - [ ] Add `'custom'` handling in `calculateBeatCountTarget()` (line 1626) — handle alongside `'natural'` at line 1651:
+  - [x] Add `'custom'` handling in `calculateBeatCountTarget()` (line 1626) — handle alongside `'natural'` at line 1651:
     ```typescript
     if (targetDifficulty === 'natural' || targetDifficulty === 'custom') {
         const currentDensity = durationSeconds > 0 ? currentBeatCount / durationSeconds : 0;
@@ -158,10 +158,10 @@ The density variant is a plain `DifficultyVariant` with `difficulty: 'custom'`. 
     }
     ```
 
-- [ ] **2.4 Refactor `simplifyBeats()` — add optional override params**
-  - [ ] Add `allowedGridTypes?: ExtendedGridType[]` param (override `getTempoAwareAllowedGridTypes()`)
-  - [ ] Add `targetDensity?: number` param (override `calculateBeatCountTarget()`)
-  - [ ] New signature:
+- [x] **2.4 Refactor `simplifyBeats()` — add optional override params**
+  - [x] Add `allowedGridTypes?: ExtendedGridType[]` param (override `getTempoAwareAllowedGridTypes()`)
+  - [x] Add `targetDensity?: number` param (override `calculateBeatCountTarget()`)
+  - [x] New signature:
     ```typescript
     private simplifyBeats(
         beats: CompositeBeat[],
@@ -176,9 +176,9 @@ The density variant is a plain `DifficultyVariant` with `difficulty: 'custom'`. 
         targetDensity?: number                   // NEW: override calculateBeatCountTarget()
     ): { beats: VariantBeat[]; metadata: SubdivisionConversionMetadata }
     ```
-  - [ ] When `allowedGridTypes` is provided, use it directly instead of `getTempoAwareAllowedGridTypes(targetDifficulty, bpm)` (line 1333)
-  - [ ] When `targetDensity` is provided, compute `targetCount = Math.round(targetDensity * durationSeconds)` directly instead of calling `calculateBeatCountTarget()` (line 1338-1340)
-  - [ ] When both omitted, existing behavior is unchanged — all existing callers pass no extra args, zero regression risk
+  - [x] When `allowedGridTypes` is provided, use it directly instead of `getTempoAwareAllowedGridTypes(targetDifficulty, bpm)` (line 1333)
+  - [x] When `targetDensity` is provided, compute `targetCount = Math.round(targetDensity * durationSeconds)` directly instead of calling `calculateBeatCountTarget()` (line 1338-1340)
+  - [x] When both omitted, existing behavior is unchanged — all existing callers pass no extra args, zero regression risk
 
 - [ ] **2.5 Refactor `enhanceBeats()` — add optional override params**
   - [ ] Add `allowedGridTypes?: ExtendedGridType[]` param (override `getTempoAwareAllowedGridTypes()` for maxBeatsPerIndex)

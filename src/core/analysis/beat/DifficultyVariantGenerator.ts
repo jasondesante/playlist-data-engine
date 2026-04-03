@@ -1478,7 +1478,9 @@ export class DifficultyVariantGenerator {
         phraseAnalysis?: PhraseAnalysisResult,
         bpm: number = 120,
         gridLock?: Map<number, ExtendedGridType>,
-        durationSeconds: number = 120
+        durationSeconds: number = 120,
+        allowedGridTypes?: ExtendedGridType[],    // Override getTempoAwareAllowedGridTypes()
+        targetDensity?: number                   // Override calculateBeatCountTarget()
     ): { beats: VariantBeat[]; metadata: SubdivisionConversionMetadata } {
         const metadata: SubdivisionConversionMetadata = {
             sixteenthToEighth: 0,
@@ -1500,14 +1502,16 @@ export class DifficultyVariantGenerator {
         metadata.totalBeatsBefore = cleanedBeats.length;
 
         // If all grid types are allowed, no grid conversion needed, but density reduction may still be required
-        const allowedTypes = getTempoAwareAllowedGridTypes(targetDifficulty, bpm);
+        // Use override if provided (for density-based generation), otherwise derive from difficulty
+        const allowedTypes = allowedGridTypes ?? getTempoAwareAllowedGridTypes(targetDifficulty, bpm);
         const allTypesAllowed = cleanedBeats.every(b => allowedTypes.includes(b.gridType));
 
         if (allTypesAllowed && !isHeavySimplification) {
             // Calculate target beat count from midpoint density
-            const { targetCount } = this.calculateBeatCountTarget(
-                cleanedBeats.length, durationSeconds, targetDifficulty
-            );
+            // Use override if provided (for density-based generation), otherwise use difficulty-based calculation
+            const targetCount = targetDensity !== undefined
+                ? Math.round(targetDensity * durationSeconds)
+                : this.calculateBeatCountTarget(cleanedBeats.length, durationSeconds, targetDifficulty).targetCount;
 
             // Even though grid types are allowed, check if density reduction is needed
             const densityReducedBeats = this.reduceDensityToTarget(
@@ -1596,16 +1600,18 @@ export class DifficultyVariantGenerator {
 
         // Task 2.3.2: After grid conversion, re-check the beat count against the target before running reduceDensityToTarget()
         const currentDensity = this.calculateDensity(deduplicatedBeats, durationSeconds);
-        const { targetCount, targetDensity } = this.calculateBeatCountTarget(
-            deduplicatedBeats.length, durationSeconds, targetDifficulty
-        );
+        // Use override if provided (for density-based generation), otherwise use difficulty-based calculation
+        const targetCount = targetDensity !== undefined
+            ? Math.round(targetDensity * durationSeconds)
+            : this.calculateBeatCountTarget(deduplicatedBeats.length, durationSeconds, targetDifficulty).targetCount;
+        const effectiveTargetDensity = targetDensity ?? this.calculateBeatCountTarget(deduplicatedBeats.length, durationSeconds, targetDifficulty).targetDensity;
 
         // Task 2.3.3: If grid conversion alone brought density to or below midpoint target, skip reduceDensityToTarget()
         if (deduplicatedBeats.length <= targetCount) {
             if (this.config.logConversions) {
                 console.log(
                     `[DifficultyVariantGenerator] Grid conversion achieved target density: ` +
-                    `${currentDensity.toFixed(2)} notes/sec (target midpoint ${targetDensity.toFixed(2)} nps, ${targetCount} beats) for ${targetDifficulty}` +
+                    `${currentDensity.toFixed(2)} notes/sec (target midpoint ${effectiveTargetDensity.toFixed(2)} nps, ${targetCount} beats) for ${targetDifficulty}` +
                     (beatsCollapsedDuringConversion > 0 ? ` (${beatsCollapsedDuringConversion} beats collapsed)` : '')
                 );
             }
