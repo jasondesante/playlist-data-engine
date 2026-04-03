@@ -218,8 +218,9 @@ The density variant is a plain `DifficultyVariant` with `difficulty: 'custom'`. 
   - [x] When `allowedGridTypes` is provided, use it as the fallback for empty beat indices instead of `getTempoAwareAllowedGridTypes(targetDifficulty, bpm)` (line 797)
   - [x] When omitted, existing behavior unchanged. This method is already public, so the new param is backwards-compatible
 
-- [ ] **2.7 Verify `reduceDensityToTarget()` needs no changes**
-  - [ ] Confirm it already accepts `targetCount` and `durationSeconds` as optional params and is called through `simplifyBeats()` — no refactoring needed
+- [x] **2.7 Verify `reduceDensityToTarget()` needs no changes**
+  - [x] Confirm it already accepts `targetCount` and `durationSeconds` as optional params and is called through `simplifyBeats()` — no refactoring needed
+  - **Verified**: Method signature at line 2174 includes `targetCount?: number` and `durationSeconds: number = 120`. Called from `simplifyBeats()` at lines 1519-1527 and 1626-1634 with targetCount derived from `targetDensity` override when provided. No changes needed.
 
 ---
 
