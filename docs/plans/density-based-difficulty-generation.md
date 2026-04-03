@@ -62,12 +62,12 @@ The density variant is a plain `DifficultyVariant` with `difficulty: 'custom'`. 
 
 **File**: `src/core/analysis/beat/DifficultyVariantGenerator.ts`
 
-- [ ] **1.1 Add `'custom'` to `DifficultyLevel`**
+- [x] **1.1 Add `'custom'` to `DifficultyLevel`**
   ```typescript
   export type DifficultyLevel = 'easy' | 'medium' | 'hard' | 'natural' | 'custom';
   ```
 
-- [ ] **1.2 Add `'custom'` to `SUBDIVISION_LIMITS`**
+- [x] **1.2 Add `'custom'` to `SUBDIVISION_LIMITS`**
   ```typescript
   custom: {
       maxSubdivision: 'sixteenth',

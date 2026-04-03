@@ -46,7 +46,7 @@ import {
     GUITAR_HERO_PATTERN_LIBRARY,
 } from './ButtonPatternLibrary.js';
 import type { GeneratedRhythm, RhythmMetadata } from './RhythmGenerator.js';
-import type { DifficultyVariant, DifficultyLevel } from '../analysis/beat/DifficultyVariantGenerator.js';
+import type { DifficultyVariant, DifficultyLevel, PresetDifficultyLevel } from '../analysis/beat/DifficultyVariantGenerator.js';
 import type { PitchAtBeat, IntervalCategory, PitchDirection } from './PitchBeatLinker.js';
 import { deriveSeed, hashSeedToFloat } from '../../utils/hash.js';
 
@@ -1043,13 +1043,13 @@ export class ButtonMapper {
      * based on pitch direction/interval and pattern library fallback.
      *
      * @param generatedRhythm - The generated rhythm from RhythmGenerator
-     * @param difficulty - Which difficulty variant to map ('easy', 'medium', 'hard')
+     * @param difficulty - Which difficulty variant to map (preset only, not 'custom')
      * @param pitchAnalysis - Optional pitch analysis from MelodyContourAnalyzer
      * @returns Mapped level result with button assignments
      */
     map(
         generatedRhythm: GeneratedRhythm,
-        difficulty: DifficultyLevel,
+        difficulty: PresetDifficultyLevel,
         pitchAnalysis?: PitchAtBeat[]
     ): MappedLevelResult {
         // Get the appropriate difficulty variant
@@ -1295,6 +1295,7 @@ export class ButtonMapper {
             case 'medium': return 6;
             case 'hard': return 10;
             case 'natural': return 10; // Natural uses hard difficulty limits
+            case 'custom': return 6; // Custom defaults to medium pattern difficulty
         }
     }
 

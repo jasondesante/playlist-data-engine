@@ -517,7 +517,7 @@ export class LevelSerializer {
      * Parse difficulty level from string
      */
     private static parseDifficultyLevel(value: string | undefined): DifficultyLevel {
-        if (value === 'easy' || value === 'medium' || value === 'hard' || value === 'natural') {
+        if (value === 'easy' || value === 'medium' || value === 'hard' || value === 'natural' || value === 'custom') {
             return value;
         }
         return 'medium';

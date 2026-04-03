@@ -176,6 +176,20 @@ export const SUBDIVISION_LIMITS: Record<DifficultyLevel, SubdivisionLimitConfig>
         description: 'Unedited composite stream - no subdivision restrictions',
         targetDensityRange: { min: 0, max: Infinity },
     },
+
+    /**
+     * Custom difficulty: Density-based variant with independent parameters
+     *
+     * - Parameters (targetDensity, maxGridType) provided at generation time
+     * - This entry is a fallback/sentinel — actual values come from DensityGenerationConfig
+     * - Used by generateAtDensity() for continuous difficulty spectrum
+     */
+    custom: {
+        maxSubdivision: 'sixteenth',
+        allowedGridTypes: ['straight_16th', 'triplet_8th', 'straight_8th', 'quarter_triplet'],
+        description: 'Custom density-based variant — parameters provided at generation time',
+        targetDensityRange: { min: 0, max: Infinity },
+    },
 };
 
 // ============================================================================
@@ -244,6 +258,13 @@ export function getTempoAwareAllowedGridTypes(
         return [...SUBDIVISION_LIMITS.hard.allowedGridTypes];
     }
 
+    if (difficulty === 'custom') {
+        // Caller must pass allowed grid types directly via the density config.
+        // This branch should not be reached in normal flow — density generation
+        // uses deriveAllowedGridTypes() instead.
+        return [...SUBDIVISION_LIMITS.custom.allowedGridTypes];
+    }
+
     // TypeScript exhaustive check — all DifficultyLevel values handled above
     const _exhaustive: never = difficulty;
     throw new Error(`Unhandled difficulty: ${_exhaustive}`);
@@ -260,8 +281,17 @@ export function getTempoAwareAllowedGridTypes(
  * - 'medium': Moderate difficulty with density reduction
  * - 'hard': Full density with all subdivisions
  * - 'natural': Unedited composite stream (what was actually detected)
+ * - 'custom': Custom density-based variant — parameters provided at generation time
  */
-export type DifficultyLevel = 'easy' | 'medium' | 'hard' | 'natural';
+export type DifficultyLevel = 'easy' | 'medium' | 'hard' | 'natural' | 'custom';
+
+/**
+ * Preset difficulty levels (excludes 'custom')
+ *
+ * Used for GeneratedRhythm.difficultyVariants which only contains preset variants.
+ * Custom variants are generated standalone via generateAtDensity().
+ */
+export type PresetDifficultyLevel = 'easy' | 'medium' | 'hard' | 'natural';
 
 /**
  * Maximum subdivision type

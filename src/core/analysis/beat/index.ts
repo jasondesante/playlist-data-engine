@@ -246,6 +246,7 @@ export {
 export type {
     ExtendedGridType,
     DifficultyLevel,
+    PresetDifficultyLevel,
     MaxSubdivision,
     SubdivisionLimitConfig,
     EditType,

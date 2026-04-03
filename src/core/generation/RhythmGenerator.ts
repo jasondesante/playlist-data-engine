@@ -41,6 +41,7 @@ import {
     DifficultyVariantGenerator,
     type DifficultyVariant,
     type DifficultyLevel,
+    type PresetDifficultyLevel,
     type VariantBeat,
     type SubdivisionConversionMetadata,
     type EnhancementMetadata,
@@ -236,7 +237,7 @@ export interface GeneratedRhythm {
         medium: DifficultyVariant;
         hard: DifficultyVariant;
         natural: DifficultyVariant;
-    };
+    } & Record<PresetDifficultyLevel, DifficultyVariant>;
 
     /** Individual band streams (for reference/advanced use) */
     bandStreams: {
@@ -375,7 +376,7 @@ interface GeneratedRhythmMapJSON {
  * JSON-serializable version of DifficultyVariant
  */
 interface DifficultyVariantJSON {
-    difficulty: 'easy' | 'medium' | 'hard' | 'natural';
+    difficulty: 'easy' | 'medium' | 'hard' | 'natural' | 'custom';
     beats: VariantBeatJSON[];
     isUnedited: boolean;
     editType: 'none' | 'simplified' | 'interpolated' | 'pattern_inserted';
@@ -1423,16 +1424,17 @@ export class RhythmGenerator {
      * Generate rhythm patterns for a specific difficulty
      *
      * Convenience method for generating a single difficulty variant.
+     * For custom density generation, use LevelGenerator.generateAtDensity() instead.
      *
      * @param audioBuffer - Audio buffer to analyze
      * @param unifiedBeatMap - Unified beat map
-     * @param difficulty - Target difficulty level
+     * @param difficulty - Target difficulty level (preset only, not 'custom')
      * @returns Difficulty variant for the requested level
      */
     static async generateForDifficulty(
         audioBuffer: AudioBuffer,
         unifiedBeatMap: UnifiedBeatMap,
-        difficulty: DifficultyLevel
+        difficulty: PresetDifficultyLevel
     ): Promise<DifficultyVariant> {
         const generator = new RhythmGenerator();
         const result = await generator.generate(audioBuffer, unifiedBeatMap);
