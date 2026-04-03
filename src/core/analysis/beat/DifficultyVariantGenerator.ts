@@ -1964,7 +1964,8 @@ export class DifficultyVariantGenerator {
         beatsByIndex: Map<number, CompositeBeat[]>,
         gridLock: Map<number, ExtendedGridType>,
         maxBeatIndex: number,
-        seed: string
+        seed: string,
+        allowedGridTypes?: ExtendedGridType[]    // Override for max beats per index fallback
     ): Map<number, number> {
         const targetMap = new Map<number, number>();
         let remainingBeats = beatsToAdd;
@@ -1979,16 +1980,25 @@ export class DifficultyVariantGenerator {
             return targetMap;
         }
 
+        // Helper to get max beats per index: use grid lock, then allowedGridTypes, then default
+        const getMaxForIndex = (beatIdx: number): number => {
+            const lockedGrid = gridLock.get(beatIdx);
+            if (lockedGrid) {
+                return this.getMaxBeatsForGridType(lockedGrid);
+            }
+            if (allowedGridTypes) {
+                return this.getMaxBeatsPerIndexFromGridTypes(allowedGridTypes);
+            }
+            return 4; // Default to 4 (16th notes) if no override
+        };
+
         // Identify empty and partially occupied indices
         const emptyIndices: number[] = [];
         const partiallyOccupiedIndices: number[] = [];
 
         for (let i = 0; i <= maxBeatIndex; i++) {
             const currentCount = targetMap.get(i) ?? 0;
-            const lockedGrid = gridLock.get(i);
-            const maxForIndex = lockedGrid
-                ? this.getMaxBeatsForGridType(lockedGrid)
-                : 4; // Default to 4 if no grid lock
+            const maxForIndex = getMaxForIndex(i);
 
             if (currentCount === 0) {
                 emptyIndices.push(i);
@@ -2023,10 +2033,7 @@ export class DifficultyVariantGenerator {
             for (const beatIndex of gap) {
                 if (remainingBeats <= 0) break;
 
-                const lockedGrid = gridLock.get(beatIndex);
-                const maxForIndex = lockedGrid
-                    ? this.getMaxBeatsForGridType(lockedGrid)
-                    : 4;
+                const maxForIndex = getMaxForIndex(beatIndex);
 
                 // Determine how many beats to add at this index
                 let beatsHere: number;
@@ -2052,10 +2059,8 @@ export class DifficultyVariantGenerator {
         partiallyOccupiedIndices.sort((a, b) => {
             const currentA = targetMap.get(a) ?? 0;
             const currentB = targetMap.get(b) ?? 0;
-            const lockedGridA = gridLock.get(a);
-            const lockedGridB = gridLock.get(b);
-            const maxA = lockedGridA ? this.getMaxBeatsForGridType(lockedGridA) : 4;
-            const maxB = lockedGridB ? this.getMaxBeatsForGridType(lockedGridB) : 4;
+            const maxA = getMaxForIndex(a);
+            const maxB = getMaxForIndex(b);
             const availableA = maxA - currentA;
             const availableB = maxB - currentB;
 
@@ -2074,10 +2079,7 @@ export class DifficultyVariantGenerator {
             if (remainingBeats <= 0) break;
 
             const currentCount = targetMap.get(beatIndex) ?? 0;
-            const lockedGrid = gridLock.get(beatIndex);
-            const maxForIndex = lockedGrid
-                ? this.getMaxBeatsForGridType(lockedGrid)
-                : 4;
+            const maxForIndex = getMaxForIndex(beatIndex);
 
             const available = maxForIndex - currentCount;
             if (available > 0) {
@@ -2095,10 +2097,7 @@ export class DifficultyVariantGenerator {
                 if (remainingBeats <= 0) break;
 
                 const currentCount = targetMap.get(beatIndex) ?? 0;
-                const lockedGrid = gridLock.get(beatIndex);
-                const maxForIndex = lockedGrid
-                    ? this.getMaxBeatsForGridType(lockedGrid)
-                    : 4;
+                const maxForIndex = getMaxForIndex(beatIndex);
                 const available = maxForIndex - currentCount;
 
                 if (available > 0) {
@@ -2762,7 +2761,8 @@ export class DifficultyVariantGenerator {
             beatsByIndex,
             gridLock ?? new Map(),
             maxBeatIndex,
-            densitySeed
+            densitySeed,
+            allowedGridTypes    // Pass through for max beats per index calculation
         );
 
         // Create enhanced beats array

@@ -181,9 +181,9 @@ The density variant is a plain `DifficultyVariant` with `difficulty: 'custom'`. 
   - [x] When both omitted, existing behavior is unchanged — all existing callers pass no extra args, zero regression risk
 
 - [x] **2.5 Refactor `enhanceBeats()` — add optional override params**
-  - [ ] Add `allowedGridTypes?: ExtendedGridType[]` param (override `getTempoAwareAllowedGridTypes()` for maxBeatsPerIndex)
-  - [ ] Add `targetDensity?: number` param (override `calculateBeatsToAdd()` target)
-  - [ ] New signature:
+  - [x] Add `allowedGridTypes?: ExtendedGridType[]` param (override `getTempoAwareAllowedGridTypes()` for maxBeatsPerIndex)
+  - [x] Add `targetDensity?: number` param (override `calculateBeatsToAdd()` target)
+  - [x] New signature:
     ```typescript
     private enhanceBeats(
         beats: CompositeBeat[],
@@ -198,10 +198,10 @@ The density variant is a plain `DifficultyVariant` with `difficulty: 'custom'`. 
         targetDensity?: number                   // NEW: override calculateBeatsToAdd() target
     ): { beats: VariantBeat[]; metadata: EnhancementMetadata }
     ```
-  - [ ] When `allowedGridTypes` is provided, use it for `getMaxBeatsPerIndexFromGridTypes()` instead of deriving from `targetDifficulty` (line 1725 via `calculateBeatsToAdd`)
-  - [ ] When `targetDensity` is provided, compute `beatsToAdd = Math.max(0, Math.round(targetDensity * durationSeconds) - cleanedBeats.length)` directly instead of calling `calculateBeatsToAdd()` (line 2544)
-  - [ ] Cap `beatsToAdd` to prevent runaway enhancement (max 4x current density)
-  - [ ] When both omitted, existing behavior unchanged
+  - [x] When `allowedGridTypes` is provided, use it for `getMaxBeatsPerIndexFromGridTypes()` instead of deriving from `targetDifficulty` (via `distributeBeatsAcrossIndices`)
+  - [x] When `targetDensity` is provided, compute `beatsToAdd = Math.max(0, Math.round(targetDensity * durationSeconds) - cleanedBeats.length)` directly instead of calling `calculateBeatsToAdd()`
+  - [x] Cap `beatsToAdd` to prevent runaway enhancement (max 4x current density)
+  - [x] When both omitted, existing behavior unchanged
 
 - [ ] **2.6 Refactor `lockGridPerBeatIndex()` — add optional override param**
   - [ ] Add `allowedGridTypes?: ExtendedGridType[]` param
