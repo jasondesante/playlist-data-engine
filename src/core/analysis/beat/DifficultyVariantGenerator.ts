@@ -2276,10 +2276,17 @@ export class DifficultyVariantGenerator {
             return targetMap;
         }
 
-        // Helper to get max beats per index: use grid lock, then allowedGridTypes, then default
+        // Helper to get max beats per index: use grid lock (clamped to allowed), then allowedGridTypes, then default
         const getMaxForIndex = (beatIdx: number): number => {
             const lockedGrid = gridLock.get(beatIdx);
             if (lockedGrid) {
+                // When allowedGridTypes is provided, clamp capacity to what's allowed.
+                // A grid lock of triplet_8th (3 positions) must not exceed 2 when only
+                // straight_8th is allowed, otherwise distributeBeatsAcrossIndices will
+                // overestimate capacity at that index.
+                if (allowedGridTypes && !allowedGridTypes.includes(lockedGrid)) {
+                    return this.getMaxBeatsPerIndexFromGridTypes(allowedGridTypes);
+                }
                 return this.getMaxBeatsForGridType(lockedGrid);
             }
             if (allowedGridTypes) {
@@ -3023,7 +3030,41 @@ export class DifficultyVariantGenerator {
         // counts them all, but enforceSingleGridPerBeat later removes the losers.
         // This causes the final density to fall short of the target. By resolving
         // grids first, all density math and interpolation work with accurate counts.
-        const cleanedBeats = gridLock ? beats : this.enforceSingleGridPerBeat(beats);
+        let cleanedBeats = gridLock ? beats : this.enforceSingleGridPerBeat(beats);
+
+        // When allowedGridTypes is provided (density-based generation), convert any
+        // existing beats with disallowed grid types before proceeding. Without this,
+        // beats like triplet_8th leak through when they exceed the target count at
+        // their index and are pushed through unfiltered (lines ~3091 and ~3181).
+        if (allowedGridTypes) {
+            const hasDisallowedTypes = cleanedBeats.some(b => !allowedGridTypes.includes(b.gridType));
+            if (hasDisallowedTypes) {
+                const converted: VariantBeat[] = [];
+                for (const beat of cleanedBeats) {
+                    if (allowedGridTypes.includes(beat.gridType)) {
+                        converted.push(beat as VariantBeat);
+                    } else {
+                        const convertedBeat = this.convertBeatGridType(
+                            beat as VariantBeat,
+                            targetDifficulty,
+                            quarterNoteInterval,
+                            bpm,
+                            undefined, // no locked grid override — convertBeatGridType will use allowedGridTypes via convertToAllowedGridType
+                            allowedGridTypes
+                        );
+                        if (convertedBeat) {
+                            converted.push(convertedBeat);
+                        }
+                    }
+                }
+                // Deduplicate in case conversions snapped multiple beats to the same position
+                const deduplicated = this.deduplicateConvertedBeats(converted);
+                // VariantBeat[] is safe to use as CompositeBeat[] downstream —
+                // the only difference is gridType: ExtendedGridType (superset of GridType)
+                cleanedBeats = deduplicated as unknown as CompositeBeat[];
+            }
+        }
+
         metadata.totalBeatsBefore = cleanedBeats.length;
 
         // Group beats by beatIndex for analysis
