@@ -1318,6 +1318,70 @@ export class DifficultyVariantGenerator {
     }
 
     /**
+     * Generate multiple custom difficulty variants at specific densities in one call
+     *
+     * This is a convenience method for generating multiple density-based variants
+     * efficiently. Each variant is generated independently with its own deep copy
+     * of the composite beats, ensuring no shared state or mutations between variants.
+     *
+     * @param composite - The composite stream from CompositeStreamGenerator
+     * @param configs - Array of labeled density configurations
+     * @param unifiedBeatMap - The unified beat map for timing information
+     * @param phraseAnalysis - Optional phrase analysis for pattern library access during enhancement
+     * @param gridDecisions - Optional grid decisions from quantized streams
+     * @returns A Map of labels to DifficultyVariants
+     *
+     * @example
+     * ```typescript
+     * const generator = new DifficultyVariantGenerator();
+     *
+     * const variants = generator.generateAtDensities(
+     *     composite,
+     *     [
+     *         { label: 'beginner', config: { targetDensity: 0.5, maxGridType: 'straight_4th' } },
+     *         { label: 'intermediate', config: { targetDensity: 1.5, maxGridType: 'straight_8th' } },
+     *         { label: 'expert', config: { targetDensity: 3.0, maxGridType: 'straight_16th' } },
+     *     ],
+     *     unifiedBeatMap
+     * );
+     *
+     * const beginnerVariant = variants.get('beginner');
+     * const expertVariant = variants.get('expert');
+     * ```
+     */
+    generateAtDensities(
+        composite: CompositeStream,
+        configs: { label: string; config: DensityGenerationConfig }[],
+        unifiedBeatMap: UnifiedBeatMap,
+        phraseAnalysis?: PhraseAnalysisResult,
+        gridDecisions?: Map<number, GridDecision>
+    ): Map<string, DifficultyVariant> {
+        const results = new Map<string, DifficultyVariant>();
+
+        for (const { label, config } of configs) {
+            // Create a deep copy of the composite for independent variant generation
+            // This ensures mutations in one variant don't affect others
+            const compositeCopy: CompositeStream = {
+                ...composite,
+                beats: composite.beats.map(beat => ({ ...beat })),
+            };
+
+            // Generate the variant using the existing generateAtDensity method
+            const variant = this.generateAtDensity(
+                compositeCopy,
+                config,
+                unifiedBeatMap,
+                phraseAnalysis,
+                gridDecisions
+            );
+
+            results.set(label, variant);
+        }
+
+        return results;
+    }
+
+    /**
      * Validate a generated variant against its subdivision limits
      *
      * This ensures that all generated variants comply with their respective

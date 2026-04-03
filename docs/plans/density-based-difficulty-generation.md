@@ -252,7 +252,7 @@ The density variant is a plain `DifficultyVariant` with `difficulty: 'custom'`. 
   - [x] Build and return `DifficultyVariant` with `difficulty: 'custom'`
   - [x] Returns a standard `DifficultyVariant` — no new type needed. The `difficulty: 'custom'` label tells downstream consumers this came from density generation
 
-- [ ] **3.2 Add `generateAtDensities()` convenience method**
+- [x] **3.2 Add `generateAtDensities()` convenience method**
   ```typescript
   generateAtDensities(
       composite: CompositeStream,
@@ -262,9 +262,9 @@ The density variant is a plain `DifficultyVariant` with `difficulty: 'custom'`. 
       gridDecisions?: Map<number, GridDecision>
   ): Map<string, DifficultyVariant>
   ```
-  - [ ] Generates multiple custom variants in one call
-  - [ ] Each variant is independent (deep copies of composite beats)
-  - [ ] Returns a `Map` keyed by label
+  - [x] Generates multiple custom variants in one call
+  - [x] Each variant is independent (deep copies of composite beats)
+  - [x] Returns a `Map` keyed by label
 
 ---
 
