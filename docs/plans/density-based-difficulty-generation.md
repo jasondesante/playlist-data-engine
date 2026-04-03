@@ -339,8 +339,11 @@ The density variant is a plain `DifficultyVariant` with `difficulty: 'custom'`. 
 
 **File**: `src/index.ts`
 
-- [ ] Export `DensityGenerationConfig` interface
-- [ ] Confirm `generateAtDensity()` and `generateAtDensities()` are accessible via existing `DifficultyVariantGenerator` export
+- [x] Export `DensityGenerationConfig` interface
+  - Already exported at line 632: `type DensityGenerationConfig,`
+- [x] Confirm `generateAtDensity()` and `generateAtDensities()` are accessible via existing `DifficultyVariantGenerator` export
+  - Both methods are public on `DifficultyVariantGenerator` class (lines 1141 and 1352 in DifficultyVariantGenerator.ts)
+  - `DifficultyVariantGenerator` is exported from `src/index.ts` at line 609
 
 ---
 
