@@ -773,16 +773,19 @@ export function getAllowedGridTypes(difficulty: DifficultyLevel, bpm?: number): 
  * @param gridType - The original grid type (can be extended type)
  * @param difficulty - The target difficulty
  * @param bpm - Optional BPM. When omitted, uses static SUBDIVISION_LIMITS.
+ * @param allowedGridTypesOverride - Optional override for allowed grid types (for density-based generation)
  * @returns The converted grid type (or original if already allowed)
  */
 export function convertToAllowedGridType(
     gridType: ExtendedGridType,
     difficulty: DifficultyLevel,
-    bpm?: number
+    bpm?: number,
+    allowedGridTypesOverride?: ExtendedGridType[]
 ): ExtendedGridType {
-    const allowedTypes = bpm !== undefined
+    // Use override if provided (for density-based generation), otherwise derive from difficulty
+    const allowedTypes = allowedGridTypesOverride ?? (bpm !== undefined
         ? getTempoAwareAllowedGridTypes(difficulty, bpm)
-        : SUBDIVISION_LIMITS[difficulty].allowedGridTypes;
+        : SUBDIVISION_LIMITS[difficulty].allowedGridTypes);
 
     // If already allowed, return as-is
     if (allowedTypes.includes(gridType)) {
@@ -1837,8 +1840,9 @@ export class DifficultyVariantGenerator {
 
             // Convert the beat
             // Task 1.2.3: Pass the locked grid type if available
+            // For density-based generation: pass allowedTypes override so conversion respects custom grid restrictions
             const lockedGridType = gridLock?.get(beat.beatIndex);
-            const convertedBeat = this.convertBeatGridType(beat, targetDifficulty, quarterNoteInterval, bpm, lockedGridType);
+            const convertedBeat = this.convertBeatGridType(beat, targetDifficulty, quarterNoteInterval, bpm, lockedGridType, allowedTypes);
 
             if (convertedBeat) {
                 convertedBeats.push(convertedBeat);
@@ -2780,11 +2784,12 @@ export class DifficultyVariantGenerator {
         targetDifficulty: DifficultyLevel,
         quarterNoteInterval: number,
         bpm: number = 120,
-        lockedGridType?: ExtendedGridType
+        lockedGridType?: ExtendedGridType,
+        allowedGridTypes?: ExtendedGridType[]
     ): VariantBeat | null {
         // Task 1.2.3: Use locked grid type if provided and different from beat's current grid
         const sourceGridType = lockedGridType ?? beat.gridType;
-        const targetGridType = convertToAllowedGridType(sourceGridType, targetDifficulty, bpm);
+        const targetGridType = convertToAllowedGridType(sourceGridType, targetDifficulty, bpm, allowedGridTypes);
 
         // If no conversion needed, return as-is (but as VariantBeat)
         if (targetGridType === sourceGridType) {
