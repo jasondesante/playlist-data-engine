@@ -228,7 +228,7 @@ The density variant is a plain `DifficultyVariant` with `difficulty: 'custom'`. 
 
 **File**: `src/core/analysis/beat/DifficultyVariantGenerator.ts`
 
-- [ ] **3.1 Add `generateAtDensity()` public method**
+- [x] **3.1 Add `generateAtDensity()` public method**
   ```typescript
   generateAtDensity(
       composite: CompositeStream,
@@ -238,19 +238,19 @@ The density variant is a plain `DifficultyVariant` with `difficulty: 'custom'`. 
       gridDecisions?: Map<number, GridDecision>
   ): DifficultyVariant
   ```
-  - [ ] Calculate current composite density: `beats.length / durationSeconds`
-  - [ ] Derive BPM from `unifiedBeatMap.quarterNoteBpm` (fallback 120)
-  - [ ] Derive duration from `unifiedBeatMap.duration` (fallback 120)
-  - [ ] Derive allowed grid types via `deriveAllowedGridTypes(config, bpm)`
-  - [ ] Calculate max achievable density via `calculateMaxAchievableDensity()`
-  - [ ] If `targetDensity > maxAchievableDensity`: clamp target to max, set `densityClamped` flag in metadata, log warning
-  - [ ] Lock grid types per beat index via `lockGridPerBeatIndex()` with `'custom'` difficulty + `allowedGridTypes` override
-  - [ ] If `currentDensity > targetDensity`: call `simplifyBeats()` with `allowedGridTypes` + `targetDensity` overrides
-  - [ ] If `currentDensity < targetDensity`: call `enhanceBeats()` with `allowedGridTypes` + `targetDensity` overrides
-  - [ ] If `currentDensity` approximately equals `targetDensity` (within 10%): still apply grid restriction via `simplifyBeats()` if any disallowed grid types exist in the composite
-  - [ ] Run `enforceSingleGridPerBeat()` on result
-  - [ ] Build and return `DifficultyVariant` with `difficulty: 'custom'`
-  - [ ] Returns a standard `DifficultyVariant` — no new type needed. The `difficulty: 'custom'` label tells downstream consumers this came from density generation
+  - [x] Calculate current composite density: `beats.length / durationSeconds`
+  - [x] Derive BPM from `unifiedBeatMap.quarterNoteBpm` (fallback 120)
+  - [x] Derive duration from `unifiedBeatMap.duration` (fallback 120)
+  - [x] Derive allowed grid types via `deriveAllowedGridTypes(config, bpm)`
+  - [x] Calculate max achievable density via `calculateMaxAchievableDensity()`
+  - [x] If `targetDensity > maxAchievableDensity`: clamp target to max, set `densityClamped` flag in metadata, log warning
+  - [x] Lock grid types per beat index via `lockGridPerBeatIndex()` with `'custom'` difficulty + `allowedGridTypes` override
+  - [x] If `currentDensity > targetDensity`: call `simplifyBeats()` with `allowedGridTypes` + `targetDensity` overrides
+  - [x] If `currentDensity < targetDensity`: call `enhanceBeats()` with `allowedGridTypes` + `targetDensity` overrides
+  - [x] If `currentDensity` approximately equals `targetDensity` (within 10%): still apply grid restriction via `simplifyBeats()` if any disallowed grid types exist in the composite
+  - [x] Run `enforceSingleGridPerBeat()` on result
+  - [x] Build and return `DifficultyVariant` with `difficulty: 'custom'`
+  - [x] Returns a standard `DifficultyVariant` — no new type needed. The `difficulty: 'custom'` label tells downstream consumers this came from density generation
 
 - [ ] **3.2 Add `generateAtDensities()` convenience method**
   ```typescript

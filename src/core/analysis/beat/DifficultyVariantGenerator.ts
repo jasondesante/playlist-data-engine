@@ -501,6 +501,9 @@ export interface DifficultyVariant {
 
     /** Task 4.2.3: Density validation result for downstream consumers */
     densityValidation?: VariantDensityValidationResult;
+
+    /** Whether density was clamped due to grid constraints (density-based generation only) */
+    densityClamped?: boolean;
 }
 
 /**
@@ -1089,6 +1092,229 @@ export class DifficultyVariantGenerator {
         }
 
         return { easy, medium, hard, natural };
+    }
+
+    /**
+     * Generate a custom difficulty variant at a specific target density.
+     *
+     * This method provides granular control over difficulty generation by decoupling
+     * target density (notes/second) from maximum quantization grid. Unlike the preset
+     * difficulties (easy/medium/hard/natural), this allows any combination such as:
+     * - Dense chart (3.0 nps) with only 8th note quantization
+     * - Sparse chart (0.5 nps) with 16th note quantization allowed
+     *
+     * The method handles three scenarios:
+     * 1. **Current density > target**: Simplify beats (remove/convert notes)
+     * 2. **Current density < target**: Enhance beats (add notes via interpolation/patterns)
+     * 3. **Current density ≈ target**: Apply grid restrictions only if needed
+     *
+     * Best-effort: If the target density is impossible given the grid constraints
+     * (e.g., 4.0 nps with only 8th notes at 60 BPM), the density is clamped to the
+     * maximum achievable and a warning is logged.
+     *
+     * @param composite - The composite stream from CompositeStreamGenerator
+     * @param config - Density generation configuration (target density + max grid type)
+     * @param unifiedBeatMap - The unified beat map for timing information
+     * @param phraseAnalysis - Optional phrase analysis for pattern library access during enhancement
+     * @param gridDecisions - Optional grid decisions from quantized streams
+     * @returns A DifficultyVariant with `difficulty: 'custom'`
+     *
+     * @example
+     * ```typescript
+     * const generator = new DifficultyVariantGenerator();
+     *
+     * // Dense chart with 8th note max grid
+     * const denseVariant = generator.generateAtDensity(
+     *     composite,
+     *     { targetDensity: 3.0, maxGridType: 'straight_8th' },
+     *     unifiedBeatMap
+     * );
+     *
+     * // Sparse chart with 16th note grid allowed, BPM-based restrictions
+     * const sparseVariant = generator.generateAtDensity(
+     *     composite,
+     *     { targetDensity: 0.5, maxGridType: 'straight_16th', bpmBasedQuantization: true },
+     *     unifiedBeatMap
+     * );
+     * ```
+     */
+    generateAtDensity(
+        composite: CompositeStream,
+        config: DensityGenerationConfig,
+        unifiedBeatMap: UnifiedBeatMap,
+        phraseAnalysis?: PhraseAnalysisResult,
+        gridDecisions?: Map<number, GridDecision>
+    ): DifficultyVariant {
+        // Store unifiedBeatMap for time-signature-aware strong beat detection
+        this.currentUnifiedBeatMap = unifiedBeatMap;
+
+        // Step 1: Derive BPM and duration from unifiedBeatMap
+        const bpm = unifiedBeatMap?.quarterNoteBpm ?? 120;
+        const durationSeconds = unifiedBeatMap?.duration ?? 120;
+
+        // Step 2: Calculate current composite density
+        const currentDensity = this.calculateDensity(composite.beats, durationSeconds);
+
+        // Step 3: Derive allowed grid types from config
+        const allowedGridTypes = deriveAllowedGridTypes(config, bpm);
+
+        // Step 4: Calculate max achievable density for these constraints
+        const maxAchievableDensity = calculateMaxAchievableDensity(allowedGridTypes, bpm);
+
+        // Step 5: Determine effective target (clamp if necessary)
+        let effectiveTargetDensity = config.targetDensity;
+        let densityClamped = false;
+
+        if (config.targetDensity > maxAchievableDensity) {
+            effectiveTargetDensity = maxAchievableDensity;
+            densityClamped = true;
+            console.warn(
+                `[DifficultyVariantGenerator] Target density ${config.targetDensity.toFixed(2)} nps ` +
+                `exceeds max achievable ${maxAchievableDensity.toFixed(2)} nps for grid types ` +
+                `[${allowedGridTypes.join(', ')}] at ${bpm} BPM. Clamping to ${effectiveTargetDensity.toFixed(2)} nps.`
+            );
+        }
+
+        // Step 6: Lock grid types per beat index
+        const { beats: lockedBeats, gridLock } = this.lockGridPerBeatIndex(
+            composite.beats,
+            'custom',
+            bpm,
+            gridDecisions,
+            allowedGridTypes
+        );
+
+        // Calculate density after grid lock (may have changed slightly due to enforcement)
+        const lockedDensity = this.calculateDensity(lockedBeats, durationSeconds);
+
+        // Step 7: Determine which path to take based on density comparison
+        // Use a small epsilon to prevent divide-by-zero issues
+        const densityTolerance = 1e-10;
+        const safeTargetDensity = Math.max(effectiveTargetDensity, 1e-10);
+
+        // Check if there are any disallowed grid types in the locked beats
+        const hasDisallowedGridTypes = lockedBeats.some(b => !allowedGridTypes.includes(b.gridType));
+
+        if (this.config.logConversions) {
+            console.log(
+                `[DifficultyVariantGenerator] generateAtDensity: current=${lockedDensity.toFixed(2)} nps, ` +
+                `target=${safeTargetDensity.toFixed(2)} nps, maxGridType=${config.maxGridType}, ` +
+                `allowedTypes=[${allowedGridTypes.join(', ')}], clamped=${densityClamped}`
+            );
+        }
+
+        // Step 8: Branch based on density comparison
+        if (lockedDensity > safeTargetDensity * (1 + densityTolerance)) {
+            // Current density is significantly higher than target — simplify
+            const result = this.simplifyBeats(
+                lockedBeats,
+                'custom',
+                composite.quarterNoteInterval,
+                false, // not heavy simplification
+                phraseAnalysis,
+                bpm,
+                gridLock,
+                durationSeconds,
+                allowedGridTypes,
+                effectiveTargetDensity
+            );
+
+            // Run enforceSingleGridPerBeat on result
+            const finalBeats = this.enforceSingleGridPerBeat(result.beats);
+
+            return {
+                difficulty: 'custom',
+                beats: finalBeats,
+                isUnedited: false,
+                editType: 'simplified',
+                editAmount: result.metadata.totalBeatsBefore > 0
+                    ? (result.metadata.totalBeatsBefore - result.metadata.totalBeatsAfter) / result.metadata.totalBeatsBefore
+                    : 0,
+                conversionMetadata: result.metadata,
+                densityClamped,
+            };
+        } else if (lockedDensity < effectiveTargetDensity * (1 - densityTolerance)) {
+            // Current density is significantly lower than target — enhance
+            const result = this.enhanceBeats(
+                lockedBeats,
+                'custom',
+                bpm,
+                unifiedBeatMap,
+                phraseAnalysis,
+                gridDecisions,
+                composite.quarterNoteInterval,
+                gridLock,
+                allowedGridTypes,
+                effectiveTargetDensity
+            );
+
+            // Run enforceSingleGridPerBeat on result
+            const finalBeats = this.enforceSingleGridPerBeat(result.beats);
+
+            const editType = result.metadata.patternsInserted > 0 ? 'pattern_inserted' : 'interpolated';
+            return {
+                difficulty: 'custom',
+                beats: finalBeats,
+                isUnedited: false,
+                editType,
+                editAmount: result.metadata.totalBeatsBefore > 0
+                    ? (result.metadata.totalBeatsAfter - result.metadata.totalBeatsBefore) / result.metadata.totalBeatsBefore
+                    : 0,
+                patternsInserted: result.metadata.insertedPatternIds.length > 0
+                    ? result.metadata.insertedPatternIds
+                    : undefined,
+                enhancementMetadata: result.metadata,
+            };
+        } else {
+            // Current density is approximately equal to target
+            // Still apply grid restriction if there are disallowed grid types
+            if (hasDisallowedGridTypes) {
+                if (this.config.logConversions) {
+                    console.log(
+                        `[DifficultyVariantGenerator] Density approximately equal (${lockedDensity.toFixed(2)} ≈ ` +
+                        `${effectiveTargetDensity.toFixed(2)}), but grid restrictions needed`
+                    );
+                }
+
+                const result = this.simplifyBeats(
+                    lockedBeats,
+                    'custom',
+                    composite.quarterNoteInterval,
+                    false,
+                    phraseAnalysis,
+                    bpm,
+                    gridLock,
+                    durationSeconds,
+                    allowedGridTypes,
+                    effectiveTargetDensity
+                );
+
+                const finalBeats = this.enforceSingleGridPerBeat(result.beats);
+
+                return {
+                    difficulty: 'custom',
+                    beats: finalBeats,
+                    isUnedited: result.metadata.beatsRemoved === 0 && !densityClamped,
+                    editType: result.metadata.beatsRemoved > 0 ? 'simplified' : 'none',
+                    editAmount: result.metadata.totalBeatsBefore > 0
+                        ? (result.metadata.totalBeatsBefore - result.metadata.totalBeatsAfter) / result.metadata.totalBeatsBefore
+                        : 0,
+                    conversionMetadata: result.metadata,
+                    densityClamped,
+                };
+            }
+
+            // No changes needed — density matches and grid types are all allowed
+            const finalBeats = this.enforceSingleGridPerBeat(lockedBeats);
+
+            return {
+                difficulty: 'custom',
+                beats: finalBeats,
+                isUnedited: !densityClamped,
+                editType: 'none',
+                editAmount: 0,
+            };
+        }
     }
 
     /**
