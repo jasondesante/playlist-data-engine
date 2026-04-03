@@ -271,6 +271,93 @@ export function getTempoAwareAllowedGridTypes(
 }
 
 // ============================================================================
+// Density-Based Generation Helpers
+// ============================================================================
+
+/**
+ * Grid hierarchy mapping: maxGridType → derived set of allowed grid types.
+ *
+ * When a caller specifies a maximum grid type, all coarser grid types are
+ * implicitly allowed. This mapping encodes the hierarchy from finest to coarsest.
+ */
+const GRID_HIERARCHY: Record<ExtendedGridType, ExtendedGridType[]> = {
+    straight_4th: ['straight_4th'],
+    straight_8th: ['straight_8th', 'quarter_triplet'],
+    quarter_triplet: ['quarter_triplet', 'straight_8th'], // same tier as straight_8th
+    triplet_8th: ['triplet_8th', 'straight_8th', 'quarter_triplet'],
+    straight_16th: ['straight_16th', 'triplet_8th', 'straight_8th', 'quarter_triplet'],
+};
+
+/**
+ * Derive allowed grid types from a DensityGenerationConfig and BPM.
+ *
+ * This is the core helper for density-based generation. It:
+ * 1. Looks up the base set of allowed grid types from the hierarchy based on `maxGridType`
+ * 2. Optionally applies BPM-based restrictions if `bpmBasedQuantization` is true
+ *
+ * @param config - The density generation configuration
+ * @param bpm - Current BPM for tempo-aware restrictions
+ * @returns Array of allowed ExtendedGridType values
+ */
+export function deriveAllowedGridTypes(
+    config: DensityGenerationConfig,
+    bpm: number
+): ExtendedGridType[] {
+    // Step 1: Derive base allowed types from the grid hierarchy
+    const baseTypes = GRID_HIERARCHY[config.maxGridType] ?? [config.maxGridType];
+
+    // Step 2: If BPM-based quantization is not enabled, return base types as-is
+    if (!config.bpmBasedQuantization) {
+        return [...baseTypes];
+    }
+
+    // Step 3: Apply BPM-based restrictions
+    const restrictBpm = config.restrictBpm ?? MEDIUM_RESTRICT_BPM;     // default 70
+    const quarterNoteBpm = config.quarterNoteBpm ?? EASY_QUARTER_NOTE_BPM; // default 120
+
+    let result = [...baseTypes];
+
+    // At BPM >= restrictBpm (default 70): remove straight_16th and triplet_8th
+    if (bpm >= restrictBpm) {
+        result = result.filter(t => t !== 'straight_16th' && t !== 'triplet_8th');
+    }
+
+    // At BPM > quarterNoteBpm (default 120): remove straight_8th too (only quarter notes remain)
+    if (bpm > quarterNoteBpm) {
+        result = result.filter(t => t !== 'straight_8th');
+    }
+
+    return result;
+}
+
+/**
+ * Calculate the maximum achievable density (notes/second) for a given set of
+ * allowed grid types at a specific BPM.
+ *
+ * This is used to detect impossible configurations (e.g., requesting 4.0 nps
+ * with only 8th notes at 60 BPM, where max achievable is ~2.0 nps).
+ *
+ * @param allowedGridTypes - The grid types that are allowed
+ * @param bpm - Current BPM
+ * @returns Maximum achievable density in notes/second
+ */
+export function calculateMaxAchievableDensity(
+    allowedGridTypes: ExtendedGridType[],
+    bpm: number
+): number {
+    if (allowedGridTypes.length === 0 || bpm <= 0) {
+        return 0;
+    }
+
+    const quarterNoteInterval = 60 / bpm;
+    const maxPositionsPerBeat = Math.max(
+        ...allowedGridTypes.map(g => GRID_TYPE_MAX_POSITIONS[g])
+    );
+    return maxPositionsPerBeat / quarterNoteInterval;
+}
+
+
+// ============================================================================
 // Types
 // ============================================================================
 

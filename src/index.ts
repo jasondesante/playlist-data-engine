@@ -631,6 +631,8 @@ export {
     type DifficultyVariantConfig,
     type DensityGenerationConfig,
     type VariantBeat,
+    deriveAllowedGridTypes,
+    calculateMaxAchievableDensity,
 } from './core/analysis/beat/DifficultyVariantGenerator.js';
 
 // Rhythmic Balancer (between Phase 3.2 and 3.3)
