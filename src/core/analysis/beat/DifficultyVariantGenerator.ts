@@ -923,13 +923,15 @@ export class DifficultyVariantGenerator {
      * @param targetDifficulty - Target difficulty level for default grid type
      * @param bpm - BPM for tempo-aware grid type defaults
      * @param gridDecisions - Optional grid decisions from quantized streams
+     * @param allowedGridTypes - Optional override for allowed grid types (bypasses getTempoAwareAllowedGridTypes)
      * @returns Grid lock result with cleaned beats and locked grid map
      */
     lockGridPerBeatIndex(
         beats: CompositeBeat[],
         targetDifficulty: DifficultyLevel,
         bpm: number,
-        gridDecisions?: Map<number, GridDecision>
+        gridDecisions?: Map<number, GridDecision>,
+        allowedGridTypes?: ExtendedGridType[]
     ): GridLockResult {
         // 1.1.1: Run enforceSingleGridPerBeat() to resolve mixed grids
         const cleanedBeats = this.enforceSingleGridPerBeat(beats);
@@ -963,8 +965,8 @@ export class DifficultyVariantGenerator {
             gridLock.set(beatIndex, beatsAtIndex[0].gridType);
         }
 
-        // Get allowed grid types for this difficulty/bpm for fallback
-        const allowedGridTypes = getTempoAwareAllowedGridTypes(targetDifficulty, bpm);
+        // Get allowed grid types for this difficulty/bpm for fallback (or use override)
+        const effectiveAllowedGridTypes = allowedGridTypes ?? getTempoAwareAllowedGridTypes(targetDifficulty, bpm);
 
         // 1.1.3: Fill empty indices using gridDecisions, neighbor fallback, or default
         for (let beatIndex = 0; beatIndex <= maxBeatIndex; beatIndex++) {
@@ -997,7 +999,7 @@ export class DifficultyVariantGenerator {
             // Default to first allowed grid type for target difficulty
             // For easy: 'straight_8th' (or 'straight_4th' at high BPM)
             // For medium/hard: 'straight_8th' or 'straight_16th' depending on BPM
-            const defaultGrid = allowedGridTypes[0] ?? 'straight_8th';
+            const defaultGrid = effectiveAllowedGridTypes[0] ?? 'straight_8th';
             gridLock.set(beatIndex, defaultGrid);
         }
 

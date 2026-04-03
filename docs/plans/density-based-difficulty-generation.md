@@ -203,9 +203,9 @@ The density variant is a plain `DifficultyVariant` with `difficulty: 'custom'`. 
   - [x] Cap `beatsToAdd` to prevent runaway enhancement (max 4x current density)
   - [x] When both omitted, existing behavior unchanged
 
-- [ ] **2.6 Refactor `lockGridPerBeatIndex()` — add optional override param**
-  - [ ] Add `allowedGridTypes?: ExtendedGridType[]` param
-  - [ ] New signature:
+- [x] **2.6 Refactor `lockGridPerBeatIndex()` — add optional override param**
+  - [x] Add `allowedGridTypes?: ExtendedGridType[]` param
+  - [x] New signature:
     ```typescript
     lockGridPerBeatIndex(
         beats: CompositeBeat[],
@@ -215,8 +215,8 @@ The density variant is a plain `DifficultyVariant` with `difficulty: 'custom'`. 
         allowedGridTypes?: ExtendedGridType[]    // NEW: override getTempoAwareAllowedGridTypes() for defaults
     ): GridLockResult
     ```
-  - [ ] When `allowedGridTypes` is provided, use it as the fallback for empty beat indices instead of `getTempoAwareAllowedGridTypes(targetDifficulty, bpm)` (line 797)
-  - [ ] When omitted, existing behavior unchanged. This method is already public, so the new param is backwards-compatible
+  - [x] When `allowedGridTypes` is provided, use it as the fallback for empty beat indices instead of `getTempoAwareAllowedGridTypes(targetDifficulty, bpm)` (line 797)
+  - [x] When omitted, existing behavior unchanged. This method is already public, so the new param is backwards-compatible
 
 - [ ] **2.7 Verify `reduceDensityToTarget()` needs no changes**
   - [ ] Confirm it already accepts `targetCount` and `durationSeconds` as optional params and is called through `simplifyBeats()` — no refactoring needed
