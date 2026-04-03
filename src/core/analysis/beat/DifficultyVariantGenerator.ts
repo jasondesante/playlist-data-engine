@@ -2683,7 +2683,9 @@ export class DifficultyVariantGenerator {
         phraseAnalysis?: PhraseAnalysisResult,
         gridDecisions?: Map<number, GridDecision>,
         quarterNoteInterval: number = 0.5,
-        gridLock?: Map<number, ExtendedGridType>
+        gridLock?: Map<number, ExtendedGridType>,
+        allowedGridTypes?: ExtendedGridType[],    // Override getTempoAwareAllowedGridTypes() for maxBeatsPerIndex
+        targetDensity?: number                    // Override calculateBeatsToAdd() target
     ): { beats: VariantBeat[]; metadata: EnhancementMetadata } {
         const durationSeconds = unifiedBeatMap?.duration ?? 120;
         const metadata: EnhancementMetadata = {
@@ -2692,6 +2694,24 @@ export class DifficultyVariantGenerator {
             patternsInserted: 0,
             interpolatedBeats: 0,
             insertedPatternIds: [],
+        };
+
+        // Helper: convert grid type to allowed type, respecting override when provided.
+        // When allowedGridTypes override is given, snap to closest allowed type.
+        // Otherwise, use the standard difficulty-based conversion.
+        const snapToAllowedGridType = (gridType: ExtendedGridType): ExtendedGridType => {
+            if (allowedGridTypes) {
+                if (allowedGridTypes.includes(gridType)) return gridType;
+                // Snap down through hierarchy: 16th -> triplet_8th -> 8th -> quarter_triplet -> 4th
+                const hierarchy: ExtendedGridType[] = ['straight_16th', 'triplet_8th', 'straight_8th', 'quarter_triplet', 'straight_4th'];
+                const idx = hierarchy.indexOf(gridType);
+                for (let i = idx + 1; i < hierarchy.length; i++) {
+                    if (allowedGridTypes.includes(hierarchy[i])) return hierarchy[i];
+                }
+                // Fallback: return the coarsest allowed type
+                return allowedGridTypes[allowedGridTypes.length - 1] ?? gridType;
+            }
+            return convertToAllowedGridType(gridType, targetDifficulty, bpm);
         };
 
         // If no beats to enhance, return empty
@@ -2717,12 +2737,25 @@ export class DifficultyVariantGenerator {
         // Calculate exactly how many beats to add from the density target range,
         // then distribute that count across indices deterministically.
         const maxBeatIndex = Math.max(...Array.from(beatsByIndex.keys()));
-        const { beatsToAdd } = this.calculateBeatsToAdd(
-            cleanedBeats.length,
-            durationSeconds,
-            bpm,
-            targetDifficulty
-        );
+
+        // Override: when targetDensity is provided (density-based generation path),
+        // compute beatsToAdd directly instead of using difficulty-based calculation.
+        // Cap to prevent runaway enhancement (max 4x current density).
+        let beatsToAdd: number;
+        if (targetDensity !== undefined) {
+            const targetCount = Math.round(targetDensity * durationSeconds);
+            beatsToAdd = Math.max(0, targetCount - cleanedBeats.length);
+            const maxBeatsAllowed = Math.max(0, 3 * cleanedBeats.length);  // max 4x current density
+            beatsToAdd = Math.min(beatsToAdd, maxBeatsAllowed);
+        } else {
+            const result = this.calculateBeatsToAdd(
+                cleanedBeats.length,
+                durationSeconds,
+                bpm,
+                targetDifficulty
+            );
+            beatsToAdd = result.beatsToAdd;
+        }
         const densitySeed = this.config.seed ?? `enhance:${maxBeatIndex}:${cleanedBeats.length}`;
         const targetBeatsPerBeat = this.distributeBeatsAcrossIndices(
             beatsToAdd,
@@ -2770,7 +2803,7 @@ export class DifficultyVariantGenerator {
                 // Convert to allowed type for the target difficulty before using it
                 const rawLockedGrid = gridLock?.get(beatIndex);
                 const lockedGridForIndex = rawLockedGrid
-                    ? convertToAllowedGridType(rawLockedGrid, targetDifficulty, bpm)
+                    ? snapToAllowedGridType(rawLockedGrid)
                     : undefined;
 
                 // Empty beat index — create beats from scratch using grid lock,
@@ -2804,7 +2837,7 @@ export class DifficultyVariantGenerator {
             // Task 1.3.3: Use locked grid type from gridLock if available, otherwise derive from existing beats
             // Convert to allowed type for the target difficulty
             const rawGridForIndex = gridLock?.get(beatIndex) ?? existingBeats[0].gridType;
-            const gridForIndex = convertToAllowedGridType(rawGridForIndex, targetDifficulty, bpm);
+            const gridForIndex = snapToAllowedGridType(rawGridForIndex);
 
             // Try pattern insertion first (if enabled and phrase analysis available)
             let addedFromPattern = 0;

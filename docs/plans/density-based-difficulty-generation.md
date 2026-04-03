@@ -180,7 +180,7 @@ The density variant is a plain `DifficultyVariant` with `difficulty: 'custom'`. 
   - [x] When `targetDensity` is provided, compute `targetCount = Math.round(targetDensity * durationSeconds)` directly instead of calling `calculateBeatCountTarget()` (line 1338-1340)
   - [x] When both omitted, existing behavior is unchanged — all existing callers pass no extra args, zero regression risk
 
-- [ ] **2.5 Refactor `enhanceBeats()` — add optional override params**
+- [x] **2.5 Refactor `enhanceBeats()` — add optional override params**
   - [ ] Add `allowedGridTypes?: ExtendedGridType[]` param (override `getTempoAwareAllowedGridTypes()` for maxBeatsPerIndex)
   - [ ] Add `targetDensity?: number` param (override `calculateBeatsToAdd()` target)
   - [ ] New signature:
