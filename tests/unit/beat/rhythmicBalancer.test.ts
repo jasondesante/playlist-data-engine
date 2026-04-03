@@ -16,11 +16,11 @@ import {
     isMetricWeakBeat,
     isStrongBeatForEmphasis,
 } from '../../../src/core/analysis/beat/RhythmicBalancer.js';
-import type { CompositeBeat } from '../../../src/core/analysis/beat/CompositeStreamGenerator.js';
+import type { CompositeBeat, CompositeStream } from '../../../src/core/analysis/beat/CompositeStreamGenerator.js';
 import type {
     UnifiedBeatMap,
     Beat,
-    DownbeatConfig,
+    BeatMapMetadata,
     DownbeatSegment,
 } from '../../../src/core/types/BeatMap.js';
 import type { GridType } from '../../../src/core/analysis/beat/RhythmQuantizer.js';
@@ -98,6 +98,13 @@ function createMockUnifiedBeatMap(options: {
         quarterNoteInterval,
         quarterNoteBpm: bpm,
         downbeatConfig: { segments },
+        originalMetadata: {
+            version: '1.0.0',
+            algorithm: 'test',
+            minBpm: bpm - 20,
+            maxBpm: bpm + 20,
+            sensitivity: 1.0,
+        } as BeatMapMetadata,
     };
 }
 
@@ -127,19 +134,18 @@ function createMockCompositeBeat(options: {
 /**
  * Create a minimal CompositeStream for testing
  */
-function createMockCompositeStream(beats: CompositeBeat[]): {
-    beats: CompositeBeat[];
-    sections: [];
-    naturalDifficulty: 'easy' | 'medium' | 'hard';
-    quarterNoteInterval: number;
-    metadata: { totalBeats: number };
-} {
+function createMockCompositeStream(beats: CompositeBeat[]): CompositeStream {
     return {
         beats,
         sections: [],
         naturalDifficulty: 'medium',
         quarterNoteInterval: 0.5,
-        metadata: { totalBeats: beats.length },
+        metadata: {
+            totalBeats: beats.length,
+            sectionCount: 0,
+            beatsPerBand: { low: 0, mid: beats.length, high: 0 },
+            sectionsPerBand: { low: 0, mid: 0, high: 0 },
+        },
     };
 }
 
@@ -294,7 +300,7 @@ describe('RhythmicBalancer', () => {
             const result = balancer.balance(composite, unifiedBeatMap);
 
             // The lone "e" should now be at gridPosition 0 (downbeat)
-            const shiftedBeat = result.beats.find((b) => b.beatIndex === 4);
+            const shiftedBeat = result.composite.beats.find((b) => b.beatIndex === 4);
             expect(shiftedBeat).toBeDefined();
             expect(shiftedBeat!.gridPosition).toBe(0);
             expect(shiftedBeat!.intensity).toBe(0.7); // preserved
@@ -325,7 +331,7 @@ describe('RhythmicBalancer', () => {
             const balancer = new RhythmicBalancer();
             const result = balancer.balance(composite, unifiedBeatMap);
 
-            const shiftedBeat = result.beats.find((b) => b.beatIndex === 4);
+            const shiftedBeat = result.composite.beats.find((b) => b.beatIndex === 4);
             expect(shiftedBeat).toBeDefined();
             expect(shiftedBeat!.gridPosition).toBe(0);
             expect(shiftedBeat!.intensity).toBe(0.8); // preserved
@@ -357,9 +363,9 @@ describe('RhythmicBalancer', () => {
             const result = balancer.balance(composite, unifiedBeatMap);
 
             // Both beats should be unchanged
-            expect(result.beats.length).toBe(2);
-            const beat0 = result.beats.find((b) => b.beatIndex === 0);
-            const beat4 = result.beats.find((b) => b.beatIndex === 4);
+            expect(result.composite.beats.length).toBe(2);
+            const beat0 = result.composite.beats.find((b) => b.beatIndex === 0);
+            const beat4 = result.composite.beats.find((b) => b.beatIndex === 4);
 
             expect(beat0!.gridPosition).toBe(0);
             expect(beat0!.intensity).toBe(0.9);
@@ -405,7 +411,7 @@ describe('RhythmicBalancer', () => {
             const result = balancer.balance(composite, unifiedBeatMap);
 
             // All original beats should be present with same grid positions
-            const measure1Beats = result.beats.filter((b) => b.beatIndex === 4);
+            const measure1Beats = result.composite.beats.filter((b) => b.beatIndex === 4);
             expect(measure1Beats.length).toBe(3);
             expect(measure1Beats.map((b) => b.gridPosition).sort()).toEqual([0, 1, 2]);
         });
@@ -434,16 +440,16 @@ describe('RhythmicBalancer', () => {
             const result = balancer.balance(composite, unifiedBeatMap);
 
             // Should have added beats for measures 1 and 3
-            expect(result.beats.length).toBe(4);
+            expect(result.composite.beats.length).toBe(4);
 
             // Check measure 1 (beatIndex 4) has a beat
-            const measure1Beat = result.beats.find((b) => b.beatIndex === 4);
+            const measure1Beat = result.composite.beats.find((b) => b.beatIndex === 4);
             expect(measure1Beat).toBeDefined();
             expect(measure1Beat!.gridPosition).toBe(0);
             expect(measure1Beat!.intensity).toBe(DEFAULT_RHYTHMIC_BALANCE_CONFIG.addedBeatIntensity);
 
             // Check measure 3 (beatIndex 12) has a beat
-            const measure3Beat = result.beats.find((b) => b.beatIndex === 12);
+            const measure3Beat = result.composite.beats.find((b) => b.beatIndex === 12);
             expect(measure3Beat).toBeDefined();
             expect(measure3Beat!.gridPosition).toBe(0);
         });
@@ -466,7 +472,7 @@ describe('RhythmicBalancer', () => {
             const result = balancer.balance(composite, unifiedBeatMap);
 
             // Should only have the original beat (no filling)
-            expect(result.beats.length).toBe(1);
+            expect(result.composite.beats.length).toBe(1);
         });
 
         it('should use configured addedBeatIntensity for new beats', () => {
@@ -486,7 +492,7 @@ describe('RhythmicBalancer', () => {
             });
             const result = balancer.balance(composite, unifiedBeatMap);
 
-            const addedBeat = result.beats.find((b) => b.beatIndex === 4);
+            const addedBeat = result.composite.beats.find((b) => b.beatIndex === 4);
             expect(addedBeat!.intensity).toBe(0.55);
         });
 
@@ -505,7 +511,7 @@ describe('RhythmicBalancer', () => {
             const balancer = new RhythmicBalancer();
             const result = balancer.balance(composite, unifiedBeatMap);
 
-            const addedBeat = result.beats.find((b) => b.beatIndex === 4);
+            const addedBeat = result.composite.beats.find((b) => b.beatIndex === 4);
             expect(addedBeat!.band).toBe('mid');
             expect(addedBeat!.sourceBand).toBe('mid');
         });
@@ -555,6 +561,13 @@ describe('RhythmicBalancer', () => {
                 quarterNoteInterval,
                 quarterNoteBpm: bpm,
                 downbeatConfig: { segments },
+                originalMetadata: {
+                    version: '1.0.0',
+                    algorithm: 'test',
+                    minBpm: bpm - 20,
+                    maxBpm: bpm + 20,
+                    sensitivity: 1.0,
+                } as BeatMapMetadata,
             };
 
             const compositeBeats: CompositeBeat[] = [
@@ -570,7 +583,7 @@ describe('RhythmicBalancer', () => {
             // Should not throw
             const result = balancer.balance(composite, partialBeatMap);
 
-            expect(result.beats.length).toBeGreaterThan(0);
+            expect(result.composite.beats.length).toBeGreaterThan(0);
         });
 
         it('should handle empty composite stream', () => {
@@ -581,8 +594,8 @@ describe('RhythmicBalancer', () => {
             const result = balancer.balance(composite, unifiedBeatMap);
 
             // Should add beats for all measures
-            expect(result.beats.length).toBe(4); // 4 measures
-            expect(result.beats.every((b) => b.gridPosition === 0)).toBe(true);
+            expect(result.composite.beats.length).toBe(4); // 4 measures
+            expect(result.composite.beats.every((b) => b.gridPosition === 0)).toBe(true);
         });
 
         it('should handle composite with beats outside unified beat map range', () => {
@@ -607,7 +620,7 @@ describe('RhythmicBalancer', () => {
             // Should not throw - beats outside range are kept as-is
             const result = balancer.balance(composite, unifiedBeatMap);
 
-            expect(result.beats.length).toBeGreaterThanOrEqual(2);
+            expect(result.composite.beats.length).toBeGreaterThanOrEqual(2);
         });
     });
 
@@ -623,18 +636,23 @@ describe('RhythmicBalancer', () => {
                         gridPosition: 0,
                     }),
                 ],
-                sections: [{ sourceBand: 'mid' as const, score: 0.8, beatRange: { start: 0, end: 3 } }],
+                sections: [{ sourceBand: 'mid' as const, score: 0.8, beatRange: { start: 0, end: 3 }, margin: 0.1 }],
                 naturalDifficulty: 'hard' as const,
                 quarterNoteInterval: 0.4,
-                metadata: { totalBeats: 1 },
+                metadata: {
+                    totalBeats: 1,
+                    sectionCount: 1,
+                    beatsPerBand: { low: 0, mid: 1, high: 0 },
+                    sectionsPerBand: { low: 0, mid: 1, high: 0 },
+                },
             };
 
             const balancer = new RhythmicBalancer();
             const result = balancer.balance(composite, unifiedBeatMap);
 
-            expect(result.sections).toEqual(composite.sections);
-            expect(result.naturalDifficulty).toBe('hard');
-            expect(result.quarterNoteInterval).toBe(0.4);
+            expect(result.composite.sections).toEqual(composite.sections);
+            expect(result.composite.naturalDifficulty).toBe('hard');
+            expect(result.composite.quarterNoteInterval).toBe(0.4);
         });
 
         it('should update metadata.totalBeats after balancing', () => {
@@ -652,7 +670,7 @@ describe('RhythmicBalancer', () => {
             const result = balancer.balance(composite, unifiedBeatMap);
 
             // Should have added beats for measures 1, 2, 3
-            expect(result.metadata.totalBeats).toBe(4);
+            expect(result.composite.metadata.totalBeats).toBe(4);
         });
 
         it('should sort beats by timestamp after processing', () => {
@@ -676,9 +694,9 @@ describe('RhythmicBalancer', () => {
             const result = balancer.balance(composite, unifiedBeatMap);
 
             // Verify sorted order
-            for (let i = 1; i < result.beats.length; i++) {
-                expect(result.beats[i].timestamp).toBeGreaterThanOrEqual(
-                    result.beats[i - 1].timestamp
+            for (let i = 1; i < result.composite.beats.length; i++) {
+                expect(result.composite.beats[i].timestamp).toBeGreaterThanOrEqual(
+                    result.composite.beats[i - 1].timestamp
                 );
             }
         });
@@ -724,7 +742,7 @@ describe('enforceDownbeatProximity (Task 3.2)', () => {
         const result = balancer.balance(composite, unifiedBeatMap);
 
         // The upbeat should be kept — there's a downbeat at the same beatIndex
-        const upbeat = result.beats.find(b => b.beatIndex === 4 && b.gridPosition === 1);
+        const upbeat = result.composite.beats.find(b => b.beatIndex === 4 && b.gridPosition === 1);
         expect(upbeat).toBeDefined();
         expect(upbeat!.intensity).toBe(0.7);
     });
@@ -762,7 +780,7 @@ describe('enforceDownbeatProximity (Task 3.2)', () => {
         const result = balancer.balance(composite, unifiedBeatMap);
 
         // The upbeat should be shifted to gridPosition 0
-        const shiftedBeat = result.beats.find(b => b.beatIndex === 5);
+        const shiftedBeat = result.composite.beats.find(b => b.beatIndex === 5);
         expect(shiftedBeat).toBeDefined();
         expect(shiftedBeat!.gridPosition).toBe(0);
         expect(shiftedBeat!.intensity).toBe(0.7); // preserved
@@ -799,7 +817,7 @@ describe('enforceDownbeatProximity (Task 3.2)', () => {
         const result = balancer.balance(composite, unifiedBeatMap);
 
         // The upbeat should be kept — downbeat is 1 beat away, within range 2
-        const upbeat = result.beats.find(b => b.beatIndex === 5 && b.gridPosition === 1);
+        const upbeat = result.composite.beats.find(b => b.beatIndex === 5 && b.gridPosition === 1);
         expect(upbeat).toBeDefined();
     });
 
@@ -837,7 +855,7 @@ describe('enforceDownbeatProximity (Task 3.2)', () => {
         const result = balancer.balance(composite, unifiedBeatMap);
 
         // beatIndex 4 should be shifted — nearest original downbeat is at index 0 (4 away)
-        const shiftedBeat = result.beats.find(b => b.beatIndex === 4);
+        const shiftedBeat = result.composite.beats.find(b => b.beatIndex === 4);
         expect(shiftedBeat).toBeDefined();
         expect(shiftedBeat!.gridPosition).toBe(0);
         expect(shiftedBeat!.intensity).toBe(0.65); // preserved
@@ -875,7 +893,7 @@ describe('enforceDownbeatProximity (Task 3.2)', () => {
         const result = balancer.balance(composite, unifiedBeatMap);
 
         // The upbeat should be kept — downbeat is 3 beats away, within range 4
-        const upbeat = result.beats.find(b => b.beatIndex === 7 && b.gridPosition === 2);
+        const upbeat = result.composite.beats.find(b => b.beatIndex === 7 && b.gridPosition === 2);
         expect(upbeat).toBeDefined();
     });
 
@@ -902,7 +920,7 @@ describe('enforceDownbeatProximity (Task 3.2)', () => {
         const result = balancer.balance(composite, unifiedBeatMap);
 
         // The downbeat should be completely unchanged
-        const downbeat = result.beats.find(b => b.beatIndex === 12);
+        const downbeat = result.composite.beats.find(b => b.beatIndex === 12);
         expect(downbeat).toBeDefined();
         expect(downbeat!.gridPosition).toBe(0);
         expect(downbeat!.intensity).toBe(0.8);
@@ -941,7 +959,7 @@ describe('Non-4/4 Time Signatures', () => {
         const result = balancer.balance(composite, unifiedBeatMap);
 
         // Should be shifted to downbeat
-        const shiftedBeat = result.beats.find((b) => b.beatIndex === 3);
+        const shiftedBeat = result.composite.beats.find((b) => b.beatIndex === 3);
         expect(shiftedBeat!.gridPosition).toBe(0);
     });
 
@@ -965,7 +983,7 @@ describe('Non-4/4 Time Signatures', () => {
 
         // Each measure should have at least one beat
         const measureCounts = new Map<number, number>();
-        for (const beat of result.beats) {
+        for (const beat of result.composite.beats) {
             const beatInfo = unifiedBeatMap.beats[beat.beatIndex];
             if (beatInfo) {
                 const count = measureCounts.get(beatInfo.measureNumber) ?? 0;
