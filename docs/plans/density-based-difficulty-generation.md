@@ -352,7 +352,7 @@ The density variant is a plain `DifficultyVariant` with `difficulty: 'custom'`. 
 **File**: `tests/unit/beat/densityBasedGeneration.test.ts` (new)
 
 - [ ] **Core generation tests**
-  - [ ] `generateAtDensity()` with density higher than natural -> enhancement occurs
+  - [x] `generateAtDensity()` with density higher than natural -> enhancement occurs
   - [ ] `generateAtDensity()` with density lower than natural -> simplification occurs
   - [ ] `generateAtDensity()` with density matching natural -> grid restrictions still applied (no tolerance)
   - [ ] `generateAtDensity()` with density 0 -> empty or near-empty result
