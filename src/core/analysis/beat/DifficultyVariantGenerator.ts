@@ -1800,8 +1800,8 @@ export class DifficultyVariantGenerator {
     ): BeatCountTarget {
         const targetRange = SUBDIVISION_LIMITS[targetDifficulty].targetDensityRange;
 
-        // For natural difficulty, use current density as target
-        if (targetDifficulty === 'natural') {
+        // For natural and custom difficulty, use current density as target
+        if (targetDifficulty === 'natural' || targetDifficulty === 'custom') {
             const currentDensity = durationSeconds > 0 ? currentBeatCount / durationSeconds : 0;
             return {
                 targetCount: currentBeatCount,

@@ -140,7 +140,7 @@ The density variant is a plain `DifficultyVariant` with `difficulty: 'custom'`. 
     ```
   - [x] Used to detect impossible configurations and apply best-effort clamping
 
-- [ ] **2.3 Handle `'custom'` in existing methods**
+- [x] **2.3 Handle `'custom'` in existing methods**
   - [x] Add `'custom'` branch to `getTempoAwareAllowedGridTypes()` (line 218) — before the exhaustive check at line 248:
     ```typescript
     if (difficulty === 'custom') {
