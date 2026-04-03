@@ -1037,6 +1037,51 @@ export class ButtonMapper {
     // ============================================================================
 
     /**
+     * Map buttons for a standalone difficulty variant
+     *
+     * Takes a difficulty variant directly (e.g., from generateAtDensity()) along with
+     * rhythm metadata, then assigns buttons based on pitch direction/interval and
+     * pattern library fallback.
+     *
+     * For 'custom' difficulty variants, pattern selection defaults to 'medium' difficulty.
+     *
+     * @param variant - The difficulty variant to map (can be preset or 'custom')
+     * @param rhythmMetadata - Rhythm metadata from the GeneratedRhythm
+     * @param pitchAnalysis - Optional pitch analysis from MelodyContourAnalyzer
+     * @returns Mapped level result with button assignments
+     */
+    mapVariant(
+        variant: DifficultyVariant,
+        rhythmMetadata: RhythmMetadata,
+        pitchAnalysis?: PitchAtBeat[]
+    ): MappedLevelResult {
+        // Map buttons for this variant (variant.difficulty is used for pattern selection)
+        const assignments = this.mapButtons(variant, pitchAnalysis, variant.difficulty);
+
+        // Build metadata
+        const buttonMetadata = this.buildMetadata(assignments, pitchAnalysis);
+
+        // Build per-beat key assignments map
+        const keyAssignments = new Map<number, string>();
+        const mappingSources = new Map<number, 'pitch' | 'pattern'>();
+        const mappingPatternIds = new Map<number, string | undefined>();
+        for (const assignment of assignments) {
+            keyAssignments.set(assignment.beatIndex, String(assignment.key));
+            mappingSources.set(assignment.beatIndex, assignment.source);
+            mappingPatternIds.set(assignment.beatIndex, assignment.patternId);
+        }
+
+        return {
+            variant,
+            rhythmMetadata,
+            buttonMetadata,
+            keyAssignments,
+            mappingSources,
+            mappingPatternIds,
+        };
+    }
+
+    /**
      * Main entry point - map buttons for a difficulty variant
      *
      * Takes a generated rhythm and optional pitch analysis, then assigns buttons
@@ -1055,30 +1100,8 @@ export class ButtonMapper {
         // Get the appropriate difficulty variant
         const variant = generatedRhythm.difficultyVariants[difficulty];
 
-        // Map buttons for this variant
-        const assignments = this.mapButtons(variant, pitchAnalysis, difficulty);
-
-        // Build metadata
-        const buttonMetadata = this.buildMetadata(assignments, pitchAnalysis);
-
-        // Build per-beat key assignments map
-        const keyAssignments = new Map<number, string>();
-        const mappingSources = new Map<number, 'pitch' | 'pattern'>();
-        const mappingPatternIds = new Map<number, string | undefined>();
-        for (const assignment of assignments) {
-            keyAssignments.set(assignment.beatIndex, String(assignment.key));
-            mappingSources.set(assignment.beatIndex, assignment.source);
-            mappingPatternIds.set(assignment.beatIndex, assignment.patternId);
-        }
-
-        return {
-            variant,
-            rhythmMetadata: generatedRhythm.metadata,
-            buttonMetadata,
-            keyAssignments,
-            mappingSources,
-            mappingPatternIds,
-        };
+        // Delegate to mapVariant for the actual mapping
+        return this.mapVariant(variant, generatedRhythm.metadata, pitchAnalysis);
     }
 
     /**

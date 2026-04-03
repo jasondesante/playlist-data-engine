@@ -272,8 +272,8 @@ The density variant is a plain `DifficultyVariant` with `difficulty: 'custom'`. 
 
 **File**: `src/core/generation/ButtonMapper.ts`
 
-- [ ] **4.1 Add `mapVariant()` method**
-  - [ ] The existing `ButtonMapper.map()` accesses `rhythm.difficultyVariants[difficulty]` which only works for preset difficulty labels stored on `GeneratedRhythm`. For standalone density variants, add a method that accepts a variant directly:
+- [x] **4.1 Add `mapVariant()` method**
+  - [x] The existing `ButtonMapper.map()` accesses `rhythm.difficultyVariants[difficulty]` which only works for preset difficulty labels stored on `GeneratedRhythm`. For standalone density variants, add a method that accepts a variant directly:
     ```typescript
     mapVariant(
         variant: DifficultyVariant,
@@ -281,19 +281,19 @@ The density variant is a plain `DifficultyVariant` with `difficulty: 'custom'`. 
         pitchAnalysis?: PitchAtBeat[]
     ): MappedLevelResult
     ```
-  - [ ] Reuses all existing mapping logic (`mapButtons()`, `buildMetadata()`) but takes a variant directly instead of looking it up from `GeneratedRhythm`
-  - [ ] Refactor existing `map()` method to call `mapVariant()` internally:
+  - [x] Reuses all existing mapping logic (`mapButtons()`, `buildMetadata()`) but takes a variant directly instead of looking it up from `GeneratedRhythm`
+  - [x] Refactor existing `map()` method to call `mapVariant()` internally:
     ```typescript
     map(
         generatedRhythm: GeneratedRhythm,
-        difficulty: DifficultyLevel,
+        difficulty: PresetDifficultyLevel,
         pitchAnalysis?: PitchAtBeat[]
     ): MappedLevelResult {
         const variant = generatedRhythm.difficultyVariants[difficulty];
         return this.mapVariant(variant, generatedRhythm.metadata, pitchAnalysis);
     }
     ```
-  - [ ] For `mapButtons()` pattern selection with `'custom'` variants: default to `'medium'` pattern selection since the density path doesn't define a pattern difficulty
+  - [x] For `mapButtons()` pattern selection with `'custom'` variants: default to `'medium'` pattern selection since the density path doesn't define a pattern difficulty
 
 ---
 
