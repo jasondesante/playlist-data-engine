@@ -42,7 +42,14 @@ import { mergeButtonMappingConfig } from '../types/ButtonMapping.js';
 import type { DifficultyPreset } from '../types/BeatMap.js';
 import type { UnifiedBeatMap } from '../types/BeatMap.js';
 import type { ChartedBeatMap } from '../types/ChartedBeatMap.js';
-import type { DifficultyVariant, DifficultyLevel } from '../analysis/beat/DifficultyVariantGenerator.js';
+import {
+    DifficultyVariantGenerator,
+    type DifficultyVariant,
+    type DifficultyLevel,
+    type DensityGenerationConfig,
+} from '../analysis/beat/DifficultyVariantGenerator.js';
+import type { GridDecision } from '../analysis/beat/RhythmQuantizer.js';
+import type { QuantizedBandStreams } from '../analysis/beat/RhythmQuantizer.js';
 
 // ============================================================================
 // Type Definitions
@@ -698,6 +705,401 @@ export class LevelGenerator {
             hard: results.hard!,
             natural: results.natural!,
         };
+    }
+
+    /**
+     * Generate a level at a specific target density
+     *
+     * This method provides fine-grained control over difficulty by allowing
+     * independent specification of target density (notes/second) and maximum
+     * quantization grid. Unlike the preset-based `generate()` method, this
+     * enables a continuous spectrum of difficulty.
+     *
+     * @param audioBuffer - Web Audio API AudioBuffer to analyze
+     * @param unifiedBeatMap - The unified beat map for measure/beat info
+     * @param config - Density generation configuration
+     * @param progressCallback - Optional callback for progress updates
+     * @param signal - Optional AbortSignal for cancellation
+     * @returns Generated level with playable chart
+     * @throws {DOMException} If the operation is cancelled via signal
+     *
+     * @example
+     * ```typescript
+     * const generator = new LevelGenerator({
+     *   controllerMode: 'ddr',
+     *   buttons: { pitchInfluenceWeight: 0.8 },
+     * });
+     *
+     * // Dense chart with only 8th note quantization
+     * const denseLevel = await generator.generateAtDensity(
+     *   audioBuffer,
+     *   beatMap,
+     *   { targetDensity: 3.0, maxGridType: 'straight_8th' }
+     * );
+     *
+     * // Sparse chart with 16th note grid allowed
+     * const sparseLevel = await generator.generateAtDensity(
+     *   audioBuffer,
+     *   beatMap,
+     *   { targetDensity: 0.5, maxGridType: 'straight_16th' }
+     * );
+     * ```
+     */
+    async generateAtDensity(
+        audioBuffer: AudioBuffer,
+        unifiedBeatMap: UnifiedBeatMap,
+        config: DensityGenerationConfig,
+        progressCallback?: LevelProgressCallback,
+        signal?: AbortSignal
+    ): Promise<GeneratedLevel> {
+        const progress = (stage: LevelGenerationProgress['stage'], p: number, message: string) => {
+            progressCallback?.({ stage, progress: p, message });
+        };
+
+        // Check for cancellation at start
+        signal?.throwIfAborted();
+
+        // Get audio ID for cache key
+        const audioId = unifiedBeatMap.audioId;
+
+        // Phase 1: Generate rhythm (with caching or use provided cached rhythm)
+        progress('rhythm', 0, 'Starting rhythm generation...');
+
+        let rhythm: GeneratedRhythm | null = null;
+
+        // First check if a cached rhythm was provided via options
+        if (this.options.cachedRhythm) {
+            rhythm = this.options.cachedRhythm;
+            progress('rhythm', 1, 'Using pre-generated rhythm from store');
+        } else {
+            // Otherwise use internal caching
+            const rhythmCacheKey = this.generateCacheKey(
+                audioId,
+                'rhythm',
+                this.createConfigFingerprint('rhythm')
+            );
+
+            rhythm = this.getFromCache<GeneratedRhythm>(rhythmCacheKey);
+
+            if (rhythm) {
+                progress('rhythm', 1, 'Rhythm loaded from cache');
+            } else {
+                rhythm = await this.generateRhythm(
+                    audioBuffer,
+                    unifiedBeatMap,
+                    (phase, p, msg) => {
+                        progress('rhythm', p, `[${phase}] ${msg}`);
+                    },
+                    signal
+                );
+                this.setCache(rhythmCacheKey, rhythm);
+                progress('rhythm', 1, 'Rhythm generation complete');
+            }
+        }
+
+        // Check for cancellation after rhythm generation
+        signal?.throwIfAborted();
+
+        // Phase 2: Generate density-based variant
+        progress('buttons', 0, 'Generating density-based variant...');
+
+        // Collect grid decisions from quantization result
+        const gridDecisions = this.collectGridDecisions(rhythm.analysis.quantizationResult);
+
+        // Create a DifficultyVariantGenerator for density generation
+        const variantGenerator = new DifficultyVariantGenerator({
+            seed: this.options.seed,
+        });
+
+        // Generate the custom density variant
+        const variant = variantGenerator.generateAtDensity(
+            rhythm.composite,
+            config,
+            unifiedBeatMap,
+            rhythm.analysis.phraseAnalysis,
+            gridDecisions
+        );
+
+        progress('buttons', 0.3, 'Density variant generated');
+
+        // Phase 3: Analyze pitch (if enabled, with caching)
+        let pitchAnalysis: MelodyContourAnalysisResult | null = null;
+
+        if (this.buttonConfig.pitchInfluenceWeight > 0 && this.buttonConfig.controllerMode !== 'tap') {
+            const pitchCacheKey = this.generateCacheKey(
+                audioId,
+                'pitch',
+                this.createConfigFingerprint('pitch')
+            );
+
+            pitchAnalysis = this.getFromCache<MelodyContourAnalysisResult>(pitchCacheKey);
+
+            if (pitchAnalysis) {
+                progress('pitch', 0.5, 'Pitch analysis loaded from cache');
+            } else {
+                progress('pitch', 0, 'Starting pitch analysis...');
+                pitchAnalysis = await this.analyzePitch(audioBuffer, rhythm, (p, msg) => {
+                    progress('pitch', p, msg);
+                });
+                this.setCache(pitchCacheKey, pitchAnalysis);
+                progress('pitch', 1, 'Pitch analysis complete');
+            }
+        } else {
+            progress('pitch', 1, 'Pitch analysis skipped');
+        }
+
+        // Check for cancellation after pitch analysis
+        signal?.throwIfAborted();
+
+        // Phase 4: Map buttons using the custom variant
+        progress('buttons', 0.6, 'Mapping buttons...');
+        const buttonMapper = new ButtonMapper(this.buttonConfig);
+        const mappedResult = buttonMapper.mapVariant(
+            variant,
+            rhythm.metadata,
+            pitchAnalysis?.pitchByBeat
+        );
+        progress('buttons', 1, 'Button mapping complete');
+
+        // Check for cancellation after button mapping
+        signal?.throwIfAborted();
+
+        // Phase 5: Convert to ChartedBeatMap
+        progress('conversion', 0, 'Converting to playable chart...');
+        const chart = this.convertToChart(mappedResult, unifiedBeatMap);
+        progress('conversion', 1, 'Chart conversion complete');
+
+        // Check for cancellation before finalizing
+        signal?.throwIfAborted();
+
+        // Phase 6: Finalize
+        progress('finalizing', 0, 'Finalizing level...');
+        const level = this.buildLevel(chart, mappedResult, rhythm, pitchAnalysis);
+        progress('finalizing', 1, 'Level generation complete');
+
+        return level;
+    }
+
+    /**
+     * Generate levels for multiple density configurations in one call
+     *
+     * This method efficiently reuses cached rhythm and pitch analysis results
+     * across all density configurations, similar to how `generateAllDifficulties()`
+     * works for preset difficulties.
+     *
+     * @param audioBuffer - Web Audio API AudioBuffer to analyze
+     * @param unifiedBeatMap - The unified beat map for measure/beat info
+     * @param configs - Array of labeled density configurations
+     * @param progressCallback - Optional callback for progress updates
+     * @param signal - Optional AbortSignal for cancellation
+     * @returns Map of labels to generated levels
+     * @throws {DOMException} If the operation is cancelled via signal
+     *
+     * @example
+     * ```typescript
+     * const generator = new LevelGenerator({
+     *   controllerMode: 'ddr',
+     *   buttons: { pitchInfluenceWeight: 0.8 },
+     * });
+     *
+     * const levels = await generator.generateAtDensities(
+     *   audioBuffer,
+     *   beatMap,
+     *   [
+     *     { label: 'sparse', config: { targetDensity: 0.5, maxGridType: 'straight_8th' } },
+     *     { label: 'medium', config: { targetDensity: 2.0, maxGridType: 'straight_16th' } },
+     *     { label: 'dense', config: { targetDensity: 3.5, maxGridType: 'straight_16th' } },
+     *   ]
+     * );
+     *
+     * const sparseLevel = levels.get('sparse');
+     * const denseLevel = levels.get('dense');
+     * ```
+     */
+    async generateAtDensities(
+        audioBuffer: AudioBuffer,
+        unifiedBeatMap: UnifiedBeatMap,
+        configs: { label: string; config: DensityGenerationConfig }[],
+        progressCallback?: LevelProgressCallback,
+        signal?: AbortSignal
+    ): Promise<Map<string, GeneratedLevel>> {
+        const results = new Map<string, GeneratedLevel>();
+
+        // Check for cancellation at start
+        signal?.throwIfAborted();
+
+        // Get audio ID for cache key
+        const audioId = unifiedBeatMap.audioId;
+
+        // Phase 1: Generate rhythm once (shared across all configs)
+        progressCallback?.({
+            stage: 'rhythm',
+            progress: 0,
+            message: 'Starting rhythm generation...',
+        });
+
+        let rhythm: GeneratedRhythm | null = null;
+
+        // First check if a cached rhythm was provided via options
+        if (this.options.cachedRhythm) {
+            rhythm = this.options.cachedRhythm;
+            progressCallback?.({
+                stage: 'rhythm',
+                progress: 1,
+                message: 'Using pre-generated rhythm from store',
+            });
+        } else {
+            // Otherwise use internal caching
+            const rhythmCacheKey = this.generateCacheKey(
+                audioId,
+                'rhythm',
+                this.createConfigFingerprint('rhythm')
+            );
+
+            rhythm = this.getFromCache<GeneratedRhythm>(rhythmCacheKey);
+
+            if (rhythm) {
+                progressCallback?.({
+                    stage: 'rhythm',
+                    progress: 1,
+                    message: 'Rhythm loaded from cache',
+                });
+            } else {
+                rhythm = await this.generateRhythm(
+                    audioBuffer,
+                    unifiedBeatMap,
+                    undefined,
+                    signal
+                );
+                this.setCache(rhythmCacheKey, rhythm);
+                progressCallback?.({
+                    stage: 'rhythm',
+                    progress: 1,
+                    message: 'Rhythm generation complete',
+                });
+            }
+        }
+
+        // Check for cancellation after rhythm generation
+        signal?.throwIfAborted();
+
+        // Phase 2: Analyze pitch once (shared across all configs)
+        let pitchAnalysis: MelodyContourAnalysisResult | null = null;
+
+        if (this.buttonConfig.pitchInfluenceWeight > 0 && this.buttonConfig.controllerMode !== 'tap') {
+            const pitchCacheKey = this.generateCacheKey(
+                audioId,
+                'pitch',
+                this.createConfigFingerprint('pitch')
+            );
+
+            pitchAnalysis = this.getFromCache<MelodyContourAnalysisResult>(pitchCacheKey);
+
+            if (pitchAnalysis) {
+                progressCallback?.({
+                    stage: 'pitch',
+                    progress: 1,
+                    message: 'Pitch analysis loaded from cache',
+                });
+            } else {
+                progressCallback?.({
+                    stage: 'pitch',
+                    progress: 0,
+                    message: 'Starting pitch analysis...',
+                });
+                pitchAnalysis = await this.analyzePitch(audioBuffer, rhythm);
+                this.setCache(pitchCacheKey, pitchAnalysis);
+                progressCallback?.({
+                    stage: 'pitch',
+                    progress: 1,
+                    message: 'Pitch analysis complete',
+                });
+            }
+        }
+
+        // Check for cancellation after pitch analysis
+        signal?.throwIfAborted();
+
+        // Collect grid decisions from quantization result (shared across all variants)
+        const gridDecisions = this.collectGridDecisions(rhythm.analysis.quantizationResult);
+
+        // Create a DifficultyVariantGenerator for density generation
+        const variantGenerator = new DifficultyVariantGenerator({
+            seed: this.options.seed,
+        });
+
+        // Phase 3: Generate each density variant independently
+        for (let i = 0; i < configs.length; i++) {
+            const { label, config } = configs[i];
+
+            progressCallback?.({
+                stage: 'buttons',
+                progress: i / configs.length,
+                message: `Generating ${label} density variant...`,
+            });
+
+            // Check for cancellation before each variant
+            signal?.throwIfAborted();
+
+            // Generate the custom density variant
+            const variant = variantGenerator.generateAtDensity(
+                rhythm.composite,
+                config,
+                unifiedBeatMap,
+                rhythm.analysis.phraseAnalysis,
+                gridDecisions
+            );
+
+            // Map buttons using the custom variant
+            const buttonMapper = new ButtonMapper(this.buttonConfig);
+            const mappedResult = buttonMapper.mapVariant(
+                variant,
+                rhythm.metadata,
+                pitchAnalysis?.pitchByBeat
+            );
+
+            // Convert to ChartedBeatMap
+            const chart = this.convertToChart(mappedResult, unifiedBeatMap);
+
+            // Build the final level
+            const level = this.buildLevel(chart, mappedResult, rhythm, pitchAnalysis);
+
+            results.set(label, level);
+        }
+
+        progressCallback?.({
+            stage: 'finalizing',
+            progress: 1,
+            message: 'All density variants generated',
+        });
+
+        return results;
+    }
+
+    /**
+     * Collect grid decisions from quantization result
+     *
+     * Merges grid decisions from all bands into a single map.
+     * When multiple bands have decisions for the same beat index,
+     * the decision with higher confidence is used.
+     */
+    private collectGridDecisions(quantizationResult: QuantizedBandStreams): Map<number, GridDecision> {
+        const gridDecisions = new Map<number, GridDecision>();
+
+        const allDecisions = [
+            ...quantizationResult.streams.low.gridDecisions,
+            ...quantizationResult.streams.mid.gridDecisions,
+            ...quantizationResult.streams.high.gridDecisions,
+        ];
+
+        for (const decision of allDecisions) {
+            const existing = gridDecisions.get(decision.beatIndex);
+            if (!existing || decision.confidence > existing.confidence) {
+                gridDecisions.set(decision.beatIndex, decision);
+            }
+        }
+
+        return gridDecisions;
     }
 
     // ============================================================================

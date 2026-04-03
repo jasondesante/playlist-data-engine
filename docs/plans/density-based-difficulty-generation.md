@@ -301,7 +301,7 @@ The density variant is a plain `DifficultyVariant` with `difficulty: 'custom'`. 
 
 **File**: `src/core/generation/LevelGenerator.ts`
 
-- [ ] **5.1 Add `generateAtDensity()` method**
+- [x] **5.1 Add `generateAtDensity()` method**
   ```typescript
   async generateAtDensity(
       audioBuffer: AudioBuffer,
@@ -311,15 +311,15 @@ The density variant is a plain `DifficultyVariant` with `difficulty: 'custom'`. 
       signal?: AbortSignal
   ): Promise<GeneratedLevel>
   ```
-  - [ ] Generate rhythm (reuse cached rhythm if available, same as `generate()`)
-  - [ ] Get the balanced composite from `rhythm.composite`
-  - [ ] Call `this.variantGenerator.generateAtDensity(composite, config, unifiedBeatMap, phraseAnalysis, gridDecisions)` to get `DifficultyVariant`
-  - [ ] Run pitch analysis if enabled (reuse cached pitch if available)
-  - [ ] Call `buttonMapper.mapVariant(variant, rhythm.metadata, pitchAnalysis?.pitchByBeat)` for button mapping
-  - [ ] Convert to `ChartedBeatMap` via `BeatConverter.fromMappedResult()`
-  - [ ] Return `GeneratedLevel` (same type as `generate()`, fully compatible downstream)
+  - [x] Generate rhythm (reuse cached rhythm if available, same as `generate()`)
+  - [x] Get the balanced composite from `rhythm.composite`
+  - [x] Call `this.variantGenerator.generateAtDensity(composite, config, unifiedBeatMap, phraseAnalysis, gridDecisions)` to get `DifficultyVariant`
+  - [x] Run pitch analysis if enabled (reuse cached pitch if available)
+  - [x] Call `buttonMapper.mapVariant(variant, rhythm.metadata, pitchAnalysis?.pitchByBeat)` for button mapping
+  - [x] Convert to `ChartedBeatMap` via `BeatConverter.fromMappedResult()`
+  - [x] Return `GeneratedLevel` (same type as `generate()`, fully compatible downstream)
 
-- [ ] **5.2 Add `generateAtDensities()` batch method**
+- [x] **5.2 Add `generateAtDensities()` batch method**
   ```typescript
   async generateAtDensities(
       audioBuffer: AudioBuffer,
@@ -329,9 +329,9 @@ The density variant is a plain `DifficultyVariant` with `difficulty: 'custom'`. 
       signal?: AbortSignal
   ): Promise<Map<string, GeneratedLevel>>
   ```
-  - [ ] Generates rhythm and pitch analysis once (shared across all configs)
-  - [ ] Generates each density variant independently via `generateAtDensity()`
-  - [ ] Returns a `Map` keyed by label
+  - [x] Generates rhythm and pitch analysis once (shared across all configs)
+  - [x] Generates each density variant independently via `generateAtDensity()`
+  - [x] Returns a `Map` keyed by label
 
 ---
 
