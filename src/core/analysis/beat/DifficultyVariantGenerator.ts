@@ -294,6 +294,59 @@ export type DifficultyLevel = 'easy' | 'medium' | 'hard' | 'natural' | 'custom';
 export type PresetDifficultyLevel = 'easy' | 'medium' | 'hard' | 'natural';
 
 /**
+ * Configuration for density-based level generation
+ *
+ * Provides independent control over target density (notes/second) and maximum
+ * quantization grid, enabling a continuous spectrum of difficulty alongside
+ * the existing easy/medium/hard/natural presets.
+ *
+ * @example
+ * ```typescript
+ * // Dense chart with only 8th note quantization
+ * const config: DensityGenerationConfig = {
+ *   targetDensity: 3.0,
+ *   maxGridType: 'straight_8th'
+ * };
+ *
+ * // Sparse chart with 16th note quantization allowed
+ * const config: DensityGenerationConfig = {
+ *   targetDensity: 0.5,
+ *   maxGridType: 'straight_16th'
+ * };
+ *
+ * // With BPM-based quantization restrictions
+ * const config: DensityGenerationConfig = {
+ *   targetDensity: 2.0,
+ *   maxGridType: 'straight_16th',
+ *   bpmBasedQuantization: true,  // At 80 BPM, this restricts to 8ths
+ *   restrictBpm: 70              // Custom threshold (default: 70)
+ * };
+ * ```
+ */
+export interface DensityGenerationConfig {
+    /** Target density in notes per second */
+    targetDensity: number;
+
+    /** Maximum quantization grid allowed (independent of density) */
+    maxGridType: ExtendedGridType;
+
+    /**
+     * When true, apply BPM-based restrictions on top of maxGridType.
+     * Uses medium's thresholds (default: 70 BPM):
+     *   - At BPM >= restrictBpm: straight_16th and triplet_8th restricted to straight_8th
+     * When false, only maxGridType is enforced regardless of BPM.
+     * Default: false
+     */
+    bpmBasedQuantization?: boolean;
+
+    /** BPM threshold for restricting 16th/triplet_8th to 8ths. Default: 70 (MEDIUM_RESTRICT_BPM) */
+    restrictBpm?: number;
+
+    /** BPM threshold for restricting 8ths to quarter notes. Default: 120 (EASY_QUARTER_NOTE_BPM) */
+    quarterNoteBpm?: number;
+}
+
+/**
  * Maximum subdivision type
  */
 export type MaxSubdivision = 'eighth' | 'sixteenth';

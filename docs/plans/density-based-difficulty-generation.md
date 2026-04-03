@@ -78,7 +78,7 @@ The density variant is a plain `DifficultyVariant` with `difficulty: 'custom'`. 
   ```
   This entry is a fallback/sentinel. When `'custom'` is used, the actual allowed grid types and density target come from the `DensityGenerationConfig`, not from this static config.
 
-- [ ] **1.3 Add `DensityGenerationConfig` interface**
+- [x] **1.3 Add `DensityGenerationConfig` interface**
   ```typescript
   export interface DensityGenerationConfig {
       /** Target density in notes per second */
