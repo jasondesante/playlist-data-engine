@@ -739,7 +739,7 @@ export type DifficultyPreset = 'easy' | 'medium' | 'hard' | 'natural' | 'custom'
 export const EASY_ACCURACY_THRESHOLDS: AccuracyThresholds = {
     perfect: 0.020,  // ±20ms
     great: 0.035,    // ±35ms
-    good: 0.060,     // ±60ms
+    good: 0.075,     // ±75ms
     ok: 0.125,       // ±125ms
 } as const;
 
