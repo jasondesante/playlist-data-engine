@@ -2529,6 +2529,7 @@ constructor(options?: RhythmGenerationOptions)
 | `verbose` | `false` | Log progress information |
 | `enableCache` | `true` | Enable caching of intermediate results |
 | `cacheMaxAge` | `1800000` | Maximum cache entry age in ms (30 min) |
+| `skipDifficultyVariants` | `false` | When `true`, skip generating preset difficulty variants (easy/medium/hard/natural). The composite stream and all analysis results are still produced. Used by density-based generation where preset variants are not needed. When skipped, `GeneratedRhythm.difficultyVariants` is `null`. |
 
 **Methods:**
 

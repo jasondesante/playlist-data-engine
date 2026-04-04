@@ -31,6 +31,7 @@ import { RhythmGenerator } from './RhythmGenerator.js';
 import type { RhythmGenerationOptions, GeneratedRhythm, RhythmMetadata } from './RhythmGenerator.js';
 import { PitchBeatLinker } from './PitchBeatLinker.js';
 import type { PitchBeatLinkerConfig } from './PitchBeatLinker.js';
+import type { PitchAtBeat } from './PitchBeatLinker.js';
 import type { PitchAlgorithm } from '../analysis/EssentiaPitchDetector.js';
 import { MelodyContourAnalyzer } from '../analysis/MelodyContourAnalyzer.js';
 import type { MelodyContourAnalysisResult } from '../analysis/MelodyContourAnalyzer.js';
@@ -790,7 +791,8 @@ export class LevelGenerator {
                     (phase, p, msg) => {
                         progress('rhythm', p, `[${phase}] ${msg}`);
                     },
-                    signal
+                    signal,
+                    true // skipDifficultyVariants — density-based mode doesn't need preset variants
                 );
                 this.setCache(rhythmCacheKey, rhythm);
                 progress('rhythm', 1, 'Rhythm generation complete');
@@ -874,7 +876,7 @@ export class LevelGenerator {
 
         // Phase 6: Finalize
         progress('finalizing', 0, 'Finalizing level...');
-        const level = this.buildLevel(chart, mappedResult, rhythm, pitchAnalysis);
+        const level = this.buildLevel(chart, mappedResult, rhythm, pitchAnalysis, 'custom');
         progress('finalizing', 1, 'Level generation complete');
 
         return level;
@@ -969,7 +971,8 @@ export class LevelGenerator {
                     audioBuffer,
                     unifiedBeatMap,
                     undefined,
-                    signal
+                    signal,
+                    true // skipDifficultyVariants — density-based mode doesn't need preset variants
                 );
                 this.setCache(rhythmCacheKey, rhythm);
                 progressCallback?.({
@@ -1062,7 +1065,7 @@ export class LevelGenerator {
             const chart = this.convertToChart(mappedResult, unifiedBeatMap);
 
             // Build the final level
-            const level = this.buildLevel(chart, mappedResult, rhythm, pitchAnalysis);
+            const level = this.buildLevel(chart, mappedResult, rhythm, pitchAnalysis, 'custom');
 
             results.set(label, level);
         }
@@ -1113,9 +1116,13 @@ export class LevelGenerator {
         audioBuffer: AudioBuffer,
         unifiedBeatMap: UnifiedBeatMap,
         progressCallback?: (phase: string, progress: number, message: string) => void,
-        signal?: AbortSignal
+        signal?: AbortSignal,
+        skipVariants?: boolean
     ): Promise<GeneratedRhythm> {
-        const rhythmGenerator = new RhythmGenerator(this.options.rhythm);
+        const rhythmGenerator = new RhythmGenerator({
+            ...this.options.rhythm,
+            skipDifficultyVariants: skipVariants,
+        });
 
         const rhythm = await rhythmGenerator.generate(
             audioBuffer,
@@ -1169,19 +1176,23 @@ export class LevelGenerator {
 
         progressCallback?.(0.8, 'Deriving variant pitches...');
 
-        // Get the target difficulty level
-        const difficultyLevel: DifficultyLevel = this.options.difficulty === 'custom' ? 'medium' : this.options.difficulty;
-
-        // Derive variant pitches from enriched composite (with direction/interval from contour analysis)
-        const variantPitches = pitchLinker.deriveVariantPitches(
-            generatedRhythm.difficultyVariants[difficultyLevel],
-            contourResult.pitchByBeat
-        );
+        // Derive pitches for button mapping
+        // When difficulty variants were skipped (density-based generation), use composite pitches directly
+        let pitchByBeat: PitchAtBeat[];
+        if (!generatedRhythm.difficultyVariants) {
+            pitchByBeat = contourResult.pitchByBeat;
+        } else {
+            const difficultyLevel: DifficultyLevel = this.options.difficulty === 'custom' ? 'medium' : this.options.difficulty;
+            pitchByBeat = pitchLinker.deriveVariantPitches(
+                generatedRhythm.difficultyVariants[difficultyLevel],
+                contourResult.pitchByBeat
+            );
+        }
 
         // Return the full contour analysis with variant pitches for button mapping
         return {
             ...contourResult,
-            pitchByBeat: variantPitches,
+            pitchByBeat,
         };
     }
 
@@ -1229,10 +1240,11 @@ export class LevelGenerator {
         chart: ChartedBeatMap,
         mappedResult: MappedLevelResult,
         rhythm: GeneratedRhythm,
-        pitchAnalysis: MelodyContourAnalysisResult | null
+        pitchAnalysis: MelodyContourAnalysisResult | null,
+        difficultyOverride?: DifficultyPreset
     ): GeneratedLevel {
         const metadata: LevelMetadata = {
-            difficulty: this.options.difficulty,
+            difficulty: difficultyOverride ?? this.options.difficulty,
             controllerMode: this.options.controllerMode,
             rhythmMetadata: mappedResult.rhythmMetadata,
             buttonMetadata: mappedResult.buttonMetadata,

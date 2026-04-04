@@ -3009,7 +3009,7 @@ The procedural rhythm generation system automatically creates interesting subdiv
 ### Overview
 
 The system produces a `GeneratedRhythm` containing:
-- **3 difficulty variants** (easy/medium/hard) of a composite rhythm stream
+- **4 difficulty variants** (easy/medium/hard/natural) of a composite rhythm stream. May be `null` when `skipDifficultyVariants` is enabled (density-based generation mode).
 - **Individual band streams** (low/mid/high frequency bands) for advanced use
 - **Analysis results** including transients, phrases, and density metrics
 

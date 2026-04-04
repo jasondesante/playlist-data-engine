@@ -1098,7 +1098,7 @@ export class ButtonMapper {
         pitchAnalysis?: PitchAtBeat[]
     ): MappedLevelResult {
         // Get the appropriate difficulty variant
-        const variant = generatedRhythm.difficultyVariants[difficulty];
+        const variant = generatedRhythm.difficultyVariants![difficulty];
 
         // Delegate to mapVariant for the actual mapping
         return this.mapVariant(variant, generatedRhythm.metadata, pitchAnalysis);

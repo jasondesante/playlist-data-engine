@@ -851,6 +851,7 @@ export class LevelSerializer {
                 verbose: false,
                 enableCache: true,
                 cacheMaxAge: 30 * 60 * 1000,
+                skipDifficultyVariants: false,
             },
             duration: data.duration,
             totalBeats: data.mergedBeats.length,
