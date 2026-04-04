@@ -31,7 +31,7 @@ import type { TempoDetectorConfig, TempoEstimate } from '../../types/BeatMap.js'
 const DEFAULT_TEMPO_DETECTOR_CONFIG: Required<TempoDetectorConfig> = {
     tempoCenter: 0.5,       // 0.5 seconds (120 BPM) - center of human tempo perception
     tempoWidth: 1.4,        // 1.4 octaves - width of tempo perception bias
-    minBpm: 60,             // Minimum BPM to detect
+    minBpm: 90,             // Minimum BPM to detect
     maxBpm: 180,            // Maximum BPM to detect
     useOctaveResolution: false,  // Disabled by default - opt-in for now
     useTripleMeter: false,  // Disabled by default - opt-in for triple meter music

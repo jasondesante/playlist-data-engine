@@ -85,7 +85,7 @@ interface GenerationState {
  *   hopSizeMs: 4,
  *   melBands: 40,
  *   gaussianSmoothMs: 20,
- *   minBpm: 60,
+ *   minBpm: 90,
  *   maxBpm: 180,
  *   dpAlpha: 680,
  * });

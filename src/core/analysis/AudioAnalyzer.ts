@@ -307,7 +307,7 @@ export class AudioAnalyzer {
      * ```typescript
      * const analyzer = new AudioAnalyzer();
      * const beatMap = await analyzer.generateBeatMap('song.mp3', 'track-001', {
-     *   minBpm: 60,
+     *   minBpm: 90,
      *   maxBpm: 180,
      *   dpAlpha: 680,
      * });

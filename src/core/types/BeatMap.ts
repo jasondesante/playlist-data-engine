@@ -523,7 +523,7 @@ export interface AudioSyncState {
  * ```
  */
 export interface BeatMapGeneratorOptions {
-    /** Minimum BPM to detect (default: 60) */
+    /** Minimum BPM to detect (default: 90) */
     minBpm?: number;
 
     /** Maximum BPM to detect (default: 180) */
@@ -1300,7 +1300,7 @@ export interface TempoDetectorConfig {
     /** Tempo width in octaves (default: 1.4, or 0.9 for stricter) */
     tempoWidth?: number;
 
-    /** Minimum BPM (default: 60) */
+    /** Minimum BPM (default: 90) */
     minBpm?: number;
 
     /** Maximum BPM (default: 180) */
@@ -1357,7 +1357,7 @@ export interface BeatMapGenerationProgress {
  * Default values for BeatMapGeneratorOptions
  */
 export const DEFAULT_BEATMAP_GENERATOR_OPTIONS: Required<BeatMapGeneratorOptions> = {
-    minBpm: 60,
+    minBpm: 90,
     maxBpm: 180,
     sensitivity: 1.0,
     filter: 0.0,
