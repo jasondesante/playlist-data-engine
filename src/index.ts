@@ -663,6 +663,14 @@ export {
     type PitchResult,
 } from './core/analysis/PitchDetector.js';
 
+// Essentia Pitch Detector (WASM algorithms + CREPE)
+export {
+    EssentiaPitchDetector,
+    DEFAULT_CREPE_MODEL_URL,
+    type EssentiaPitchAlgorithm,
+    type PitchAlgorithm,
+} from './core/analysis/EssentiaPitchDetector.js';
+
 // Pitch Beat Linker
 export {
     PitchBeatLinker,

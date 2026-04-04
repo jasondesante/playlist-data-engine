@@ -376,6 +376,48 @@ const profile = await classifier.analyze('https://example.com/track.mp3');
 | **Mood** | Two-step (effnet + classifier) | JAMENDO_MOODS (60 themes) | Arweave |
 | **Danceability** | Single-step (musicnn) | Binary | Turbo Gateway |
 
+#### Using Presets
+
+Instead of raw URLs, use preset names to select pre-configured models. This is the simplest way to swap genre/mood/danceability models without managing URLs.
+
+```typescript
+import { MusicClassifier } from 'playlist-data-engine';
+
+// Use presets for genre and mood
+const classifier = new MusicClassifier({
+    preset: { genre: 'jamendo', mood: 'jamendo' }
+});
+
+// Mix presets with custom URLs — explicit models take precedence
+const classifier = new MusicClassifier({
+    preset: { genre: 'tzanetakis' },
+    models: {
+        mood: { modelUrl: '/models/custom-mood.json', modelType: 'musicnn' }
+    }
+});
+```
+
+**Available presets:**
+
+| Category | Preset | Architecture | Labels |
+|----------|--------|--------------|--------|
+| Genre | `discogs400` | Two-step (effnet + discogs400) | 400+ subgenres |
+| Genre | `jamendo` | Two-step (effnet + jamendo) | MTG Jamendo 87 |
+| Genre | `tzanetakis` | Single-step (musicnn) | GTZAN 10 |
+| Genre | `musicnn` | Single-step (musicnn) | MagnaTagATune 50 |
+| Mood | `jamendo` | Two-step (effnet + jamendo) | 60 themes |
+| Mood | `happyMusicnn` | Single-step (musicnn) | Binary (happy/not happy) |
+| Danceability | `default` | Single-step (musicnn) | Binary |
+
+To enumerate available presets at runtime:
+
+```typescript
+import { AVAILABLE_PRESETS } from 'playlist-data-engine';
+console.log(AVAILABLE_PRESETS.genre);       // ['discogs400', 'jamendo', 'tzanetakis', 'musicnn']
+console.log(AVAILABLE_PRESETS.mood);        // ['jamendo', 'happyMusicnn']
+console.log(AVAILABLE_PRESETS.danceability); // ['default']
+```
+
 **Partial Override & Custom Arweave Models:**
 
 ```typescript

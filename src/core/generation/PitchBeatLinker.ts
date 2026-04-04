@@ -27,7 +27,7 @@
  */
 
 import { PitchDetector, type PitchResult, type PitchDetectorConfig } from '../analysis/PitchDetector.js';
-import { EssentiaPitchDetector, type EssentiaPitchAlgorithm, type PitchAlgorithm } from '../analysis/EssentiaPitchDetector.js';
+import { EssentiaPitchDetector, DEFAULT_CREPE_MODEL_URL, type EssentiaPitchAlgorithm, type PitchAlgorithm } from '../analysis/EssentiaPitchDetector.js';
 import {
     resampleAudio,
 } from '../analysis/beat/utils/audioUtils.js';
@@ -105,7 +105,7 @@ const DEFAULT_CONFIG: Required<Omit<PitchBeatLinkerConfig, 'pitchDetector'>> & {
     targetSampleRate: 44100,
     pitchDetector: {},
     pitchAlgorithm: 'pitch_melodia',
-    crepeModelUrl: 'https://arweave.net/PLACEHOLDER_CREPE_TINY',
+    crepeModelUrl: DEFAULT_CREPE_MODEL_URL,
 };
 
 // ============================================================================

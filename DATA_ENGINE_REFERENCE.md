@@ -3375,7 +3375,7 @@ Available pitch detection algorithms, separated by category:
 | `multipitch_melodia` | Multiple simultaneous F0 contours (MELODIA) | No | Multi F0 |
 | `multipitch_klapuri` | Harmonic summation multi-pitch detection | No | Multi F0 |
 
-**External model algorithm** (requires TFJS model loaded via `crepeModelUrl`):
+**External model algorithm** (uses `DEFAULT_CREPE_MODEL_URL` by default; override via `crepeModelUrl`):
 
 | Algorithm | Best For | Returns Confidence? | Polyphonic? |
 |-----------|----------|-------------------|-------------|
@@ -3407,7 +3407,7 @@ Uses a static factory pattern (same as `MusicClassifier`) to handle async WASM m
 | `frameSize` | number | 2048 | Frame size in samples (~46ms at 44.1kHz) |
 | `hopSize` | number | 128 | Hop size in samples (~2.9ms at 44.1kHz). Essentia prefers finer hop sizes than pYIN's 512. |
 | `targetSampleRate` | number | 44100 | Target sample rate for analysis |
-| `crepeModelUrl` | string | `'https://arweave.net/PLACEHOLDER_CREPE_TINY'` | URL to CREPE TFJS model (only for `pitch_crepe`) |
+| `crepeModelUrl` | string | `DEFAULT_CREPE_MODEL_URL` | URL to CREPE TFJS model (only for `pitch_crepe`). Omit to use the default Arweave-hosted model. |
 
 #### Algorithm Output Behavior
 

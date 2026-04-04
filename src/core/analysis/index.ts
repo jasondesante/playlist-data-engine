@@ -8,11 +8,10 @@ export { AudioAnalyzer } from './AudioAnalyzer.js';
 export { SpectrumScanner } from './SpectrumScanner.js';
 export { MusicClassifier } from './MusicClassifier.js';
 export { PitchDetector } from './PitchDetector.js';
-export { EssentiaPitchDetector } from './EssentiaPitchDetector.js';
+export { EssentiaPitchDetector, DEFAULT_CREPE_MODEL_URL } from './EssentiaPitchDetector.js';
 export type {
     EssentiaPitchAlgorithm,
     EssentiaPitchDetectorConfig,
-    CrepeModelVariant,
 } from './EssentiaPitchDetector.js';
 export { MultiBandAnalyzer } from './MultiBandAnalyzer.js';
 

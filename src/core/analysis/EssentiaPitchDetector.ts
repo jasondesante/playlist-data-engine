@@ -81,14 +81,6 @@ export type EssentiaPitchAlgorithm =
 export type PitchAlgorithm = 'pyin_legacy' | EssentiaPitchAlgorithm;
 
 /**
- * CREPE model variants for neural network pitch detection.
- *
- * All variants have been converted to browser-compatible TFJS format.
- * The `large` variant is the recommended default for best accuracy/speed tradeoff.
- */
-export type CrepeModelVariant = 'tiny' | 'small' | 'medium' | 'large' | 'full';
-
-/**
  * Configuration for the EssentiaPitchDetector.
  */
 export interface EssentiaPitchDetectorConfig {
@@ -133,8 +125,7 @@ export interface EssentiaPitchDetectorConfig {
     /**
      * URL to the CREPE TensorFlow.js model.
      * Only required when algorithm is 'pitch_crepe'.
-     * Should point to the model.json file of the converted TFJS model.
-     * @default 'https://arweave.net/PLACEHOLDER_CREPE_TINY'
+     * Omit to use DEFAULT_CREPE_MODEL_URL.
      */
     crepeModelUrl?: string;
 }
@@ -142,6 +133,14 @@ export interface EssentiaPitchDetectorConfig {
 // ============================================================================
 // Constants
 // ============================================================================
+
+/**
+ * Default CREPE TensorFlow.js model URL.
+ *
+ * Used when `crepeModelUrl` is not explicitly provided and algorithm is 'pitch_crepe'.
+ * Update this constant when the model is deployed to Arweave.
+ */
+export const DEFAULT_CREPE_MODEL_URL = 'https://arweave.net/_HoMwkbF0JUamTiVGWNnCCC5yDjcPry-ENhzN6Xn3U0/model.json';
 
 /**
  * Default configuration for EssentiaPitchDetector.
@@ -153,7 +152,7 @@ const DEFAULT_CONFIG: EssentiaPitchDetectorConfig = {
     frameSize: 2048,
     hopSize: 128,
     targetSampleRate: 44100,
-    crepeModelUrl: 'https://arweave.net/PLACEHOLDER_CREPE_TINY',
+    crepeModelUrl: DEFAULT_CREPE_MODEL_URL,
 };
 
 /** MIDI note number for A4 (440 Hz) */
@@ -264,7 +263,6 @@ export class EssentiaPitchDetector {
         if (this.initialized) return;
 
         // Load WASM backend (ES module version)
-        // @ts-expect-error essentia.js does not have types for dist files
         const wasmModule = await import('essentia.js/dist/essentia-wasm.es.js');
         const EssentiaWASM = wasmModule.EssentiaWASM;
 

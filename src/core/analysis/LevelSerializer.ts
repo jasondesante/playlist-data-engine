@@ -846,6 +846,7 @@ export class LevelSerializer {
                     downbeatProximityRange: 2,
                     fillEmptyMeasures: true,
                     addedBeatIntensity: 0.45,
+                    marginSeconds: 0.5,
                 },
                 seed: genMeta?.seed,
                 verbose: false,
