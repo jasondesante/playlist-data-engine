@@ -43,6 +43,7 @@
 
 import type { PitchResult } from './PitchDetector.js';
 import * as tf from '@tensorflow/tfjs';
+import { arweaveGatewayManager } from '../../utils/arweaveGatewayManager.js';
 
 // ============================================================================
 // Type Definitions
@@ -128,6 +129,12 @@ export interface EssentiaPitchDetectorConfig {
      * Omit to use DEFAULT_CREPE_MODEL_URL.
      */
     crepeModelUrl?: string;
+
+    /**
+     * Optional callback to resolve Arweave URLs before loading models.
+     * Used by the ArweaveGatewayManager to try alternate gateways on failure.
+     */
+    resolveUrl?: (url: string) => Promise<string>;
 }
 
 // ============================================================================
@@ -208,6 +215,13 @@ export class EssentiaPitchDetector {
     private initialized: boolean = false;
 
     /**
+     * Cache for resolved Arweave URLs.
+     * Avoids repeated gateway resolution calls for the same URL.
+     * @internal
+     */
+    private resolvedUrlCache: Map<string, string> = new Map();
+
+    /**
      * Private constructor - use static `create()` factory method instead.
      *
      * @param config - Detector configuration
@@ -235,6 +249,12 @@ export class EssentiaPitchDetector {
         config: Partial<EssentiaPitchDetectorConfig> = {}
     ): Promise<EssentiaPitchDetector> {
         const fullConfig = { ...DEFAULT_CONFIG, ...config };
+
+        // Use gateway manager as default resolver if none provided
+        if (!fullConfig.resolveUrl) {
+            fullConfig.resolveUrl = arweaveGatewayManager.resolveUrl.bind(arweaveGatewayManager);
+        }
+
         const detector = new EssentiaPitchDetector(fullConfig);
 
         // Load Essentia WASM module
@@ -275,21 +295,72 @@ export class EssentiaPitchDetector {
     }
 
     /**
-     * Load the CREPE TensorFlow.js model from a URL.
+     * Load the CREPE TensorFlow.js model from a URL with retry and gateway fallback.
      * @internal
      */
     private async loadCrepeModel(modelUrl: string): Promise<void> {
+        const resolvedUrl = await this.resolveUrlWithCache(modelUrl);
+        let lastError: Error | null = null;
+
+        for (let attempt = 0; attempt < 3; attempt++) {
+            try {
+                this.crepeModel = await tf.loadGraphModel(resolvedUrl);
+                // Warm up the model with a dummy inference to avoid JIT lag on first real call
+                const dummy = tf.zeros([1, 1024]);
+                tf.tidy(() => { this.crepeModel!.execute(dummy); });
+                dummy.dispose();
+                console.log(`[EssentiaPitchDetector] CREPE model loaded from ${resolvedUrl}`);
+                return;
+            } catch (error) {
+                lastError = error as Error;
+                const msg = String(error).toLowerCase();
+                const isTransient = msg.includes('fetch') || msg.includes('network') ||
+                    msg.includes('timeout') || msg.includes('failed to fetch') || msg.includes('networkerror');
+
+                if (!isTransient || attempt === 2) throw error;
+
+                const delay = 1000 * Math.pow(2, attempt);
+                console.warn(
+                    `[EssentiaPitchDetector] CREPE model load failed (attempt ${attempt + 1}/3), retrying in ${delay}ms...`,
+                    { originalUrl: modelUrl, resolvedUrl, error: String(error) }
+                );
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
+        }
+
+        throw new Error(
+            `Failed to load CREPE model from ${modelUrl}: ${lastError?.message ?? String(lastError)}`
+        );
+    }
+
+    /**
+     * Resolves a URL using the resolveUrl callback with caching.
+     * @internal
+     */
+    private async resolveUrlWithCache(url: string): Promise<string> {
+        if (this.resolvedUrlCache.has(url)) {
+            return this.resolvedUrlCache.get(url)!;
+        }
+        if (!this.config.resolveUrl) {
+            return url;
+        }
         try {
-            this.crepeModel = await tf.loadGraphModel(modelUrl);
-            // Warm up the model with a dummy inference to avoid JIT lag on first real call
-            const dummy = tf.zeros([1, 1024]);
-            tf.tidy(() => { this.crepeModel!.execute(dummy); });
-            dummy.dispose();
-            console.log(`[EssentiaPitchDetector] CREPE model loaded from ${modelUrl}`);
-        } catch (error) {
-            throw new Error(
-                `Failed to load CREPE model from ${modelUrl}: ${error instanceof Error ? error.message : String(error)}`
+            const resolvedUrl = await this.config.resolveUrl(url);
+            this.resolvedUrlCache.set(url, resolvedUrl);
+            if (resolvedUrl !== url) {
+                console.info(
+                    `[EssentiaPitchDetector] Resolved URL to alternate gateway`,
+                    { originalUrl: url, resolvedUrl }
+                );
+            }
+            return resolvedUrl;
+        } catch (resolveError) {
+            console.warn(
+                `[EssentiaPitchDetector] URL resolution failed, using original URL`,
+                { url, error: String(resolveError) }
             );
+            this.resolvedUrlCache.set(url, url);
+            return url;
         }
     }
 

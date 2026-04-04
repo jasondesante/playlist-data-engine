@@ -94,6 +94,9 @@ export interface PitchBeatLinkerConfig {
 
     /** URL to the CREPE TFJS model (only required when pitchAlgorithm is 'pitch_crepe') */
     crepeModelUrl?: string;
+
+    /** Optional callback to resolve Arweave URLs (gateway fallback for CREPE model) */
+    resolveUrl?: (url: string) => Promise<string>;
 }
 
 // ============================================================================
@@ -101,7 +104,9 @@ export interface PitchBeatLinkerConfig {
 // ============================================================================
 
 /** Default configuration for PitchBeatLinker */
-const DEFAULT_CONFIG: Required<Omit<PitchBeatLinkerConfig, 'pitchDetector'>> & { pitchDetector: Partial<PitchDetectorConfig> } = {
+type PitchBeatLinkerResolvedConfig = Required<Omit<PitchBeatLinkerConfig, 'pitchDetector' | 'resolveUrl'>> & { pitchDetector: Partial<PitchDetectorConfig>; resolveUrl?: (url: string) => Promise<string> };
+
+const DEFAULT_CONFIG: PitchBeatLinkerResolvedConfig = {
     targetSampleRate: 44100,
     pitchDetector: {},
     pitchAlgorithm: 'pitch_melodia',
@@ -119,7 +124,7 @@ const DEFAULT_CONFIG: Required<Omit<PitchBeatLinkerConfig, 'pitchDetector'>> & {
  * then matches pitch frames to beat timestamps.
  */
 export class PitchBeatLinker {
-    private config: Required<Omit<PitchBeatLinkerConfig, 'pitchDetector'>> & { pitchDetector: Partial<PitchDetectorConfig> };
+    private config: PitchBeatLinkerResolvedConfig;
     private fullSpectrumDetector: PitchDetector;
     private essentiaDetector: EssentiaPitchDetector | null = null;
 
@@ -155,7 +160,7 @@ export class PitchBeatLinker {
     /**
      * Get the current configuration
      */
-    getConfig(): Required<Omit<PitchBeatLinkerConfig, 'pitchDetector'>> & { pitchDetector: Partial<PitchDetectorConfig> } {
+    getConfig(): PitchBeatLinkerResolvedConfig {
         return { ...this.config };
     }
 
@@ -196,6 +201,7 @@ export class PitchBeatLinker {
                     minFrequency: this.config.pitchDetector.minFrequency ?? 80,
                     maxFrequency: this.config.pitchDetector.maxFrequency ?? 20000,
                     crepeModelUrl: this.config.crepeModelUrl,
+                    resolveUrl: this.config.resolveUrl,
                 });
                 console.log(`[PitchBeatLinker] Essentia detector initialized: ${this.config.pitchAlgorithm}`);
             }

@@ -88,6 +88,9 @@ export interface LevelGenerationOptions {
     /** URL to the CREPE TFJS model (only required when pitchAlgorithm is 'pitch_crepe') */
     crepeModelUrl?: string
 
+    /** Optional callback to resolve Arweave URLs (gateway fallback for CREPE model) */
+    resolveUrl?: (url: string) => Promise<string>
+
     /**
      * Probability threshold for voiced/unvoiced decision in pitch detection.
      * Higher values require stronger pitch signal to be considered "voiced".
@@ -1153,6 +1156,9 @@ export class LevelGenerator {
         }
         if (this.options.crepeModelUrl !== undefined) {
             pitchLinkerConfig.crepeModelUrl = this.options.crepeModelUrl;
+        }
+        if (this.options.resolveUrl !== undefined) {
+            pitchLinkerConfig.resolveUrl = this.options.resolveUrl;
         }
         if (this.options.voicingThreshold !== undefined) {
             pitchLinkerConfig.pitchDetector = {

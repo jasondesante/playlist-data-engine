@@ -1479,6 +1479,20 @@ Genre models auto-detect their taxonomy from URL keywords (see [`GenreListType`]
 | `isTwoStepModel()` | Type guard for two-step config |
 | `isSingleStepModel()` | Type guard for single-step config |
 
+### Arweave Gateway Resolution
+
+The engine includes a built-in Arweave gateway manager (`arweaveGatewayManager`) that provides automatic fallback to alternate gateways when Arweave URLs fail. `MusicClassifier`, `EssentiaPitchDetector`, `ColorExtractor`, and `PlaylistParser` all use this internally — no configuration needed.
+
+| Export | Description |
+|--------|-------------|
+| `arweaveGatewayManager` | Singleton instance for resolving Arweave URLs with gateway fallback |
+| `ArweaveGatewayManager` | Class: create custom instances with custom gateway lists |
+| `isArweaveUrl` | Utility: check if a URL is an Arweave transaction |
+
+**Gateway priority order:** arweave.net → ar.io → ardrive.net → turbo-gateway.com
+
+All model loading includes exponential backoff retries (1s, 2s, 4s) on transient failures, combined with automatic gateway resolution. Non-Arweave URLs pass through unchanged.
+
 ### ColorExtractor
 
 *Also known as: Color palette extractor, dominant colors, k-means color analyzer*

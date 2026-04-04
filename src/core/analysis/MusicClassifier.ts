@@ -4,6 +4,7 @@ import type {
     VibeMetrics
 } from '../types/AudioProfile.js';
 import * as tf from '@tensorflow/tfjs';
+import { arweaveGatewayManager } from '../../utils/arweaveGatewayManager.js';
 
 /**
  * Supported model architectures for audio feature extraction.
@@ -984,6 +985,11 @@ export class MusicClassifier {
             cacheEmbeddings: true,
             ...options
         };
+
+        // Use gateway manager as default resolver if none provided
+        if (!this.options.resolveUrl) {
+            this.options.resolveUrl = arweaveGatewayManager.resolveUrl.bind(arweaveGatewayManager);
+        }
 
         // Don't store preset in options — it's resolved and no longer needed
         delete this.options.preset;

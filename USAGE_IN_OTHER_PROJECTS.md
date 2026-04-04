@@ -532,20 +532,18 @@ All variables are optional. For complete configuration with examples and program
 
 ## Arweave Gateway Resolution
 
-The engine automatically resolves Arweave URLs with gateway fallback for reliability. This is used internally by `MusicClassifier`, `ColorExtractor`, and `PlaylistParser`.
+The engine includes a built-in Arweave gateway manager that automatically provides fallback to alternate gateways when Arweave URLs fail. `MusicClassifier`, `EssentiaPitchDetector`, `ColorExtractor`, and `PlaylistParser` all use this automatically — no configuration needed.
 
 For direct use in your application:
 
 ```typescript
-import { ArweaveGatewayManager } from 'playlist-data-engine';
-
-const gatewayManager = new ArweaveGatewayManager();
+import { arweaveGatewayManager } from 'playlist-data-engine';
 
 // Resolves Arweave URLs with automatic fallback to working gateways
-const workingUrl = await gatewayManager.resolveUrl('https://arweave.net/txId/model.json');
+const workingUrl = await arweaveGatewayManager.resolveUrl('https://arweave.net/txId/model.json');
 
 // Non-Arweave URLs are returned unchanged
-const regularUrl = await gatewayManager.resolveUrl('https://example.com/file.json');
+const regularUrl = await arweaveGatewayManager.resolveUrl('https://example.com/file.json');
 ```
 ---
 
