@@ -2934,6 +2934,7 @@ Post-processing step that enforces metric structure and downbeat anchoring on th
 1. `shiftLoneSubdivisionNotes()` — Move lone offbeat notes to downbeats
 2. `fillEmptyMeasures()` — Ensure every measure has a beat
 3. `enforceDownbeatProximity()` — Ensure upbeats have nearby downbeats
+4. `removeMarginNotes()` — Remove beats within start/end audio margin
 
 Modified beats are tagged with a `balancerAction` field so the UI can visually distinguish balancer-modified beats from naturally detected ones.
 
@@ -2951,6 +2952,7 @@ constructor(config?: Partial<RhythmicBalanceConfig>)
 | `downbeatProximityRange` | `number` | `2` | Max distance in quarter-note beats from an upbeat note to the nearest downbeat. 0 = same beat only, 1 = one beat, 1.5 = one beat (half-beat increments supported), 4 = same measure. Supports whole beats and 0.5 increments; intermediate fractional values are rounded down to the nearest supported step (e.g., 1.7 behaves like 1.5) |
 | `fillEmptyMeasures` | `boolean` | `true` | Whether to fill empty measures with a beat on beat 1 downbeat |
 | `addedBeatIntensity` | `number` | `0.45` | Intensity for beats added by the balancer. Lower than detected beats so they're removable during density reduction |
+| `marginSeconds` | `number` | `0.5` | Minimum distance in seconds from the start/end of audio where notes are allowed. Beats within this margin are removed. 0 = disabled |
 
 **Strong Beat Emphasis Modes:**
 
@@ -2979,6 +2981,7 @@ Describes what action the balancer took on a beat (tagged on `CompositeBeat.bala
 | `'shifted_to_downbeat'` | Lone offbeat note moved to the downbeat position |
 | `'empty_measure_fill'` | Beat added to fill an otherwise empty measure |
 | `'proximity_shift'` | Upbeat note shifted to downbeat (no nearby downbeat) |
+| `'margin_removal'` | Beat removed for being within the start/end audio margin |
 
 **BalanceStats Properties:**
 
@@ -2989,6 +2992,7 @@ Describes what action the balancer took on a beat (tagged on `CompositeBeat.bala
 | `proximityShifts` | `number` | Number of upbeat notes shifted due to missing nearby downbeat |
 | `beatsAdded` | `number` | Total beats added by the balancer (filled measures only) |
 | `beatsShifted` | `number` | Total beats modified by the balancer (shifts) |
+| `marginRemovals` | `number` | Total beats removed for being within the start/end audio margin |
 
 **BalanceResult Properties:**
 

@@ -9,6 +9,7 @@
  * - Shifts lone subdivision notes to downbeats
  * - Fills empty measures with a beat on beat 1
  * - Enforces downbeat proximity for upbeat notes
+ * - Removes notes within the start/end audio margin
  *
  * Part of the Procedural Rhythm Generation pipeline - Rhythmic Balance
  */
@@ -31,7 +32,8 @@ export type BalancerAction =
     | 'none'               // Beat was not modified by the balancer
     | 'shifted_to_downbeat' // Lone offbeat note moved to the downbeat position
     | 'empty_measure_fill' // Beat added to fill an otherwise empty measure
-    | 'proximity_shift';   // Upbeat note shifted to downbeat (no nearby downbeat)
+    | 'proximity_shift'    // Upbeat note shifted to downbeat (no nearby downbeat)
+    | 'margin_removal';    // Beat removed for being within the start/end audio margin
 
 /**
  * Summary statistics from the rhythmic balancing step.
@@ -47,6 +49,8 @@ export interface BalanceStats {
     beatsAdded: number;
     /** Total beats modified by the balancer (shifts) */
     beatsShifted: number;
+    /** Total beats removed for being within the start/end audio margin */
+    marginRemovals: number;
 }
 
 /**
@@ -123,6 +127,17 @@ export interface RhythmicBalanceConfig {
      * @default 0.45
      */
     addedBeatIntensity: number;
+
+    /**
+     * Minimum distance in seconds from the start and end of the audio file
+     * where notes are allowed. Beats within this margin are removed to prevent
+     * unfair/unplayable notes at the very beginning or end of a song.
+     *
+     * 0 = disabled (no margin enforced).
+     *
+     * @default 0.5
+     */
+    marginSeconds: number;
 }
 
 /**
@@ -133,6 +148,7 @@ export const DEFAULT_RHYTHMIC_BALANCE_CONFIG: RhythmicBalanceConfig = {
     downbeatProximityRange: 2,
     fillEmptyMeasures: true,
     addedBeatIntensity: 0.45,
+    marginSeconds: 0.5,
 };
 
 // ============================================================================
@@ -152,18 +168,21 @@ const CONTROLLER_MODE_BALANCE_DEFAULTS: Record<ControllerMode, RhythmicBalanceCo
         downbeatProximityRange: 1,
         fillEmptyMeasures: true,
         addedBeatIntensity: 0.45,
+        marginSeconds: 0.5,
     },
     guitar_hero: {
         strongBeatEmphasis: 'natural',
         downbeatProximityRange: 2,
         fillEmptyMeasures: true,
         addedBeatIntensity: 0.45,
+        marginSeconds: 0.5,
     },
     tap: {
         strongBeatEmphasis: 'natural',
         downbeatProximityRange: 1.5,
         fillEmptyMeasures: true,
         addedBeatIntensity: 0.45,
+        marginSeconds: 0.5,
     },
 };
 
@@ -312,6 +331,7 @@ export class RhythmicBalancer {
      * 1. shiftLoneSubdivisionNotes() - Move lone offbeat notes to downbeats
      * 2. fillEmptyMeasures() - Ensure every measure has a beat
      * 3. enforceDownbeatProximity() - Ensure upbeats have nearby downbeats
+     * 4. removeMarginNotes() - Remove beats within start/end audio margin
      *
      * Each modified beat is tagged with a `balancerAction` field so the UI
      * can visually distinguish balancer-modified beats from detected ones.
@@ -330,6 +350,7 @@ export class RhythmicBalancer {
             proximityShifts: 0,
             beatsAdded: 0,
             beatsShifted: 0,
+            marginRemovals: 0,
         };
 
         // Start with the original beats
@@ -343,6 +364,9 @@ export class RhythmicBalancer {
 
         // Phase 3: Enforce downbeat proximity
         beats = this.enforceDownbeatProximity(beats, unifiedBeatMap, stats);
+
+        // Phase 4: Remove beats within start/end audio margin
+        beats = this.removeMarginNotes(beats, unifiedBeatMap.duration, stats);
 
         // Sort by timestamp to ensure correct order
         beats.sort((a, b) => a.timestamp - b.timestamp);
@@ -608,5 +632,38 @@ export class RhythmicBalancer {
         }
 
         return result;
+    }
+
+    /**
+     * Remove beats within the start/end audio margin
+     *
+     * Filters out beats whose timestamps fall within `marginSeconds` of
+     * the beginning or end of the audio file. This prevents unfair/unplayable
+     * notes at the very edges of a song where the player has no time to react.
+     *
+     * @param beats - Current beats array
+     * @param audioDuration - Total duration of the audio file in seconds
+     * @returns Updated beats array with margin beats removed
+     */
+    private removeMarginNotes(
+        beats: CompositeBeat[],
+        audioDuration: number,
+        stats: BalanceStats
+    ): CompositeBeat[] {
+        const margin = this.config.marginSeconds;
+
+        if (margin <= 0 || audioDuration <= 0) {
+            return beats;
+        }
+
+        const endTime = audioDuration - margin;
+
+        return beats.filter(beat => {
+            if (beat.timestamp < margin || beat.timestamp > endTime) {
+                stats.marginRemovals++;
+                return false;
+            }
+            return true;
+        });
     }
 }

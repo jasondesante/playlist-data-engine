@@ -235,7 +235,7 @@ describe('Rhythmic Balance Integration Tests', () => {
             ];
 
             const composite = createMockCompositeStream(beats);
-            const balancer = new RhythmicBalancer();
+            const balancer = new RhythmicBalancer({ marginSeconds: 0 });
             const result = balancer.balance(composite, unifiedBeatMap);
 
             // Verify every measure has at least 1 beat
@@ -285,7 +285,7 @@ describe('Rhythmic Balance Integration Tests', () => {
             ];
 
             const composite = createMockCompositeStream([...originalBeats]);
-            const balancer = new RhythmicBalancer();
+            const balancer = new RhythmicBalancer({ marginSeconds: 0 });
             const result = balancer.balance(composite, unifiedBeatMap);
 
             // Verify original beats are preserved with their properties
@@ -317,6 +317,7 @@ describe('Rhythmic Balance Integration Tests', () => {
             const customIntensity = 0.55;
             const balancer = new RhythmicBalancer({
                 addedBeatIntensity: customIntensity,
+                marginSeconds: 0,
             });
             const result = balancer.balance(composite, unifiedBeatMap);
 
@@ -373,7 +374,7 @@ describe('Rhythmic Balance Integration Tests', () => {
             ];
 
             const composite = createMockCompositeStream(beats);
-            const balancer = new RhythmicBalancer();
+            const balancer = new RhythmicBalancer({ marginSeconds: 0 });
             const result = balancer.balance(composite, unifiedBeatMap);
 
             // All shifted beats should now be at gridPosition 0
@@ -449,7 +450,7 @@ describe('Rhythmic Balance Integration Tests', () => {
             ];
 
             const composite = createMockCompositeStream(beats);
-            const balancer = new RhythmicBalancer();
+            const balancer = new RhythmicBalancer({ marginSeconds: 0 });
             const result = balancer.balance(composite, unifiedBeatMap);
 
             // All measures should have beats
@@ -541,7 +542,7 @@ describe('Rhythmic Balance Integration Tests', () => {
             ];
 
             const composite = createMockCompositeStream(beats);
-            const balancer = new RhythmicBalancer();
+            const balancer = new RhythmicBalancer({ marginSeconds: 0 });
             const result = balancer.balance(composite, unifiedBeatMap);
 
             // Every measure should have a beat on beat 1 (downbeat)
@@ -674,7 +675,7 @@ describe('Rhythmic Balance Integration Tests', () => {
             ];
 
             const composite = createMockCompositeStream(compositeBeats);
-            const balancer = new RhythmicBalancer();
+            const balancer = new RhythmicBalancer({ marginSeconds: 0 });
             const result = balancer.balance(composite, unifiedBeatMap);
 
             // Verify that the correct segment is found for each beat
@@ -707,7 +708,7 @@ describe('Rhythmic Balance Integration Tests', () => {
             ];
 
             const composite = createMockCompositeStream(beats);
-            const balancer = new RhythmicBalancer();
+            const balancer = new RhythmicBalancer({ marginSeconds: 0 });
             const result = balancer.balance(composite, unifiedBeatMap);
 
             // Every measure should have a beat
@@ -738,7 +739,7 @@ describe('Rhythmic Balance Integration Tests', () => {
             ];
 
             const composite = createMockCompositeStream(beats);
-            const balancer = new RhythmicBalancer();
+            const balancer = new RhythmicBalancer({ marginSeconds: 0 });
             const result = balancer.balance(composite, unifiedBeatMap);
 
             // Every measure should have a beat on beat 1
@@ -773,7 +774,7 @@ describe('Rhythmic Balance Integration Tests', () => {
             ];
 
             const composite = createMockCompositeStream(beats);
-            const balancer = new RhythmicBalancer();
+            const balancer = new RhythmicBalancer({ marginSeconds: 0 });
             const result = balancer.balance(composite, unifiedBeatMap);
 
             // Every measure should have at least one beat
@@ -800,7 +801,7 @@ describe('Rhythmic Balance Integration Tests', () => {
             ];
 
             const composite = createMockCompositeStream(originalBeats);
-            const balancer = new RhythmicBalancer();
+            const balancer = new RhythmicBalancer({ marginSeconds: 0 });
             const result = balancer.balance(composite, unifiedBeatMap);
 
             // Original beat should be unchanged
@@ -837,6 +838,88 @@ describe('Rhythmic Balance Integration Tests', () => {
                 expect(result1.composite.beats[i].gridPosition).toBe(result2.composite.beats[i].gridPosition);
                 expect(result1.composite.beats[i].timestamp).toBe(result2.composite.beats[i].timestamp);
             }
+        });
+    });
+
+    // =========================================================================
+    // Margin Removal Integration Tests
+    // =========================================================================
+    describe('Margin removal integration', () => {
+        it('should remove notes near start and end of audio', () => {
+            // 8 measures at 120 BPM = 16 seconds duration
+            const unifiedBeatMap = createMockUnifiedBeatMap({ numMeasures: 8 });
+
+            const beats: CompositeBeat[] = [
+                createMockCompositeBeat({ timestamp: 0.0, beatIndex: 0, gridPosition: 0 }),
+                createMockCompositeBeat({ timestamp: 0.3, beatIndex: 1, gridPosition: 1 }),
+                createMockCompositeBeat({ timestamp: 1.0, beatIndex: 2, gridPosition: 0 }),
+                createMockCompositeBeat({ timestamp: 8.0, beatIndex: 16, gridPosition: 0 }),
+                createMockCompositeBeat({ timestamp: 15.6, beatIndex: 30, gridPosition: 2 }),
+                createMockCompositeBeat({ timestamp: 16.0, beatIndex: 31, gridPosition: 0 }),
+            ];
+
+            const composite = createMockCompositeStream(beats);
+            const balancer = new RhythmicBalancer({
+                fillEmptyMeasures: false,
+                downbeatProximityRange: 100,
+                marginSeconds: 0.5,
+            });
+            const result = balancer.balance(composite, unifiedBeatMap);
+
+            // 0.0, 0.3, 15.6, 16.0 should be removed; 1.0 and 8.0 should stay
+            expect(result.composite.beats.length).toBe(2);
+            expect(result.stats.marginRemovals).toBe(4);
+        });
+
+        it('should combine margin removal with other balancing phases', () => {
+            const unifiedBeatMap = createMockUnifiedBeatMap({ numMeasures: 4 });
+
+            const beats: CompositeBeat[] = [
+                // Lone upbeat in measure 1 (only beat in measure, not on downbeat) → shifted
+                createMockCompositeBeat({ timestamp: 2.25, beatIndex: 4, gridPosition: 1, intensity: 0.7 }),
+                // Downbeat near end of audio → removed by margin
+                createMockCompositeBeat({ timestamp: 7.9, beatIndex: 15, gridPosition: 0 }),
+            ];
+
+            const composite = createMockCompositeStream(beats);
+            const balancer = new RhythmicBalancer({
+                fillEmptyMeasures: false,
+                downbeatProximityRange: 100,
+                marginSeconds: 0.5,
+            });
+            const result = balancer.balance(composite, unifiedBeatMap);
+
+            // The lone upbeat should be shifted to downbeat
+            const shiftedBeat = result.composite.beats.find(b => b.beatIndex === 4);
+            expect(shiftedBeat).toBeDefined();
+            expect(shiftedBeat!.gridPosition).toBe(0);
+            expect(shiftedBeat!.intensity).toBe(0.7);
+
+            // The end beat should be removed
+            const endBeat = result.composite.beats.find(b => b.beatIndex === 15);
+            expect(endBeat).toBeUndefined();
+
+            expect(result.stats.shiftedToDownbeat).toBe(1);
+            expect(result.stats.marginRemovals).toBe(1);
+        });
+
+        it('should not remove beats when margin is disabled', () => {
+            const unifiedBeatMap = createMockUnifiedBeatMap({ numMeasures: 4 });
+
+            const beats: CompositeBeat[] = [
+                createMockCompositeBeat({ timestamp: 0.0, beatIndex: 0, gridPosition: 0 }),
+                createMockCompositeBeat({ timestamp: 8.0, beatIndex: 15, gridPosition: 3 }),
+            ];
+
+            const composite = createMockCompositeStream(beats);
+            const balancer = new RhythmicBalancer({
+                fillEmptyMeasures: false,
+                marginSeconds: 0,
+            });
+            const result = balancer.balance(composite, unifiedBeatMap);
+
+            expect(result.composite.beats.length).toBe(2);
+            expect(result.stats.marginRemovals).toBe(0);
         });
     });
 });
