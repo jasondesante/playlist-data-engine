@@ -1372,12 +1372,13 @@ Deep semantic analysis of music including genre, mood, and vibe metrics using mu
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
+| `preset` | `ClassifierPreset` | — | Model preset names; resolved to full configs internally. Can be combined with `models` — explicit entries take precedence |
 | `models` | `ModelsConfig` | `DEFAULT_ARWEAVE_MODELS` | Model URLs for each analysis type |
 | `topN` | number | `5` | Return top N matches for genres and moods |
 | `threshold` | number | `0.05` | Minimum confidence score (5%) |
 | `cacheEmbeddings` | boolean | `true` | Cache embedding models for reuse across classifiers |
 
-For complete type definitions (`ModelConfig`, `SingleStepModelConfig`, `TwoStepModelConfig`, `ModelArchitecture`, `GenreListType`), see [src/core/analysis/MusicClassifier.ts:15-77](src/core/analysis/MusicClassifier.ts#L15-L77).
+For complete type definitions (`ModelConfig`, `SingleStepModelConfig`, `TwoStepModelConfig`, `ModelArchitecture`, `GenreListType`, `GenrePreset`, `MoodPreset`, `DanceabilityPreset`, `ClassifierPreset`), see [src/core/analysis/MusicClassifier.ts:15-122](src/core/analysis/MusicClassifier.ts#L15-L122).
 
 #### DEFAULT_ARWEAVE_MODELS
 
@@ -1388,6 +1389,43 @@ Pre-configured Arweave-hosted models for zero-setup usage (see [source](src/core
 | `genre` | Two-step (effnet + discogs400) | 400+ subgenres |
 | `mood` | Two-step (effnet) | 60+ mood themes |
 | `danceability` | Single-step (musicnn) | Binary |
+
+#### Model Presets
+
+Instead of providing raw model URLs, use preset names to select pre-configured models. Presets are resolved to full `ModelConfig` objects in the constructor. Explicit `models` entries override presets for the same category.
+
+```typescript
+// Use presets
+const classifier = new MusicClassifier({ preset: { genre: 'discogs400', mood: 'jamendo' } });
+
+// Mix presets with custom URLs
+const classifier = new MusicClassifier({
+    preset: { genre: 'jamendo' },
+    models: { mood: { modelUrl: 'https://...', modelType: 'musicnn' } }
+});
+```
+
+**Genre presets:**
+
+| Preset | Architecture | Genre Taxonomy |
+|--------|--------------|----------------|
+| `discogs400` | Two-step (effnet + discogs400) | Discogs 400+ |
+| `jamendo` | Two-step (effnet + jamendo) | MTG Jamendo 87 |
+| `tzanetakis` | Single-step (musicnn) | GTZAN 10 |
+| `musicnn` | Single-step (musicnn) | MagnaTagATune 50 |
+
+**Mood presets:**
+
+| Preset | Architecture |
+|--------|--------------|
+| `jamendo` | Two-step (effnet + jamendo) |
+| `happyMusicnn` | Single-step (musicnn) |
+
+**Danceability presets:**
+
+| Preset | Architecture |
+|--------|--------------|
+| `default` | Single-step (musicnn) |
 
 #### Architecture & Mel Bands
 
@@ -1426,6 +1464,14 @@ Genre models auto-detect their taxonomy from URL keywords (see [`GenreListType`]
 |--------|-------------|
 | `MusicClassifier` | Main classifier class |
 | `DEFAULT_ARWEAVE_MODELS` | Pre-configured Arweave model URLs |
+| `GENRE_PRESETS` | Registry of genre model presets |
+| `MOOD_PRESETS` | Registry of mood model presets |
+| `DANCEABILITY_PRESETS` | Registry of danceability model presets |
+| `AVAILABLE_PRESETS` | All available preset names by category |
+| `GenrePreset` | Type: `'discogs400' \| 'jamendo' \| 'tzanetakis' \| 'musicnn'` |
+| `MoodPreset` | Type: `'jamendo' \| 'happyMusicnn'` |
+| `DanceabilityPreset` | Type: `'default'` |
+| `ClassifierPreset` | Combined preset config: `{ genre?, mood?, danceability? }` |
 | `ModelArchitecture` | Type: `'musicnn' \| 'effnet' \| 'vggish' \| 'tempocnn'` |
 | `GenreListType` | Type: `'jamendo' \| 'discogs400' \| 'tzanetakis' \| 'mtt_musicnn'` |
 | `detectModelArchitecture()` | Detects architecture from URL |

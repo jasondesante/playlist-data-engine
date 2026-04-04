@@ -796,6 +796,10 @@ export {
     type TwoStepModelConfig,
     type SingleStepModelConfig,
     type ModelConfig,
+    type GenrePreset,
+    type MoodPreset,
+    type DanceabilityPreset,
+    type ClassifierPreset,
     isTwoStepModel,
     isSingleStepModel,
     detectModelArchitecture,
@@ -804,6 +808,10 @@ export {
     formatModelForMetadata,
     averageEmbeddings,
     DEFAULT_ARWEAVE_MODELS,
+    GENRE_PRESETS,
+    MOOD_PRESETS,
+    DANCEABILITY_PRESETS,
+    AVAILABLE_PRESETS,
     DISCOGS400_GENRES
 } from './core/analysis/MusicClassifier.js';
 export { SpectrumScanner } from './core/analysis/SpectrumScanner.js';

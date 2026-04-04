@@ -86,7 +86,49 @@ export interface SingleStepModelConfig {
  */
 export type ModelConfig = SingleStepModelConfig | TwoStepModelConfig;
 
+/**
+ * Preset names for genre classification models.
+ */
+export type GenrePreset = 'discogs400' | 'jamendo' | 'tzanetakis' | 'musicnn';
+
+/**
+ * Preset names for mood classification models.
+ */
+export type MoodPreset = 'jamendo' | 'happyMusicnn';
+
+/**
+ * Preset names for danceability classification models.
+ */
+export type DanceabilityPreset = 'default';
+
+/**
+ * Configuration that selects models by preset name instead of raw URLs.
+ * Presets are resolved to full model configs internally.
+ *
+ * @example
+ * // Use presets
+ * const classifier = new MusicClassifier({ preset: { genre: 'discogs400', mood: 'jamendo' } });
+ *
+ * // Mix presets with custom URLs
+ * const classifier = new MusicClassifier({
+ *     preset: { genre: 'jamendo' },
+ *     models: { mood: { modelUrl: 'https://...', modelType: 'musicnn' } }
+ * });
+ */
+export interface ClassifierPreset {
+    genre?: GenrePreset;
+    mood?: MoodPreset;
+    danceability?: DanceabilityPreset;
+}
+
 export interface MusicClassifierOptions {
+    /**
+     * Model preset names. When provided, these are resolved to full model configs
+     * internally. Can be combined with `models` for partial override — explicit
+     * `models` entries take precedence over `preset` entries for the same category.
+     */
+    preset?: ClassifierPreset;
+
     /**
      * URLs to pre-trained TensorFlow.js models.
      * Each model option accepts EITHER:
@@ -804,6 +846,86 @@ export const DEFAULT_ARWEAVE_MODELS = {
     }
 } as const;
 
+/**
+ * Registry of genre model presets.
+ * Each preset maps a name to a full ModelConfig with Arweave-hosted URLs.
+ */
+export const GENRE_PRESETS: Record<GenrePreset, ModelConfig> = {
+    discogs400: {
+        embedding: 'https://arweave.net/tVO0RIu2Ly_Di5cZccw_wB3x6Vs_2KSqxhl8bdhhimE/model.json',
+        embeddingType: 'effnet',
+        classifier: 'https://arweave.net/ZY-GSfMe7crJUITAtHITcoLCNfNWVP1HMwywivZ_LAQ/model.json',
+        classifierType: 'discogs400',
+    },
+    jamendo: {
+        embedding: 'https://arweave.net/tVO0RIu2Ly_Di5cZccw_wB3x6Vs_2KSqxhl8bdhhimE/model.json',
+        embeddingType: 'effnet',
+        classifier: 'https://arweave.net/MuhF5mek1BJPZLoPNY1TBTPUUBEXbVmMfAGgBp-_MyA/model.json',
+        classifierType: 'jamendo',
+    },
+    tzanetakis: {
+        modelUrl: 'https://arweave.net/7MQD4W5yJeUUK2tRg8TEdomew-ZY7s0K91nk35FxleM/model.json',
+        modelType: 'musicnn',
+        genreType: 'tzanetakis',
+    },
+    musicnn: {
+        modelUrl: 'https://arweave.net/KCZQ1geu4ymxp8axAql95FDY98VjnOzSymdkCiM9BXo/model.json',
+        modelType: 'musicnn',
+        genreType: 'mtt_musicnn',
+    },
+};
+
+/**
+ * Registry of mood model presets.
+ */
+export const MOOD_PRESETS: Record<MoodPreset, ModelConfig> = {
+    jamendo: {
+        embedding: 'https://arweave.net/tVO0RIu2Ly_Di5cZccw_wB3x6Vs_2KSqxhl8bdhhimE/model.json',
+        embeddingType: 'effnet',
+        classifier: 'https://arweave.net/BUXf3AoFuIsrNDkV2hW6BhiwSVTuFllWOUQv5mu6qQ8/model.json',
+        classifierType: 'jamendo',
+    },
+    happyMusicnn: {
+        modelUrl: 'https://arweave.net/kUIS-Xxr4k3MZ4K2gHdvMgZxK7aBYce_FPGIkGA_hjM/model.json',
+        modelType: 'musicnn',
+    },
+};
+
+/**
+ * Registry of danceability model presets.
+ */
+export const DANCEABILITY_PRESETS: Record<DanceabilityPreset, ModelConfig> = {
+    default: {
+        modelUrl: 'https://arweave.net/nX9KX1OVhEaT1dStNcsRiZKCQTWuHjAMl4MWprIFyZU/model.json',
+        modelType: 'musicnn',
+    },
+};
+
+/**
+ * All available preset names for enumeration.
+ *
+ * @example
+ * import { AVAILABLE_PRESETS } from 'playlist-data-engine';
+ * console.log(AVAILABLE_PRESETS.genre); // ['discogs400', 'jamendo', 'tzanetakis', 'musicnn']
+ */
+export const AVAILABLE_PRESETS = {
+    genre: Object.keys(GENRE_PRESETS) as GenrePreset[],
+    mood: Object.keys(MOOD_PRESETS) as MoodPreset[],
+    danceability: Object.keys(DANCEABILITY_PRESETS) as DanceabilityPreset[],
+} as const;
+
+/**
+ * Resolves a ClassifierPreset to a full models config.
+ * Returns only the categories that have a preset defined.
+ */
+function resolvePreset(preset: ClassifierPreset): MusicClassifierOptions['models'] {
+    const models: MusicClassifierOptions['models'] = {};
+    if (preset.genre) models.genre = GENRE_PRESETS[preset.genre];
+    if (preset.mood) models.mood = MOOD_PRESETS[preset.mood];
+    if (preset.danceability) models.danceability = DANCEABILITY_PRESETS[preset.danceability];
+    return models;
+}
+
 export class MusicClassifier {
     private options: MusicClassifierOptions;
     private essentiaWASM: any = null;
@@ -844,23 +966,27 @@ export class MusicClassifier {
     private extractors: Map<ModelArchitecture, any> = new Map();
 
     constructor(options: MusicClassifierOptions = {}) {
+        // Resolve presets to model configs, then merge with explicit models
+        // Explicit models take precedence over presets for the same category
+        const presetModels = options.preset ? resolvePreset(options.preset) : {};
+
         this.options = {
             models: {
-                // Two-step architecture: Discogs-EffNet embedding + MTG Jamendo classifiers
-                // Benefits: 1) Shared embedding model cached for both genre and mood
-                //          2) Better accuracy with specialized classifier heads
+                // Start with engine defaults, layer on presets, then explicit models
                 genre: DEFAULT_ARWEAVE_MODELS.genre,
                 mood: DEFAULT_ARWEAVE_MODELS.mood,
-                // Single-step architecture: VGGish model handles everything internally
                 danceability: DEFAULT_ARWEAVE_MODELS.danceability,
-                // Voice and acoustic are optional - user can provide either format
+                ...presetModels,
                 ...options.models
             },
             topN: 5,
             threshold: 0.05,
-            cacheEmbeddings: true, // Enable embedding caching by default (reuses shared embedding)
+            cacheEmbeddings: true,
             ...options
         };
+
+        // Don't store preset in options — it's resolved and no longer needed
+        delete this.options.preset;
     }
 
     /**
@@ -871,7 +997,7 @@ export class MusicClassifier {
         if (this.initialized) return;
 
         // Load WASM backend (ES module version for proper import)
-        // @ts-expect-error essentia.js does not have types for dist files
+        // essentia.js WASM backend (ES module version)
         const wasmModule = await import('essentia.js/dist/essentia-wasm.es.js');
         const EssentiaWASM = wasmModule.EssentiaWASM;
         // Wait for the WASM module to be ready before using it
@@ -879,7 +1005,7 @@ export class MusicClassifier {
         this.essentiaWASM = EssentiaWASM;
 
         // Load model classes
-        // @ts-expect-error essentia.js does not have types for dist files
+        // essentia.js model classes
         const modelModule = await import('essentia.js/dist/essentia.js-model.es.js');
         this.essentiaModel = modelModule;
 
