@@ -294,7 +294,7 @@ All TypeScript types are exported, including:
 
 **Charted Beat Types:** `ChartedBeat`, `ChartedBeatMap`, `ChartMetadata`, `PitchMetadata`, `RhythmMetadataSummary`, `ChartConversionOptions` — see [Pitch Detection & Button Mapping](#pitch-detection--button-mapping)
 
-**Level Export Types:** `FullBeatMapExportData`, `FullExportDetectedBeat`, `FullExportMergedBeat`, `FullExportSubdividedBeat`, `SubdivisionExportData`, `ChartExportData`, `ProceduralGenerationMetadata`, `FullBeatMapImportResult` — see [Pitch Detection & Button Mapping](#pitch-detection--button-mapping) and [docs/BEAT_DETECTION.md](docs/BEAT_DETECTION.md#serialization-format)
+**Level Export Types:** `FullBeatMapExportData`, `FullExportDetectedBeat`, `FullExportMergedBeat`, `FullExportSubdividedBeat`, `SubdivisionExportData`, `ChartExportData`, `ProceduralGenerationMetadata`, `FullBeatMapImportResult`, `TrackReference`, `TrackMatchResult` — see [Pitch Detection & Button Mapping](#pitch-detection--button-mapping) and [docs/BEAT_DETECTION.md](docs/BEAT_DETECTION.md#serialization-format)
 
 **Game Data:** `RACE_DATA`, `CLASS_DATA`, `SPELL_DATABASE`, `XP_THRESHOLDS` — see [Game Data Reference](#game-data-reference)
 
@@ -3709,6 +3709,23 @@ Serializes and deserializes generated levels. Converts between engine internal f
 | `validate(data)` | FullBeatMapImportResult | Validate unknown data as export format |
 | `isProcedural(data)` | boolean | Check if export data is from procedural generation |
 
+#### Track Validation
+
+The `validateTrackMatch()` function (exported from the library) checks whether the currently selected track matches the track referenced in an imported level file.
+
+```typescript
+validateTrackMatch(levelTrackRef: TrackReference, currentTrack: {
+  id: string; title: string; artist: string;
+  playlist_index: number; tx_id?: string;
+}): TrackMatchResult
+```
+
+Matching strategy:
+1. Compare by `trackId` (exact match)
+2. Fall back to `title + artist` (case-insensitive)
+
+Returns a `TrackMatchResult` with `matches: boolean`, `mismatchDetails: string[]`, and optionally `requiredTrack` describing which track to switch to.
+
 #### FullBeatMapExportData Properties
 
 | Property | Type | Description |
@@ -3722,6 +3739,7 @@ Serializes and deserializes generated levels. Converts between engine internal f
 | `mergedBeats` | array | Merged beat data |
 | `subdivision` | object \| null | Subdivision data with beats |
 | `chart` | object \| null | Chart style and keys |
+| `trackReference` | object | Track reference for song validation on import (optional) |
 | `generationSource` | string | 'procedural' or 'manual' (optional) |
 | `generationMetadata` | object | Procedural generation metadata (optional) |
 

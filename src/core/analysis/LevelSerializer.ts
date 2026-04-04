@@ -40,6 +40,7 @@ import type {
     ChartExportData,
     ProceduralGenerationMetadata,
     FullBeatMapImportResult,
+    TrackReference,
 } from '../types/LevelExport.js';
 import { isFullBeatMapExportData } from '../types/LevelExport.js';
 import type { SubdivisionType, DownbeatConfig, DownbeatSegment, TimeSignatureConfig } from '../types/BeatMap.js';
@@ -65,6 +66,8 @@ export interface LevelSerializerOptions {
     includeAudioTitle?: boolean;
     /** Audio title to include */
     audioTitle?: string;
+    /** Track reference identifying the song this level was built for */
+    trackReference?: TrackReference;
 }
 
 // ============================================================================
@@ -126,6 +129,7 @@ export class LevelSerializer {
             interpolatedMetadata,
             subdivision,
             chart: chartExportData,
+            trackReference: options.trackReference,
             generationSource: 'procedural',
             generationMetadata,
         };

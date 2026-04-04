@@ -4978,6 +4978,7 @@ The `FullBeatMapExportData` format contains all the data needed to reconstruct a
 | **Beat data** | `detectedBeats`, `mergedBeats`, `interpolatedMetadata` |
 | **Subdivision** | `config`, `beats`, `metadata` (optional) |
 | **Chart** | `style`, `keyCount`, `usedKeys` (optional) |
+| **Track reference** | `playlistTxId`, `trackId`, `trackUuid`, `title`, `artist`, `audioUrl`, etc. (optional) |
 | **Procedural extensions** | `generationSource`, `generationMetadata` (optional) |
 
 #### Core Structure
@@ -5008,6 +5009,9 @@ interface FullBeatMapExportData {
 
   // Chart metadata (null if no chart)
   chart: ChartExportData | null;
+
+  // Track reference (optional, for song validation on import)
+  trackReference?: TrackReference;
 
   // Procedural extensions (optional)
   generationSource?: 'manual' | 'procedural';

@@ -214,10 +214,13 @@ export type {
     ProceduralGenerationMetadata,
     FullBeatMapExportData,
     FullBeatMapImportResult,
+    TrackReference,
+    TrackMatchResult,
 } from './core/types/LevelExport.js';
 
 export {
     isFullBeatMapExportData,
+    validateTrackMatch,
 } from './core/types/LevelExport.js';
 
 // Character types
