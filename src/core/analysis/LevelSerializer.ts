@@ -41,8 +41,9 @@ import type {
     ProceduralGenerationMetadata,
     FullBeatMapImportResult,
     TrackReference,
+    LevelPackExport,
 } from '../types/LevelExport.js';
-import { isFullBeatMapExportData } from '../types/LevelExport.js';
+import { isFullBeatMapExportData, isLevelPackExport } from '../types/LevelExport.js';
 import type { SubdivisionType, DownbeatConfig, DownbeatSegment, TimeSignatureConfig } from '../types/BeatMap.js';
 import type { DifficultyLevel, DifficultyVariant } from '../analysis/beat/DifficultyVariantGenerator.js';
 import type { NaturalDifficulty } from '../analysis/beat/DensityAnalyzer.js';
@@ -1156,6 +1157,101 @@ export class LevelSerializer {
             data,
             warnings: warnings.length > 0 ? warnings : undefined,
         };
+    }
+
+    // ============================================================================
+    // Level Pack (Multi-Difficulty)
+    // ============================================================================
+
+    /**
+     * Serialize multiple difficulty levels into a LevelPackExport.
+     *
+     * Each difficulty is independently serialized as a FullBeatMapExportData.
+     * The pack-level trackReference is shared across all difficulties.
+     *
+     * @param levels - Map of difficulty key to GeneratedLevel
+     * @param options - Serialization options (trackReference applied at pack level)
+     * @returns The level pack ready for JSON serialization
+     */
+    static toPack(
+        levels: { natural?: GeneratedLevel; easy?: GeneratedLevel; medium?: GeneratedLevel; hard?: GeneratedLevel; custom?: GeneratedLevel },
+        options: LevelSerializerOptions = {},
+    ): LevelPackExport {
+        const difficulties: LevelPackExport['difficulties'] = {};
+
+        for (const [key, level] of Object.entries(levels)) {
+            if (level) {
+                // Per-difficulty options: no trackReference (it's on the pack level)
+                const perDifficultyOptions: LevelSerializerOptions = {
+                    includeAudioTitle: options.includeAudioTitle,
+                    audioTitle: options.audioTitle,
+                };
+                difficulties[key as keyof typeof difficulties] = this.toExportData(level, perDifficultyOptions);
+            }
+        }
+
+        return {
+            version: 1,
+            format: 'level-pack',
+            exportedAt: Date.now(),
+            trackReference: options.trackReference,
+            difficulties,
+        };
+    }
+
+    /**
+     * Deserialize a LevelPackExport into individual GeneratedLevels.
+     *
+     * @param pack - The level pack to deserialize
+     * @returns Map of difficulty key to GeneratedLevel (only entries that existed in the pack)
+     */
+    static fromPack(
+        pack: LevelPackExport,
+    ): { natural?: GeneratedLevel; easy?: GeneratedLevel; medium?: GeneratedLevel; hard?: GeneratedLevel; custom?: GeneratedLevel } {
+        const result: ReturnType<typeof LevelSerializer.fromPack> = {};
+
+        for (const [key, data] of Object.entries(pack.difficulties)) {
+            if (data) {
+                try {
+                    result[key as keyof typeof result] = this.fromExportData(data);
+                } catch {
+                    // Skip invalid difficulty entries rather than failing the whole pack
+                }
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * Convert a LevelPackExport to JSON string.
+     */
+    static packToJSON(
+        levels: { natural?: GeneratedLevel; easy?: GeneratedLevel; medium?: GeneratedLevel; hard?: GeneratedLevel; custom?: GeneratedLevel },
+        options: LevelSerializerOptions = {},
+    ): string {
+        const pack = this.toPack(levels, options);
+        return JSON.stringify(pack, null, 2);
+    }
+
+    /**
+     * Parse a JSON string as a LevelPackExport and return the GeneratedLevels.
+     *
+     * @throws {Error} If the JSON is invalid or doesn't match the pack format
+     */
+    static packFromJSON(json: string): { natural?: GeneratedLevel; easy?: GeneratedLevel; medium?: GeneratedLevel; hard?: GeneratedLevel; custom?: GeneratedLevel } {
+        let data: unknown;
+        try {
+            data = JSON.parse(json);
+        } catch (e) {
+            throw new Error(`Invalid JSON: ${e instanceof Error ? e.message : 'Unknown error'}`);
+        }
+
+        if (!isLevelPackExport(data)) {
+            throw new Error('Data does not match LevelPackExport format');
+        }
+
+        return this.fromPack(data);
     }
 
     // ============================================================================

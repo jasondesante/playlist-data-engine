@@ -294,7 +294,7 @@ All TypeScript types are exported, including:
 
 **Charted Beat Types:** `ChartedBeat`, `ChartedBeatMap`, `ChartMetadata`, `PitchMetadata`, `RhythmMetadataSummary`, `ChartConversionOptions` — see [Pitch Detection & Button Mapping](#pitch-detection--button-mapping)
 
-**Level Export Types:** `FullBeatMapExportData`, `FullExportDetectedBeat`, `FullExportMergedBeat`, `FullExportSubdividedBeat`, `SubdivisionExportData`, `ChartExportData`, `ProceduralGenerationMetadata`, `FullBeatMapImportResult`, `TrackReference`, `TrackMatchResult` — see [Pitch Detection & Button Mapping](#pitch-detection--button-mapping) and [docs/BEAT_DETECTION.md](docs/BEAT_DETECTION.md#serialization-format)
+**Level Export Types:** `FullBeatMapExportData`, `FullExportDetectedBeat`, `FullExportMergedBeat`, `FullExportSubdividedBeat`, `SubdivisionExportData`, `ChartExportData`, `ProceduralGenerationMetadata`, `FullBeatMapImportResult`, `TrackReference`, `TrackMatchResult`, `LevelPackExport` — see [Pitch Detection & Button Mapping](#pitch-detection--button-mapping) and [docs/BEAT_DETECTION.md](docs/BEAT_DETECTION.md#serialization-format)
 
 **Game Data:** `RACE_DATA`, `CLASS_DATA`, `SPELL_DATABASE`, `XP_THRESHOLDS` — see [Game Data Reference](#game-data-reference)
 
@@ -3694,6 +3694,8 @@ Serializes and deserializes generated levels. Converts between engine internal f
 |--------|---------|-------------|
 | `toExportData(level, options?)` | FullBeatMapExportData | Convert GeneratedLevel to export format |
 | `toJSON(level)` | string | Serialize level to JSON string |
+| `toPack(levels, options?)` | LevelPackExport | Serialize multiple difficulties into a level pack |
+| `packToJSON(levels, options?)` | string | Serialize multiple difficulties into JSON string |
 
 **Import Methods:**
 
@@ -3701,6 +3703,8 @@ Serializes and deserializes generated levels. Converts between engine internal f
 |--------|---------|-------------|
 | `fromExportData(data)` | GeneratedLevel | Convert export format to GeneratedLevel |
 | `fromJSON(json)` | GeneratedLevel | Parse JSON string to GeneratedLevel |
+| `fromPack(pack)` | object | Deserialize a LevelPackExport into per-difficulty GeneratedLevels |
+| `packFromJSON(json)` | object | Parse JSON string as a level pack |
 
 **Validation:**
 
@@ -3708,6 +3712,7 @@ Serializes and deserializes generated levels. Converts between engine internal f
 |--------|---------|-------------|
 | `validate(data)` | FullBeatMapImportResult | Validate unknown data as export format |
 | `isProcedural(data)` | boolean | Check if export data is from procedural generation |
+| `isLevelPackExport(data)` | boolean | Check if data matches the LevelPackExport format |
 
 #### Track Validation
 
@@ -3725,6 +3730,16 @@ Matching strategy:
 2. Fall back to `title + artist` (case-insensitive)
 
 Returns a `TrackMatchResult` with `matches: boolean`, `mismatchDetails: string[]`, and optionally `requiredTrack` describing which track to switch to.
+
+#### LevelPackExport Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `version` | 1 | Format version |
+| `format` | 'level-pack' | Format identifier |
+| `exportedAt` | number | Unix timestamp when exported |
+| `trackReference` | TrackReference | Track reference shared across all difficulties (optional) |
+| `difficulties` | object | Per-difficulty FullBeatMapExportData keyed by `natural`, `easy`, `medium`, `hard`, `custom` |
 
 #### FullBeatMapExportData Properties
 

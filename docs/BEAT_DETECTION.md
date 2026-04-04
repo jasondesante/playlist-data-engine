@@ -5147,6 +5147,28 @@ console.assert(
 );
 ```
 
+### Level Pack Export Format (`level-pack`)
+
+The `LevelPackExport` format bundles multiple difficulty levels for the same song into a single file. Each difficulty is a full `FullBeatMapExportData`, so any difficulty can be independently deserialized.
+
+```typescript
+interface LevelPackExport {
+  version: 1;
+  format: 'level-pack';
+  exportedAt: number;          // Unix timestamp
+  trackReference?: TrackReference;
+  difficulties: {
+    natural?: FullBeatMapExportData;
+    easy?: FullBeatMapExportData;
+    medium?: FullBeatMapExportData;
+    hard?: FullBeatMapExportData;
+    custom?: FullBeatMapExportData;
+  };
+}
+```
+
+Use `LevelSerializer.toPack(levels, options?)` to create a pack and `LevelSerializer.fromPack(pack)` to deserialize. The pack-level `trackReference` is shared across all difficulties.
+
 ### Edge Cases
 
 #### Pattern-Only Levels (pitchInfluenceWeight = 0)

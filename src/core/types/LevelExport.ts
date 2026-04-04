@@ -546,3 +546,59 @@ export function isFullBeatMapExportData(value: unknown): value is FullBeatMapExp
         typeof data.interpolatedMetadata === 'object'
     );
 }
+
+// ============================================================================
+// Level Pack Export (Multi-Difficulty)
+// ============================================================================
+
+/**
+ * A collection of difficulty levels for the same song, exported as a single file.
+ *
+ * Each difficulty is a full FullBeatMapExportData so it can be independently
+ * deserialized. The pack-level trackReference applies to all difficulties.
+ */
+export interface LevelPackExport {
+    /** Format version (always 1) */
+    version: 1;
+
+    /** Format identifier (always 'level-pack') */
+    format: 'level-pack';
+
+    /** Unix timestamp when this pack was exported */
+    exportedAt: number;
+
+    /** Track reference identifying the song (shared across all difficulties) */
+    trackReference?: TrackReference;
+
+    /** Per-difficulty level data. Keys that exist have generated levels. */
+    difficulties: {
+        natural?: FullBeatMapExportData;
+        easy?: FullBeatMapExportData;
+        medium?: FullBeatMapExportData;
+        hard?: FullBeatMapExportData;
+        custom?: FullBeatMapExportData;
+    };
+}
+
+/**
+ * Check if an unknown value is a valid LevelPackExport.
+ */
+export function isLevelPackExport(value: unknown): value is LevelPackExport {
+    if (typeof value !== 'object' || value === null) {
+        return false;
+    }
+
+    const data = value as Record<string, unknown>;
+
+    return (
+        data.version === 1 &&
+        data.format === 'level-pack' &&
+        typeof data.exportedAt === 'number' &&
+        data.difficulties !== null &&
+        typeof data.difficulties === 'object' &&
+        Object.keys(data.difficulties).some((key) => {
+            const entry = (data.difficulties as Record<string, unknown>)[key];
+            return entry !== null && entry !== undefined;
+        })
+    );
+}

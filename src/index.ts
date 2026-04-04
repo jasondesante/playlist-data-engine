@@ -216,10 +216,12 @@ export type {
     FullBeatMapImportResult,
     TrackReference,
     TrackMatchResult,
+    LevelPackExport,
 } from './core/types/LevelExport.js';
 
 export {
     isFullBeatMapExportData,
+    isLevelPackExport,
     validateTrackMatch,
 } from './core/types/LevelExport.js';
 
