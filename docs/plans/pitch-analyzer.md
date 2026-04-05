@@ -18,7 +18,7 @@ Create a standalone `PitchAnalyzer` class in `src/core/analysis/PitchAnalyzer.ts
 
 ## Phase 1: Define the Output Type
 
-- [ ] Create a new `PitchAnalysisProfile` interface in `src/core/analysis/PitchAnalyzer.ts` (co-located with the class, matching existing type-per-module pattern)
+- [x] Create a new `PitchAnalysisProfile` interface in `src/core/analysis/PitchAnalyzer.ts` (co-located with the class, matching existing type-per-module pattern)
 
   ```typescript
   interface PitchAnalysisProfile {

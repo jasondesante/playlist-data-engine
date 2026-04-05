@@ -32,3 +32,14 @@ export type {
     MelodySegmentDirection,
     MelodyContourDirection,
 } from './MelodyContourAnalyzer.js';
+
+// Pitch analysis (standalone, no beat dependency)
+export { PitchAnalyzer } from './PitchAnalyzer.js';
+export type {
+    PitchAnalyzerConfig,
+    PitchAnalysisProfile,
+    PitchContour,
+    PitchContourSegment,
+    PitchContourSegmentDirection,
+    PitchContourDirection,
+} from './PitchAnalyzer.js';
