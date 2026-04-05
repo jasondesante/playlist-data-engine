@@ -190,7 +190,7 @@ Create a standalone `PitchAnalyzer` class in `src/core/analysis/PitchAnalyzer.ts
 
 ### 5a. `docs/AUDIO_ANALYSIS.md`
 
-- [ ] Add a new `## Pitch Analysis` section between "Music Classification" and "Related Documentation", following the same format as the AudioAnalyzer and MusicClassifier sections:
+- [x] Add a new `## Pitch Analysis` section between "Music Classification" and "Related Documentation", following the same format as the AudioAnalyzer and MusicClassifier sections:
 
   **Structure:**
   ```markdown
@@ -241,7 +241,7 @@ Create a standalone `PitchAnalyzer` class in `src/core/analysis/PitchAnalyzer.ts
   | `analysis_metadata` | `{ algorithm_used, analyzed_at, duration_analyzed }` | Pipeline metadata |
   ```
 
-- [ ] Add a note distinguishing `PitchAnalyzer` (standalone, no beats) from `PitchBeatLinker` (beat-aligned, used in level generation), with a link to the "Beat Detection & Button Mapping" section of `DATA_ENGINE_REFERENCE.md`
+- [x] Add a note distinguishing `PitchAnalyzer` (standalone, no beats) from `PitchBeatLinker` (beat-aligned, used in level generation), with a link to the "Beat Detection & Button Mapping" section of `DATA_ENGINE_REFERENCE.md`
 
 ### 5b. `DATA_ENGINE_REFERENCE.md`
 

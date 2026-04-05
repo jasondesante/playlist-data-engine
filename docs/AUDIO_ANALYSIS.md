@@ -13,6 +13,7 @@ The engine's audio analysis is powered by the Web Audio API and provides two dis
 | **Triple Tap Real-Time** | `extractSonicFingerprint()` | Quick analysis at key positions | Character generation, quick profiling |
 | **Full Song Timeline** | `analyzeTimeline()` | Complete track analysis | Waveform visualization, level generation |
 | **Music Classification** | `analyze()` | Deep ML classification | Genre, mood, and vibe detection |
+| **Pitch Analysis** | `analyze()` | Full-track pitch detection | Melody analysis, note detection |
 
 > **Note**: For rhythm game features like beat detection, beat streaming, and chart creation, see [BEAT_DETECTION.md](BEAT_DETECTION.md).
 
@@ -22,6 +23,7 @@ The engine's audio analysis is powered by the Web Audio API and provides two dis
 |-----------|----------|
 | **AudioAnalyzer** (main class) | [src/core/analysis/AudioAnalyzer.ts](../src/core/analysis/AudioAnalyzer.ts) |
 | **MusicClassifier** (ML classification) | [src/core/analysis/MusicClassifier.ts](../src/core/analysis/MusicClassifier.ts) |
+| **PitchAnalyzer** (pitch detection) | [src/core/analysis/PitchAnalyzer.ts](../src/core/analysis/PitchAnalyzer.ts) |
 | **SpectrumScanner** (frequency bands) | [src/core/analysis/SpectrumScanner.ts](../src/core/analysis/SpectrumScanner.ts) |
 | **Audio Types** | [src/core/types/AudioProfile.ts](../src/core/types/AudioProfile.ts) |
 
@@ -479,6 +481,75 @@ console.log(profile.analysis_metadata.models_used);
 // Two-step: ['/models/discogs-effnet-bs64-1.json -> /models/mtg_jamendo_genre-discogs-effnet-1.json', ...]
 // Single-step: ['/models/genre-musicnn-msd-1.json', ...]
 ```
+
+---
+
+## Pitch Analysis
+
+For full-track pitch detection without beat-map dependency, use the `PitchAnalyzer`. This provides per-frame pitch results, melody contour analysis, and summary statistics directly from raw audio.
+
+### Method
+
+```typescript
+analyze(audioUrl: string): Promise<PitchAnalysisProfile>
+```
+
+### Usage Example
+
+```typescript
+import { PitchAnalyzer } from 'playlist-data-engine';
+
+const analyzer = new PitchAnalyzer({
+  algorithm: 'pitch_melodia',
+  includeContour: true
+});
+
+const profile = await analyzer.analyze('https://example.com/audio.mp3');
+
+console.log(`Voicing ratio: ${(profile.voicingRatio * 100).toFixed(1)}%`);
+console.log(`Range: ${profile.lowestNote} - ${profile.highestNote}`);
+console.log(`Contour direction: ${profile.contour?.direction}`);
+```
+
+### Constructor Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `algorithm` | `PitchAlgorithm` | `'pitch_melodia'` | Pitch detection algorithm |
+| `minFrequency` | `number` | `80` | Minimum frequency in Hz |
+| `maxFrequency` | `number` | algorithm-dependent | Maximum frequency in Hz (1000 for pyin_legacy, 20000 for others) |
+| `sampleRate` | `number` | `44100` | Target sample rate |
+| `crepeModelUrl` | `string` | — | CREPE model URL (for pitch_crepe algorithm) |
+| `resolveUrl` | `(url) => Promise<string>` | — | URL resolver for Arweave URLs |
+| `includeContour` | `boolean` | `true` | Include melody contour analysis |
+| `onProgress` | `(phase, progress) => void` | — | Progress callback |
+
+### PitchAnalysisProfile Output
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `pitchResults` | `PitchResult[]` | Per-frame pitch detection results |
+| `contour` | `PitchContour` | Melody contour (when `includeContour: true`) |
+| `voicingRatio` | `number` | Ratio of voiced frames (0.0 - 1.0) |
+| `averageFrequency` | `number` | Average frequency of voiced frames (Hz) |
+| `medianFrequency` | `number` | Median frequency of voiced frames (Hz) |
+| `minFrequency` | `number` | Minimum detected frequency (Hz) |
+| `maxFrequency` | `number` | Maximum detected frequency (Hz) |
+| `pitchRangeSemitones` | `number` | Pitch range in semitones |
+| `lowestNote` | `string \| null` | Lowest detected note name |
+| `highestNote` | `string \| null` | Highest detected note name |
+| `noteDistribution` | `{ note, count, percentage }[]` | Note frequency distribution |
+| `totalFrames` | `number` | Total frames analyzed |
+| `voicedFrames` | `number` | Voiced frames count |
+| `directionStats` | `DirectionStats` | Direction statistics (when contour enabled) |
+| `intervalStats` | `IntervalStats` | Interval statistics (when contour enabled) |
+| `analysis_metadata` | `{ algorithm_used, analyzed_at, duration_analyzed }` | Pipeline metadata |
+
+### PitchAnalyzer vs PitchBeatLinker
+
+The `PitchAnalyzer` is a standalone analyzer that operates on raw audio with **no dependency on beat detection**. Use it for general pitch analysis tasks.
+
+For rhythm game chart generation where pitch needs to be aligned to beats, use `PitchBeatLinker` combined with `MelodyContourAnalyzer` (see [BEAT_DETECTION.md](BEAT_DETECTION.md)).
 
 ---
 
