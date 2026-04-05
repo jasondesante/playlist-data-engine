@@ -67,7 +67,7 @@ Create a standalone `PitchAnalyzer` class in `src/core/analysis/PitchAnalyzer.ts
   }
   ```
 
-- [ ] Create a `PitchContour` interface that mirrors `MelodyContour` depth
+- [x] Create a `PitchContour` interface that mirrors `MelodyContour` depth
 
   ```typescript
   interface PitchContour {
