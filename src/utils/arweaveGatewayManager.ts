@@ -7,9 +7,10 @@
  *
  * Design decisions:
  * - Sequential gateway checking (primary -> fallbacks one-by-one)
- * - In-memory cache only (no localStorage)
+ * - localStorage persistence for active gateway across sessions
  * - 5 second timeout per gateway check
  * - 2 hour cache TTL
+ * - Active gateway is reused without HEAD checks; only real fetch failures trigger fallback
  *
  * @module utils/arweaveGatewayManager
  */
@@ -22,6 +23,20 @@ import {
     constructGatewayUrl,
 } from './arweaveUtils.js';
 import { Logger } from './logger.js';
+
+/**
+ * Dynamically import Wayfinder to avoid bundling Node.js `crypto` polyfills
+ * into the main build. Only used by resolveUrlWayfinder().
+ */
+type Wayfinder = Awaited<ReturnType<typeof import('@ar.io/wayfinder-core')['createWayfinderClient']>> & { resolveUrl: (opts: { originalUrl: string }) => Promise<{ hostname: string; protocol: string }> };
+
+async function loadWayfinder(): Promise<typeof import('@ar.io/wayfinder-core') | null> {
+    try {
+        return await import('@ar.io/wayfinder-core');
+    } catch {
+        return null;
+    }
+}
 
 /**
  * Configuration for the gateway cache entry
@@ -204,6 +219,11 @@ const DEFAULT_TIMEOUT = 5000;
 const DEFAULT_CACHE_TTL = 7200000;
 
 /**
+ * localStorage key for persisting the active gateway across sessions
+ */
+const ACTIVE_GATEWAY_STORAGE_KEY = 'arweave_active_gateway';
+
+/**
  * ArweaveGatewayManager class
  *
  * Manages gateway fallback for Arweave URLs with caching support.
@@ -233,6 +253,10 @@ export class ArweaveGatewayManager {
     private originalPriorities: Map<string, number> = new Map();
     /** Maximum number of response time records to keep per gateway */
     private readonly MAX_HEALTH_RECORDS = 50;
+    /** AR.IO Wayfinder client for dynamic routing */
+    private wayfinder: Wayfinder | null = null;
+    /** The currently active dynamic gateway. Used globally to prevent constant switching. */
+    private activeGateway: GatewayConfig | null = null;
 
     constructor(config?: ArweaveGatewayManagerConfig) {
         // Deep-clone gateways to avoid mutating the original config objects
@@ -248,10 +272,22 @@ export class ArweaveGatewayManager {
             this.originalPriorities.set(g.host, g.priority);
         });
 
+        // Restore active gateway from localStorage (persists across sessions)
+        this.activeGateway = this.loadPersistedGateway();
+
+        // Initialize Wayfinder lazily (deferred to avoid bundling Node.js crypto polyfills)
+        loadWayfinder().then(mod => {
+            if (mod) {
+                this.wayfinder = mod.createWayfinderClient();
+                this.logger.info('Wayfinder client initialized');
+            }
+        });
+
         this.logger.info('Gateway manager initialized', {
             gateways: this.gateways.map(g => g.host),
             timeout: this.timeout,
             cacheTTL: this.cacheTTL,
+            activeGateway: this.activeGateway?.host ?? null,
         });
     }
 
@@ -266,7 +302,8 @@ export class ArweaveGatewayManager {
      * @param url - The URL to resolve
      * @returns A working URL (or original URL if all gateways fail)
      */
-    async resolveUrl(url: string): Promise<string> {
+    // async resolveUrl(url: string): Promise<string> {
+    async resolveUrlOld(url: string): Promise<string> {
         // Not an Arweave URL, return as-is
         if (!isArweaveUrl(url)) {
             return url;
@@ -323,6 +360,215 @@ export class ArweaveGatewayManager {
         // All gateways failed, return original URL
         this.logger.warn('All gateways failed, returning original URL', { txId, pathSuffix, originalUrl: url });
         return url;
+    }
+
+    /**
+     * Resolve an Arweave URL using AR.IO Wayfinder as the primary strategy,
+     * with static gateways as fallback.
+     *
+     * This is the experimental Wayfinder-powered resolver. It tries:
+     * 1. Cache
+     * 2. Previously active gateway
+     * 3. AR.IO Wayfinder dynamic resolution
+     * 4. Static gateway fallback
+     *
+     * @param url - The URL to resolve
+     * @returns A working URL (or original URL if all gateways fail)
+     */
+    // async resolveUrlWayfinder(url: string): Promise<string> {
+    async resolveUrl(url: string): Promise<string> {
+        // Not an Arweave URL, return as-is
+        if (!isArweaveUrl(url)) {
+            return url;
+        }
+
+        // Parse the URL to get txId and pathSuffix
+        const parsed = parseArweaveUrl(url);
+        if (!parsed) {
+            this.logger.warn('Failed to parse Arweave URL, returning original', { url });
+            return url;
+        }
+
+        const { txId, pathSuffix } = parsed;
+
+        // Check per-txId cache first
+        const cachedGateway = this.getCachedGateway(txId);
+        if (cachedGateway) {
+            this.hitCount++;
+            const workingUrl = constructGatewayUrl(txId, cachedGateway, pathSuffix);
+            this.logger.debug('Cache hit for txId', { txId, gateway: cachedGateway.host, pathSuffix });
+            return workingUrl;
+        }
+
+        // If we have an active gateway, use it directly without a HEAD check.
+        // The caller should use reportGatewayFailure() if the actual fetch fails.
+        if (this.activeGateway) {
+            this.setCache(txId, this.activeGateway);
+            const workingUrl = constructGatewayUrl(txId, this.activeGateway, pathSuffix);
+            this.logger.debug('Using active gateway (no HEAD check)', {
+                txId,
+                host: this.activeGateway.host,
+            });
+            return workingUrl;
+        }
+
+        // No active gateway yet — find one (this only runs on first resolve of a session)
+        return this.findAndSetGateway(url, txId, pathSuffix);
+    }
+
+    /**
+     * Report that the active gateway failed a real fetch.
+     *
+     * Call this when the URL returned by resolveUrl() actually fails to load
+     * (e.g. fetch() returns a 4xx/5xx or throws). This clears the active gateway
+     * and finds a new one, persisting the result to localStorage.
+     *
+     * @param url - The URL that failed
+     * @returns A new working URL (or original if all gateways fail)
+     */
+    async reportGatewayFailure(url: string): Promise<string> {
+        const parsed = parseArweaveUrl(url);
+        if (!parsed) return url;
+        const { txId, pathSuffix } = parsed;
+
+        this.logger.warn('Real fetch failure reported, finding new gateway', {
+            failedHost: this.activeGateway?.host,
+            txId,
+        });
+
+        this.activeGateway = null;
+        this.cache.delete(txId);
+        this.clearPersistedGateway();
+
+        return this.findAndSetGateway(url, txId, pathSuffix);
+    }
+
+    /**
+     * Find a working gateway by trying Wayfinder then static gateways,
+     * set it as the active gateway, cache it, and persist to localStorage.
+     */
+    private async findAndSetGateway(url: string, txId: string, pathSuffix: string): Promise<string> {
+        this.missCount++;
+        this.logger.debug('Finding gateway for txId', { txId, pathSuffix });
+
+        // Try Wayfinder resolution if available
+        if (this.wayfinder) {
+            try {
+                this.logger.debug('Attempting Wayfinder resolution', { txId });
+                const wayfinderUrlObj = await this.wayfinder.resolveUrl({ originalUrl: url });
+                const wayfinderHost = wayfinderUrlObj.hostname;
+                const wayfinderProtocol = wayfinderUrlObj.protocol.replace(':', '') as 'http' | 'https';
+
+                const wayfinderGateway: GatewayConfig = {
+                    host: wayfinderHost,
+                    protocol: wayfinderProtocol,
+                    priority: 0,
+                };
+
+                const isWorking = await this.checkGateway(txId, wayfinderGateway, pathSuffix);
+                if (isWorking) {
+                    this.setActiveGateway(wayfinderGateway, txId);
+                    const workingUrl = constructGatewayUrl(txId, wayfinderGateway, pathSuffix);
+                    this.logger.info('Wayfinder resolution succeeded', {
+                        txId,
+                        gateway: wayfinderHost,
+                        pathSuffix,
+                        workingUrl,
+                    });
+                    return workingUrl;
+                }
+                this.logger.debug('Wayfinder gateway did not pass health check, falling back to static gateways', {
+                    txId,
+                    host: wayfinderHost,
+                });
+            } catch (error) {
+                this.logger.warn('Wayfinder resolution failed, falling back to static gateways', {
+                    txId,
+                    error: error instanceof Error ? error.message : String(error),
+                });
+            }
+        }
+
+        // Fallback: Try each static gateway in priority order
+        for (const gateway of this.gateways) {
+            try {
+                const isWorking = await this.checkGateway(txId, gateway, pathSuffix);
+                if (isWorking) {
+                    this.setActiveGateway(gateway, txId);
+                    const workingUrl = constructGatewayUrl(txId, gateway, pathSuffix);
+                    this.logger.info('Gateway check succeeded', {
+                        txId,
+                        gateway: gateway.host,
+                        pathSuffix,
+                        workingUrl,
+                    });
+                    return workingUrl;
+                }
+            } catch (error) {
+                this.logger.debug('Gateway check failed', {
+                    txId,
+                    gateway: gateway.host,
+                    pathSuffix,
+                    error: error instanceof Error ? error.message : String(error),
+                });
+            }
+        }
+
+        // All gateways failed, return original URL
+        this.logger.warn('All gateways failed, returning original URL', { txId, pathSuffix, originalUrl: url });
+        return url;
+    }
+
+    /**
+     * Set the active gateway, cache it for the txId, and persist to localStorage.
+     */
+    private setActiveGateway(gateway: GatewayConfig, txId: string): void {
+        this.activeGateway = gateway;
+        this.setCache(txId, gateway);
+        this.persistGateway(gateway);
+    }
+
+    /**
+     * Load the persisted active gateway from localStorage.
+     */
+    private loadPersistedGateway(): GatewayConfig | null {
+        try {
+            if (typeof localStorage === 'undefined') return null;
+            const stored = localStorage.getItem(ACTIVE_GATEWAY_STORAGE_KEY);
+            if (!stored) return null;
+            const parsed = JSON.parse(stored);
+            if (parsed && typeof parsed.host === 'string' && typeof parsed.protocol === 'string') {
+                this.logger.info('Restored active gateway from localStorage', { host: parsed.host });
+                return parsed as GatewayConfig;
+            }
+        } catch {
+            // localStorage unavailable or corrupted — ignore
+        }
+        return null;
+    }
+
+    /**
+     * Persist the active gateway to localStorage.
+     */
+    private persistGateway(gateway: GatewayConfig): void {
+        try {
+            if (typeof localStorage === 'undefined') return;
+            localStorage.setItem(ACTIVE_GATEWAY_STORAGE_KEY, JSON.stringify(gateway));
+        } catch {
+            // localStorage unavailable — ignore
+        }
+    }
+
+    /**
+     * Clear the persisted gateway from localStorage.
+     */
+    private clearPersistedGateway(): void {
+        try {
+            if (typeof localStorage === 'undefined') return;
+            localStorage.removeItem(ACTIVE_GATEWAY_STORAGE_KEY);
+        } catch {
+            // localStorage unavailable — ignore
+        }
     }
 
     /**

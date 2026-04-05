@@ -77,7 +77,7 @@ describe('BeatMapGenerator', () => {
             const generator = new BeatMapGenerator();
             const config = generator.getConfig();
 
-            expect(config.minBpm).toBe(60);
+            expect(config.minBpm).toBe(90);
             expect(config.maxBpm).toBe(180);
             expect(config.sensitivity).toBe(1.0);
             expect(config.noiseFloorThreshold).toBe(0);
@@ -399,6 +399,9 @@ describe('BeatMapGenerator', () => {
                     tempoCenter: 0.5,
                     tempoWidth: 1.4,
                     generatedAt: new Date().toISOString(),
+                    filter: 0.0,
+                    useOctaveResolution: false,
+                    useTripleMeter: false,
                 },
             };
 
@@ -469,6 +472,9 @@ describe('BeatMapGenerator', () => {
                     tempoCenter: 0.5,
                     tempoWidth: 1.4,
                     generatedAt: new Date().toISOString(),
+                    filter: 0.0,
+                    useOctaveResolution: false,
+                    useTripleMeter: false,
                 },
             };
 
@@ -523,6 +529,9 @@ describe('BeatMapGenerator', () => {
                     tempoCenter: 0.5,
                     tempoWidth: 1.4,
                     generatedAt: new Date().toISOString(),
+                    filter: 0.0,
+                    useOctaveResolution: false,
+                    useTripleMeter: false,
                 },
             };
 
@@ -592,6 +601,9 @@ describe('BeatMapGenerator', () => {
                     tempoCenter: 0.5,
                     tempoWidth: 1.4,
                     generatedAt: new Date().toISOString(),
+                    filter: 0.0,
+                    useOctaveResolution: false,
+                    useTripleMeter: false,
                 },
             };
 
@@ -632,6 +644,9 @@ describe('BeatMapGenerator', () => {
                     tempoCenter: 0.5,
                     tempoWidth: 1.4,
                     generatedAt: new Date().toISOString(),
+                    filter: 0.0,
+                    useOctaveResolution: false,
+                    useTripleMeter: false,
                 },
             };
 
@@ -707,6 +722,9 @@ describe('BeatMapGenerator', () => {
                     tempoCenter: 0.5,
                     tempoWidth: 1.4,
                     generatedAt: new Date().toISOString(),
+                    filter: 0.0,
+                    useOctaveResolution: false,
+                    useTripleMeter: false,
                 },
             };
 

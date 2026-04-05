@@ -12,7 +12,13 @@ export default defineConfig({
       fileName: (format: 'es' | 'cjs') => `playlist-data-engine.${format === 'es' ? 'mjs' : 'js'}`
     },
     rollupOptions: {
-      external: ['react', 'react-dom', 'essentia.js'],
+      external: [
+        'react',
+        'react-dom',
+        'essentia.js',
+        '@tensorflow/tfjs',
+        '@ar.io/wayfinder-core',
+      ],
       output: {
         globals: {
           react: 'React',

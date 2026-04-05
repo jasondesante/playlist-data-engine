@@ -16,6 +16,17 @@ import {
 } from '../../src/utils/arweaveGatewayManager';
 import type { GatewayConfig } from '../../src/utils/arweaveUtils';
 
+// Mock Wayfinder
+const mockWayfinderInstance = {
+    resolveUrl: vi.fn(),
+};
+
+vi.mock('@ar.io/wayfinder-core', () => ({
+    createWayfinderClient: vi.fn(() => mockWayfinderInstance),
+}));
+
+import { createWayfinderClient } from '@ar.io/wayfinder-core';
+
 // ============================================================
 // Test Data
 // ============================================================
@@ -47,9 +58,11 @@ const CUSTOM_GATEWAYS: GatewayConfig[] = [
 const originalFetch = global.fetch;
 
 // Create a mock fetch function that can be configured per-test
-let mockFetch: ReturnType<typeof vi.fn>;
+let mockFetch: any;
 
 beforeEach(() => {
+    mockWayfinderInstance.resolveUrl.mockReset();
+    (createWayfinderClient as any).mockClear();
     mockFetch = vi.fn();
     global.fetch = mockFetch;
 });
@@ -120,6 +133,95 @@ describe('Gateway priority ordering', () => {
 
         // Default gateways: arweave.net, ar.io, ardrive.net, turbo-gateway.com
         expect(fetchCalls[0]).toContain('arweave.net');
+    });
+});
+
+// ============================================================
+// Test Wayfinder Integration
+// ============================================================
+
+describe('Wayfinder Integration', () => {
+    it('should try Wayfinder resolution and use it if it passes health check', async () => {
+        const manager = new ArweaveGatewayManager();
+
+        // Mock Wayfinder to return a specific gateway
+        mockWayfinderInstance.resolveUrl.mockResolvedValueOnce(new URL('https://wayfinder-gateway.io/' + VALID_TX_ID));
+
+        // Mock fetch to succeed for the Wayfinder gateway
+        mockFetch.mockResolvedValueOnce(new Response(null, { status: 200 }));
+
+        const result = await manager.resolveUrl(ARWEAVE_URL);
+
+        expect(mockWayfinderInstance.resolveUrl).toHaveBeenCalled();
+        expect(mockFetch).toHaveBeenCalledWith(
+            expect.stringContaining('wayfinder-gateway.io'),
+            expect.objectContaining({ method: 'HEAD' })
+        );
+        expect(result).toContain('wayfinder-gateway.io');
+    });
+
+    it('should fallback to static gateways if Wayfinder resolution fails', async () => {
+        const manager = new ArweaveGatewayManager({
+            gateways: CUSTOM_GATEWAYS
+        });
+
+        // Wayfinder resolution throws an error
+        mockWayfinderInstance.resolveUrl.mockRejectedValueOnce(new Error('Wayfinder error'));
+
+        // Mock fetch to succeed for the first static gateway
+        mockFetch.mockResolvedValueOnce(new Response(null, { status: 200 }));
+
+        const result = await manager.resolveUrl(ARWEAVE_URL);
+
+        expect(mockWayfinderInstance.resolveUrl).toHaveBeenCalled();
+        expect(result).toContain('primary.example.com');
+        expect(mockFetch).toHaveBeenCalledWith(
+            expect.stringContaining('primary.example.com'),
+            expect.anything()
+        );
+    });
+
+    it('should fallback to static gateways if Wayfinder gateway fails health check', async () => {
+        const manager = new ArweaveGatewayManager({
+            gateways: CUSTOM_GATEWAYS
+        });
+
+        // Wayfinder returns a gateway
+        mockWayfinderInstance.resolveUrl.mockResolvedValueOnce(new URL('https://failed-gateway.io/' + VALID_TX_ID));
+
+        // Wayfinder gateway fails health check (500)
+        mockFetch.mockResolvedValueOnce(new Response(null, { status: 500 }));
+        // First static gateway succeeds
+        mockFetch.mockResolvedValueOnce(new Response(null, { status: 200 }));
+
+        const result = await manager.resolveUrl(ARWEAVE_URL);
+
+        expect(mockWayfinderInstance.resolveUrl).toHaveBeenCalled();
+        expect(mockFetch).toHaveBeenCalledTimes(2);
+        expect(mockFetch).toHaveBeenCalledWith(
+            expect.stringContaining('failed-gateway.io'),
+            expect.anything()
+        );
+        expect(result).toContain('primary.example.com');
+    });
+
+    it('should not try Wayfinder if client initialization failed', async () => {
+        // Force initialization failure by making createWayfinderClient throw
+        (createWayfinderClient as any).mockImplementationOnce(() => {
+            throw new Error('Init failed');
+        });
+
+        const manager = new ArweaveGatewayManager({
+            gateways: CUSTOM_GATEWAYS
+        });
+
+        // Mock fetch to succeed for the first static gateway
+        mockFetch.mockResolvedValueOnce(new Response(null, { status: 200 }));
+
+        const result = await manager.resolveUrl(ARWEAVE_URL);
+
+        expect(result).toContain('primary.example.com');
+        // Since it failed at constructor, it shouldn't have a wayfinder client to call
     });
 });
 

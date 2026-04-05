@@ -83,7 +83,7 @@ describe('TempoDetector', () => {
 
             expect(config.tempoCenter).toBe(0.5);
             expect(config.tempoWidth).toBe(1.4);
-            expect(config.minBpm).toBe(60);
+            expect(config.minBpm).toBe(90);
             expect(config.maxBpm).toBe(180);
         });
 
@@ -107,7 +107,7 @@ describe('TempoDetector', () => {
 
     describe('estimateTempo', () => {
         it('should detect 60 BPM from periodic envelope', () => {
-            const detector = new TempoDetector();
+            const detector = new TempoDetector({ minBpm: 50, maxBpm: 180 });
             const { envelope, hopSizeSeconds } = createPeriodicOnsetEnvelope(60, 10);
 
             const estimate = detector.estimateTempo(envelope, hopSizeSeconds);
