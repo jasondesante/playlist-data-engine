@@ -1567,6 +1567,7 @@ Full-track pitch detection that operates on raw audio with zero dependency on be
 | `minFrequency` | `number` | `80` | Min frequency in Hz |
 | `maxFrequency` | `number` | algorithm-dependent | Max frequency in Hz (1000 for pyin_legacy, 20000 for others) |
 | `sampleRate` | `number` | `44100` | Target sample rate |
+| `hopSize` | `number` | `1024` | Hop size in samples (~23ms at 44.1kHz, ~43 frames/sec). Larger = faster but lower time resolution |
 | `crepeModelUrl` | `string` | — | CREPE model URL |
 | `resolveUrl` | `(url) => Promise<string>` | — | URL resolver for Arweave URLs |
 | `includeContour` | `boolean` | `true` | Include melody contour analysis |

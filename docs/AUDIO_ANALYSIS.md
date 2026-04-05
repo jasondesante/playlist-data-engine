@@ -519,6 +519,7 @@ console.log(`Contour direction: ${profile.contour?.direction}`);
 | `minFrequency` | `number` | `80` | Minimum frequency in Hz |
 | `maxFrequency` | `number` | algorithm-dependent | Maximum frequency in Hz (1000 for pyin_legacy, 20000 for others) |
 | `sampleRate` | `number` | `44100` | Target sample rate |
+| `hopSize` | `number` | `1024` | Hop size in samples (~23ms at 44.1kHz, ~43 frames/sec). Larger = faster but lower time resolution |
 | `crepeModelUrl` | `string` | — | CREPE model URL (for pitch_crepe algorithm) |
 | `resolveUrl` | `(url) => Promise<string>` | — | URL resolver for Arweave URLs |
 | `includeContour` | `boolean` | `true` | Include melody contour analysis |

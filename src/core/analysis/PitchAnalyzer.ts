@@ -71,6 +71,16 @@ export interface PitchAnalyzerConfig {
     sampleRate?: number;
 
     /**
+     * Hop size in samples between consecutive frames.
+     * Larger values = fewer frames = faster analysis, lower time resolution.
+     * Default is 1024 (~23ms at 44.1kHz, ~43 frames/sec) for the standalone
+     * analyzer. The beat-aligned path (PitchBeatLinker) uses smaller hops
+     * internally since it only evaluates at beat positions.
+     * @default 1024
+     */
+    hopSize?: number;
+
+    /**
      * CREPE model URL (only for 'pitch_crepe' algorithm).
      */
     crepeModelUrl?: string;
@@ -210,6 +220,7 @@ const DEFAULT_CONFIG: Required<Omit<PitchAnalyzerConfig, 'onProgress'>> & { onPr
     minFrequency: 80,
     maxFrequency: 20000,
     sampleRate: 44100,
+    hopSize: 1024,
     crepeModelUrl: DEFAULT_CREPE_MODEL_URL,
     resolveUrl: arweaveGatewayManager.resolveUrl.bind(arweaveGatewayManager),
     includeContour: true,
@@ -415,6 +426,7 @@ export class PitchAnalyzer {
                 minFrequency: config.minFrequency ?? 80,
                 maxFrequency: config.maxFrequency ?? 1000,
                 targetSampleRate: config.sampleRate ?? 44100,
+                hopSize: config.hopSize ?? 1024,
             });
             return detector.detectSignal(signal, sampleRate);
         } else {
@@ -424,6 +436,7 @@ export class PitchAnalyzer {
                 minFrequency: config.minFrequency ?? 80,
                 maxFrequency: config.maxFrequency ?? 20000,
                 targetSampleRate: config.sampleRate ?? 44100,
+                hopSize: config.hopSize ?? 1024,
                 crepeModelUrl: config.crepeModelUrl,
                 resolveUrl: config.resolveUrl,
             });
