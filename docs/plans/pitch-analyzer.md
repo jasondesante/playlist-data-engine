@@ -103,7 +103,7 @@ Create a standalone `PitchAnalyzer` class in `src/core/analysis/PitchAnalyzer.ts
 
 ## Phase 2: Implement PitchAnalyzer Class
 
-- [ ] Create `src/core/analysis/PitchAnalyzer.ts`
+- [x] Create `src/core/analysis/PitchAnalyzer.ts`
 
   ```typescript
   interface PitchAnalyzerConfig {
@@ -126,7 +126,7 @@ Create a standalone `PitchAnalyzer` class in `src/core/analysis/PitchAnalyzer.ts
   }
   ```
 
-- [ ] Implement `analyze(audioUrl: string): Promise<PitchAnalysisProfile>` — main public method
+- [x] Implement `analyze(audioUrl: string): Promise<PitchAnalysisProfile>` — main public method
 
   Internal flow:
   1. Emit `onProgress('fetching', 0)`
@@ -143,13 +143,13 @@ Create a standalone `PitchAnalyzer` class in `src/core/analysis/PitchAnalyzer.ts
   10. If `includeContour !== false`, compute contour analysis from `PitchResult[]`
   11. Build and return `PitchAnalysisProfile`
 
-- [ ] Implement private `computeSummary(results: PitchResult[])` method
+- [x] Implement private `computeSummary(results: PitchResult[])` method
   - Calculate voicedFrames, voicingRatio, averageFrequency, medianFrequency
   - Calculate min/max frequency, pitchRangeSemitones
   - Build noteDistribution from voiced frames
   - Return flat stats to be spread onto the profile
 
-- [ ] Implement private `computeContour(results: PitchResult[])` method
+- [x] Implement private `computeContour(results: PitchResult[])` method
   - Compare consecutive voiced frames to determine direction (up/down/stable)
   - Group consecutive frames with same direction into segments
   - Determine overall direction from segment analysis
@@ -158,10 +158,10 @@ Create a standalone `PitchAnalyzer` class in `src/core/analysis/PitchAnalyzer.ts
   - Reuse the same interval categorization thresholds from `MelodyContourAnalyzer` (1-2 small, 3-4 medium, 5-7 large, 8+ very_large)
   - Return `PitchContour` + `DirectionStats` + `IntervalStats`
 
-- [ ] Implement private `fetchAndDecodeAudio(url: string): Promise<{ signal: Float32Array; sampleRate: number; duration: number }>` method
+- [x] Implement private `fetchAndDecodeAudio(url: string): Promise<{ signal: Float32Array; sampleRate: number; duration: number }>` method
   - Fetch audio, decode via OfflineAudioContext, mix to mono, return signal + metadata
 
-- [ ] Implement private `resolveDefaults(config: PitchAnalyzerConfig)` method
+- [x] Implement private `resolveDefaults(config: PitchAnalyzerConfig)` method
   - If `algorithm === 'pyin_legacy'` and `maxFrequency` is not provided → default to 1000
   - Otherwise if `maxFrequency` not provided → default to 20000
 
@@ -172,19 +172,19 @@ Create a standalone `PitchAnalyzer` class in `src/core/analysis/PitchAnalyzer.ts
 
 ## Phase 4: Tests
 
-- [ ] Create `tests/unit/analysis/pitchAnalyzer.test.ts`
+- [x] Create `tests/unit/analysis/pitchAnalyzer.test.ts`
 
   Test cases:
-  - [ ] Constructor with default config
-  - [ ] Constructor with custom config
-  - [ ] `analyze()` with a valid audio URL returns `PitchAnalysisProfile`
-  - [ ] Summary statistics are accurate (voicing ratio, frequency range, note distribution)
-  - [ ] Contour analysis produces segments, direction, time-window directions, interval stats
-  - [ ] `pyin_legacy` algorithm selection uses built-in detector and clamps maxFrequency to 1000
-  - [ ] Essentia algorithm selection uses `EssentiaPitchDetector` with 20000 Hz default
-  - [ ] `includeContour: false` skips contour computation (contour, directionStats, intervalStats all absent)
-  - [ ] `onProgress` callback fires with expected phases
-  - [ ] Handles edge cases: silent audio, very short audio, all-unvoiced audio
+  - [x] Constructor with default config
+  - [x] Constructor with custom config
+  - [x] `analyze()` with a valid audio URL returns `PitchAnalysisProfile`
+  - [x] Summary statistics are accurate (voicing ratio, frequency range, note distribution)
+  - [x] Contour analysis produces segments, direction, time-window directions, interval stats
+  - [x] `pyin_legacy` algorithm selection uses built-in detector and clamps maxFrequency to 1000
+  - [x] Essentia algorithm selection uses `EssentiaPitchDetector` with 20000 Hz default
+  - [x] `includeContour: false` skips contour computation (contour, directionStats, intervalStats all absent)
+  - [x] `onProgress` callback fires with expected phases
+  - [x] Handles edge cases: silent audio, very short audio, all-unvoiced audio
 
 ## Phase 5: Documentation
 
