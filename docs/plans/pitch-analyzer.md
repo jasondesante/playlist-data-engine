@@ -245,11 +245,11 @@ Create a standalone `PitchAnalyzer` class in `src/core/analysis/PitchAnalyzer.ts
 
 ### 5b. `DATA_ENGINE_REFERENCE.md`
 
-- [ ] **Quick Export Reference** — Add a new "Pitch Analysis" row to the export table (between "Pitch Detection & Button Mapping" and "Utilities"), listing `PitchAnalyzer`, `PitchAnalysisProfile`, `PitchContour`, `PitchContourSegment`
+- [x] **Quick Export Reference** — Add a new "Pitch Analysis" row to the export table (between "Pitch Detection & Button Mapping" and "Utilities"), listing `PitchAnalyzer`, `PitchAnalysisProfile`, `PitchContour`, `PitchContourSegment`
 
-- [ ] **Type Exports** — Add `PitchAnalysisProfile`, `PitchContour`, `PitchContourSegment`, `PitchAnalyzerConfig` to the Generator Types list
+- [x] **Type Exports** — Add `PitchAnalysisProfile`, `PitchContour`, `PitchContourSegment`, `PitchAnalyzerConfig` to the Generator Types list
 
-- [ ] **Core Modules** — Add a `PitchAnalyzer` subsection between `MusicClassifier` and `Beat Detection`, following the same format as the `AudioAnalyzer` and `MusicClassifier` entries:
+- [x] **Core Modules** — Add a `PitchAnalyzer` subsection between `MusicClassifier` and `Beat Detection`, following the same format as the `AudioAnalyzer` and `MusicClassifier` entries:
 
   ```markdown
   ### PitchAnalyzer
@@ -282,14 +282,14 @@ Create a standalone `PitchAnalyzer` class in `src/core/analysis/PitchAnalyzer.ts
   | `analyze(audioUrl)` | `Promise<PitchAnalysisProfile>` | Full-track pitch analysis with optional contour |
   ```
 
-- [ ] **Pitch Detection & Button Mapping** section — Add a callout box at the top of the section explaining the distinction:
+- [x] **Pitch Detection & Button Mapping** section — Add a callout box at the top of the section explaining the distinction:
   - `PitchAnalyzer` = standalone, no beats required, for general pitch analysis
   - `PitchBeatLinker` + `MelodyContourAnalyzer` = beat-aligned, for rhythm game chart generation
   - Include cross-reference link to the new Core Modules entry
 
-- [ ] **Data Types** — Add a `PitchAnalysisProfile` type documentation entry (between `MusicClassificationProfile` and `AudioTimelineEvent`), documenting the interface fields in a table
+- [x] **Data Types** — Add a `PitchAnalysisProfile` type documentation entry (between `MusicClassificationProfile` and `AudioTimelineEvent`), documenting the interface fields in a table
 
-- [ ] **Files Changed table** — Update to include both documentation files
+- [x] **Files Changed table** — Update to include both documentation files
 
 ## Dependencies
 

@@ -87,6 +87,7 @@ A concise overview of all main exports from the library, organized by category.
 | `getAudioUrls`, `getImageUrls`, etc. | Simple playlist data extraction utilities | [Core Modules](#core-modules) |
 | `AudioAnalyzer` | Analyze audio frequency characteristics | [Core Modules](#core-modules) |
 | `MusicClassifier` | Deep ML classification (genre, mood, vibe) | [Core Modules](#core-modules) |
+| `PitchAnalyzer` | Full-track pitch detection with contour analysis | [Core Modules](#core-modules) |
 | `SpectrumScanner` | Analyze frequency bands | [Core Modules](#core-modules) |
 | `ColorExtractor` | Extract color palettes from images | [Core Modules](#core-modules) |
 | `CharacterGenerator` | Generate D&D 5e characters deterministically | [Core Modules](#core-modules) |
@@ -254,7 +255,7 @@ All TypeScript types are exported, including:
 
 **Character Types:** `CharacterSheet`, `AbilityScores`, `Skill`, `ProficiencyLevel`, `Race`, `Class`, `Ability`, `GameMode` — see [Data Types](#data-types)
 
-**Generator Types:** `CharacterGeneratorOptions` (includes `gameMode`), `AudioProfile`, `ColorPalette`, `FrequencyBands`, `MusicClassificationProfile`, `ClassificationTag`, `VibeMetrics`, `GenreProfile`, `GenreTag` — see [Data Types](#data-types)
+**Generator Types:** `CharacterGeneratorOptions` (includes `gameMode`), `AudioProfile`, `ColorPalette`, `FrequencyBands`, `MusicClassificationProfile`, `ClassificationTag`, `VibeMetrics`, `GenreProfile`, `GenreTag`, `PitchAnalysisProfile`, `PitchContour`, `PitchContourSegment`, `PitchAnalyzerConfig` — see [Data Types](#data-types)
 
 **Context Types:** `EnvironmentalContext`, `GamingContext`, `ListeningSession` — see [Data Types](#data-types)
 
@@ -372,6 +373,61 @@ Individual probability match for genre/mood.
 |----------|------|-------------|
 | `name` | `string` | Tag name |
 | `confidence` | `number` | Match confidence (0.0 - 1.0) |
+
+### PitchAnalysisProfile
+
+*Location:* *[src/core/analysis/PitchAnalyzer.ts](src/core/analysis/PitchAnalyzer.ts)*
+
+Result of the `PitchAnalyzer.analyze()` method. Contains per-frame pitch detection results, optional melody contour analysis, and summary statistics.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `pitchResults` | `PitchResult[]` | Per-frame pitch detection results |
+| `contour` | `PitchContour?` | Melody contour analysis (when `includeContour: true`) |
+| `voicingRatio` | `number` | Ratio of voiced to total frames (0.0 - 1.0) |
+| `averageFrequency` | `number` | Average frequency of voiced frames (Hz) |
+| `medianFrequency` | `number` | Median frequency of voiced frames (Hz) |
+| `minFrequency` | `number` | Minimum detected frequency (Hz) |
+| `maxFrequency` | `number` | Maximum detected frequency (Hz) |
+| `pitchRangeSemitones` | `number` | Pitch range in semitones |
+| `lowestNote` | `string \| null` | Lowest detected note name (e.g., "C3") |
+| `highestNote` | `string \| null` | Highest detected note name (e.g., "G5") |
+| `noteDistribution` | `{ note, count, percentage }[]` | Note frequency distribution, sorted by count |
+| `totalFrames` | `number` | Total frames analyzed |
+| `voicedFrames` | `number` | Number of voiced frames |
+| `directionStats` | `DirectionStats?` | Direction statistics (when contour enabled) |
+| `intervalStats` | `IntervalStats?` | Interval statistics (when contour enabled) |
+| `analysis_metadata` | `object` | Pipeline metadata: `{ algorithm_used, analyzed_at, duration_analyzed }` |
+
+### PitchContour
+
+*Location:* *[src/core/analysis/PitchAnalyzer.ts](src/core/analysis/PitchAnalyzer.ts)*
+
+Melody contour analysis result. Populated when `includeContour !== false`.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `direction` | `'ascending' \| 'descending' \| 'stable' \| 'mixed'` | Overall melody direction |
+| `range` | `{ minNote, maxNote, semitones }` | Pitch range information |
+| `segments` | `PitchContourSegment[]` | Melody segments with consistent direction |
+| `shortTermDirection` | `PitchContourDirection` | Direction over recent 1-2 frames |
+| `mediumTermDirection` | `PitchContourDirection` | Direction over recent 4-8 frames |
+| `longTermDirection` | `PitchContourDirection` | Direction over recent 16+ frames |
+
+### PitchContourSegment
+
+*Location:* *[src/core/analysis/PitchAnalyzer.ts](src/core/analysis/PitchAnalyzer.ts)*
+
+A segment of a pitch contour with consistent direction.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `startTime` | `number` | Start time in seconds |
+| `endTime` | `number` | End time in seconds |
+| `startNote` | `string` | Starting note name (e.g., "C4") |
+| `endNote` | `string` | Ending note name (e.g., "G5") |
+| `direction` | `'up' \| 'down' \| 'stable'` | Direction of this segment |
+| `interval` | `number` | Interval in semitones between start and end |
 
 ### SamplingStrategy
 
@@ -1492,6 +1548,44 @@ The engine includes a built-in Arweave gateway manager (`arweaveGatewayManager`)
 **Gateway priority order:** arweave.net → ar.io → ardrive.net → turbo-gateway.com
 
 All model loading includes exponential backoff retries (1s, 2s, 4s) on transient failures, combined with automatic gateway resolution. Non-Arweave URLs pass through unchanged.
+
+### PitchAnalyzer
+
+*Location:* *[src/core/analysis/PitchAnalyzer.ts](src/core/analysis/PitchAnalyzer.ts)*
+
+*Also known as: pitch analysis, standalone pitch detection, full-track pitch*
+
+Full-track pitch detection that operates on raw audio with zero dependency on beat detection or rhythm generation. Returns per-frame pitch results, melody contour analysis, and summary statistics.
+
+**For comprehensive documentation including usage examples, see [docs/AUDIO_ANALYSIS.md](docs/AUDIO_ANALYSIS.md#pitch-analysis)**
+
+#### Constructor Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `algorithm` | `PitchAlgorithm` | `'pitch_melodia'` | Pitch detection algorithm |
+| `minFrequency` | `number` | `80` | Min frequency in Hz |
+| `maxFrequency` | `number` | algorithm-dependent | Max frequency in Hz (1000 for pyin_legacy, 20000 for others) |
+| `sampleRate` | `number` | `44100` | Target sample rate |
+| `crepeModelUrl` | `string` | — | CREPE model URL |
+| `resolveUrl` | `(url) => Promise<string>` | — | URL resolver for Arweave URLs |
+| `includeContour` | `boolean` | `true` | Include melody contour analysis |
+| `onProgress` | `(phase, progress) => void` | — | Progress callback |
+
+#### Methods
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `analyze(audioUrl)` | `Promise<PitchAnalysisProfile>` | Full-track pitch analysis with optional contour |
+
+#### Distinction from PitchBeatLinker
+
+| Component | Purpose | Beat Dependency |
+|-----------|---------|-----------------|
+| `PitchAnalyzer` | Standalone pitch analysis for general use | None — works on raw audio |
+| `PitchBeatLinker` + `MelodyContourAnalyzer` | Beat-aligned pitch for rhythm game chart generation | Requires beat map |
+
+Use `PitchAnalyzer` when you need pitch analysis without rhythm generation. Use `PitchBeatLinker` when building rhythm game charts.
 
 ### ColorExtractor
 
@@ -3298,6 +3392,12 @@ Density-based variants return a standard `DifficultyVariant` with `difficulty: '
 This section covers pitch detection, melody analysis, button mapping, and level generation for rhythm games. These components work together to create playable rhythm game charts from audio.
 
 *Also known as: melody extraction, fundamental frequency estimation, key assignment, chart generation*
+
+> **Standalone vs. Beat-Aligned Pitch Analysis**
+>
+> For pitch analysis without beat detection, use [`PitchAnalyzer`](#pitchanalyzer) — it provides full-track pitch detection with contour analysis directly from raw audio.
+>
+> For rhythm game chart generation that requires pitch aligned to beats, use `PitchBeatLinker` + `MelodyContourAnalyzer` (documented in this section).
 
 **For pitch detection algorithms (pYIN with HMM), see [docs/BEAT_DETECTION.md#pitch-detection](docs/BEAT_DETECTION.md#pitch-detection)**
 
