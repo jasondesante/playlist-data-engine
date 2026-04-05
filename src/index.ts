@@ -686,6 +686,21 @@ export {
     type IntervalCategory,
 } from './core/generation/PitchBeatLinker.js';
 
+// ============================================================================
+// PITCH ANALYSIS
+// ============================================================================
+
+// PitchAnalyzer - Standalone full-track pitch detection (no beat dependency)
+export {
+    PitchAnalyzer,
+    type PitchAnalyzerConfig,
+    type PitchAnalysisProfile,
+    type PitchContour,
+    type PitchContourSegment,
+    type PitchContourSegmentDirection,
+    type PitchContourDirection,
+} from './core/analysis/PitchAnalyzer.js';
+
 // Button Pattern Library
 export {
     DDR_PATTERN_LIBRARY,

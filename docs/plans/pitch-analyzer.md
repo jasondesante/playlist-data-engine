@@ -99,7 +99,7 @@ Create a standalone `PitchAnalyzer` class in `src/core/analysis/PitchAnalyzer.ts
 
   Reuses the existing `DirectionStats` and `IntervalStats` types exported from `MelodyContourAnalyzer.ts` (they are generic enough to apply here).
 
-- [ ] Export the new types from `PitchAnalyzer.ts` alongside the class
+- [x] Export the new types from `PitchAnalyzer.ts` alongside the class
 
 ## Phase 2: Implement PitchAnalyzer Class
 
@@ -167,8 +167,8 @@ Create a standalone `PitchAnalyzer` class in `src/core/analysis/PitchAnalyzer.ts
 
 ## Phase 3: Export and Wire Up
 
-- [ ] Export `PitchAnalyzer` from `src/core/analysis/index.ts`
-- [ ] Export `PitchAnalyzer`, `PitchAnalyzerConfig`, `PitchAnalysisProfile`, `PitchContour`, `PitchContourSegment` from `src/index.ts` in a new "PITCH ANALYSIS" section (distinct from the existing "PITCH DETECTION" section which has the low-level detectors and the beat-coupled `PitchBeatLinker`)
+- [x] Export `PitchAnalyzer` from `src/core/analysis/index.ts`
+- [x] Export `PitchAnalyzer`, `PitchAnalyzerConfig`, `PitchAnalysisProfile`, `PitchContour`, `PitchContourSegment` from `src/index.ts` in a new "PITCH ANALYSIS" section (distinct from the existing "PITCH DETECTION" section which has the low-level detectors and the beat-coupled `PitchBeatLinker`)
 
 ## Phase 4: Tests
 
