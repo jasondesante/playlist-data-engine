@@ -36,7 +36,8 @@ import { SpellcastingGenerator, type SpellcastingConfig } from './SpellcastingGe
 import { LegendaryGenerator, type LegendaryAction, type LegendaryConfig } from './LegendaryGenerator.js';
 import { DEFAULT_EQUIPMENT } from '../../constants/DefaultEquipment.js';
 import { crToLevel } from './CRLevelConverter.js';
-import { getDamageModifierForStats } from '../../constants/StatScaling.js';
+import { getDamageModifierForStats, getHPAtLevel, getAttackAtLevel, getDefenseAtLevel } from '../../constants/StatScaling.js';
+import type { StatLevelOverrides } from '../types/Enemy.js';
 
 /**
  * EnemyGenerator - Static class for enemy generation
@@ -379,11 +380,18 @@ export class EnemyGenerator {
         rarity: EnemyRarity,
         scaledStats: AbilityScores,
         level: number,
-        archetype: EnemyArchetype
+        archetype: EnemyArchetype,
+        statLevels?: StatLevelOverrides
     ): Record<string, unknown> {
         const config = getRarityConfig(rarity);
-        const scaledDie = `d${config.signatureDieSize}`;
-        const damageModifier = getDamageModifierForStats(scaledStats, level, archetype);
+        // If attackLevel is overridden, use StatScaling for damage die
+        const scaledDie = statLevels?.attackLevel !== undefined
+            ? getAttackAtLevel(scaledStats, statLevels.attackLevel, rarity, archetype).damageDie
+            : `d${config.signatureDieSize}`;
+        // If attackLevel is overridden, use StatScaling for damage modifier
+        const damageModifier = statLevels?.attackLevel !== undefined
+            ? getAttackAtLevel(scaledStats, statLevels.attackLevel, rarity, archetype).damageModifier
+            : getDamageModifierForStats(scaledStats, level, archetype);
 
         // Build feature object compatible with ClassFeature format
         return {
@@ -738,7 +746,8 @@ export class EnemyGenerator {
         rng: SeededRNG,
         cr?: number,
         scaledStats?: AbilityScores,
-        level?: number
+        level?: number,
+        statLevels?: StatLevelOverrides
     ): { abilities: Record<string, unknown>[]; spellConfig?: SpellcastingConfig } {
         // Start with signature ability — use ability-score-based modifier if stats available
         const signatureAbility = scaledStats && level
@@ -747,14 +756,16 @@ export class EnemyGenerator {
                 rarity,
                 scaledStats,
                 level,
-                template.archetype
+                template.archetype,
+                statLevels
             )
             : EnemyGenerator.scaleSignatureAbility(
                 template.signatureAbility,
                 rarity,
                 template.baseStats,
                 1,
-                template.archetype
+                template.archetype,
+                statLevels
             );
 
         const abilities: Record<string, unknown>[] = [signatureAbility];
@@ -919,7 +930,8 @@ export class EnemyGenerator {
             rarity = 'common',
             difficultyMultiplier = 1.0,
             audioProfile,
-            track
+            track,
+            statLevels
         } = options;
 
         // Validate: track required if audioProfile provided
@@ -980,12 +992,18 @@ export class EnemyGenerator {
 
         // Calculate HP with rarity multiplier
         // Apply fractional CR reduction only when CR is explicitly provided (not derived from rarity)
-        let hpMultiplier = rarityConfig.statMultiplier;
-        if (explicitCR !== undefined) {
-            const crMultiplier = EnemyGenerator.getStatMultiplierForFractionalCR(cr);
-            hpMultiplier = crMultiplier * hpMultiplier;
+        let maxHp: number;
+        if (statLevels?.hpLevel !== undefined) {
+            // Use StatScaling to compute HP at the overridden level
+            maxHp = getHPAtLevel(template.baseHP, statLevels.hpLevel, rarity);
+        } else {
+            let hpMultiplier = rarityConfig.statMultiplier;
+            if (explicitCR !== undefined) {
+                const crMultiplier = EnemyGenerator.getStatMultiplierForFractionalCR(cr);
+                hpMultiplier = crMultiplier * hpMultiplier;
+            }
+            maxHp = Math.round(template.baseHP * hpMultiplier);
         }
-        let maxHp = Math.round(template.baseHP * hpMultiplier);
 
         // Apply difficulty multiplier to HP
         if (difficultyMultiplier !== 1.0) {
@@ -999,7 +1017,7 @@ export class EnemyGenerator {
         const shouldHaveSpells = SpellcastingGenerator.shouldHaveSpellcasting(template.archetype, rarity);
 
         // Generate all abilities (signature + extras from FeatureQuery)
-        const { abilities: generatedAbilities, spellConfig } = EnemyGenerator.generateAbilities(template, rarity, rng, cr, scaledStats, level);
+        const { abilities: generatedAbilities, spellConfig } = EnemyGenerator.generateAbilities(template, rarity, rng, cr, scaledStats, level, statLevels);
 
         // Apply boss-specific enhancements for boss rarity
         // This replaces the signature ability with an enhanced version (double damage dice)
@@ -1065,7 +1083,17 @@ export class EnemyGenerator {
 
         // Build weapon array from equipment config
         // Compute damage modifier from actual scaled ability scores
-        const damageModifier = getDamageModifierForStats(scaledStats, level, template.archetype);
+        // If attackLevel is overridden, use StatScaling functions for attack stats
+        let weaponDamageDie: string;
+        let weaponDamageModifier: number;
+        if (statLevels?.attackLevel !== undefined) {
+            const attackStats = getAttackAtLevel(scaledStats, statLevels.attackLevel, rarity, template.archetype);
+            weaponDamageDie = attackStats.damageDie;
+            weaponDamageModifier = attackStats.damageModifier;
+        } else {
+            weaponDamageDie = EnemyGenerator.getDamageDieForRarity(rarity);
+            weaponDamageModifier = getDamageModifierForStats(scaledStats, level, template.archetype);
+        }
 
         const weapons: Array<{ name: string; damage: string; damage_dice: string; damage_type: string; type: string; range?: number; properties?: string[]; equipped: boolean }> = [];
 
@@ -1074,12 +1102,10 @@ export class EnemyGenerator {
             const weaponData = DEFAULT_EQUIPMENT[weaponName];
 
             if (weaponData) {
-                // Use signature ability damage die (scales by rarity: d6->d8->d10->d12)
-                const signatureDamageDie = EnemyGenerator.getDamageDieForRarity(rarity);
                 weapons.push({
                     name: weaponName,
-                    damage: `${signatureDamageDie} + ${damageModifier}`,
-                    damage_dice: signatureDamageDie,
+                    damage: `${weaponDamageDie} + ${weaponDamageModifier}`,
+                    damage_dice: weaponDamageDie,
                     damage_type: weaponData.damage?.damageType || template.signatureAbility.damageType,
                     type: template.signatureAbility.attackType,
                     range: template.signatureAbility.range,
@@ -1093,8 +1119,8 @@ export class EnemyGenerator {
         if (weapons.length === 0) {
             weapons.push({
                 name: template.signatureAbility.name,
-                damage: `${EnemyGenerator.getDamageDieForRarity(rarity)} + ${damageModifier}`,
-                damage_dice: EnemyGenerator.getDamageDieForRarity(rarity),
+                damage: `${weaponDamageDie} + ${weaponDamageModifier}`,
+                damage_dice: weaponDamageDie,
                 damage_type: template.signatureAbility.damageType,
                 type: template.signatureAbility.attackType,
                 range: template.signatureAbility.range,
@@ -1126,7 +1152,13 @@ export class EnemyGenerator {
         }
 
         // Recalculate AC with equipment modifiers
-        const armorClass = template.baseAC + abilityModifiers.DEX + acModifier;
+        let armorClass: number;
+        if (statLevels?.defenseLevel !== undefined) {
+            // Use StatScaling to compute AC at the overridden level
+            armorClass = getDefenseAtLevel(scaledStats, statLevels.defenseLevel, template.baseAC, equipmentConfig);
+        } else {
+            armorClass = template.baseAC + abilityModifiers.DEX + acModifier;
+        }
 
         // Build the character sheet
         const character: CharacterSheet = {
@@ -1222,6 +1254,10 @@ export class EnemyGenerator {
             // CR for frontend validation (enables verifying CR → level mapping)
             // Undefined if CR was not explicitly provided (backward compat)
             ...(cr !== undefined ? { cr } : {}),
+
+            // Stat level overrides for creative encounter design
+            // Only set when statLevels was provided to generate()
+            ...(statLevels ? { stat_levels: statLevels } : {}),
 
             // Legendary configuration for boss enemies
             ...(legendaryConfig ? {

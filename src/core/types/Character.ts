@@ -13,6 +13,7 @@ import type {
     EnhancedInventoryItem
 } from './Equipment.js';
 import type { PrestigeLevel } from './Prestige.js';
+import type { StatLevelOverrides } from './Enemy.js';
 
 /**
  * Branded type for extensible Race names
@@ -545,6 +546,20 @@ export interface CharacterSheet {
         /** Optional lair action hint for encounter design */
         lair_action_hint?: string;
     };
+
+    /**
+     * Stat level overrides for enemy characters
+     *
+     * When set, indicates that HP/attack/defense were scaled at independent
+     * effective levels rather than the CR-derived level. Enables creative
+     * encounter designs like glass cannons or tanks.
+     *
+     * For player characters: undefined
+     * For enemies: only set when statLevels was provided to EnemyGenerator.generate()
+     *
+     * @see StatLevelOverrides
+     */
+    stat_levels?: StatLevelOverrides;
 
     /**
      * Challenge Rating for enemy characters

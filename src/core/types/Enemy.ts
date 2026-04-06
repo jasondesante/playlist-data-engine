@@ -237,6 +237,26 @@ export interface EnemyGenerationOptions {
 
     /** Optional - Track data (required if audioProfile provided) */
     track?: PlaylistTrack;
+
+    /**
+     * Optional - Override effective levels for HP, attack, and defense independently
+     *
+     * Allows each stat axis to scale at a different effective level than the CR-derived level.
+     * When not set, all stats use the CR-derived level (identical to current generation).
+     *
+     * @see StatLevelOverrides
+     * @example
+     * ```typescript
+     * // Glass cannon: high attack, low HP and defense
+     * EnemyGenerator.generate({
+     *   seed: 'glass-cannon',
+     *   cr: 5,
+     *   rarity: 'elite',
+     *   statLevels: { attackLevel: 15, hpLevel: 1, defenseLevel: 1 }
+     * });
+     * ```
+     */
+    statLevels?: StatLevelOverrides;
 }
 
 /**
