@@ -22,6 +22,18 @@ import { SeededRNG } from '../../utils/random.js';
 import { getFullCasterSlotsForLevel } from '../../constants/SpellSlots.js';
 
 /**
+ * Describes a single validation issue found in spell slot data.
+ */
+export interface SpellSlotValidationIssue {
+  /** Human-readable description of the issue */
+  message: string;
+  /** Which spell level is affected (1-9), or undefined if structural */
+  level?: number;
+  /** Severity: 'error' means data is unusable, 'warn' means data is questionable but usable */
+  severity: 'error' | 'warn';
+}
+
+/**
  * D&D 5e turn-based combat engine
  *
  * Fully implements D&D 5e combat rules:
@@ -578,6 +590,196 @@ export class CombatEngine {
   }
 
   /**
+   * Validate spell slot data on a character sheet.
+   *
+   * Checks for common issues:
+   * - Negative `total` or `used` values
+   * - `used` exceeding `total` (more slots consumed than exist)
+   * - Non-integer spell level keys
+   * - Spell levels outside the 1-9 range
+   * - `total` of 0 with non-zero `used`
+   *
+   * Returns an array of issues (empty = valid). Does not throw — callers
+   * decide how to handle issues (log, warn, fall back to table).
+   */
+  validateSpellSlots(character: CharacterSheet): SpellSlotValidationIssue[] {
+    const issues: SpellSlotValidationIssue[] = [];
+    const sourceSlots = character.spells?.spell_slots;
+
+    if (!sourceSlots) {
+      return issues;
+    }
+
+    if (Object.keys(sourceSlots).length === 0) {
+      return issues;
+    }
+
+    for (const [levelStr, slot] of Object.entries(sourceSlots)) {
+      const level = Number(levelStr);
+
+      if (!Number.isInteger(level) || level < 1 || level > 9) {
+        issues.push({
+          message: `Invalid spell level key "${levelStr}" — must be an integer 1-9`,
+          level: Number.isNaN(level) ? undefined : level,
+          severity: 'error'
+        });
+        continue;
+      }
+
+      if (typeof slot !== 'object' || slot === null) {
+        issues.push({
+          message: `Spell level ${level} has invalid slot data (expected { total, used }, got ${typeof slot})`,
+          level,
+          severity: 'error'
+        });
+        continue;
+      }
+
+      const { total, used } = slot as { total: number; used: number };
+
+      if (typeof total !== 'number' || typeof used !== 'number') {
+        issues.push({
+          message: `Spell level ${level} has non-numeric total (${typeof total}) or used (${typeof used})`,
+          level,
+          severity: 'error'
+        });
+        continue;
+      }
+
+      if (total < 0) {
+        issues.push({
+          message: `Spell level ${level} has negative total (${total})`,
+          level,
+          severity: 'error'
+        });
+      }
+
+      if (used < 0) {
+        issues.push({
+          message: `Spell level ${level} has negative used (${used})`,
+          level,
+          severity: 'error'
+        });
+      }
+
+      if (total === 0 && used !== 0) {
+        issues.push({
+          message: `Spell level ${level} has total=0 but used=${used} — no slots exist to consume`,
+          level,
+          severity: 'warn'
+        });
+      }
+
+      if (used > total) {
+        issues.push({
+          message: `Spell level ${level} has used (${used}) exceeding total (${total})`,
+          level,
+          severity: 'error'
+        });
+      }
+    }
+
+    return issues;
+  }
+
+  /**
+   * Validate that combatant spell slots are consistent with the source character.
+   *
+   * After `createCombatant()` runs, this checks that the combatant's remaining
+   * spell slots match what the character's `spells.spell_slots` would produce.
+   * Useful for catching regressions in the initialization pipeline.
+   *
+   * Returns an array of issues (empty = consistent).
+   */
+  validateCombatantSpellSlots(combatant: Combatant): SpellSlotValidationIssue[] {
+    const issues: SpellSlotValidationIssue[] = [];
+    const character = combatant.character;
+    const sourceSlots = character.spells?.spell_slots;
+    const combatantSlots = combatant.spellSlots;
+
+    // Both undefined — consistent (non-spellcaster or no slot data)
+    if (!sourceSlots || Object.keys(sourceSlots).length === 0) {
+      if (combatantSlots && Object.keys(combatantSlots).length > 0) {
+        // Combatant has slots but character source doesn't — could be from fallback table
+        const expected = getFullCasterSlotsForLevel(character.level);
+        const expectedKeys = Object.keys(expected).sort();
+        const actualKeys = Object.keys(combatantSlots).sort();
+        if (expectedKeys.join(',') !== actualKeys.join(',')) {
+          issues.push({
+            message: `Combatant has spell slots ${actualKeys.join(', ')} but fallback table for ${character.class} level ${character.level} expects ${expectedKeys.join(', ')}`,
+            severity: 'warn'
+          });
+        } else {
+          for (const levelStr of expectedKeys) {
+            const level = Number(levelStr);
+            if (combatantSlots[level] !== expected[level]) {
+              issues.push({
+                message: `Spell level ${level}: combatant has ${combatantSlots[level]} but fallback table expects ${expected[level]}`,
+                level,
+                severity: 'warn'
+              });
+            }
+          }
+        }
+      }
+      return issues;
+    }
+
+    // Source exists — check conversion correctness
+    if (!combatantSlots) {
+      // Source has slots but combatant has none — all slots were fully used
+      const allUsed = Object.values(sourceSlots).every(s => s.total - s.used <= 0);
+      if (!allUsed) {
+        issues.push({
+          message: `Character has spell slot data but combatant has no spell slots — expected some remaining`,
+          severity: 'error'
+        });
+      }
+      return issues;
+    }
+
+    // Both exist — verify each level
+    for (const [levelStr, slot] of Object.entries(sourceSlots)) {
+      const level = Number(levelStr);
+      const expectedRemaining = Math.max(0, slot.total - slot.used);
+
+      if (expectedRemaining === 0) {
+        // Level should not appear in combatant slots
+        if (combatantSlots[level] !== undefined && combatantSlots[level] > 0) {
+          issues.push({
+            message: `Spell level ${level}: combatant has ${combatantSlots[level]} slots but source indicates all used (total=${slot.total}, used=${slot.used})`,
+            level,
+            severity: 'error'
+          });
+        }
+      } else {
+        const actual = combatantSlots[level] ?? 0;
+        if (actual !== expectedRemaining) {
+          issues.push({
+            message: `Spell level ${level}: combatant has ${actual} but source expects ${expectedRemaining} (total=${slot.total}, used=${slot.used})`,
+            level,
+            severity: 'error'
+          });
+        }
+      }
+    }
+
+    // Check for combatant slot levels that don't exist in source
+    for (const levelStr of Object.keys(combatantSlots)) {
+      const level = Number(levelStr);
+      if (!(level in sourceSlots)) {
+        issues.push({
+          message: `Combatant has spell level ${level} with ${combatantSlots[level]} slots but no source data for that level`,
+          level,
+          severity: 'warn'
+        });
+      }
+    }
+
+    return issues;
+  }
+
+  /**
    * Initialize spell slots for a character.
    *
    * Priority:
@@ -585,6 +787,10 @@ export class CombatEngine {
    *    convert `{ [level]: { total, used } }` → `{ [level]: total - used }`.
    * 2. Fall back to the D&D 5e full-caster table for known spellcasting classes.
    * 3. Return undefined for non-spellcasters with no spell slot data.
+   *
+   * If validation errors are found in source spell slot data, the problematic
+   * levels are skipped (treated as if they don't exist) and the method falls
+   * through to the fallback table for known classes.
    */
   private initializeSpellSlots(character: CharacterSheet): {
     [level: number]: number;
@@ -592,14 +798,27 @@ export class CombatEngine {
     // 1. Use character's spell_slots if available (generated enemies, custom chars)
     const sourceSlots = character.spells?.spell_slots;
     if (sourceSlots && Object.keys(sourceSlots).length > 0) {
-      const result: { [level: number]: number } = {};
-      for (const [level, slot] of Object.entries(sourceSlots)) {
-        const remaining = slot.total - slot.used;
-        if (remaining > 0) {
-          result[Number(level)] = remaining;
+      const validationIssues = this.validateSpellSlots(character);
+      const errors = validationIssues.filter(i => i.severity === 'error');
+
+      if (errors.length > 0) {
+        // Source data has errors — skip it and fall through to fallback table
+        // so combat doesn't crash with bad data. Warn-level issues are tolerated.
+        console.warn(
+          `[CombatEngine] Spell slot validation failed for ${character.name} (${character.class}): ` +
+          errors.map(e => e.message).join('; ') +
+          '. Falling back to class table.'
+        );
+      } else {
+        const result: { [level: number]: number } = {};
+        for (const [level, slot] of Object.entries(sourceSlots)) {
+          const remaining = slot.total - slot.used;
+          if (remaining > 0) {
+            result[Number(level)] = remaining;
+          }
         }
+        return Object.keys(result).length > 0 ? result : undefined;
       }
-      return Object.keys(result).length > 0 ? result : undefined;
     }
 
     // 2. Fall back to hardcoded table for known spellcasting classes
