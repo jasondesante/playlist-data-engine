@@ -101,6 +101,7 @@ export interface TestCombatantOverrides {
   statusEffects?: Combatant['statusEffects'];
   spellSlots?: Combatant['spellSlots'];
   position?: Combatant['position'];
+  concentratingOn?: Combatant['concentratingOn'];
 }
 
 /**
@@ -178,6 +179,7 @@ export function createTestCombatant(
     reactionUsed: combatantOverrides?.reactionUsed ?? false,
     spellSlots: combatantOverrides?.spellSlots,
     position: combatantOverrides?.position,
+    concentratingOn: combatantOverrides?.concentratingOn,
   };
 }
 

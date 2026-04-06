@@ -18,6 +18,7 @@ import type { Equipment } from '../../utils/constants.js';
 import { InitiativeRoller } from './InitiativeRoller';
 import { AttackResolver } from './AttackResolver';
 import { SpellCaster } from './SpellCaster';
+import { DiceRoller } from './DiceRoller';
 import { DEFAULT_EQUIPMENT } from '../../constants/DefaultEquipment.js';
 import { SeededRNG } from '../../utils/random.js';
 import { getFullCasterSlotsForLevel } from '../../constants/SpellSlots.js';
@@ -197,6 +198,13 @@ export class CombatEngine {
     // Check if target is defeated
     if (target.currentHP <= 0) {
       target.isDefeated = true;
+      // Defeated combatants automatically lose concentration
+      if (target.concentratingOn) {
+        target.concentratingOn = undefined;
+      }
+    } else if (result.attackRoll.hit && result.damageRoll?.total && target.concentratingOn) {
+      // Check concentration for hit targets that took damage
+      this.checkConcentration(combat, target, result.damageRoll.total);
     }
 
     return action;
@@ -334,10 +342,48 @@ export class CombatEngine {
     // Add to history
     combat.history.push(action);
 
-    // Check for defeated targets
+    // Handle concentration for targets: SpellCaster pushes effects directly to
+    // target.statusEffects, bypassing applyStatusEffect(). We post-process here
+    // to set concentratingOn and enforce one-concentration-per-target rule.
+    if (result.success) {
+      for (const target of targets) {
+        for (const effect of result.effectsApplied) {
+          if (effect.hasConcentration) {
+            // Drop any previous concentration effect on this target
+            if (target.concentratingOn && target.concentratingOn !== effect.name) {
+              const oldIndex = target.statusEffects.findIndex(
+                e => e.name === target.concentratingOn
+              );
+              if (oldIndex !== -1) {
+                const [dropped] = target.statusEffects.splice(oldIndex, 1);
+                combat.history.push({
+                  type: 'statusEffectTick',
+                  actor: target,
+                  result: {
+                    success: true,
+                    description: `${target.character.name} lost ${dropped.name} (replaced by new concentration effect ${effect.name})`,
+                  },
+                });
+              }
+            }
+            target.concentratingOn = effect.name;
+            break; // Only one concentration effect per target per spell
+          }
+        }
+      }
+    }
+
+    // Check for defeated targets and concentration
     for (const target of targets) {
       if (target.currentHP <= 0) {
         target.isDefeated = true;
+        // Defeated combatants automatically lose concentration
+        if (target.concentratingOn) {
+          target.concentratingOn = undefined;
+        }
+      } else if (result.success && result.damage?.total && target.concentratingOn) {
+        // Check concentration for targets that took spell damage
+        this.checkConcentration(combat, target, result.damage.total);
       }
     }
 
@@ -524,6 +570,21 @@ export class CombatEngine {
         nextCombatant.bonusActionUsed = true;
         nextCombatant.reactionUsed = true;
 
+        // Being incapacitated (Stunned, Unconscious) breaks concentration
+        if (nextCombatant.concentratingOn) {
+          const dropped = this.dropConcentration(nextCombatant, 'Incapacitated');
+          if (dropped) {
+            combat.history.push({
+              type: 'statusEffectTick',
+              actor: nextCombatant,
+              result: {
+                success: true,
+                description: `${nextCombatant.character.name} lost concentration on ${dropped.name} (incapacitated)`,
+              },
+            });
+          }
+        }
+
         const skipEffects = nextCombatant.statusEffects
           .filter(e => e.mechanicalEffects?.skipTurn)
           .map(e => e.name);
@@ -581,6 +642,16 @@ export class CombatEngine {
             description: `${combatant.character.name} takes ${actualDamage} ${effect.damageType ?? ''} damage from ${effect.name}`,
           },
         });
+
+        // Start-of-turn damage can break concentration
+        if (combatant.concentratingOn) {
+          if (combatant.isDefeated) {
+            // Dead combatants lose concentration automatically
+            combatant.concentratingOn = undefined;
+          } else {
+            this.checkConcentration(combat, combatant, actualDamage);
+          }
+        }
       }
     }
   }
@@ -1093,6 +1164,11 @@ export class CombatEngine {
    * refreshed effect or the newly pushed one).
    */
   applyStatusEffect(combatant: Combatant, effect: StatusEffect): StatusEffect {
+    // If the new effect requires concentration, drop any existing concentration effect
+    if (effect.hasConcentration && combatant.concentratingOn) {
+      this.dropConcentration(combatant, 'New concentration spell cast');
+    }
+
     const existingIndex = combatant.statusEffects.findIndex(
       e => e.name === effect.name
     );
@@ -1131,11 +1207,123 @@ export class CombatEngine {
         existing.damageType = effect.damageType;
       }
 
+      // Track concentration on the combatant
+      if (effect.hasConcentration) {
+        combatant.concentratingOn = effect.name;
+      }
+
       return existing;
     }
 
     combatant.statusEffects.push(effect);
+
+    // Track concentration on the combatant
+    if (effect.hasConcentration) {
+      combatant.concentratingOn = effect.name;
+    }
+
     return effect;
+  }
+
+  /**
+   * Drop a combatant's concentration, removing the concentrated effect.
+   *
+   * Per D&D 5e: a combatant can only maintain concentration on one effect
+   * at a time. When concentration ends (new concentration spell, failed save,
+   * incapacitated, or dead), the effect is removed immediately.
+   *
+   * @param combatant - The concentrating combatant
+   * @param reason - Why concentration was dropped (for logging)
+   * @returns The dropped StatusEffect, or undefined if not concentrating
+   */
+  dropConcentration(combatant: Combatant, reason: string = 'Concentration ended'): StatusEffect | undefined {
+    if (!combatant.concentratingOn) {
+      return undefined;
+    }
+
+    const effectName = combatant.concentratingOn;
+    const effectIndex = combatant.statusEffects.findIndex(e => e.name === effectName);
+
+    if (effectIndex !== -1) {
+      const [dropped] = combatant.statusEffects.splice(effectIndex, 1);
+      combatant.concentratingOn = undefined;
+      return dropped;
+    }
+
+    // Effect was already removed (e.g., expired), just clear the tracking
+    combatant.concentratingOn = undefined;
+    return undefined;
+  }
+
+  /**
+   * Make a concentration saving throw when a concentrating combatant takes damage.
+   *
+   * Per D&D 5e: DC = 10 or half the damage taken (rounded down), whichever is higher.
+   * The save is a CON saving throw.
+   *
+   * @param combatant - The concentrating combatant
+   * @param damage - The total damage taken in the triggering event
+   * @returns true if concentration maintained, false if broken
+   */
+  private rollConcentrationSave(combatant: Combatant, damage: number): boolean {
+    if (!combatant.concentratingOn) {
+      return true; // Not concentrating, nothing to check
+    }
+
+    // DC = 10 or half damage, whichever is higher
+    const dc = Math.max(10, Math.floor(damage / 2));
+
+    // CON modifier + proficiency bonus (if proficient in CON saves)
+    const conModifier = combatant.character.ability_modifiers.CON ?? 0;
+    const conSaveProficiency = combatant.character.saving_throws.CON ?? false;
+    const proficiencyBonus = conSaveProficiency ? combatant.character.proficiency_bonus : 0;
+
+    const roll = this.diceRoller
+      ? this.diceRoller.rollSavingThrow(conModifier, proficiencyBonus)
+      : DiceRoller.rollSavingThrow(conModifier, proficiencyBonus);
+
+    // Natural 1 always fails, natural 20 always succeeds
+    const d20Result = roll - conModifier - proficiencyBonus;
+    if (d20Result === 1) return false;
+    if (d20Result === 20) return true;
+
+    return roll >= dc;
+  }
+
+  /**
+   * Check and potentially break concentration when a combatant takes damage.
+   *
+   * Should be called whenever a concentrating combatant takes damage.
+   * If the concentration save fails, the concentrated effect is dropped.
+   *
+   * @param combat - Combat instance (for history logging)
+   * @param combatant - The combatant who took damage
+   * @param damage - The amount of damage taken
+   * @returns true if concentration was broken, false if maintained or not concentrating
+   */
+  checkConcentration(combat: CombatInstance, combatant: Combatant, damage: number): boolean {
+    if (!combatant.concentratingOn) {
+      return false; // Not concentrating
+    }
+
+    const maintained = this.rollConcentrationSave(combatant, damage);
+
+    if (!maintained) {
+      const dropped = this.dropConcentration(combatant, 'Took damage and failed concentration save');
+      if (dropped) {
+        combat.history.push({
+          type: 'statusEffectTick',
+          actor: combatant,
+          result: {
+            success: true,
+            description: `${combatant.character.name} lost concentration on ${dropped.name} (took ${damage} damage)`,
+          },
+        });
+      }
+      return true; // Concentration was broken
+    }
+
+    return false; // Concentration maintained
   }
 
   /**
@@ -1152,6 +1340,16 @@ export class CombatEngine {
     combatant.statusEffects = combatant.statusEffects.filter(
       e => e.duration > 0
     );
+
+    // If the concentrated effect expired, clear the concentration tracking
+    if (combatant.concentratingOn) {
+      const stillActive = combatant.statusEffects.some(
+        e => e.name === combatant.concentratingOn
+      );
+      if (!stillActive) {
+        combatant.concentratingOn = undefined;
+      }
+    }
 
     return expired;
   }

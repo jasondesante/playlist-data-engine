@@ -117,6 +117,8 @@ export interface Combatant {
   spellSlots?: {          // Remaining spell slots by level (if applicable)
     [level: number]: number;
   };
+  /** Name of the status effect this combatant is concentrating on, if any */
+  concentratingOn?: string;
 }
 
 /**
