@@ -8,6 +8,36 @@ import type { EnvironmentalContext } from './Progression';
 import type { Equipment } from '../../utils/constants.ts';
 
 /**
+ * DiceRollerAPI - Common interface for dice rolling implementations.
+ * Both the static DiceRoller (via adapter) and instance-based SeededDiceRoller
+ * satisfy this interface, allowing CombatEngine to work in both live (random)
+ * and simulation (seeded) modes.
+ */
+export interface DiceRollerAPI {
+  rollDie(sides: number): number;
+  rollD20(): number;
+  rollWithAdvantage(): { roll1: number; roll2: number; result: number };
+  rollWithDisadvantage(): { roll1: number; roll2: number; result: number };
+  calculateDamage(formula: string, modifier: number, isCritical?: boolean): {
+    rolls: number[];
+    modifier: number;
+    total: number;
+    isCritical: boolean;
+  };
+  rollSavingThrow(abilityModifier: number, proficiencyBonus?: number): number;
+  rollAbilityCheck(abilityModifier: number, proficiencyBonus?: number): number;
+  isCriticalHit(d20Roll: number): boolean;
+  isCriticalMiss(d20Roll: number): boolean;
+  parseDiceFormula(formula: string): {
+    diceCount: number;
+    diceSides: number;
+    modifier: number;
+    rolls: number[];
+    total: number;
+  };
+}
+
+/**
  * StatusEffect - Temporary condition affecting a combatant
  */
 export interface StatusEffect {

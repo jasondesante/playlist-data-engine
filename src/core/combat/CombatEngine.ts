@@ -9,7 +9,8 @@ import type {
   Combatant,
   CombatAction,
   CombatConfig,
-  CombatResult
+  CombatResult,
+  DiceRollerAPI
 } from '../types/Combat';
 import type { EnvironmentalContext } from '../types/Progression';
 import type { Equipment } from '../../utils/constants.js';
@@ -37,6 +38,7 @@ export class CombatEngine {
   private spellCaster: SpellCaster;
   private config: CombatConfig;
   private rng: SeededRNG;
+  private diceRoller?: DiceRollerAPI;
 
   /**
    * Initialize the combat engine with configuration options
@@ -48,14 +50,17 @@ export class CombatEngine {
    * @param {number} [config.maxTurnsBeforeDraw=100] - Max turns before combat draws
    * @param {boolean} [config.allowFleeing=false] - Allow combatants to flee
    * @param {string} [config.seed] - Seed for deterministic treasure generation
+   * @param {DiceRollerAPI} [diceRoller] - Optional dice roller for deterministic simulations
    *
    * @example
    * const combat = new CombatEngine({ tacticalMode: true, seed: 'my-seed' });
+   * const seeded = new CombatEngine({}, createSeededRoller('sim-42'));
    */
-  constructor(config: CombatConfig = {}) {
-    this.initiativeRoller = new InitiativeRoller();
-    this.attackResolver = new AttackResolver();
-    this.spellCaster = new SpellCaster();
+  constructor(config: CombatConfig = {}, diceRoller?: DiceRollerAPI) {
+    this.diceRoller = diceRoller;
+    this.initiativeRoller = new InitiativeRoller(diceRoller);
+    this.attackResolver = new AttackResolver(diceRoller);
+    this.spellCaster = new SpellCaster(diceRoller);
     this.config = {
       useEnvironment: true,
       useMusic: false,

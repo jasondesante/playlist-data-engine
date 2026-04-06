@@ -5,7 +5,7 @@
  * Critical misses (natural 1) always miss
  */
 
-import type { Combatant, AttackRoll, DamageRoll } from '../types/Combat';
+import type { Combatant, AttackRoll, DamageRoll, DiceRollerAPI } from '../types/Combat';
 import type { Attack, CharacterSheet } from '../types/Character';
 import { DiceRoller } from './DiceRoller';
 
@@ -26,6 +26,12 @@ export interface AttackResult {
  * AttackResolver - D&D 5e attack and damage calculation
  */
 export class AttackResolver {
+  private diceRoller?: DiceRollerAPI;
+
+  constructor(diceRoller?: DiceRollerAPI) {
+    this.diceRoller = diceRoller;
+  }
+
   /**
    * Resolve an attack action
    * 1. Roll d20 + attack bonus
@@ -82,13 +88,19 @@ export class AttackResolver {
    * Attack bonus = ability modifier + proficiency bonus (if proficient)
    */
   private rollAttack(_attacker: Combatant, target: Combatant, attack: Attack): AttackRoll {
-    const d20Roll = DiceRoller.rollD20();
+    const d20Roll = this.diceRoller
+      ? this.diceRoller.rollD20()
+      : DiceRoller.rollD20();
     const attackBonus = attack.attack_bonus ?? 0;
     const totalRoll = d20Roll + attackBonus;
     const targetAC = target.character.armor_class;
 
-    const isCritical = DiceRoller.isCriticalHit(d20Roll);
-    const isMiss = DiceRoller.isCriticalMiss(d20Roll);
+    const isCritical = this.diceRoller
+      ? this.diceRoller.isCriticalHit(d20Roll)
+      : DiceRoller.isCriticalHit(d20Roll);
+    const isMiss = this.diceRoller
+      ? this.diceRoller.isCriticalMiss(d20Roll)
+      : DiceRoller.isCriticalMiss(d20Roll);
     const hit = !isMiss && (isCritical || totalRoll >= targetAC);
 
     return {
@@ -145,7 +157,9 @@ export class AttackResolver {
     const abilityModifier = this.getDamageModifier(attacker, attack);
     const damageDice = attack.damage_dice ?? '';
 
-    const damageResult = DiceRoller.calculateDamage(damageDice, abilityModifier, isCritical);
+    const damageResult = this.diceRoller
+      ? this.diceRoller.calculateDamage(damageDice, abilityModifier, isCritical)
+      : DiceRoller.calculateDamage(damageDice, abilityModifier, isCritical);
 
     return {
       diceFormula: damageDice,
@@ -201,7 +215,9 @@ export class AttackResolver {
    */
   attackWithAdvantage(attacker: Combatant, target: Combatant, attack: Attack): AttackResult {
     // Roll twice, take higher using DiceRoller
-    const advantageRoll = DiceRoller.rollWithAdvantage();
+    const advantageRoll = this.diceRoller
+      ? this.diceRoller.rollWithAdvantage()
+      : DiceRoller.rollWithAdvantage();
     const roll1 = advantageRoll.roll1;
     const roll2 = advantageRoll.roll2;
     const d20Roll = advantageRoll.result;
@@ -212,8 +228,14 @@ export class AttackResolver {
 
     // D&D 5e Sage Advice: With advantage, if either die is a 20, it's a critical hit
     // Only check for fumble on the selected roll with advantage
-    const isCritical = DiceRoller.isCriticalHit(roll1) || DiceRoller.isCriticalHit(roll2);
-    const isMiss = DiceRoller.isCriticalMiss(d20Roll);
+    const isCritical = (this.diceRoller
+      ? this.diceRoller.isCriticalHit(roll1)
+      : DiceRoller.isCriticalHit(roll1)) || (this.diceRoller
+      ? this.diceRoller.isCriticalHit(roll2)
+      : DiceRoller.isCriticalHit(roll2));
+    const isMiss = this.diceRoller
+      ? this.diceRoller.isCriticalMiss(d20Roll)
+      : DiceRoller.isCriticalMiss(d20Roll);
     const hit = !isMiss && (isCritical || totalRoll >= targetAC);
 
     const description = `${attacker.character.name} attacks with advantage (rolled ${roll1} and ${roll2}, using ${d20Roll})`;
@@ -272,7 +294,9 @@ export class AttackResolver {
    */
   attackWithDisadvantage(attacker: Combatant, target: Combatant, attack: Attack): AttackResult {
     // Roll twice, take lower using DiceRoller
-    const disadvantageRoll = DiceRoller.rollWithDisadvantage();
+    const disadvantageRoll = this.diceRoller
+      ? this.diceRoller.rollWithDisadvantage()
+      : DiceRoller.rollWithDisadvantage();
     const roll1 = disadvantageRoll.roll1;
     const roll2 = disadvantageRoll.roll2;
     const d20Roll = disadvantageRoll.result;
@@ -283,8 +307,14 @@ export class AttackResolver {
 
     // D&D 5e Sage Advice: With disadvantage, if either die is a 1, it's a critical miss
     // Only check for crit on the selected roll with disadvantage
-    const isCritical = DiceRoller.isCriticalHit(d20Roll);
-    const isMiss = DiceRoller.isCriticalMiss(roll1) || DiceRoller.isCriticalMiss(roll2);
+    const isCritical = this.diceRoller
+      ? this.diceRoller.isCriticalHit(d20Roll)
+      : DiceRoller.isCriticalHit(d20Roll);
+    const isMiss = (this.diceRoller
+      ? this.diceRoller.isCriticalMiss(roll1)
+      : DiceRoller.isCriticalMiss(roll1)) || (this.diceRoller
+      ? this.diceRoller.isCriticalMiss(roll2)
+      : DiceRoller.isCriticalMiss(roll2));
     const hit = !isMiss && (isCritical || totalRoll >= targetAC);
 
     const description = `${attacker.character.name} attacks with disadvantage (rolled ${roll1} and ${roll2}, using ${d20Roll})`;

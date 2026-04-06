@@ -3,7 +3,7 @@
  * D&D 5e: Initiative = d20 + DEX modifier
  */
 
-import type { Combatant } from '../types/Combat';
+import type { Combatant, DiceRollerAPI } from '../types/Combat';
 import { DiceRoller } from './DiceRoller.js';
 
 /**
@@ -20,13 +20,21 @@ export interface InitiativeResult {
  * InitiativeRoller - Manages initiative system for D&D combat
  */
 export class InitiativeRoller {
+  private diceRoller?: DiceRollerAPI;
+
+  constructor(diceRoller?: DiceRollerAPI) {
+    this.diceRoller = diceRoller;
+  }
+
   /**
    * Roll initiative for a single combatant
    * Initiative = d20 + DEX modifier
    */
   rollInitiativeForCombatant(combatant: Combatant): InitiativeResult {
     const dexModifier = combatant.character.ability_modifiers.dexterity ?? 0;
-    const d20Roll = DiceRoller.rollD20();
+    const d20Roll = this.diceRoller
+      ? this.diceRoller.rollD20()
+      : DiceRoller.rollD20();
     const initiativeTotal = d20Roll + dexModifier;
 
     // Update combatant's initiative
@@ -107,7 +115,9 @@ export class InitiativeRoller {
    */
   rerollInitiativeForCombatant(combatant: Combatant): number {
     const dexModifier = combatant.character.ability_modifiers.dexterity ?? 0;
-    const d20Roll = DiceRoller.rollD20();
+    const d20Roll = this.diceRoller
+      ? this.diceRoller.rollD20()
+      : DiceRoller.rollD20();
     combatant.initiative = d20Roll + dexModifier;
     return combatant.initiative;
   }

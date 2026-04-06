@@ -3,7 +3,7 @@
  * Manages spell slots, saving throws, and spell damage
  */
 
-import type { Combatant, SpellCastResult, StatusEffect } from '../types/Combat';
+import type { Combatant, SpellCastResult, StatusEffect, DiceRollerAPI } from '../types/Combat';
 import type { Spell } from '../types/Character';
 import { DiceRoller } from './DiceRoller';
 
@@ -11,6 +11,11 @@ import { DiceRoller } from './DiceRoller';
  * SpellCaster - D&D 5e spell casting system
  */
 export class SpellCaster {
+  private diceRoller?: DiceRollerAPI;
+
+  constructor(diceRoller?: DiceRollerAPI) {
+    this.diceRoller = diceRoller;
+  }
   /**
    * Cast a spell at one or more targets
    * Handles:
@@ -52,7 +57,9 @@ export class SpellCaster {
       // Check if this is an attack roll or saving throw
       if (spell.attack_roll) {
         // Attack roll spell (like Fire Bolt)
-        damage = DiceRoller.calculateDamage(spell.damage_dice, 0, false);
+        damage = this.diceRoller
+          ? this.diceRoller.calculateDamage(spell.damage_dice, 0, false)
+          : DiceRoller.calculateDamage(spell.damage_dice, 0, false);
       } else if (spell.saving_throw) {
         // Saving throw spell (like Fireball)
         saveDC = this.calculateSaveDC(caster, spell.saving_throw);
@@ -61,7 +68,9 @@ export class SpellCaster {
         for (const target of targets) {
           const saveResult = this.makeSavingThrow(target, spell.saving_throw, saveDC);
           if (!saveResult) {
-            damage = DiceRoller.calculateDamage(spell.damage_dice, 0, false);
+            damage = this.diceRoller
+              ? this.diceRoller.calculateDamage(spell.damage_dice, 0, false)
+              : DiceRoller.calculateDamage(spell.damage_dice, 0, false);
             target.currentHP -= damage.total;
             if (target.currentHP < 0) {
               target.currentHP = 0;
@@ -214,7 +223,9 @@ export class SpellCaster {
 
     const proficiencyBonus = hasProficiency ? target.character.proficiency_bonus : 0;
 
-    const saveRoll = DiceRoller.rollSavingThrow(abilityModifier, proficiencyBonus);
+    const saveRoll = this.diceRoller
+      ? this.diceRoller.rollSavingThrow(abilityModifier, proficiencyBonus)
+      : DiceRoller.rollSavingThrow(abilityModifier, proficiencyBonus);
 
     return saveRoll >= saveDC;
   }
