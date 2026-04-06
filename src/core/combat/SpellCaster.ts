@@ -87,7 +87,9 @@ export class SpellCaster {
       }
     }
 
-    // Apply spell effects (status effects, buffs, debuffs)
+    // Build spell effects (status effects, buffs, debuffs).
+    // These are returned in effectsApplied for the caller (e.g. CombatEngine)
+    // to apply via applyStatusEffect() which handles stacking and concentration.
     if (spell.description?.toLowerCase().includes('charm')) {
       const charmed: StatusEffect = {
         name: 'Charmed',
@@ -97,8 +99,8 @@ export class SpellCaster {
         hasConcentration: true
       };
       for (const target of targets) {
-        target.statusEffects.push(charmed);
-        effectsApplied.push(charmed);
+        // Create a fresh copy per target so they don't share references
+        effectsApplied.push({ ...charmed });
       }
     }
 
@@ -111,8 +113,7 @@ export class SpellCaster {
         hasConcentration: true
       };
       for (const target of targets) {
-        target.statusEffects.push(frightened);
-        effectsApplied.push(frightened);
+        effectsApplied.push({ ...frightened });
       }
     }
 

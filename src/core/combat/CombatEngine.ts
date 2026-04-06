@@ -342,33 +342,12 @@ export class CombatEngine {
     // Add to history
     combat.history.push(action);
 
-    // Handle concentration for targets: SpellCaster pushes effects directly to
-    // target.statusEffects, bypassing applyStatusEffect(). We post-process here
-    // to set concentratingOn and enforce one-concentration-per-target rule.
+    // Apply status effects from the spell via applyStatusEffect(), which handles
+    // stacking rules, concentration tracking, and one-concentration-per-target.
     if (result.success) {
       for (const target of targets) {
         for (const effect of result.effectsApplied) {
-          if (effect.hasConcentration) {
-            // Drop any previous concentration effect on this target
-            if (target.concentratingOn && target.concentratingOn !== effect.name) {
-              const oldIndex = target.statusEffects.findIndex(
-                e => e.name === target.concentratingOn
-              );
-              if (oldIndex !== -1) {
-                const [dropped] = target.statusEffects.splice(oldIndex, 1);
-                combat.history.push({
-                  type: 'statusEffectTick',
-                  actor: target,
-                  result: {
-                    success: true,
-                    description: `${target.character.name} lost ${dropped.name} (replaced by new concentration effect ${effect.name})`,
-                  },
-                });
-              }
-            }
-            target.concentratingOn = effect.name;
-            break; // Only one concentration effect per target per spell
-          }
+          this.applyStatusEffect(target, effect);
         }
       }
     }

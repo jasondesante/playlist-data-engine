@@ -710,8 +710,9 @@ describe('SpellCaster', () => {
       expect(result.success).toBe(true);
       expect(result.effectsApplied).toHaveLength(1);
       expect(result.effectsApplied[0].name).toBe('Charmed');
-      expect(target.statusEffects).toHaveLength(1);
-      expect(target.statusEffects[0].name).toBe('Charmed');
+      // SpellCaster no longer applies effects directly to target.statusEffects;
+      // that is CombatEngine's responsibility via applyStatusEffect()
+      expect(target.statusEffects).toHaveLength(0);
     });
 
     it('applies Charmed effect with concentration flag', () => {
@@ -720,8 +721,8 @@ describe('SpellCaster', () => {
       const target = makeTarget('Goblin');
       const spell = makeSpell({ description: 'charm the target' });
 
-      caster.castSpell(wizard, spell, [target]);
-      expect(target.statusEffects[0].hasConcentration).toBe(true);
+      const result = caster.castSpell(wizard, spell, [target]);
+      expect(result.effectsApplied[0].hasConcentration).toBe(true);
     });
 
     it('applies Charmed effect with source tracking', () => {
@@ -730,8 +731,8 @@ describe('SpellCaster', () => {
       const target = makeTarget('Goblin');
       const spell = makeSpell({ description: 'charm' });
 
-      caster.castSpell(wizard, spell, [target]);
-      expect(target.statusEffects[0].source).toBe('wizard_0');
+      const result = caster.castSpell(wizard, spell, [target]);
+      expect(result.effectsApplied[0].source).toBe('wizard_0');
     });
 
     it('applies Frightened effect when description contains "frighten"', () => {
@@ -746,7 +747,8 @@ describe('SpellCaster', () => {
       expect(result.success).toBe(true);
       expect(result.effectsApplied).toHaveLength(1);
       expect(result.effectsApplied[0].name).toBe('Frightened');
-      expect(target.statusEffects[0].name).toBe('Frightened');
+      // SpellCaster no longer applies effects directly to target.statusEffects
+      expect(target.statusEffects).toHaveLength(0);
     });
 
     it('applies both Charmed and Frightened when description contains both', () => {
@@ -755,11 +757,13 @@ describe('SpellCaster', () => {
       const target = makeTarget('Goblin');
       const spell = makeSpell({ description: 'charm and frighten the target', damage_dice: undefined, damage_type: undefined });
 
-      caster.castSpell(wizard, spell, [target]);
-      expect(target.statusEffects).toHaveLength(2);
-      const names = target.statusEffects.map(e => e.name);
+      const result = caster.castSpell(wizard, spell, [target]);
+      expect(result.effectsApplied).toHaveLength(2);
+      const names = result.effectsApplied.map(e => e.name);
       expect(names).toContain('Charmed');
       expect(names).toContain('Frightened');
+      // SpellCaster no longer applies effects directly to target.statusEffects
+      expect(target.statusEffects).toHaveLength(0);
     });
 
     it('applies status effects to all targets', () => {
@@ -768,10 +772,15 @@ describe('SpellCaster', () => {
       const targets = [makeTarget('A'), makeTarget('B'), makeTarget('C')];
       const spell = makeSpell({ description: 'charm all enemies', damage_dice: undefined, damage_type: undefined });
 
-      caster.castSpell(wizard, spell, targets);
+      const result = caster.castSpell(wizard, spell, targets);
+      // effectsApplied should have one effect per target (3 total)
+      expect(result.effectsApplied).toHaveLength(3);
+      for (const effect of result.effectsApplied) {
+        expect(effect.name).toBe('Charmed');
+      }
+      // SpellCaster no longer applies effects directly to targets
       for (const target of targets) {
-        expect(target.statusEffects).toHaveLength(1);
-        expect(target.statusEffects[0].name).toBe('Charmed');
+        expect(target.statusEffects).toHaveLength(0);
       }
     });
 
@@ -781,7 +790,8 @@ describe('SpellCaster', () => {
       const target = makeTarget('Goblin');
       const spell = makeSpell({ description: 'A blast of fire' });
 
-      caster.castSpell(wizard, spell, [target]);
+      const result = caster.castSpell(wizard, spell, [target]);
+      expect(result.effectsApplied).toHaveLength(0);
       expect(target.statusEffects).toHaveLength(0);
     });
 
@@ -793,11 +803,11 @@ describe('SpellCaster', () => {
       const target1 = makeTarget('A');
       const target2 = makeTarget('B');
 
-      caster.castSpell(wizard, spell1, [target1]);
-      caster.castSpell(wizard, spell2, [target2]);
+      const result1 = caster.castSpell(wizard, spell1, [target1]);
+      const result2 = caster.castSpell(wizard, spell2, [target2]);
 
-      expect(target1.statusEffects[0].name).toBe('Charmed');
-      expect(target2.statusEffects[0].name).toBe('Frightened');
+      expect(result1.effectsApplied[0].name).toBe('Charmed');
+      expect(result2.effectsApplied[0].name).toBe('Frightened');
     });
   });
 
@@ -1068,8 +1078,8 @@ describe('SpellCaster', () => {
       const target = makeTarget('Goblin');
       const spell = makeSpell({ description: 'charm the target', damage_dice: undefined, damage_type: undefined });
 
-      caster.castSpell(wizard, spell, [target]);
-      expect(target.statusEffects[0].description).toContain('Gandalf');
+      const result = caster.castSpell(wizard, spell, [target]);
+      expect(result.effectsApplied[0].description).toContain('Gandalf');
     });
 
     it('frightened effect includes caster name', () => {
@@ -1078,8 +1088,8 @@ describe('SpellCaster', () => {
       const target = makeTarget('Goblin');
       const spell = makeSpell({ description: 'frighten the target', damage_dice: undefined, damage_type: undefined });
 
-      caster.castSpell(wizard, spell, [target]);
-      expect(target.statusEffects[0].description).toContain('Gandalf');
+      const result = caster.castSpell(wizard, spell, [target]);
+      expect(result.effectsApplied[0].description).toContain('Gandalf');
     });
 
     it('charmed effect has duration 1', () => {
@@ -1088,8 +1098,8 @@ describe('SpellCaster', () => {
       const target = makeTarget('Goblin');
       const spell = makeSpell({ description: 'charm', damage_dice: undefined, damage_type: undefined });
 
-      caster.castSpell(wizard, spell, [target]);
-      expect(target.statusEffects[0].duration).toBe(1);
+      const result = caster.castSpell(wizard, spell, [target]);
+      expect(result.effectsApplied[0].duration).toBe(1);
     });
   });
 
