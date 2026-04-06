@@ -799,6 +799,7 @@ describe('CombatEngine — combat end conditions', () => {
     expect(combat.isActive).toBe(false);
     expect(combat.winner).toBeDefined();
     expect(combat.winner!.id.startsWith('player')).toBe(true);
+    expect(combat.winnerSide).toBe('player');
   });
 
   it('combat ends when all players are defeated', () => {
@@ -817,6 +818,7 @@ describe('CombatEngine — combat end conditions', () => {
     expect(combat.isActive).toBe(false);
     expect(combat.winner).toBeDefined();
     expect(combat.winner!.id.startsWith('enemy')).toBe(true);
+    expect(combat.winnerSide).toBe('enemy');
   });
 
   it('combat ends in draw when both sides are fully defeated', () => {
@@ -835,6 +837,7 @@ describe('CombatEngine — combat end conditions', () => {
 
     expect(combat.isActive).toBe(false);
     expect(combat.winner).toBeUndefined();
+    expect(combat.winnerSide).toBe('draw');
   });
 
   it('combat ends in draw when max turns is reached', () => {
@@ -855,6 +858,7 @@ describe('CombatEngine — combat end conditions', () => {
     engine.nextTurn(combat);
 
     expect(combat.isActive).toBe(false);
+    expect(combat.winnerSide).toBe('draw');
   });
 
   it('combat continues when some but not all enemies are defeated', () => {
@@ -1227,6 +1231,115 @@ describe('CombatEngine.getCombatResult()', () => {
 
     const result = engine.getCombatResult(combat);
     expect(result!.description).toContain('Champion');
+  });
+
+  it('winnerSide is "player" when enemies defeated', () => {
+    const engine = new CombatEngine();
+    const player = createMockPartyCharacter(1, { name: 'Hero' });
+    const enemy = createMockPartyCharacter(1, { name: 'Goblin' });
+    const combat = engine.startCombat([player], [enemy]);
+
+    const enemyC = combat.combatants.find(c => c.id.startsWith('enemy'))!;
+    enemyC.isDefeated = true;
+    enemyC.currentHP = 0;
+    engine.nextTurn(combat);
+
+    const result = engine.getCombatResult(combat);
+    expect(result!.winnerSide).toBe('player');
+    expect(result!.winner).toBeDefined();
+    expect(result!.winner!.id.startsWith('player')).toBe(true);
+  });
+
+  it('winnerSide is "enemy" when players defeated', () => {
+    const engine = new CombatEngine();
+    const player = createMockPartyCharacter(1, { name: 'Hero' });
+    const enemy = createMockPartyCharacter(1, { name: 'Dragon' });
+    const combat = engine.startCombat([player], [enemy]);
+
+    const playerC = combat.combatants.find(c => c.id.startsWith('player'))!;
+    playerC.isDefeated = true;
+    playerC.currentHP = 0;
+    engine.nextTurn(combat);
+
+    const result = engine.getCombatResult(combat);
+    expect(result!.winnerSide).toBe('enemy');
+    expect(result!.winner).toBeDefined();
+    expect(result!.winner!.id.startsWith('enemy')).toBe(true);
+  });
+
+  it('winnerSide is "draw" when both sides defeated', () => {
+    const engine = new CombatEngine();
+    const player = createMockPartyCharacter(1, { name: 'Hero' });
+    const enemy = createMockPartyCharacter(1, { name: 'Goblin' });
+    const combat = engine.startCombat([player], [enemy]);
+
+    combat.combatants[0].isDefeated = true;
+    combat.combatants[0].currentHP = 0;
+    combat.combatants[1].isDefeated = true;
+    combat.combatants[1].currentHP = 0;
+    engine.nextTurn(combat);
+
+    const result = engine.getCombatResult(combat);
+    expect(result!.winnerSide).toBe('draw');
+    expect(result!.winner).toBeUndefined();
+  });
+
+  it('winnerSide is "draw" when max turns reached', () => {
+    const engine = new CombatEngine({ maxTurnsBeforeDraw: 1 });
+    const player = createMockPartyCharacter(1, { name: 'Staller' });
+    const enemy = createMockPartyCharacter(1, { name: 'Stallee' });
+    const combat = engine.startCombat([player], [enemy]);
+
+    combat.history.push({
+      type: 'dodge' as any,
+      actor: combat.combatants[0],
+      result: { success: true, description: 'dodge' },
+    });
+    engine.nextTurn(combat);
+
+    const result = engine.getCombatResult(combat);
+    expect(result!.winnerSide).toBe('draw');
+  });
+
+  it('winnerSide is "draw" when max turns reached with some enemies defeated', () => {
+    const engine = new CombatEngine({ maxTurnsBeforeDraw: 1 });
+    const player = createMockPartyCharacter(1, { name: 'Hero' });
+    const enemies = [
+      createMockPartyCharacter(1, { name: 'Goblin A' }),
+      createMockPartyCharacter(1, { name: 'Goblin B' }),
+    ];
+    const combat = engine.startCombat([player], enemies);
+
+    // Defeat one enemy but not all
+    const enemyCs = combat.combatants.filter(c => c.id.startsWith('enemy'));
+    enemyCs[0].isDefeated = true;
+    enemyCs[0].currentHP = 0;
+
+    combat.history.push({
+      type: 'dodge' as any,
+      actor: combat.combatants[0],
+      result: { success: true, description: 'dodge' },
+    });
+    engine.nextTurn(combat);
+
+    const result = engine.getCombatResult(combat);
+    expect(result!.winnerSide).toBe('draw');
+    expect(result!.winner).toBeUndefined();
+  });
+
+  it('winnerSide is consistent between CombatInstance and CombatResult', () => {
+    const engine = new CombatEngine();
+    const player = createMockPartyCharacter(1, { name: 'Hero' });
+    const enemy = createMockPartyCharacter(1, { name: 'Goblin' });
+    const combat = engine.startCombat([player], [enemy]);
+
+    const enemyC = combat.combatants.find(c => c.id.startsWith('enemy'))!;
+    enemyC.isDefeated = true;
+    enemyC.currentHP = 0;
+    engine.nextTurn(combat);
+
+    const result = engine.getCombatResult(combat);
+    expect(result!.winnerSide).toBe(combat.winnerSide);
   });
 });
 

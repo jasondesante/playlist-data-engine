@@ -203,7 +203,8 @@ export interface CombatInstance {
   environment?: EnvironmentalContext;
   history: CombatAction[];   // Log of all actions taken
   isActive: boolean;
-  winner?: Combatant;        // Set when combat ends
+  winner?: Combatant;        // Set when combat ends (first surviving combatant on winning side)
+  winnerSide?: 'player' | 'enemy' | 'draw';  // Set when combat ends
   startTime: number;
   lastUpdated: number;
 }
@@ -212,7 +213,8 @@ export interface CombatInstance {
  * CombatResult - Final outcome of a combat encounter
  */
 export interface CombatResult {
-  winner: Combatant;
+  winner?: Combatant;
+  winnerSide: 'player' | 'enemy' | 'draw';
   defeated: Combatant[];
   roundsElapsed: number;
   totalTurns: number;

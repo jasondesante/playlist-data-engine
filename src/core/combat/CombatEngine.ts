@@ -905,11 +905,16 @@ export class CombatEngine {
     if (allEnemiesDefeated || allPlayersDefeated || maxTurnsReached) {
       combat.isActive = false;
 
-      // Determine winner
+      // Determine winner and winnerSide
       if (allEnemiesDefeated && !allPlayersDefeated) {
         combat.winner = players.find(c => !c.isDefeated);
+        combat.winnerSide = 'player';
       } else if (allPlayersDefeated && !allEnemiesDefeated) {
         combat.winner = enemies.find(c => !c.isDefeated);
+        combat.winnerSide = 'enemy';
+      } else {
+        // Both sides defeated, or max turns reached with both sides alive
+        combat.winnerSide = 'draw';
       }
     }
   }
@@ -959,7 +964,8 @@ export class CombatEngine {
     }
 
     return {
-      winner: combat.winner!,
+      winner: combat.winner,
+      winnerSide: combat.winnerSide ?? 'draw',
       defeated,
       roundsElapsed: combat.roundNumber,
       totalTurns,
