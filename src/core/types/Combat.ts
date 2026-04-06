@@ -123,7 +123,7 @@ export interface Combatant {
  * CombatAction - An action taken during combat
  */
 export interface CombatAction {
-  type: 'attack' | 'spell' | 'dodge' | 'dash' | 'disengage' | 'help' | 'hide' | 'ready' | 'flee' | 'useItem' | 'legendaryAction';
+  type: 'attack' | 'spell' | 'dodge' | 'dash' | 'disengage' | 'help' | 'hide' | 'ready' | 'flee' | 'useItem' | 'legendaryAction' | 'statusEffectTick';
   actor: Combatant;
   target?: Combatant;
   targets?: Combatant[];

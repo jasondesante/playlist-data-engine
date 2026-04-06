@@ -479,10 +479,48 @@ export class CombatEngine {
     combat.currentTurnIndex = nextIndex;
     combat.lastUpdated = Date.now();
 
+    // Tick down status effects for the new current combatant
+    const nextCombatant = combat.combatants[nextIndex];
+    if (!nextCombatant.isDefeated) {
+      this.tickStatusEffects(combat, nextCombatant);
+    }
+
     // Check for combat end conditions
     this.checkCombatStatus(combat);
 
     return combat;
+  }
+
+  /**
+   * Process status effect tick-down at the start of a combatant's turn.
+   *
+   * Decrements duration by 1 for all active status effects, then removes
+   * any that have expired (duration <= 0). If effects expired, a
+   * 'statusEffectTick' entry is added to combat history for logging.
+   */
+  private tickStatusEffects(combat: CombatInstance, combatant: Combatant): void {
+    if (combatant.statusEffects.length === 0) return;
+
+    // Decrement duration for all effects
+    for (const effect of combatant.statusEffects) {
+      effect.duration--;
+    }
+
+    // Remove expired effects
+    const expired = this.removeExpiredStatusEffects(combatant);
+
+    // Log expirations in combat history
+    if (expired.length > 0) {
+      const effectNames = expired.map(e => e.name).join(', ');
+      combat.history.push({
+        type: 'statusEffectTick',
+        actor: combatant,
+        result: {
+          success: true,
+          description: `${combatant.character.name}: ${effectNames} expired`,
+        },
+      });
+    }
   }
 
   /**
