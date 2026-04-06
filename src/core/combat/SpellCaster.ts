@@ -6,6 +6,7 @@
 import type { Combatant, SpellCastResult, StatusEffect, DiceRollerAPI } from '../types/Combat';
 import type { Spell } from '../types/Character';
 import { DiceRoller } from './DiceRoller';
+import { getFullCasterSlotsForLevel } from '../../constants/SpellSlots.js';
 
 /**
  * SpellCaster - D&D 5e spell casting system
@@ -164,37 +165,7 @@ export class SpellCaster {
    * For simplicity, restores ALL spell slots to maximum
    */
   restoreSpellSlots(caster: Combatant): void {
-    // D&D 5e spell slot progression by class and level
-    // This is simplified - in full implementation, would use actual class progression
-    const maxSlots: { [key: number]: number[] } = {
-      1: [2, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      2: [3, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      3: [4, 2, 0, 0, 0, 0, 0, 0, 0, 0],
-      4: [4, 3, 0, 0, 0, 0, 0, 0, 0, 0],
-      5: [4, 3, 2, 0, 0, 0, 0, 0, 0, 0],
-      6: [4, 3, 3, 0, 0, 0, 0, 0, 0, 0],
-      7: [4, 3, 3, 1, 0, 0, 0, 0, 0, 0],
-      8: [4, 3, 3, 2, 0, 0, 0, 0, 0, 0],
-      9: [4, 3, 3, 3, 1, 0, 0, 0, 0, 0],
-      10: [4, 3, 3, 3, 2, 0, 0, 0, 0, 0],
-      11: [4, 3, 3, 3, 2, 1, 0, 0, 0, 0],
-      12: [4, 3, 3, 3, 2, 1, 0, 0, 0, 0],
-      13: [4, 3, 3, 3, 2, 1, 1, 0, 0, 0],
-      14: [4, 3, 3, 3, 2, 1, 1, 0, 0, 0],
-      15: [4, 3, 3, 3, 2, 1, 1, 1, 0, 0],
-      16: [4, 3, 3, 3, 2, 1, 1, 1, 0, 0],
-      17: [4, 3, 3, 3, 2, 1, 1, 1, 1, 0],
-      18: [4, 3, 3, 3, 3, 1, 1, 1, 1, 0],
-      19: [4, 3, 3, 3, 3, 2, 1, 1, 1, 1],
-      20: [4, 3, 3, 3, 3, 2, 2, 1, 1, 1]
-    };
-
-    const slots = maxSlots[caster.character.level] || [0];
-    caster.spellSlots = {};
-
-    for (let i = 1; i < slots.length; i++) {
-      caster.spellSlots[i] = slots[i];
-    }
+    caster.spellSlots = getFullCasterSlotsForLevel(caster.character.level);
   }
 
   /**

@@ -19,6 +19,7 @@ import { AttackResolver } from './AttackResolver';
 import { SpellCaster } from './SpellCaster';
 import { DEFAULT_EQUIPMENT } from '../../constants/DefaultEquipment.js';
 import { SeededRNG } from '../../utils/random.js';
+import { getFullCasterSlotsForLevel } from '../../constants/SpellSlots.js';
 
 /**
  * D&D 5e turn-based combat engine
@@ -588,38 +589,7 @@ export class CombatEngine {
       return undefined;
     }
 
-    // Simplified spell slot table by level
-    const slotsByLevel: { [level: number]: number[] } = {
-      1: [2, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      2: [3, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      3: [4, 2, 0, 0, 0, 0, 0, 0, 0, 0],
-      4: [4, 3, 0, 0, 0, 0, 0, 0, 0, 0],
-      5: [4, 3, 2, 0, 0, 0, 0, 0, 0, 0],
-      6: [4, 3, 3, 0, 0, 0, 0, 0, 0, 0],
-      7: [4, 3, 3, 1, 0, 0, 0, 0, 0, 0],
-      8: [4, 3, 3, 2, 0, 0, 0, 0, 0, 0],
-      9: [4, 3, 3, 3, 1, 0, 0, 0, 0, 0],
-      10: [4, 3, 3, 3, 2, 0, 0, 0, 0, 0],
-      11: [4, 3, 3, 3, 2, 1, 0, 0, 0, 0],
-      12: [4, 3, 3, 3, 2, 1, 0, 0, 0, 0],
-      13: [4, 3, 3, 3, 2, 1, 1, 0, 0, 0],
-      14: [4, 3, 3, 3, 2, 1, 1, 0, 0, 0],
-      15: [4, 3, 3, 3, 2, 1, 1, 1, 0, 0],
-      16: [4, 3, 3, 3, 2, 1, 1, 1, 0, 0],
-      17: [4, 3, 3, 3, 2, 1, 1, 1, 1, 0],
-      18: [4, 3, 3, 3, 3, 1, 1, 1, 1, 0],
-      19: [4, 3, 3, 3, 3, 2, 1, 1, 1, 1],
-      20: [4, 3, 3, 3, 3, 2, 2, 1, 1, 1]
-    };
-
-    const slots = slotsByLevel[character.level] || [0];
-    const spellSlots: { [level: number]: number } = {};
-
-    for (let i = 1; i < slots.length; i++) {
-      spellSlots[i] = slots[i];
-    }
-
-    return spellSlots;
+    return getFullCasterSlotsForLevel(character.level);
   }
 
   /**
