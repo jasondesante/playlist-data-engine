@@ -3,7 +3,7 @@
  *
  * This module provides type-safe configuration options for:
  * - Environmental sensors (geolocation, weather, motion, light)
- * - Gaming platform sensors (Steam, Discord RPC)
+ * - Gaming platform sensors (Steam)
  * - XP modifier calculation
  * - Caching and retry behavior
  *
@@ -60,15 +60,6 @@ export interface GamingSensorConfig {
         apiKey?: string;
         /** Steam user ID (64-bit ID) */
         steamId?: string;
-        /** Polling interval in milliseconds (default: 60000 = 1 minute) */
-        pollInterval?: number;
-    };
-    /** Discord RPC configuration */
-    discord?: {
-        /** Discord client ID (can be loaded from DISCORD_CLIENT_ID env var) */
-        clientId?: string;
-        /** Enable Rich Presence (default: true) */
-        enableRichPresence?: boolean;
         /** Polling interval in milliseconds (default: 60000 = 1 minute) */
         pollInterval?: number;
     };
@@ -156,11 +147,6 @@ export const DEFAULT_SENSOR_CONFIG: Required<SensorConfig> = {
             steamId: undefined,
             pollInterval: 60000, // 1 minute
         },
-        discord: {
-            clientId: '',
-            enableRichPresence: true,
-            pollInterval: 60000, // 1 minute
-        },
         metadataCacheExpiry: 24 * 60 * 60 * 1000, // 24 hours
         maxBackoffMs: 10 * 60 * 1000, // 10 minutes
     },
@@ -212,14 +198,6 @@ export function loadConfigFromEnv(): Partial<SensorConfig> {
         config.gaming = {
             ...config.gaming,
             steam: { ...config.gaming?.steam, steamId: process.env.STEAM_USER_ID }
-        };
-    }
-
-    // Discord client ID from DISCORD_CLIENT_ID
-    if (typeof process !== 'undefined' && process.env?.DISCORD_CLIENT_ID) {
-        config.gaming = {
-            ...config.gaming,
-            discord: { ...config.gaming?.discord, clientId: process.env.DISCORD_CLIENT_ID }
         };
     }
 

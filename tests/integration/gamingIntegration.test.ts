@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { GamingPlatformSensors } from '../../src/core/sensors/GamingPlatformSensors';
 import { SteamAPIClient } from '../../src/core/sensors/SteamAPIClient';
-import { DiscordRPCClient } from '../../src/core/sensors/DiscordRPCClient';
 import {
   mockGamingContext_NoGame,
   mockGamingContext_ActionGame,
@@ -11,7 +10,6 @@ import {
   getMockGamingContext,
   getExpectedGamingBonus,
   mockSteamAPI_RecentlyPlayed,
-  mockDiscordRPC_MusicPresence,
   mockSteamAPI_AppList,
   gamingSessionScenarios
 } from '../fixtures/mockGamingData';
@@ -31,9 +29,6 @@ describe('Gaming Platform Integration (T093-T106)', () => {
             steam: {
                 apiKey: 'test-steam-key',
                 steamId: '123456789'
-            },
-            discord: {
-                clientId: 'test-discord-id'
             }
         });
     });
@@ -43,21 +38,18 @@ describe('Gaming Platform Integration (T093-T106)', () => {
         gamingSensors.stopMonitoring();
     });
 
-    describe('Steam and Discord Integration', () => {
-        it('should authenticate with Steam and Discord platforms', async () => {
+    describe('Steam Integration', () => {
+        it('should authenticate with Steam', async () => {
             // Test configuration is properly initialized
             const sensors = new GamingPlatformSensors({
                 steam: {
                     apiKey: 'test-key',
                     steamId: '987654321'
-                },
-                discord: {
-                    clientId: 'discord-test-id'
                 }
             });
 
-            // Authenticate to both platforms
-            const authResult = await sensors.authenticate('123456789', 'discord-user-id');
+            // Authenticate
+            const authResult = await sensors.authenticate('123456789');
             expect(authResult).toBe(true);
 
             sensors.stopMonitoring();
@@ -274,9 +266,6 @@ describe('Gaming Integration with Mock Data (T119)', () => {
             steam: {
                 apiKey: 'test-steam-key',
                 steamId: '123456789'
-            },
-            discord: {
-                clientId: 'test-discord-id'
             }
         });
     });
@@ -333,7 +322,6 @@ describe('Gaming Integration with Mock Data (T119)', () => {
             const context = mockGamingContext_MultiplayerGame;
 
             expect(context.isActivelyGaming).toBe(true);
-            // Note: platformSource is 'steam' only - Discord cannot detect games
             expect(context.platformSource).toBe('steam');
             expect(context.currentGame?.name).toBe('Baldur\'s Gate 3');
             expect(context.currentGame?.source).toBe('steam');
@@ -449,7 +437,6 @@ describe('Gaming Integration with Mock Data (T119)', () => {
 
                 // Verify types
                 expect(typeof context.isActivelyGaming).toBe('boolean');
-                // Note: platformSource can only be 'steam' or 'none' since Discord cannot detect games
                 expect(['steam', 'none']).toContain(context.platformSource);
                 expect(typeof context.totalGamingMinutes).toBe('number');
                 expect(Array.isArray(context.gamesPlayedWhileListening)).toBe(true);
@@ -516,16 +503,6 @@ describe('Gaming Integration with Mock Data (T119)', () => {
                 expect(typeof app.appid).toBe('number');
                 expect(typeof app.name).toBe('string');
             });
-        });
-
-        it('should provide valid Discord RPC music presence mock data', () => {
-            expect(mockDiscordRPC_MusicPresence).toHaveProperty('applicationId');
-            expect(mockDiscordRPC_MusicPresence).toHaveProperty('name');
-            expect(mockDiscordRPC_MusicPresence).toHaveProperty('state');
-            expect(mockDiscordRPC_MusicPresence).toHaveProperty('details');
-            expect(mockDiscordRPC_MusicPresence).toHaveProperty('startTimestamp');
-            expect(mockDiscordRPC_MusicPresence).toHaveProperty('type');
-            expect(mockDiscordRPC_MusicPresence.type).toBe(2); // ActivityType.Listening
         });
     });
 

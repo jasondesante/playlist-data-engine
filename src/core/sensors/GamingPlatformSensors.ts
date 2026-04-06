@@ -1,7 +1,6 @@
 import type { GamingContext } from '../types/Progression';
 import type { GamingSensorConfig, XPModifierConfig } from '../config/sensorConfig.js';
 import { SteamAPIClient } from './SteamAPIClient';
-import { DiscordRPCClient, DiscordConnectionState } from './DiscordRPCClient';
 import { Logger } from '../../utils/logger.js';
 import { SensorDashboard, type DashboardConfig } from '../../utils/sensorDashboard.js';
 
@@ -9,16 +8,12 @@ import { SensorDashboard, type DashboardConfig } from '../../utils/sensorDashboa
  * GamingPlatformSensors - Unified interface for gaming detection
  * Monitors active games and calculates gaming-based XP bonuses
  *
- * Note: Discord RPC CANNOT read game activity due to platform limitations.
- * Discord RPC is only used for SETTING music presence ("Listening to" status).
  * Game detection uses Steam API only.
  */
 export class GamingPlatformSensors {
     private steam: SteamAPIClient;
-    private discord: DiscordRPCClient;
     private steamUserId?: string;
     private steamApiKey?: string;
-    private discordClientId?: string;
     private pollIntervalMs: number = 60000; // 60 seconds default
     private pollingInterval: NodeJS.Timeout | null = null;
     private exponentialBackoff: number = 1;
@@ -54,7 +49,7 @@ export class GamingPlatformSensors {
     private cacheExpiryMs: number = 86400000; // 24 hours
 
     /**
-     * Initialize GamingPlatformSensors with optional Steam and Discord configuration
+     * Initialize GamingPlatformSensors with optional Steam configuration
      * Matches specification from specs/001-core-engine/SPEC.md
      *
      * Supports both legacy config format and new GamingSensorConfig format
@@ -65,11 +60,6 @@ export class GamingPlatformSensors {
             steamId?: string;
             pollInterval?: number;
         };
-        discord?: {
-            clientId: string;
-            enableRichPresence?: boolean;
-            pollInterval?: number;
-        };
     } | GamingSensorConfig = {}) {
         // Steam configuration
         if ('steam' in config && config.steam) {
@@ -77,14 +67,6 @@ export class GamingPlatformSensors {
             this.steamUserId = config.steam.steamId;
             if (config.steam.pollInterval) {
                 this.pollIntervalMs = config.steam.pollInterval;
-            }
-        }
-
-        // Discord configuration
-        if ('discord' in config && config.discord) {
-            this.discordClientId = config.discord.clientId;
-            if (config.discord.pollInterval) {
-                this.pollIntervalMs = config.discord.pollInterval;
             }
         }
 
@@ -99,29 +81,20 @@ export class GamingPlatformSensors {
             this.xpConfig = { ...this.xpConfig, ...config.xpModifier };
         }
 
-        // Initialize clients with their respective API keys
+        // Initialize Steam client
         this.steam = new SteamAPIClient(this.steamApiKey);
-        this.discord = new DiscordRPCClient(this.discordClientId);
     }
 
     /**
-     * Authenticate with Steam and Discord
+     * Authenticate with Steam
      */
-    async authenticate(steamUserId?: string, discordUserId?: string): Promise<boolean> {
-        let steamAuth = false;
-        let discordAuth = false;
-
+    async authenticate(steamUserId?: string): Promise<boolean> {
         if (steamUserId) {
             this.steamUserId = steamUserId;
-            steamAuth = true;
+            return true;
         }
 
-        if (discordUserId) {
-            // Future: store discordUserId for Discord API calls
-            discordAuth = await this.discord.connect();
-        }
-
-        return steamAuth || discordAuth;
+        return !!this.steamUserId;
     }
 
     /**
@@ -156,7 +129,7 @@ export class GamingPlatformSensors {
 
     /**
      * Update gaming status from Steam
-     * Note: Discord RPC cannot read game activity (platform limitation)
+     * Note: Only Steam API is used for game activity detection.
      */
     private async updateGamingStatus(): Promise<void> {
         try {
@@ -306,7 +279,7 @@ export class GamingPlatformSensors {
      * Get comprehensive diagnostic information for troubleshooting
      * Returns structured data about gaming platform connection states, cache, and performance metrics
      *
-     * @returns Diagnostic report containing Steam and Discord connection states, cache, and API performance
+     * @returns Diagnostic report containing Steam connection state, cache, and API performance
      */
     getDiagnostics(): {
         timestamp: number;
@@ -314,11 +287,6 @@ export class GamingPlatformSensors {
             isAuthenticated: boolean;
             userId?: string;
             apiKey: boolean;
-        };
-        discord: {
-            isConnected: boolean;
-            clientId: boolean;
-            connectionState: string;
         };
         gamingContext: GamingContext;
         polling: {
@@ -357,11 +325,6 @@ export class GamingPlatformSensors {
                 isAuthenticated: !!this.steamUserId,
                 userId: this.steamUserId,
                 apiKey: !!this.steamApiKey,
-            },
-            discord: {
-                isConnected: this.discord.getConnectionState() === DiscordConnectionState?.Connected,
-                clientId: !!this.discordClientId,
-                connectionState: this.discord.getConnectionState()?.toString() || 'unknown',
             },
             gamingContext: this.getContext(),
             polling: {

@@ -55,7 +55,7 @@ cd /path/to/your/project && npm link playlist-data-engine
 - [XP Scaling](#xp-scaling) — Progression configuration
 - [Prestige System](docs/XP_AND_STATS.md#track-mastery-prestige-system) — Reset for badge upgrades after mastering tracks
 - [Environmental Sensors](#environmental-sensors) — GPS, motion, weather, light modifiers
-- [Gaming Platform Integration](#gaming-platform-integration) — Steam and Discord bonuses
+- [Gaming Platform Integration](#gaming-platform-integration) — Steam bonuses
 - [Combat System](#combat-system) — Turn-based D&D 5e combat
 - [Enemy Generation](#enemy-generation) — CR-based enemies, encounters, CR vs Rarity independence
 
@@ -411,7 +411,7 @@ for (const track of playlist.tracks) {
 
 GPS, motion, weather, and light sensors that provide XP modifiers based on real-world conditions (running, night, storm, altitude).
 
-Steam game detection and Discord Rich Presence integration that provide XP bonuses based on gaming activity.
+Steam game detection integration that provides XP bonuses based on gaming activity.
 
 **For detailed documentation, see [IRL_SENSORS.md](docs/IRL_SENSORS.md)**
 
@@ -523,7 +523,6 @@ When developing with `file://` or `npm link`: changes in `src/` are available im
 | `WEATHER_API_KEY` | OpenWeatherMap API key for weather-based XP modifiers |
 | `STEAM_API_KEY` | Steam Web API key for game detection |
 | `STEAM_USER_ID` | Your 64-bit Steam ID |
-| `DISCORD_CLIENT_ID` | Discord application ID for Rich Presence |
 | `XP_MAX_MODIFIER` | Maximum XP multiplier (default: 3.0) |
 
 All variables are optional. For complete configuration with examples and programmatic options, see **[`.env.example`](.env.example)**.

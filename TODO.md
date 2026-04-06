@@ -17,9 +17,6 @@ This document tracks what's been completed, what was recently changed, and what 
 
 | Item | Location | Why It's Safe |
 |------|----------|---------------|
-| `discordUserId` property | GamingPlatformSensors.ts | Was being stored but never used for actual Discord API calls |
-| `callback` parameter | DiscordRPCClient.ts subscribeToVoiceUpdates() | Stub for future Discord voice features |
-
 | `longitude` parameter | GeolocationProvider.ts getBiome() | Simplified biome logic only uses latitude |
 | `isListening` property | LightSensor.ts | Internal state flag that wasn't exposed |
 

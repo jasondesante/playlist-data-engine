@@ -16,7 +16,7 @@ Transforms music playlists into D&D 5e-inspired RPG characters through audio/vis
 5. **Naming** - 3 formats weighted 50/30/20, title cleaning
 6. **Advanced Character** - 18+ skills, proficiencies, spells, equipment, appearance
 7. **Environmental Sensors** - GPS, motion, weather, light → XP modifiers
-8. **Gaming Integration** - Steam game detection + Discord music presence
+8. **Gaming Integration** - Steam game detection
 9. **Progression** - 1 XP/sec, D&D 5e levels (1-20/uncapped), mastery, stat increases
 10. **Combat** - Turn-based, initiative, attacks, spell casting
 11. **Extensibility** - Runtime custom content registration with spawn rate control
@@ -167,7 +167,6 @@ Sensors can be configured via environment variables or programmatically.
 | `WEATHER_API_KEY` | OpenWeatherMap API key for weather data |
 | `STEAM_API_KEY` | Steam Web API key for game detection |
 | `STEAM_USER_ID` | 64-bit Steam ID for account identification |
-| `DISCORD_CLIENT_ID` | Discord application ID for music presence |
 | `XP_MAX_MODIFIER` | Maximum XP multiplier (default: 3.0) |
 
 **Environment file**: `.env.example`
@@ -184,7 +183,7 @@ Sensors can be configured via environment variables or programmatically.
 | `CharacterGenerator` | Generates character from seed + profile | `src/core/generation/CharacterGenerator.ts` |
 | `NamingEngine` | Generates RPG-style character names | `src/core/generation/NamingEngine.ts` |
 | `EnvironmentalSensors` | GPS, motion, weather, light monitoring | `src/core/sensors/EnvironmentalSensors.ts` |
-| `GamingPlatformSensors` | Steam game detection + Discord presence | `src/core/sensors/GamingPlatformSensors.ts` |
+| `GamingPlatformSensors` | Steam game detection | `src/core/sensors/GamingPlatformSensors.ts` |
 | `SessionTracker` | Tracks listening sessions for XP | `src/core/progression/SessionTracker.ts` |
 | `XPCalculator` | Calculates XP with modifiers | `src/core/progression/XPCalculator.ts` |
 | `CharacterUpdater` | Orchestrates character updates; `addXP()` for any source | `src/core/progression/CharacterUpdater.ts` |
@@ -224,18 +223,9 @@ Sensors can be configured via environment variables or programmatically.
 
 ### Developer Configuration Required
 
-This engine requires developers to provide API keys. End-users provide their identity (Steam ID, Discord login) through your application's UI—the engine does not handle authentication or OAuth flows.
+This engine requires developers to provide API keys. End-users provide their identity (Steam ID) through your application's UI—the engine does not handle authentication or OAuth flows.
 
 | Service | Developer Provides | End-User Provides | Mode |
 |---------|-------------------|-------------------|-------|
 | Weather (OpenWeatherMap) | API key | — | Browser + Server |
 | Steam (Web API) | API key | 64-bit Steam ID | Browser + Server |
-| Discord (RPC) | Application client ID | Logged-in Discord client | **Server only** |
-
-### Discord RPC Dual-Mode Support
-
-**Server Mode (Node.js)**: Full Discord Rich Presence functionality is available when the package runs in a Node.js environment. The `@ryuziii/discord-rpc` dependency is automatically detected and used.
-
-**Browser Mode**: When running in browsers, Discord RPC gracefully degrades with clear console warnings explaining that Discord Rich Presence requires a server environment. The API remains fully compatible - all methods exist and return appropriate defaults (false, null).
-
-**Automatic Detection**: The DiscordRPCClient auto-detects the environment and switches modes automatically. No configuration required.

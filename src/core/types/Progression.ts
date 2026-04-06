@@ -32,8 +32,6 @@ export type {
 
 /**
  * GamingContext - Steam gaming activity data
- * Note: Discord RPC CANNOT read game activity due to platform limitations.
- * Discord RPC is only used for SETTING music presence ("Listening to" status).
  * Game detection uses Steam API only.
  */
 export interface GamingContext {

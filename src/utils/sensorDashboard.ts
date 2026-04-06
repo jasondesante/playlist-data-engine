@@ -349,11 +349,6 @@ export function displayGamingDiagnostics(
         console.log(`   User ID:       ${diagnostics.steam.userId}`);
     }
 
-    console.log(`\n ${colorize('DISCORD RPC', Colors.bright, useColors)}`);
-    console.log(`   Connected:    ${diagnostics.discord.isConnected ? colorize('✓', Colors.green, useColors) : colorize('✗', Colors.red, useColors)}`);
-    console.log(`   Client ID:    ${diagnostics.discord.clientId ? colorize('✓ Configured', Colors.green, useColors) : colorize('✗ Missing', Colors.red, useColors)}`);
-    console.log(`   State:        ${colorize(diagnostics.discord.connectionState, diagnostics.discord.isConnected ? Colors.green : Colors.yellow, useColors)}`);
-
     // Current Gaming Context
     console.log(`\n${colorize('┌─ GAMING CONTEXT', Colors.cyan, useColors)}`);
     console.log(drawLine(20) + (useColors ? Colors.reset : ''));
@@ -463,8 +458,7 @@ export function displaySystemDashboard(data: {
 
     if (data.gaming) {
         const steamConnected = data.gaming.steam.isAuthenticated;
-        const discordConnected = data.gaming.discord.isConnected;
-        console.log(` Gaming:        ${steamConnected || discordConnected ? colorize('✓ Connected', Colors.green, useColors) : colorize('✗ Disconnected', Colors.dim, useColors)}`);
+        console.log(` Gaming:        ${steamConnected ? colorize('✓ Connected', Colors.green, useColors) : colorize('✗ Disconnected', Colors.dim, useColors)}`);
     }
 
     // Detailed sections

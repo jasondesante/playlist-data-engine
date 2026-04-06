@@ -87,26 +87,15 @@ console.log(`Christmas day length: ${christmasSolar.dayLengthHours} hours`);
 
 ## Gaming Platform Integration
 
-
-**Discord RPC Dual-Mode:**
-
-The Discord RPC integration now works in both browser and server environments with automatic detection:
-
-- **Server Mode (Node.js)**: Full Discord Rich Presence when running in Node.js
-- **Browser Mode**: Graceful degradation with console warnings (API remains compatible)
-
 ```typescript
 import { GamingPlatformSensors } from 'playlist-data-engine';
 
-// Initialize with Steam and Discord
+// Initialize with Steam
 const gamingSensors = new GamingPlatformSensors({
   steam: {
     apiKey: process.env.STEAM_API_KEY,
     steamId: '123456789',
     pollInterval: 60000  // Check every 60 seconds
-  },
-  discord: {
-    clientId: process.env.DISCORD_CLIENT_ID  // Required for both modes
   }
 });
 
@@ -128,8 +117,6 @@ gamingSensors.stopMonitoring();
 
 **Browser Compatibility Notes:**
 
-- The `@ryuziii/discord-rpc` package is now an **optional dependency**
-- In browser environments, Discord music presence gracefully degrades with warnings
 - Steam game detection works in both browser AND server modes
 - No configuration required - environment is detected automatically
 
@@ -243,8 +230,7 @@ import { SensorDashboard, EnvironmentalSensors, GamingPlatformSensors } from 'pl
 // Initialize sensors
 const sensors = new EnvironmentalSensors(process.env.WEATHER_API_KEY);
 const gamingSensors = new GamingPlatformSensors({
-    steamApiKey: process.env.STEAM_API_KEY,
-    discordClientId: process.env.DISCORD_CLIENT_ID
+    steamApiKey: process.env.STEAM_API_KEY
 });
 
 // Get sensor data
@@ -287,7 +273,7 @@ SensorDashboard.displayEnvironmentalDiagnostics(diagnostics, config);
 - Context Data - Available context types (geolocation, motion, weather, light, biome)
 
 **Gaming Diagnostics:**
-- Platform Status - Steam authentication/API key, Discord connection state
+- Platform Status - Steam authentication/API key
 - Gaming Context - Active gaming status, current game with session details
 - Polling Status - Active status, interval, exponential backoff multiplier
 - Cache - Game metadata cache size and cached games list
@@ -325,7 +311,7 @@ const defaultConfig = DEFAULT_SENSOR_CONFIG;
 console.log(defaultConfig.xpModifier.maxModifier); // 3.0
 
 // Load configuration from environment variables
-// Reads: WEATHER_API_KEY, STEAM_API_KEY, STEAM_USER_ID, DISCORD_CLIENT_ID, XP_MAX_MODIFIER
+// Reads: WEATHER_API_KEY, STEAM_API_KEY, STEAM_USER_ID, XP_MAX_MODIFIER
 const envConfig = loadConfigFromEnv();
 
 // Merge custom configuration with defaults

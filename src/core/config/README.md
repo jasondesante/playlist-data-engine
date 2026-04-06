@@ -1,6 +1,6 @@
 # Sensor Configuration Guide
 
-This guide explains how to configure the Core Data Engine's sensor modules, including environmental sensors (geolocation, weather, motion, light) and gaming platform sensors (Steam, Discord RPC).
+This guide explains how to configure the Core Data Engine's sensor modules, including environmental sensors (geolocation, weather, motion, light) and gaming platform sensors (Steam).
 
 ## Table of Contents
 
@@ -29,7 +29,6 @@ All configuration options have sensible defaults, so you only need to configure 
 WEATHER_API_KEY=your_openweathermap_api_key
 STEAM_API_KEY=your_steam_api_key
 STEAM_USER_ID=your_64bit_steam_id
-DISCORD_CLIENT_ID=your_discord_client_id
 ```
 
 ### Using Programmatic Configuration
@@ -87,14 +86,6 @@ const sensors = new EnvironmentalSensors({
 | `steamId` | `string` | `undefined` | 64-bit Steam ID |
 | `pollInterval` | `number` | `60000` (1 min) | Polling interval in ms |
 
-#### Discord RPC Options
-
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `clientId` | `string` | `''` | Discord application client ID |
-| `enableRichPresence` | `boolean` | `true` | Enable Rich Presence |
-| `pollInterval` | `number` | `60000` (1 min) | Polling interval in ms |
-
 #### Gaming Options
 
 | Option | Type | Default | Description |
@@ -138,7 +129,6 @@ The following environment variables are supported:
 | `WEATHER_API_KEY` | OpenWeatherMap API key |
 | `STEAM_API_KEY` | Steam Web API key |
 | `STEAM_USER_ID` | Your 64-bit Steam ID |
-| `DISCORD_CLIENT_ID` | Discord application client ID |
 | `XP_MAX_MODIFIER` | Maximum XP modifier (e.g., `3.0`) |
 
 ## Programmatic Configuration
@@ -201,10 +191,6 @@ const gaming = new GamingPlatformSensors({
         apiKey: process.env.STEAM_API_KEY,
         steamId: process.env.STEAM_USER_ID,
         pollInterval: 30000 // 30 seconds
-    },
-    discord: {
-        clientId: process.env.DISCORD_CLIENT_ID,
-        enableRichPresence: true
     },
     metadataCacheExpiry: 48 * 60 * 60 * 1000, // 48 hours
     xpModifier: {

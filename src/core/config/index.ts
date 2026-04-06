@@ -3,7 +3,7 @@
  *
  * Centralized configuration for all sensor modules including:
  * - Environmental sensors (geolocation, weather, motion, light)
- * - Gaming platform sensors (Steam, Discord RPC)
+ * - Gaming platform sensors (Steam)
  * - XP modifier calculation
  * - Caching and retry behavior
  *

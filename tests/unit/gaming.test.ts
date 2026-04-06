@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { GamingPlatformSensors } from '../../src/core/sensors/GamingPlatformSensors';
 import { SteamAPIClient } from '../../src/core/sensors/SteamAPIClient';
-import { DiscordRPCClient } from '../../src/core/sensors/DiscordRPCClient';
 
 describe('GamingPlatformSensors (T093)', () => {
     let gamingSensors: GamingPlatformSensors;
@@ -10,9 +9,6 @@ describe('GamingPlatformSensors (T093)', () => {
         gamingSensors = new GamingPlatformSensors({
             steam: {
                 apiKey: 'test-steam-key'
-            },
-            discord: {
-                clientId: 'test-discord-id'
             }
         });
     });
@@ -29,8 +25,8 @@ describe('GamingPlatformSensors (T093)', () => {
         expect(context.currentGame).toBeUndefined();
     });
 
-    it('should authenticate with Steam and Discord', async () => {
-        const result = await gamingSensors.authenticate('123456789', 'test-discord-user');
+    it('should authenticate with Steam', async () => {
+        const result = await gamingSensors.authenticate('123456789');
         expect(result).toBe(true);
     });
 
@@ -155,10 +151,10 @@ describe('GamingPlatformSensors (T093)', () => {
 
     it('should cap bonus at 3.0x maximum', () => {
         const sensors = new GamingPlatformSensors({});
-        // Simulate all bonuses stacking (note: platformSource can only be 'steam' or 'none' now)
+        // Simulate all bonuses stacking
         vi.spyOn(sensors, 'getContext').mockReturnValue({
             isActivelyGaming: true,
-            platformSource: 'steam', // Only 'steam' or 'none' since Discord can't detect games
+            platformSource: 'steam',
             currentGame: {
                 name: 'Baldur\'s Gate 3',
                 source: 'steam',
@@ -259,7 +255,6 @@ describe('GamingPlatformSensors (T093)', () => {
 
             expect(diagnostics).toHaveProperty('timestamp');
             expect(diagnostics).toHaveProperty('steam');
-            expect(diagnostics).toHaveProperty('discord');
             expect(diagnostics).toHaveProperty('gamingContext');
             expect(diagnostics).toHaveProperty('polling');
             expect(diagnostics).toHaveProperty('cache');
@@ -272,16 +267,6 @@ describe('GamingPlatformSensors (T093)', () => {
             expect(diagnostics.steam).toHaveProperty('apiKey');
             expect(diagnostics.steam.isAuthenticated).toBe(false); // No user ID set
             expect(diagnostics.steam.apiKey).toBe(true); // API key was provided
-        });
-
-        it('should include Discord diagnostic information', () => {
-            const diagnostics = gamingSensors.getDiagnostics();
-
-            expect(diagnostics.discord).toHaveProperty('isConnected');
-            expect(diagnostics.discord).toHaveProperty('clientId');
-            expect(diagnostics.discord).toHaveProperty('connectionState');
-            expect(diagnostics.discord.clientId).toBe(true); // Client ID was provided
-            expect(typeof diagnostics.discord.connectionState).toBe('string');
         });
 
         it('should include polling information', () => {
@@ -440,80 +425,5 @@ describe('SteamAPIClient', () => {
 
         const result = await steamClient.getCurrentGame('12345');
         expect(result).toBeNull();
-    });
-});
-
-describe('DiscordRPCClient', () => {
-    let discordClient: DiscordRPCClient;
-
-    beforeEach(() => {
-        discordClient = new DiscordRPCClient('test-client-id');
-    });
-
-    afterEach(() => {
-        vi.restoreAllMocks();
-    });
-
-    it('should initialize without connection', () => {
-        expect(discordClient.isConnectedToDiscord()).toBe(false);
-    });
-
-    it('should connect successfully', async () => {
-        const result = await discordClient.connect();
-        // Connection attempt returns true (initiated successfully)
-        // Actual connection state depends on Discord being available
-        expect(typeof result).toBe('boolean');
-    });
-
-    it('should handle missing client ID', async () => {
-        const clientNoId = new DiscordRPCClient();
-        const result = await clientNoId.connect();
-        expect(result).toBe(false);
-    });
-
-    it('should disconnect properly', async () => {
-        await discordClient.connect();
-        discordClient.disconnect();
-        expect(discordClient.isConnectedToDiscord()).toBe(false);
-    });
-
-    it('should set and clear music activity', async () => {
-        await discordClient.connect();
-
-        const result = await discordClient.setMusicActivity({
-            songName: 'Never Gonna Give You Up',
-            artistName: 'Rick Astley',
-            durationSeconds: 212
-        });
-
-        // Result depends on whether Discord is actually running
-        // If Discord isn't available, the operation will gracefully fail
-        expect(typeof result).toBe('boolean');
-
-        const clearResult = await discordClient.clearMusicActivity();
-        expect(typeof clearResult).toBe('boolean');
-    });
-
-    it('should handle music activity updates when not connected', async () => {
-        const result = await discordClient.setMusicActivity({
-            songName: 'Test Song',
-            artistName: 'Test Artist'
-        });
-
-        expect(result).toBe(false);
-    });
-
-    it('should set music activity with album art', async () => {
-        await discordClient.connect();
-
-        const result = await discordClient.setMusicActivity({
-            songName: 'Bohemian Rhapsody',
-            artistName: 'Queen',
-            albumArtKey: 'album1',
-            startTime: Math.floor(Date.now() / 1000),
-            durationSeconds: 354
-        });
-
-        expect(typeof result).toBe('boolean');
     });
 });

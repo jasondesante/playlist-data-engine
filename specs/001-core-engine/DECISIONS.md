@@ -33,7 +33,7 @@ src/core/
 | D&D 5e | Hardcoded SRD 5.1 | Static data, no network dependency |
 | Sensors | Geolocation, DeviceMotion APIs | Native browser APIs |
 | Weather | OpenWeatherMap (dev key required) | Free tier, comprehensive data |
-| Gaming | Steam Web API, Discord RPC | Platform integration (CORS proxy needed) |
+| Gaming | Steam Web API | Platform integration (CORS proxy needed) |
 | Testing | Vitest + mock fixtures | Fast, reproducible tests |
 
 ---
@@ -66,6 +66,6 @@ src/core/
 | Risk | Mitigation |
 |------|------------|
 | Browser API compatibility | Feature detection + graceful degradation |
-| Steam/Discord rate limits | Exponential backoff + caching |
+| Steam rate limits | Exponential backoff + caching |
 | Weather API costs | Optional, developer provides key |
 | Sensor permission fatigue | Cache permissions, clear value prop |

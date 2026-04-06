@@ -1,6 +1,6 @@
 /**
  * Mock Gaming Platform Data
- * Provides realistic mock data for Steam and Discord API testing
+ * Provides realistic mock data for Steam API testing
  */
 
 import type { GamingContext } from '../../src/core/types/Progression';
@@ -64,25 +64,6 @@ export const mockSteamAPI_GameSchema = {
       ]
     }
   }
-};
-
-/**
- * Mock Discord RPC music presence data
- * Note: Discord RPC is used for SETTING music activity only, NOT for game detection.
- * Game detection is handled by Steam API only.
- */
-export const mockDiscordRPC_MusicPresence = {
-  applicationId: '123456789',
-  name: 'Never Gonna Give You Up',
-  state: 'by Rick Astley',
-  details: 'Listening',
-  startTimestamp: Date.now() - 45000,  // 45 seconds into song
-  endTimestamp: Date.now() + 167000,  // 212 second song, remaining time
-  largeImageKey: 'album_art',
-  largeImageText: 'Never Gonna Give You Up',
-  smallImageKey: 'music_icon',
-  smallImageText: 'Now Playing',
-  type: 2,  // ActivityType.Listening
 };
 
 /**
@@ -153,7 +134,6 @@ export const mockGamingContext_StrategyGame: GamingContext = {
 
 /**
  * Gaming context for multiplayer game with party
- * Note: platformSource is 'steam' only - Discord cannot detect games
  */
 export const mockGamingContext_MultiplayerGame: GamingContext = {
   isActivelyGaming: true,
