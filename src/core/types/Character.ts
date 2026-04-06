@@ -414,6 +414,13 @@ export interface CharacterSheet {
         cantrips: string[];
     };
 
+    /** Combat-ready Spell objects for use by CombatEngine and SpellCaster.
+     *  Populated from SpellcastingConfig during enemy generation.
+     *  Contains the full InnateSpell objects (which extend Spell) with
+     *  tags, damage, save, concentration, etc. — everything the AI needs
+     *  to make intelligent casting decisions. */
+    combat_spells?: Spell[];
+
     /** Equipment */
     equipment?: {
         weapons: EnhancedInventoryItem[];

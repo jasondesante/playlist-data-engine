@@ -9,7 +9,7 @@
  * All generation is seeded for reproducibility.
  */
 
-import type { CharacterSheet, AbilityScores } from '../types/Character.js';
+import type { CharacterSheet, AbilityScores, Spell } from '../types/Character.js';
 import type { AudioProfile } from '../types/AudioProfile.js';
 import type {
     EnemyTemplate,
@@ -1194,6 +1194,12 @@ export class EnemyGenerator {
                 known_spells: [],
                 cantrips: []
             },
+
+            // Combat-ready Spell objects for CombatEngine/SpellCaster/AI
+            // InnateSpell extends Spell, so this array is directly usable by SpellCaster.castSpell()
+            ...(spellConfig ? {
+                combat_spells: [...spellConfig.cantrips, ...spellConfig.spells] as Spell[]
+            } : {}),
 
             // XP tracking
             xp: {
