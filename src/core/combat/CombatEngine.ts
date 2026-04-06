@@ -335,7 +335,7 @@ export class CombatEngine {
       result: {
         success: result.success,
         damage: result.damage?.total,
-        damageType: spell.damage_type,
+        damageType: spell.damage_type ?? spell.damageType,
         description: result.description
       }
     };

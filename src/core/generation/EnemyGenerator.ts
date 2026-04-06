@@ -32,7 +32,7 @@ import {
     getXPBudgetForParty
 } from '../../constants/EncounterBalance.js';
 import { EnemyEquipmentGenerator } from './EnemyEquipmentGenerator.js';
-import { SpellcastingGenerator } from './SpellcastingGenerator.js';
+import { SpellcastingGenerator, type SpellcastingConfig } from './SpellcastingGenerator.js';
 import { LegendaryGenerator, type LegendaryAction, type LegendaryConfig } from './LegendaryGenerator.js';
 import { DEFAULT_EQUIPMENT } from '../../constants/DefaultEquipment.js';
 import { crToLevel } from './CRLevelConverter.js';
@@ -745,7 +745,7 @@ export class EnemyGenerator {
         rarity: EnemyRarity,
         rng: SeededRNG,
         cr?: number
-    ): Record<string, unknown>[] {
+    ): { abilities: Record<string, unknown>[]; spellConfig?: SpellcastingConfig } {
         // Start with signature ability
         const signatureAbility = EnemyGenerator.scaleSignatureAbility(
             template.signatureAbility,
@@ -753,11 +753,12 @@ export class EnemyGenerator {
         );
 
         const abilities: Record<string, unknown>[] = [signatureAbility];
+        let spellConfig: SpellcastingConfig | undefined;
 
         // Check if enemy should have spellcasting
         if (SpellcastingGenerator.shouldHaveSpellcasting(template.archetype, rarity)) {
             const spellCR = cr || EnemyGenerator.getCRForRarity(rarity);
-            const spellConfig = SpellcastingGenerator.generateSpellListWithRNG({
+            spellConfig = SpellcastingGenerator.generateSpellListWithRNG({
                 archetype: template.archetype,
                 rarity,
                 cr: spellCR,
@@ -787,7 +788,7 @@ export class EnemyGenerator {
             abilities.push(...extraAbilities);
         }
 
-        return abilities;
+        return { abilities, spellConfig };
     }
 
     /**
@@ -993,12 +994,13 @@ export class EnemyGenerator {
         const shouldHaveSpells = SpellcastingGenerator.shouldHaveSpellcasting(template.archetype, rarity);
 
         // Generate all abilities (signature + extras from FeatureQuery)
-        let abilities = EnemyGenerator.generateAbilities(template, rarity, rng, cr);
+        const { abilities: generatedAbilities, spellConfig } = EnemyGenerator.generateAbilities(template, rarity, rng, cr);
 
         // Apply boss-specific enhancements for boss rarity
         // This replaces the signature ability with an enhanced version (double damage dice)
         // and adds an ultimate ability usable once per encounter
         // Boss enemies do NOT get spellcasting - they get ultimate abilities instead
+        let abilities = generatedAbilities;
         if (rarity === 'boss') {
             // Extract the original signature ability (first element) for enhancement
             const signatureAbility = abilities[0];
@@ -1175,8 +1177,19 @@ export class EnemyGenerator {
                 equippedWeight: 0
             },
 
-            // Empty spells (V1 - spells as features only)
-            spells: {
+            // Spells — populated from SpellcastingConfig when enemy has spellcasting
+            // Boss enemies have spellConfig but abilities are replaced; spells remain populated
+            // for future use but are not active in boss combat (boss uses ultimate abilities)
+            spells: spellConfig ? {
+                spell_slots: Object.fromEntries(
+                    Object.entries(spellConfig.slots).map(([level, count]) => [
+                        Number(level),
+                        { total: count, used: 0 }
+                    ])
+                ),
+                known_spells: spellConfig.spells.map(s => s.name),
+                cantrips: spellConfig.cantrips.map(s => s.name)
+            } : {
                 spell_slots: {},
                 known_spells: [],
                 cantrips: []

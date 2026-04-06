@@ -302,13 +302,22 @@ export interface Attack {
 
 /**
  * Spell type for casting
+ *
+ * Unified spell interface that supports both player-facing spells (with
+ * damage_dice, damage_type, saving_throw) and enemy InnateSpell objects
+ * (with damage, damageType, save, tags, concentration, effect).
+ *
+ * SpellCaster checks both naming conventions so either field set works.
  */
 export interface Spell {
     name: string;
     level?: number;
     school?: string;
     casting_time?: string;
+    /** Range as a string (e.g., "30 feet") — player spells */
     range?: string;
+    /** Range as a number (feet) — enemy InnateSpell. Either range or rangeFeet may be set. */
+    rangeFeet?: number;
     duration?: string;
     components?: string[];
     description?: string;
@@ -316,6 +325,20 @@ export interface Spell {
     damage_type?: string;
     attack_roll?: boolean;
     saving_throw?: string;
+    /** Unique spell identifier (used by enemy InnateSpell) */
+    id?: string;
+    /** Spell effect description (used by enemy InnateSpell, separate from description) */
+    effect?: string;
+    /** Whether spell requires concentration */
+    concentration?: boolean;
+    /** Tags for spell classification (damage, healing, buff, control, aoe, etc.) */
+    tags?: string[];
+    /** Damage dice (alias for damage_dice — used by enemy InnateSpell) */
+    damage?: string;
+    /** Save ability (alias for saving_throw — used by enemy InnateSpell, e.g., "DEX") */
+    save?: string;
+    /** Damage type (alias for damage_type — used by enemy InnateSpell) */
+    damageType?: string;
 }
 
 export interface AbilityScores {

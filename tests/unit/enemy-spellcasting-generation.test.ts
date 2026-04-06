@@ -130,7 +130,7 @@ describe('SpellcastingGenerator', () => {
                 damage: '1d8',
                 damageType: 'fire',
                 save: 'DEX',
-                range: 60,
+                rangeFeet: 60,
                 tags: ['damage', 'fire']
             };
 

@@ -53,30 +53,36 @@ export class SpellCaster {
     let damage: any;
     let saveDC: number | undefined;
 
+    // Resolve damage dice and damage type from either naming convention
+    // Player spells use damage_dice/damage_type, enemy InnateSpell uses damage/damageType
+    const damageDice = spell.damage_dice ?? spell.damage;
+    const damageType = spell.damage_type ?? spell.damageType;
+    const saveAbility = spell.saving_throw ?? spell.save;
+
     // If spell deals damage
-    if (spell.damage_dice && spell.damage_type) {
+    if (damageDice && damageType) {
       // Check if this is an attack roll or saving throw
       if (spell.attack_roll) {
         // Attack roll spell (like Fire Bolt)
         damage = this.diceRoller
-          ? this.diceRoller.calculateDamage(spell.damage_dice, 0, false)
-          : DiceRoller.calculateDamage(spell.damage_dice, 0, false);
-      } else if (spell.saving_throw) {
+          ? this.diceRoller.calculateDamage(damageDice, 0, false)
+          : DiceRoller.calculateDamage(damageDice, 0, false);
+      } else if (saveAbility) {
         // Saving throw spell (like Fireball)
-        saveDC = this.calculateSaveDC(caster, spell.saving_throw);
+        saveDC = this.calculateSaveDC(caster, saveAbility);
 
         // Apply effects to targets based on saving throw
         for (const target of targets) {
           // Check for disadvantage on the save ability (e.g., Stunned → disadvantage on DEX saves)
-          const disadvantagedAbility = spell.saving_throw.toLowerCase();
+          const disadvantagedAbility = saveAbility.toLowerCase();
           const hasDisadvantage = disadvantagedAbility === 'dexterity' &&
             target.statusEffects.some(e => e.mechanicalEffects?.disadvantageOnDexSaves);
 
-          const saveResult = this.makeSavingThrow(target, spell.saving_throw, saveDC, hasDisadvantage);
+          const saveResult = this.makeSavingThrow(target, saveAbility, saveDC, hasDisadvantage);
           if (!saveResult) {
             damage = this.diceRoller
-              ? this.diceRoller.calculateDamage(spell.damage_dice, 0, false)
-              : DiceRoller.calculateDamage(spell.damage_dice, 0, false);
+              ? this.diceRoller.calculateDamage(damageDice, 0, false)
+              : DiceRoller.calculateDamage(damageDice, 0, false);
             target.currentHP -= damage.total;
             if (target.currentHP < 0) {
               target.currentHP = 0;
@@ -90,7 +96,9 @@ export class SpellCaster {
     // Build spell effects (status effects, buffs, debuffs).
     // These are returned in effectsApplied for the caller (e.g. CombatEngine)
     // to apply via applyStatusEffect() which handles stacking and concentration.
-    if (spell.description?.toLowerCase().includes('charm')) {
+    // Check both 'description' (player spells) and 'effect' (enemy InnateSpell) for status effects.
+    const effectText = [spell.description, spell.effect].filter(Boolean).join(' ').toLowerCase();
+    if (effectText.includes('charm')) {
       const charmed: StatusEffect = {
         name: 'Charmed',
         description: `Charmed by ${caster.character.name}`,
@@ -104,7 +112,7 @@ export class SpellCaster {
       }
     }
 
-    if (spell.description?.toLowerCase().includes('frighten')) {
+    if (effectText.includes('frighten')) {
       const frightened: StatusEffect = {
         name: 'Frightened',
         description: `Frightened of ${caster.character.name}`,

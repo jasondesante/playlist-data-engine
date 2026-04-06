@@ -25,6 +25,7 @@
 
 import { SeededRNG } from '../../utils/random.js';
 import type { EnemyArchetype, EnemyRarity } from '../types/Enemy.js';
+import type { Spell } from '../types/Character.js';
 
 /**
  * Innate Spell - A spell available to an enemy
@@ -32,12 +33,9 @@ import type { EnemyArchetype, EnemyRarity } from '../types/Enemy.js';
  * Represents a single spell that an enemy can cast.
  * Simplified compared to player spells - enemies have predefined spell lists.
  */
-export interface InnateSpell {
+export interface InnateSpell extends Spell {
     /** Unique identifier for this spell */
     id: string;
-
-    /** Display name shown to players */
-    name: string;
 
     /** Spell level (0 = cantrip, 1-9 = spell level) */
     level: number;
@@ -47,24 +45,6 @@ export interface InnateSpell {
 
     /** Description of what the spell does */
     effect: string;
-
-    /** Damage dice (e.g., '2d6' for damaging spells) */
-    damage?: string;
-
-    /** Save type (e.g., 'DEX' for Dexterity save) */
-    save?: string;
-
-    /** Damage type for resistance calculations */
-    damageType?: string;
-
-    /** Range in feet (for ranged spells) */
-    range?: number;
-
-    /** Whether this spell requires concentration */
-    concentration?: boolean;
-
-    /** Tags for spell classification */
-    tags?: string[];
 }
 
 /**
@@ -175,7 +155,7 @@ const SPELL_LISTS: Record<EnemyArchetype, SpellList> = {
                 effect: 'A flame of divine brightness springs from your hand. Deals radiant damage to one target.',
                 damage: '1d8',
                 damageType: 'radiant',
-                range: 60,
+                rangeFeet: 60,
                 tags: ['damage', 'ranged']
             },
             {
@@ -184,7 +164,7 @@ const SPELL_LISTS: Record<EnemyArchetype, SpellList> = {
                 level: 0,
                 school: 'divination',
                 effect: 'You touch one willing creature. Once before the spell ends, the target can roll a d4 and add the number rolled to one ability check of its choice.',
-                range: 30,
+                rangeFeet: 30,
                 concentration: false,
                 tags: ['buff', 'utility']
             },
@@ -194,7 +174,7 @@ const SPELL_LISTS: Record<EnemyArchetype, SpellList> = {
                 level: 0,
                 school: 'abjuration',
                 effect: 'You touch one willing creature. The target gains resistance to one damage type of your choice until the spell ends.',
-                range: 30,
+                rangeFeet: 30,
                 concentration: true,
                 tags: ['buff', 'defense']
             }
@@ -206,7 +186,7 @@ const SPELL_LISTS: Record<EnemyArchetype, SpellList> = {
                 level: 1,
                 school: 'enchantment',
                 effect: 'You bless up to three creatures of your choice within range. Whenever a target makes an attack roll or saving throw before the spell ends, the target can roll a d4 and add the number rolled to the d20.',
-                range: 30,
+                rangeFeet: 30,
                 concentration: true,
                 tags: ['buff', 'ally', 'multi-target']
             },
@@ -217,7 +197,7 @@ const SPELL_LISTS: Record<EnemyArchetype, SpellList> = {
                 school: 'enchantment',
                 effect: 'Up to three creatures of your choice that you can see within range must make a Wisdom saving throw. On a failed save, the target has disadvantage on attack rolls for the duration.',
                 save: 'WIS',
-                range: 30,
+                rangeFeet: 30,
                 concentration: true,
                 tags: ['debuff', 'control']
             },
@@ -227,7 +207,7 @@ const SPELL_LISTS: Record<EnemyArchetype, SpellList> = {
                 level: 1,
                 school: 'evocation',
                 effect: 'A creature you touch regains a number of hit points equal to 1d8 + your spellcasting ability modifier.',
-                range: 30,
+                rangeFeet: 30,
                 tags: ['healing', 'ally']
             },
             {
@@ -236,7 +216,7 @@ const SPELL_LISTS: Record<EnemyArchetype, SpellList> = {
                 level: 1,
                 school: 'evocation',
                 effect: 'A creature of your choice that you can see within range regains hit points equal to 1d4 + your spellcasting ability modifier.',
-                range: 60,
+                rangeFeet: 60,
                 tags: ['healing', 'ally', 'bonus-action']
             },
             {
@@ -246,7 +226,7 @@ const SPELL_LISTS: Record<EnemyArchetype, SpellList> = {
                 school: 'enchantment',
                 effect: 'You speak a one-word command to a creature you can see within range. The target must succeed on a Wisdom save or follow the command on its next turn.',
                 save: 'WIS',
-                range: 60,
+                rangeFeet: 60,
                 tags: ['control', 'debuff']
             }
         ],
@@ -257,7 +237,7 @@ const SPELL_LISTS: Record<EnemyArchetype, SpellList> = {
                 level: 2,
                 school: 'evocation',
                 effect: 'Your spell bolsters your allies with toughness and resolve. Up to three creatures gain temporary hit points and advantage on certain ability checks.',
-                range: 30,
+                rangeFeet: 30,
                 tags: ['buff', 'ally', 'multi-target']
             },
             {
@@ -266,7 +246,7 @@ const SPELL_LISTS: Record<EnemyArchetype, SpellList> = {
                 level: 2,
                 school: 'abjuration',
                 effect: 'You touch a creature and can end either one disease or one condition afflicting it. The condition can be blinded, deafened, paralyzed, or poisoned.',
-                range: 30,
+                rangeFeet: 30,
                 tags: ['healing', 'ally', 'utility']
             },
             {
@@ -277,7 +257,7 @@ const SPELL_LISTS: Record<EnemyArchetype, SpellList> = {
                 effect: 'You create a spectral weapon within range. It can be used to attack, dealing force damage on a hit.',
                 damage: '1d8 + 1',
                 damageType: 'force',
-                range: 60,
+                rangeFeet: 60,
                 concentration: false,
                 tags: ['summon', 'damage']
             },
@@ -290,7 +270,7 @@ const SPELL_LISTS: Record<EnemyArchetype, SpellList> = {
                 damage: '3d8',
                 damageType: 'thunder',
                 save: 'CON',
-                range: 60,
+                rangeFeet: 60,
                 tags: ['damage', 'aoe']
             }
         ],
@@ -304,7 +284,7 @@ const SPELL_LISTS: Record<EnemyArchetype, SpellList> = {
                 damage: '2d8',
                 damageType: 'radiant',
                 save: 'WIS',
-                range: 30,
+                rangeFeet: 30,
                 concentration: true,
                 tags: ['defense', 'control', 'aoe']
             },
@@ -314,7 +294,7 @@ const SPELL_LISTS: Record<EnemyArchetype, SpellList> = {
                 level: 3,
                 school: 'conjuration',
                 effect: 'You touch a creature that has died within the last minute. That creature returns to life with 1 hit point.',
-                range: 30,
+                rangeFeet: 30,
                 tags: ['healing', 'ally', 'utility']
             },
             {
@@ -323,7 +303,7 @@ const SPELL_LISTS: Record<EnemyArchetype, SpellList> = {
                 level: 3,
                 school: 'evocation',
                 effect: 'Up to six creatures of your choice that you can see within range regain hit points equal to 1d4 + your spellcasting ability modifier.',
-                range: 60,
+                rangeFeet: 60,
                 tags: ['healing', 'ally', 'multi-target']
             }
         ]
@@ -340,7 +320,7 @@ const SPELL_LISTS: Record<EnemyArchetype, SpellList> = {
                 effect: 'A frigid beam of blue-white light streaks toward a creature within range. On a hit, the target takes cold damage and its speed is reduced by 10 feet until the start of your next turn.',
                 damage: '1d8',
                 damageType: 'cold',
-                range: 60,
+                rangeFeet: 60,
                 tags: ['damage', 'control', 'ranged']
             },
             {
@@ -351,7 +331,7 @@ const SPELL_LISTS: Record<EnemyArchetype, SpellList> = {
                 effect: 'Lightning springs from your hand to deliver a shock to a creature you try to touch. The target takes lightning damage and cannot take reactions until its next turn.',
                 damage: '1d8',
                 damageType: 'lightning',
-                range: 30,
+                rangeFeet: 30,
                 tags: ['damage', 'melee', 'control']
             },
             {
@@ -360,7 +340,7 @@ const SPELL_LISTS: Record<EnemyArchetype, SpellList> = {
                 level: 0,
                 school: 'divination',
                 effect: 'You extend your hand and point a finger at a target in range. Your magic grants you a brief insight into the target\'s defenses. On your next turn, you gain advantage on your first attack roll against the target.',
-                range: 30,
+                rangeFeet: 30,
                 tags: ['buff', 'self']
             }
         ],
@@ -371,7 +351,7 @@ const SPELL_LISTS: Record<EnemyArchetype, SpellList> = {
                 level: 1,
                 school: 'conjuration',
                 effect: 'You briefly vanish from existence and teleport to a nearby space. During your next turn, you gain advantage on the first melee attack you make against an enemy.',
-                range: 90,
+                rangeFeet: 90,
                 tags: ['mobility', 'escape', 'buff']
             },
             {
@@ -381,7 +361,7 @@ const SPELL_LISTS: Record<EnemyArchetype, SpellList> = {
                 school: 'enchantment',
                 effect: 'Choose a humanoid that you can see within range. The target must succeed on a Wisdom saving throw or be paralyzed for the duration.',
                 save: 'WIS',
-                range: 60,
+                rangeFeet: 60,
                 concentration: true,
                 tags: ['control', 'debuff']
             },
@@ -394,7 +374,7 @@ const SPELL_LISTS: Record<EnemyArchetype, SpellList> = {
                 damage: '2d8',
                 damageType: 'poison',
                 save: 'CON',
-                range: 60,
+                rangeFeet: 60,
                 tags: ['damage', 'debuff']
             },
             {
@@ -406,7 +386,7 @@ const SPELL_LISTS: Record<EnemyArchetype, SpellList> = {
                 damage: '2d8',
                 damageType: 'thunder',
                 save: 'CON',
-                range: 30,
+                rangeFeet: 30,
                 tags: ['damage', 'aoe', 'control']
             }
         ],
@@ -418,7 +398,7 @@ const SPELL_LISTS: Record<EnemyArchetype, SpellList> = {
                 school: 'conjuration',
                 effect: 'You cast a web of thick, sticky strands at a point within range. Creatures in the area must make a Dexterity saving throw or be restrained.',
                 save: 'DEX',
-                range: 60,
+                rangeFeet: 60,
                 concentration: false,
                 tags: ['control', 'aoe', 'restrain']
             },
@@ -428,7 +408,7 @@ const SPELL_LISTS: Record<EnemyArchetype, SpellList> = {
                 level: 2,
                 school: 'illusion',
                 effect: 'A creature you touch becomes invisible until the spell ends. Anything the target is wearing or carrying is invisible as long as it is on the target\'s person.',
-                range: 30,
+                rangeFeet: 30,
                 concentration: true,
                 tags: ['stealth', 'defense', 'utility']
             },
@@ -440,7 +420,7 @@ const SPELL_LISTS: Record<EnemyArchetype, SpellList> = {
                 effect: 'A shimmering green arrow streaks toward a target within range and bursts in a spray of acid. The target takes acid damage immediately and additional acid damage at the end of its next turn.',
                 damage: '4d4',
                 damageType: 'acid',
-                range: 90,
+                rangeFeet: 90,
                 tags: ['damage', 'ranged', 'dot']
             },
             {
@@ -451,7 +431,7 @@ const SPELL_LISTS: Record<EnemyArchetype, SpellList> = {
                 effect: 'You focus elemental energy into a ray that deals fire damage to a target. The target ignites if it\'s wearing flammable gear.',
                 damage: '4d6',
                 damageType: 'fire',
-                range: 60,
+                rangeFeet: 60,
                 tags: ['damage', 'ranged']
             }
         ],
@@ -462,7 +442,7 @@ const SPELL_LISTS: Record<EnemyArchetype, SpellList> = {
                 level: 3,
                 school: 'transmutation',
                 effect: 'You touch a willing creature. The target gains a flying speed of 60 feet for the duration. When the spell ends, the target falls if it is still aloft.',
-                range: 30,
+                rangeFeet: 30,
                 concentration: true,
                 tags: ['mobility', 'buff', 'ally']
             },
@@ -475,7 +455,7 @@ const SPELL_LISTS: Record<EnemyArchetype, SpellList> = {
                 damage: '8d6',
                 damageType: 'lightning',
                 save: 'DEX',
-                range: 90,
+                rangeFeet: 90,
                 tags: ['damage', 'aoe']
             },
             {
@@ -484,7 +464,7 @@ const SPELL_LISTS: Record<EnemyArchetype, SpellList> = {
                 level: 3,
                 school: 'transmutation',
                 effect: 'You transform a willing creature you touch into a misty cloud for the duration. The creature can\'t talk or manipulate objects, and is immune to non-magical damage.',
-                range: 30,
+                rangeFeet: 30,
                 concentration: false,
                 tags: ['defense', 'utility', 'escape']
             }
@@ -502,7 +482,7 @@ const SPELL_LISTS: Record<EnemyArchetype, SpellList> = {
                 effect: 'You hurl a mote of fire at a creature or object within range. On a hit, the target takes fire damage.',
                 damage: '1d10',
                 damageType: 'fire',
-                range: 60,
+                rangeFeet: 60,
                 tags: ['damage', 'ranged']
             },
             {
@@ -513,7 +493,7 @@ const SPELL_LISTS: Record<EnemyArchetype, SpellList> = {
                 effect: 'The wood of a club or quarterstaff you are holding becomes imbued with magic. For the duration, your weapon deals magical damage and has its damage die increased.',
                 damage: '1d8',
                 damageType: 'force',
-                range: 30,
+                rangeFeet: 30,
                 concentration: true,
                 tags: ['buff', 'self', 'melee']
             },
@@ -525,7 +505,7 @@ const SPELL_LISTS: Record<EnemyArchetype, SpellList> = {
                 effect: 'You create a long, vine-like whip covered in thorns that lashes out at your command toward a creature you can see.',
                 damage: '1d6',
                 damageType: 'piercing',
-                range: 30,
+                rangeFeet: 30,
                 tags: ['damage', 'ranged', 'control']
             }
         ],
@@ -539,7 +519,7 @@ const SPELL_LISTS: Record<EnemyArchetype, SpellList> = {
                 damage: '3d6',
                 damageType: 'fire',
                 save: 'DEX',
-                range: 30,
+                rangeFeet: 30,
                 tags: ['damage', 'aoe']
             },
             {
@@ -548,7 +528,7 @@ const SPELL_LISTS: Record<EnemyArchetype, SpellList> = {
                 level: 1,
                 school: 'evocation',
                 effect: 'Your prayer empowers you with divine energy. You gain advantage on the first attack roll you make during the spell\'s duration.',
-                range: 30,
+                rangeFeet: 30,
                 tags: ['buff', 'self']
             },
             {
@@ -559,7 +539,7 @@ const SPELL_LISTS: Record<EnemyArchetype, SpellList> = {
                 effect: 'You touch one to three pebbles and imbue them with magic. You or another creature can make a ranged spell attack with one of the stones, dealing bludgeoning damage.',
                 damage: '1d6 + 1',
                 damageType: 'bludgeoning',
-                range: 30,
+                rangeFeet: 30,
                 tags: ['damage', 'ranged']
             },
             {
@@ -569,7 +549,7 @@ const SPELL_LISTS: Record<EnemyArchetype, SpellList> = {
                 school: 'evocation',
                 effect: 'You create a gust of wind that pushes a creature away from you. The target must succeed on a Strength saving throw or be pushed 15 feet away.',
                 save: 'STR',
-                range: 30,
+                rangeFeet: 30,
                 tags: ['control', 'push']
             }
         ],
@@ -583,7 +563,7 @@ const SPELL_LISTS: Record<EnemyArchetype, SpellList> = {
                 damage: '3d8',
                 damageType: 'thunder',
                 save: 'CON',
-                range: 60,
+                rangeFeet: 60,
                 tags: ['damage', 'aoe']
             },
             {
@@ -594,7 +574,7 @@ const SPELL_LISTS: Record<EnemyArchetype, SpellList> = {
                 effect: 'The next time you hit a creature with a melee weapon attack during this spell\'s duration, your weapon flares with bright light and deals an extra 2d6 radiant damage.',
                 damage: '2d6',
                 damageType: 'radiant',
-                range: 30,
+                rangeFeet: 30,
                 tags: ['damage', 'melee', 'buff']
             },
             {
@@ -605,7 +585,7 @@ const SPELL_LISTS: Record<EnemyArchetype, SpellList> = {
                 effect: 'You create a spectral weapon within range. It can be used to attack, dealing force damage on a hit.',
                 damage: '1d8 + 1',
                 damageType: 'force',
-                range: 60,
+                rangeFeet: 60,
                 concentration: false,
                 tags: ['summon', 'damage']
             },
@@ -617,7 +597,7 @@ const SPELL_LISTS: Record<EnemyArchetype, SpellList> = {
                 effect: 'You evoke a fiery blade in your free hand. The blade is similar in size and shape to a scimitar and sheds bright light in a 10-foot radius.',
                 damage: '3d6',
                 damageType: 'fire',
-                range: 30,
+                rangeFeet: 30,
                 concentration: true,
                 tags: ['damage', 'melee']
             }
@@ -632,7 +612,7 @@ const SPELL_LISTS: Record<EnemyArchetype, SpellList> = {
                 damage: '5d6',
                 damageType: 'lightning',
                 save: 'DEX',
-                range: 90,
+                rangeFeet: 90,
                 concentration: true,
                 tags: ['damage', 'aoe', 'control']
             },
@@ -642,7 +622,7 @@ const SPELL_LISTS: Record<EnemyArchetype, SpellList> = {
                 level: 3,
                 school: 'transmutation',
                 effect: 'A nonmagical weapon you touch becomes a magic weapon. Choose one of the following damage types: acid, cold, fire, lightning, or thunder.',
-                range: 30,
+                rangeFeet: 30,
                 tags: ['buff', 'melee', 'utility']
             },
             {
@@ -651,7 +631,7 @@ const SPELL_LISTS: Record<EnemyArchetype, SpellList> = {
                 level: 3,
                 school: 'illusion',
                 effect: 'Your body becomes blurred, shifting and wavering to all who can see you. Attacks against you have disadvantage unless the attacker can\'t see.',
-                range: 30,
+                rangeFeet: 30,
                 concentration: true,
                 tags: ['defense', 'debuff']
             }
@@ -1033,7 +1013,7 @@ export class SpellcastingGenerator {
             damage: spell.damage,
             damageType: spell.damageType,
             save: spell.save,
-            range: spell.range,
+            range: spell.rangeFeet,
             concentration: spell.concentration
         };
     }
