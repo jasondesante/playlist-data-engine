@@ -370,6 +370,120 @@ export class CombatEngine {
   }
 
   /**
+   * Execute a legendary action for a boss combatant.
+   *
+   * Legendary actions are special abilities that boss enemies can use at the end
+   * of another creature's turn, spending legendary action points (3 per round).
+   *
+   * Validates that the action exists on the boss's `legendary_config`, checks
+   * that enough action points remain, resolves damage if applicable, and records
+   * the action in combat history.
+   *
+   * @param combat - Combat instance
+   * @param bossCombatant - The boss combatant executing the legendary action
+   * @param action - The legendary action to execute (from `legendary_config.actions`)
+   * @param target - Optional target combatant for damaging/controlling actions
+   * @returns Combat action with result
+   * @throws {Error} If the combatant has no legendary config, the action doesn't
+   *                  belong to this boss, or not enough action points remain
+   */
+  executeLegendaryAction(
+    combat: CombatInstance,
+    bossCombatant: Combatant,
+    action: { id: string; name: string; cost: number; effect: string; damage?: string; damage_type?: string },
+    target?: Combatant
+  ): CombatAction {
+    const config = bossCombatant.character.legendary_config;
+    if (!config) {
+      throw new Error(`${bossCombatant.character.name} has no legendary actions (not a boss)`);
+    }
+
+    // Validate that the action belongs to this boss
+    const knownAction = config.actions.find(a => a.id === action.id);
+    if (!knownAction) {
+      throw new Error(`Legendary action "${action.id}" not found on ${bossCombatant.character.name}`);
+    }
+
+    // Check action point budget
+    const pointsNeeded = knownAction.cost;
+    const pointsAvailable = bossCombatant.legendaryActionsRemaining ?? 0;
+
+    if (pointsAvailable < pointsNeeded) {
+      throw new Error(
+        `${bossCombatant.character.name} needs ${pointsNeeded} legendary action points but only has ${pointsAvailable} remaining`
+      );
+    }
+
+    // Spend the action points
+    bossCombatant.legendaryActionsRemaining = pointsAvailable - pointsNeeded;
+
+    // Resolve damage if the action has a damage formula
+    let damageTotal: number | undefined;
+    let targetHP: number | undefined;
+
+    if (knownAction.damage && target) {
+      // Strip spaces from dice formula (e.g., "2d8 + 5" → "2d8+5")
+      const formula = knownAction.damage.replace(/\s/g, '');
+      const roller = this.diceRoller;
+      if (roller) {
+        const parsed = roller.parseDiceFormula(formula);
+        damageTotal = parsed.total;
+      } else {
+        damageTotal = DiceRoller.parseDiceFormula(formula).total;
+      }
+
+      const actualDamage = this.applyDamage(target, damageTotal);
+      targetHP = target.currentHP;
+
+      // Check if target is defeated
+      if (target.currentHP <= 0) {
+        target.isDefeated = true;
+        if (target.concentratingOn) {
+          target.concentratingOn = undefined;
+        }
+      } else if (target.concentratingOn && actualDamage > 0) {
+        this.checkConcentration(combat, target, actualDamage);
+      }
+    }
+
+    const description = target
+      ? `${bossCombatant.character.name} uses ${knownAction.name} on ${target.character.name}${damageTotal ? ` for ${damageTotal} ${knownAction.damage_type ?? ''} damage` : ''} (${pointsNeeded} action point${pointsNeeded !== 1 ? 's' : ''} spent, ${bossCombatant.legendaryActionsRemaining} remaining)`
+      : `${bossCombatant.character.name} uses ${knownAction.name} (${pointsNeeded} action point${pointsNeeded !== 1 ? 's' : ''} spent, ${bossCombatant.legendaryActionsRemaining} remaining)`;
+
+    const combatAction: CombatAction = {
+      type: 'legendaryAction',
+      actor: bossCombatant,
+      target,
+      legendaryAction: {
+        id: knownAction.id,
+        name: knownAction.name,
+        description: knownAction.effect,
+        cost: knownAction.cost,
+        effect: knownAction.effect,
+        damage: knownAction.damage,
+        damageType: knownAction.damage_type,
+        archetypes: [],
+      },
+      result: {
+        success: true,
+        damage: damageTotal,
+        damageType: knownAction.damage_type,
+        targetHP,
+        description,
+      }
+    };
+
+    combat.history.push(combatAction);
+
+    // Check for combat end if target was defeated
+    if (target?.isDefeated) {
+      this.checkCombatStatus(combat);
+    }
+
+    return combatAction;
+  }
+
+  /**
    * Execute a dodge action (increase AC by 2)
    */
   executeDodge(combat: CombatInstance, combatant: Combatant): CombatAction {
@@ -520,6 +634,13 @@ export class CombatEngine {
 
       if (isNewRound) {
         combat.roundNumber++;
+
+        // Reset legendary action points for all boss combatants at the start of each round
+        for (const c of combat.combatants) {
+          if (c.character.legendary_config && !c.isDefeated) {
+            c.legendaryActionsRemaining = 3;
+          }
+        }
       }
 
       combat.currentTurnIndex = nextIndex;
@@ -823,7 +944,7 @@ export class CombatEngine {
    * Create a combatant from a character
    */
   private createCombatant(character: CharacterSheet, id: string): Combatant {
-    return {
+    const combatant: Combatant = {
       id,
       character,
       initiative: 0,
@@ -836,6 +957,14 @@ export class CombatEngine {
       reactionUsed: false,
       spellSlots: this.initializeSpellSlots(character)
     };
+
+    // Initialize legendary action tracking for boss enemies
+    if (character.legendary_config) {
+      combatant.legendaryActionsRemaining = 3;
+      combatant.legendaryResistancesRemaining = character.legendary_config.resistances_per_day;
+    }
+
+    return combatant;
   }
 
   /**

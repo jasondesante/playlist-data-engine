@@ -102,6 +102,8 @@ export interface TestCombatantOverrides {
   spellSlots?: Combatant['spellSlots'];
   position?: Combatant['position'];
   concentratingOn?: Combatant['concentratingOn'];
+  legendaryActionsRemaining?: number;
+  legendaryResistancesRemaining?: number;
 }
 
 /**
@@ -180,6 +182,10 @@ export function createTestCombatant(
     spellSlots: combatantOverrides?.spellSlots,
     position: combatantOverrides?.position,
     concentratingOn: combatantOverrides?.concentratingOn,
+    legendaryActionsRemaining: combatantOverrides?.legendaryActionsRemaining ??
+      (character.legendary_config ? 3 : undefined),
+    legendaryResistancesRemaining: combatantOverrides?.legendaryResistancesRemaining ??
+      (character.legendary_config ? character.legendary_config.resistances_per_day : undefined),
   };
 }
 

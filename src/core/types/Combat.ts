@@ -119,6 +119,10 @@ export interface Combatant {
   };
   /** Name of the status effect this combatant is concentrating on, if any */
   concentratingOn?: string;
+  /** Legendary action points remaining this round (3 per round for bosses, 0 for non-bosses) */
+  legendaryActionsRemaining?: number;
+  /** Legendary resistances remaining (per-day resource for bosses) */
+  legendaryResistancesRemaining?: number;
 }
 
 /**
