@@ -9,7 +9,6 @@
  * - Geolocation API (navigator.geolocation)
  * - DeviceMotionEvent (window.addEventListener('devicemotion'))
  * - DeviceOrientationEvent (window.addEventListener('deviceorientation'))
- * - AmbientLightSensor (Experimental Web Generic Sensor API)
  * - localStorage (for browser environments that don't have it)
  */
 
@@ -46,7 +45,6 @@ declare global {
             type: string,
             listener: (event: DeviceMotionEvent | DeviceOrientationEvent) => void
         ) => void;
-        AmbientLightSensor?: new () => MockAmbientLightSensor;
         localStorage?: Storage;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         [key: string]: any;
@@ -431,102 +429,6 @@ export function createMockDeviceOrientationAPI() {
 }
 
 /**
- * Ambient Light Sensor Mock
- *
- * Provides mock implementation of the Generic Sensor API's AmbientLightSensor.
- * This is an experimental API not available in most browsers.
- */
-
-export interface MockAmbientLightSensor {
-    illuminance: number | null;
-    reading?: { illuminance: number };
-    start: () => void;
-    stop: () => void;
-    addEventListener: (type: string, listener: (event: any) => void) => void;
-    removeEventListener: (type: string, listener: (event: any) => void) => void;
-}
-
-let mockIlluminance: number | null = 500; // Default: typical indoor lighting
-let lightSensorStarted = false;
-let lightSensorListeners: Array<(event: { illuminance: number }) => void> = [];
-
-/**
- * Set the mock illuminance value in lux
- */
-export function setMockIlluminance(lux: number | null): void {
-    mockIlluminance = lux;
-    // Update reading if sensor is started
-    if (lightSensorStarted && mockIlluminance !== null) {
-        triggerLightReading();
-    }
-}
-
-/**
- * Reset light sensor mock state
- */
-export function resetLightSensorMock(): void {
-    mockIlluminance = 500;
-    lightSensorStarted = false;
-    lightSensorListeners = [];
-}
-
-/**
- * Trigger a light reading event to all registered listeners
- */
-export function triggerLightReading(): void {
-    if (mockIlluminance === null) return;
-
-    const event = { illuminance: mockIlluminance };
-    lightSensorListeners.forEach(listener => listener(event));
-}
-
-/**
- * Create a mock AmbientLightSensor implementation
- */
-export function createMockAmbientLightSensor(): MockAmbientLightSensor {
-    return {
-        illuminance: mockIlluminance,
-
-        start() {
-            lightSensorStarted = true;
-            // Trigger initial reading after a short delay
-            setTimeout(() => {
-                if (mockIlluminance !== null) {
-                    this.reading = { illuminance: mockIlluminance };
-                    triggerLightReading();
-                }
-            }, 10);
-        },
-
-        stop() {
-            lightSensorStarted = false;
-        },
-
-        addEventListener(_type: string, listener: (event: any) => void) {
-            lightSensorListeners.push(listener);
-        },
-
-        removeEventListener(_type: string, listener: (event: any) => void) {
-            const index = lightSensorListeners.indexOf(listener);
-            if (index > -1) {
-                lightSensorListeners.splice(index, 1);
-            }
-        }
-    };
-}
-
-/**
- * Check if AmbientLightSensor is "supported" (can be controlled)
- */
-export function setMockLightSensorSupported(supported: boolean): void {
-    if (supported) {
-        globalThis.AmbientLightSensor = createMockAmbientLightSensor();
-    } else {
-        delete globalThis.AmbientLightSensor;
-    }
-}
-
-/**
  * localStorage Mock
  *
  * Provides a mock localStorage implementation for Node.js environments.
@@ -588,9 +490,6 @@ export function setupBrowserAPIMocks(): void {
         globalThis.removeEventListener = createMockDeviceMotionAPI().removeEventListener;
     }
 
-    // Setup AmbientLightSensor
-    setMockLightSensorSupported(true);
-
     // Setup localStorage if not available
     if (typeof globalThis.localStorage === 'undefined') {
         const mockStorage = new MockStorage();
@@ -607,7 +506,6 @@ export function teardownBrowserAPIMocks(): void {
     resetGeolocationMock();
     resetMotionMock();
     resetOrientationMock();
-    resetLightSensorMock();
 }
 
 /**
@@ -629,12 +527,6 @@ export default {
     setMockOrientationData,
     resetOrientationMock,
     triggerOrientationEvent,
-
-    // Light
-    setMockIlluminance,
-    resetLightSensorMock,
-    triggerLightReading,
-    setMockLightSensorSupported,
 
     // Setup/teardown
     setupBrowserAPIMocks,

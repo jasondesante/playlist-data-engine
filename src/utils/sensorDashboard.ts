@@ -313,7 +313,6 @@ export function displayEnvironmentalDiagnostics(
     console.log(`\n Geolocation: ${diagnostics.context.hasGeolocation ? colorize('✓', Colors.green, useColors) : colorize('✗', Colors.red, useColors)}`);
     console.log(` Motion:      ${diagnostics.context.hasMotion ? colorize('✓', Colors.green, useColors) : colorize('✗', Colors.red, useColors)}`);
     console.log(` Weather:     ${diagnostics.context.hasWeather ? colorize('✓', Colors.green, useColors) : colorize('✗', Colors.red, useColors)}`);
-    console.log(` Light:       ${diagnostics.context.hasLight ? colorize('✓', Colors.green, useColors) : colorize('✗', Colors.red, useColors)}`);
     console.log(` Biome:       ${diagnostics.context.hasBiome ? colorize('✓', Colors.green, useColors) : colorize('✗', Colors.red, useColors)}`);
 
     console.log(`\n${drawLine(width)}\n`);

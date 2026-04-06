@@ -2,7 +2,7 @@
  * Full Sensor Pipeline Integration Tests
  *
  * Tests the complete end-to-end flow of sensor data:
- * 1. Raw sensor data collection (geolocation, motion, weather, light, gaming)
+ * 1. Raw sensor data collection (geolocation, motion, weather, gaming)
  * 2. Data aggregation and context processing
  * 3. XP modifier calculation combining environmental and gaming factors
  * 4. Error recovery and graceful degradation

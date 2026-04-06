@@ -87,7 +87,6 @@ if (typeof window !== 'undefined') {
 // - navigator.geolocation (Geolocation API)
 // - DeviceMotionEvent (motion detection)
 // - DeviceOrientationEvent (orientation detection)
-// - AmbientLightSensor (ambient light detection)
 // - localStorage (storage API)
 setupBrowserAPIMocks();
 

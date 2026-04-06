@@ -737,7 +737,6 @@ Aggregated environmental sensor data that provides XP modifiers based on real-wo
 | geolocation | GeolocationData? | GPS position data |
 | motion | MotionData? | Device motion/acceleration |
 | weather | WeatherData? | Current weather conditions |
-| light | LightData? | Ambient light level |
 | biome | BiomeType? | Derived biome (12 types) |
 | environmental_xp_modifier | number? | Composite XP multiplier (0.5-3.0) |
 | timestamp | number | Unix timestamp |
@@ -790,17 +789,6 @@ Current weather conditions from OpenWeatherMap API.
 | windDirection | number | Wind direction (degrees) |
 | isNight | boolean | Based on sunrise/sunset |
 | moonPhase | number | Moon phase 0.0-1.0 (new to full) |
-| timestamp | number | Unix timestamp |
-
-### LightData
-
-*Location:* *[src/core/types/Environmental.ts](src/core/types/Environmental.ts)*
-
-Ambient light sensor data.
-
-| Property | Type | Description |
-|----------|------|-------------|
-| illuminance | number | Light intensity in lux |
 | timestamp | number | Unix timestamp |
 
 ### ForecastData
@@ -1169,7 +1157,7 @@ Diagnostic tool for visual console output during development and debugging. Disp
 
 | Function | Description |
 |----------|-------------|
-| `displayEnvironmentalDiagnostics(diagnostics, config?)` | Displays environmental sensor dashboard (GPS, motion, weather, light sensors) |
+| `displayEnvironmentalDiagnostics(diagnostics, config?)` | Displays environmental sensor dashboard (GPS, motion, weather sensors) |
 | `displayGamingDiagnostics(diagnostics, config?)` | Displays gaming platform sensor dashboard (Steam) |
 | `displaySystemDashboard(data, config?)` | Displays combined system dashboard with health summary |
 
@@ -4656,22 +4644,6 @@ Astronomical calculations for sunrise, sunset, and day stage. **Works without an
 | `dusk` | Between sunset and civil dusk (~30 min) |
 
 *For usage examples, see [IRL_SENSORS.md](docs/IRL_SENSORS.md#solar-information-no-api-key-required).*
-
-#### Helper: `LightSensor`
-
-*Location:* *[src/core/sensors/LightSensor.ts](src/core/sensors/LightSensor.ts)*
-
-Uses the experimental AmbientLightSensor API for illuminance detection.
-
-**Methods:**
-
-| Method | Parameters | Returns | Description |
-|--------|-----------|---------|-------------|
-| `startMonitoring()` | `callback: (data: LightData) => void` | `void` | Starts monitoring ambient light levels |
-| `stopMonitoring()` | - | `void` | Stops monitoring light |
-| `getLastReading()` | - | `LightData \| null` | Returns the last light sensor reading |
-
-**Note:** The AmbientLightSensor API is experimental and may not be available in all browsers. The class gracefully handles unavailability.
 
 ---
 

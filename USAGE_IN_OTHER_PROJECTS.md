@@ -409,7 +409,7 @@ for (const track of playlist.tracks) {
 
 ## Environmental Sensors & Gaming Platform Integration
 
-GPS, motion, weather, and light sensors that provide XP modifiers based on real-world conditions (running, night, storm, altitude).
+GPS, motion, and weather sensors that provide XP modifiers based on real-world conditions (running, night, storm, altitude).
 
 Steam game detection integration that provides XP bonuses based on gaming activity.
 

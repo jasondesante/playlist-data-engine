@@ -3,7 +3,6 @@ import { EnvironmentalSensors } from '../../src/core/sensors/EnvironmentalSensor
 import { GeolocationProvider } from '../../src/core/sensors/GeolocationProvider';
 import { MotionDetector } from '../../src/core/sensors/MotionDetector';
 import { WeatherAPIClient, SevereWeatherType } from '../../src/core/sensors/WeatherAPIClient';
-import { LightSensor } from '../../src/core/sensors/LightSensor';
 import type { WeatherData, ForecastData, MotionData } from '../../src/core/types/Environmental';
 import { Logger } from '../../src/utils/logger';
 
@@ -37,7 +36,6 @@ describe('EnvironmentalSensors', () => {
         // We can't easily delete window in jsdom, so let's test that it returns boolean
         expect(typeof sensors.checkAvailability('geolocation')).toBe('boolean');
         expect(typeof sensors.checkAvailability('motion')).toBe('boolean');
-        expect(typeof sensors.checkAvailability('light')).toBe('boolean');
         expect(sensors.checkAvailability('weather')).toBe(true);
     });
 
@@ -48,15 +46,13 @@ describe('EnvironmentalSensors', () => {
         // Mock internal request methods
         vi.spyOn(sensors as any, 'requestGeolocationPermission').mockResolvedValue(true);
         vi.spyOn(sensors as any, 'requestMotionPermission').mockResolvedValue(true);
-        vi.spyOn(sensors as any, 'requestLightPermission').mockResolvedValue(true);
 
-        const results = await sensors.requestPermissions(['geolocation', 'motion', 'weather', 'light']);
+        const results = await sensors.requestPermissions(['geolocation', 'motion', 'weather']);
 
-        expect(results).toHaveLength(4);
+        expect(results).toHaveLength(3);
         expect(results.find(r => r.type === 'geolocation')?.granted).toBe(true);
         expect(results.find(r => r.type === 'motion')?.granted).toBe(true);
         expect(results.find(r => r.type === 'weather')?.granted).toBe(true);
-        expect(results.find(r => r.type === 'light')?.granted).toBe(true);
 
         const permissions = sensors.getPermissions();
         expect(permissions.find(p => p.type === 'geolocation')?.granted).toBe(true);
@@ -1075,36 +1071,32 @@ describe('Permission Request System (T078)', () => {
         vi.spyOn(sensors, 'checkAvailability').mockReturnValue(true);
         vi.spyOn(sensors as any, 'requestGeolocationPermission').mockResolvedValue(true);
         vi.spyOn(sensors as any, 'requestMotionPermission').mockResolvedValue(true);
-        vi.spyOn(sensors as any, 'requestLightPermission').mockResolvedValue(true);
 
         // Before request, all should be denied
         let permissions = sensors.getPermissions();
         expect(permissions.every(p => !p.granted)).toBe(true);
 
         // Request permissions
-        const results = await sensors.requestPermissions(['geolocation', 'motion', 'light']);
-        expect(results).toHaveLength(3);
+        const results = await sensors.requestPermissions(['geolocation', 'motion']);
+        expect(results).toHaveLength(2);
 
         // After request, check that state is updated
         permissions = sensors.getPermissions();
         expect(permissions.find(p => p.type === 'geolocation')?.granted).toBe(true);
         expect(permissions.find(p => p.type === 'motion')?.granted).toBe(true);
-        expect(permissions.find(p => p.type === 'light')?.granted).toBe(true);
     });
 
     it('should handle partial permission grants', async () => {
         vi.spyOn(sensors, 'checkAvailability')
-            .mockImplementation((type) => type !== 'light'); // Light sensor unavailable
+            .mockImplementation((type) => type !== 'weather'); // Weather always available
 
         vi.spyOn(sensors as any, 'requestGeolocationPermission').mockResolvedValue(true);
         vi.spyOn(sensors as any, 'requestMotionPermission').mockResolvedValue(true);
-        vi.spyOn(sensors as any, 'requestLightPermission').mockResolvedValue(false);
 
-        const results = await sensors.requestPermissions(['geolocation', 'motion', 'light']);
+        const results = await sensors.requestPermissions(['geolocation', 'motion']);
 
         expect(results.find(r => r.type === 'geolocation')?.granted).toBe(true);
         expect(results.find(r => r.type === 'motion')?.granted).toBe(true);
-        expect(results.find(r => r.type === 'light')?.granted).toBe(false);
     });
 
     it('should handle permission denial gracefully', async () => {
@@ -1202,21 +1194,18 @@ describe('Permission Request System (T078)', () => {
         vi.spyOn(sensors, 'checkAvailability').mockReturnValue(true);
         vi.spyOn(sensors as any, 'requestGeolocationPermission').mockResolvedValue(true);
         vi.spyOn(sensors as any, 'requestMotionPermission').mockResolvedValue(false);
-        vi.spyOn(sensors as any, 'requestLightPermission').mockResolvedValue(true);
 
-        const results = await sensors.requestPermissions(['geolocation', 'motion', 'light', 'weather']);
+        const results = await sensors.requestPermissions(['geolocation', 'motion', 'weather']);
 
-        expect(results).toHaveLength(4);
-        expect(results.map(r => r.type)).toEqual(['geolocation', 'motion', 'light', 'weather']);
+        expect(results).toHaveLength(3);
+        expect(results.map(r => r.type)).toEqual(['geolocation', 'motion', 'weather']);
 
         const geoResult = results.find(r => r.type === 'geolocation');
         const motionResult = results.find(r => r.type === 'motion');
-        const lightResult = results.find(r => r.type === 'light');
         const weatherResult = results.find(r => r.type === 'weather');
 
         expect(geoResult?.granted).toBe(true);
         expect(motionResult?.granted).toBe(false);
-        expect(lightResult?.granted).toBe(true);
         expect(weatherResult?.granted).toBe(true); // Weather doesn't require permission
     });
 
@@ -1227,77 +1216,12 @@ describe('Permission Request System (T078)', () => {
         // When unavailable, request methods should return false
         vi.spyOn(sensors as any, 'requestGeolocationPermission').mockResolvedValue(false);
         vi.spyOn(sensors as any, 'requestMotionPermission').mockResolvedValue(false);
-        vi.spyOn(sensors as any, 'requestLightPermission').mockResolvedValue(false);
 
-        const results = await sensors.requestPermissions(['geolocation', 'motion', 'light']);
+        const results = await sensors.requestPermissions(['geolocation', 'motion']);
 
         // All should be denied due to unavailability
         expect(results.find(r => r.type === 'geolocation')?.granted).toBe(false);
         expect(results.find(r => r.type === 'motion')?.granted).toBe(false);
-        expect(results.find(r => r.type === 'light')?.granted).toBe(false);
-    });
-});
-
-describe('LightSensor (T087-088)', () => {
-    afterEach(() => {
-        vi.restoreAllMocks();
-    });
-
-    it('should initialize AmbientLightSensor and access illuminance property', () => {
-        // Real AmbientLightSensor illuminance readings (in lux)
-        const illuminanceValues = [
-            { value: 0.1, label: 'Very dark (night, no lights)' },
-            { value: 5, label: 'Dark room with lights' },
-            { value: 50, label: 'Indoor office' },
-            { value: 500, label: 'Bright indoor lighting' },
-            { value: 10000, label: 'Daylight' },
-            { value: 100000, label: 'Direct sunlight' }
-        ];
-
-        for (const { value } of illuminanceValues) {
-            const mockSensor = {
-                illuminance: value,
-                addEventListener: vi.fn(),
-                start: vi.fn(),
-                stop: vi.fn()
-            };
-
-            // Mock the AmbientLightSensor constructor
-            (window as any).AmbientLightSensor = vi.fn(() => mockSensor);
-
-            // Verify the sensor can be created
-            const sensor = new LightSensor();
-            expect(sensor).toBeDefined();
-
-            // Verify illuminance values are accessible
-            expect(value).toBeGreaterThanOrEqual(0);
-            expect(value).toBeLessThanOrEqual(150000); // Exceeds direct sunlight but valid
-        }
-    });
-
-    it('should handle gracefully when AmbientLightSensor is not available', () => {
-        const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
-        // Remove AmbientLightSensor from window
-        const oldALS = (window as any).AmbientLightSensor;
-        delete (window as any).AmbientLightSensor;
-
-        const sensor = new LightSensor();
-        const lightDataSpy = vi.fn();
-
-        // Should not crash when starting monitoring
-        sensor.startMonitoring(lightDataSpy);
-
-        expect(consoleWarnSpy).toHaveBeenCalledWith(
-            expect.stringContaining('AmbientLightSensor not supported')
-        );
-
-        // Restore
-        if (oldALS) {
-            (window as any).AmbientLightSensor = oldALS;
-        }
-
-        consoleWarnSpy.mockRestore();
     });
 });
 
@@ -2952,7 +2876,7 @@ describe('WeatherAPIClient Severe Weather Detection', () => {
                 const statuses = sensors.getAllSensorStatuses();
                 const sensorTypes = statuses.map(s => s.type).sort();
 
-                expect(sensorTypes).toEqual(['geolocation', 'light', 'motion', 'weather']);
+                expect(sensorTypes).toEqual(['geolocation', 'motion', 'weather']);
             });
 
             it('should have all required status fields', () => {
@@ -3011,8 +2935,8 @@ describe('WeatherAPIClient Severe Weather Detection', () => {
             });
 
             it('should return null for all sensors initially', () => {
-                const sensorTypes: Array<'geolocation' | 'motion' | 'weather' | 'light'> =
-                    ['geolocation', 'motion', 'weather', 'light'];
+                const sensorTypes: Array<'geolocation' | 'motion' | 'weather'> =
+                    ['geolocation', 'motion', 'weather'];
 
                 sensorTypes.forEach(type => {
                     expect(sensors.getLastKnownGood(type)).toBeNull();
@@ -3212,12 +3136,11 @@ describe('WeatherAPIClient Severe Weather Detection', () => {
         it('should include sensor statuses in diagnostics', () => {
             const diagnostics = sensors.getDiagnostics();
 
-            expect(diagnostics.sensors).toHaveLength(4);
+            expect(diagnostics.sensors).toHaveLength(3);
             const sensorTypes = diagnostics.sensors.map(s => s.type);
             expect(sensorTypes).toContain('geolocation');
             expect(sensorTypes).toContain('motion');
             expect(sensorTypes).toContain('weather');
-            expect(sensorTypes).toContain('light');
 
             // Each sensor should have status, permission, availability, and lastKnownGood
             diagnostics.sensors.forEach(sensor => {
@@ -3248,7 +3171,6 @@ describe('WeatherAPIClient Severe Weather Detection', () => {
             expect(diagnostics.context).toHaveProperty('hasGeolocation');
             expect(diagnostics.context).toHaveProperty('hasMotion');
             expect(diagnostics.context).toHaveProperty('hasWeather');
-            expect(diagnostics.context).toHaveProperty('hasLight');
             expect(diagnostics.context).toHaveProperty('hasBiome');
             expect(diagnostics.context).toHaveProperty('timestamp');
         });

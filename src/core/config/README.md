@@ -1,6 +1,6 @@
 # Sensor Configuration Guide
 
-This guide explains how to configure the Core Data Engine's sensor modules, including environmental sensors (geolocation, weather, motion, light) and gaming platform sensors (Steam).
+This guide explains how to configure the Core Data Engine's sensor modules, including environmental sensors (geolocation, weather, motion) and gaming platform sensors (Steam).
 
 ## Table of Contents
 

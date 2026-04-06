@@ -2,7 +2,7 @@
  * Centralized configuration interface for all sensor modules
  *
  * This module provides type-safe configuration options for:
- * - Environmental sensors (geolocation, weather, motion, light)
+ * - Environmental sensors (geolocation, weather, motion)
  * - Gaming platform sensors (Steam)
  * - XP modifier calculation
  * - Caching and retry behavior

@@ -590,9 +590,9 @@ describe('Multi-Sensor Interaction Tests (Task 11.4)', () => {
       const allStatuses = sensors.getAllSensorStatuses();
 
       // Should have status for all sensor types
-      expect(allStatuses.length).toBe(4);
+      expect(allStatuses.length).toBe(3);
       const sensorTypes = allStatuses.map(s => s.type).sort();
-      expect(sensorTypes).toEqual(['geolocation', 'light', 'motion', 'weather']);
+      expect(sensorTypes).toEqual(['geolocation', 'motion', 'weather']);
 
       // Health statuses should be independent
       const geoStatus = sensors.getSensorStatus('geolocation');

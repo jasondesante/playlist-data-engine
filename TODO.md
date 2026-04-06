@@ -18,7 +18,7 @@ This document tracks what's been completed, what was recently changed, and what 
 | Item | Location | Why It's Safe |
 |------|----------|---------------|
 | `longitude` parameter | GeolocationProvider.ts getBiome() | Simplified biome logic only uses latitude |
-| `isListening` property | LightSensor.ts | Internal state flag that wasn't exposed |
+| ~~`isListening` property~~ | ~~LightSensor.ts~~ | Removed: LightSensor was removed (API too rare/unreliable) |
 
 | `attacker` parameter | AttackResolver.ts rollAttack() | Attack roll (d20 + bonus) doesn't reference attacker |
 | `characterClass` variable | SpellCaster.ts restoreSpellSlots() | Declared but never used in slot restoration |

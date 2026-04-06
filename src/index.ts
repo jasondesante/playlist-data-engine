@@ -242,7 +242,6 @@ export type {
     GeolocationData,
     MotionData,
     WeatherData,
-    LightData,
     EnvironmentalContext,
     GamingContext,
     ListeningSession,

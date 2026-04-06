@@ -51,11 +51,6 @@ export const mockSensorData_Stationary_Indoors: EnvironmentalContext = {
     moon_phase: 0.5,
     timestamp: Date.now()
   },
-  light: {
-    illuminance: 500,
-    timestamp: Date.now(),
-    environment: 'indoor'
-  },
   biome: 'urban',
   time_of_day: 'day',
   season: 'spring',
@@ -107,11 +102,6 @@ export const mockSensorData_Running_Outdoors: EnvironmentalContext = {
     is_night: false,
     moon_phase: 0,
     timestamp: Date.now()
-  },
-  light: {
-    illuminance: 30000,
-    timestamp: Date.now(),
-    environment: 'bright_daylight'
   },
   biome: 'urban',
   time_of_day: 'day',
@@ -165,11 +155,6 @@ export const mockSensorData_Walking_Night: EnvironmentalContext = {
     moon_phase: 0.8,
     timestamp: Date.now()
   },
-  light: {
-    illuminance: 50,
-    timestamp: Date.now(),
-    environment: 'dark'
-  },
   biome: 'urban',
   time_of_day: 'night',
   season: 'winter',
@@ -221,11 +206,6 @@ export const mockSensorData_Driving_Highway: EnvironmentalContext = {
     is_night: false,
     moon_phase: 0,
     timestamp: Date.now()
-  },
-  light: {
-    illuminance: 100000,
-    timestamp: Date.now(),
-    environment: 'bright_daylight'
   },
   biome: 'urban',
   time_of_day: 'day',
@@ -279,11 +259,6 @@ export const mockSensorData_HighAltitude_Mountain: EnvironmentalContext = {
     moon_phase: 0,
     timestamp: Date.now()
   },
-  light: {
-    illuminance: 120000,
-    timestamp: Date.now(),
-    environment: 'bright_daylight'
-  },
   biome: 'mountain',
   time_of_day: 'day',
   season: 'spring',
@@ -336,11 +311,6 @@ export const mockSensorData_Tropical_Beach: EnvironmentalContext = {
     moon_phase: 0.25,
     timestamp: Date.now()
   },
-  light: {
-    illuminance: 80000,
-    timestamp: Date.now(),
-    environment: 'bright_daylight'
-  },
   biome: 'forest',
   time_of_day: 'day',
   season: 'summer',
@@ -392,11 +362,6 @@ export const mockSensorData_Snow_Cold: EnvironmentalContext = {
     is_night: true,
     moon_phase: 0,
     timestamp: Date.now()
-  },
-  light: {
-    illuminance: 200,
-    timestamp: Date.now(),
-    environment: 'dark'
   },
   biome: 'tundra',
   time_of_day: 'night',

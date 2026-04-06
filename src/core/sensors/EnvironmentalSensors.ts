@@ -10,7 +10,6 @@ import type {
     GeolocationData,
     WeatherData,
     MotionData,
-    LightData,
     XPBonusSource,
     XpModifierBreakdown,
     SolarInfo
@@ -19,7 +18,6 @@ import type { GeolocationSensorConfig, WeatherSensorConfig, XPModifierConfig, Re
 import { GeolocationProvider } from './GeolocationProvider';
 import { MotionDetector } from './MotionDetector';
 import { WeatherAPIClient, type SevereWeatherAlert } from './WeatherAPIClient';
-import { LightSensor } from './LightSensor';
 import { Logger } from '../../utils/logger.js';
 import { SensorDashboard, type DashboardConfig } from '../../utils/sensorDashboard.js';
 
@@ -30,7 +28,6 @@ import { SensorDashboard, type DashboardConfig } from '../../utils/sensorDashboa
  * - GPS/Geolocation (latitude, longitude, altitude)
  * - Motion sensors (accelerometer, gyroscope, activity detection)
  * - Weather API (temperature, humidity, conditions)
- * - Light sensor (illuminance, environment classification)
  *
  * Calculates environmental XP modifiers (1.0x - 3.0x) based on activity
  * type, weather conditions, altitude, and time of day.
@@ -48,7 +45,6 @@ export class EnvironmentalSensors {
     private geolocation: GeolocationProvider;
     private motion: MotionDetector;
     private weather: WeatherAPIClient;
-    private light: LightSensor;
     private logger = Logger.for('EnvironmentalSensors');
 
     private context: EnvironmentalContext = {
@@ -62,7 +58,6 @@ export class EnvironmentalSensors {
         geolocation?: GeolocationData;
         weather?: WeatherData;
         motion?: MotionData;
-        light?: LightData;
     }> = new Map();
     private recoveryCallbacks: Set<(notification: SensorRecoveryNotification) => void> = new Set();
 
@@ -110,7 +105,6 @@ export class EnvironmentalSensors {
         this.permissions.set('geolocation', false);
         this.permissions.set('motion', false);
         this.permissions.set('weather', false);
-        this.permissions.set('light', false);
 
         // Handle both legacy signature and new config object
         let weatherApiKey = '';
@@ -138,7 +132,6 @@ export class EnvironmentalSensors {
         this.geolocation = geoConfig ? new GeolocationProvider(geoConfig as GeolocationSensorConfig) : new GeolocationProvider();
         this.motion = new MotionDetector();
         this.weather = new WeatherAPIClient(weatherApiKey);
-        this.light = new LightSensor();
 
         // Initialize sensor statuses
         this.initializeSensorStatuses();
@@ -148,8 +141,7 @@ export class EnvironmentalSensors {
      * Initialize sensor statuses to 'unknown' state
      */
     private initializeSensorStatuses(): void {
-        const sensorTypes: SensorType[] = ['geolocation', 'motion', 'weather', 'light'];
-        const now = Date.now();
+        const sensorTypes: SensorType[] = ['geolocation', 'motion', 'weather'];
 
         for (const type of sensorTypes) {
             this.sensorStatuses.set(type, {
@@ -415,10 +407,10 @@ export class EnvironmentalSensors {
     /**
      * Request user permissions for specific sensor types
      *
-     * Requests browser/device permissions for GPS, motion, weather, and light sensors.
+     * Requests browser/device permissions for GPS, motion, and weather sensors.
      * User must explicitly grant permissions before data can be accessed.
      *
-     * @param {SensorType[]} types - Array of sensor types to request ('geolocation' | 'motion' | 'weather' | 'light')
+     * @param {SensorType[]} types - Array of sensor types to request ('geolocation' | 'motion' | 'weather')
      * @returns {Promise<SensorPermission[]>} Array of permission results (granted/denied)
      *
      * @example
@@ -439,9 +431,6 @@ export class EnvironmentalSensors {
                     break;
                 case 'weather':
                     granted = true;
-                    break;
-                case 'light':
-                    granted = await this.requestLightPermission();
                     break;
             }
 
@@ -475,21 +464,6 @@ export class EnvironmentalSensors {
             });
         }
 
-        if (this.permissions.get('light')) {
-            this.light.startMonitoring((data) => {
-                this.context.light = data;
-                this.context.timestamp = Date.now();
-
-                // Store last known good
-                this.storeLastKnownGood('light', { light: data });
-
-                // Update sensor status on successful read
-                this.updateSensorStatus('light', true);
-
-                if (callback) callback(this.context);
-            });
-        }
-
         // Poll geolocation and weather if enabled
         this.updateSnapshot();
     }
@@ -499,7 +473,6 @@ export class EnvironmentalSensors {
      */
     stopMonitoring(): void {
         this.motion.stopMonitoring();
-        this.light.stopMonitoring();
     }
 
     /**
@@ -805,8 +778,6 @@ export class EnvironmentalSensors {
                 return 'DeviceMotionEvent' in window;
             case 'weather':
                 return true;
-            case 'light':
-                return 'AmbientLightSensor' in window;
             default:
                 return false;
         }
@@ -834,16 +805,6 @@ export class EnvironmentalSensors {
             }
         }
         return true;
-    }
-
-    private async requestLightPermission(): Promise<boolean> {
-        if (!this.checkAvailability('light')) return false;
-        try {
-            const result = await navigator.permissions.query({ name: 'ambient-light-sensor' as any });
-            return result.state === 'granted' || result.state === 'prompt';
-        } catch (e) {
-            return false;
-        }
     }
 
     /**
@@ -916,7 +877,6 @@ export class EnvironmentalSensors {
             hasGeolocation: boolean;
             hasMotion: boolean;
             hasWeather: boolean;
-            hasLight: boolean;
             hasBiome: boolean;
             timestamp: number;
         };
@@ -955,7 +915,6 @@ export class EnvironmentalSensors {
                 hasGeolocation: !!this.context.geolocation,
                 hasMotion: !!this.context.motion,
                 hasWeather: !!this.context.weather,
-                hasLight: !!this.context.light,
                 hasBiome: !!this.context.biome,
                 timestamp: this.context.timestamp,
             },

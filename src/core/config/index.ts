@@ -2,7 +2,7 @@
  * Sensor Configuration Module
  *
  * Centralized configuration for all sensor modules including:
- * - Environmental sensors (geolocation, weather, motion, light)
+ * - Environmental sensors (geolocation, weather, motion)
  * - Gaming platform sensors (Steam)
  * - XP modifier calculation
  * - Caching and retry behavior

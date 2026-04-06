@@ -38,7 +38,6 @@ describe('Environmental Sensors Integration (T118)', () => {
       expect(context.location).toBeDefined();
       expect(context.motion).toBeDefined();
       expect(context.weather).toBeDefined();
-      expect(context.light).toBeDefined();
 
       // Verify location data
       expect(context.location?.latitude).toBeGreaterThanOrEqual(-90);
@@ -72,10 +71,6 @@ describe('Environmental Sensors Integration (T118)', () => {
       );
       expect(context.weather?.wind_speed).toBeGreaterThanOrEqual(0);
       expect(context.weather?.is_night).toBeDefined();
-
-      // Verify light data
-      expect(context.light?.illuminance).toBeGreaterThanOrEqual(0);
-      expect(['bright_daylight', 'indoor', 'dim', 'dark']).toContain(context.light?.environment);
     });
 
     it('should maintain data consistency across multiple sensor readings', () => {
@@ -87,11 +82,9 @@ describe('Environmental Sensors Integration (T118)', () => {
         expect(context.location).toBeDefined();
         expect(context.motion).toBeDefined();
         expect(context.weather).toBeDefined();
-        expect(context.light).toBeDefined();
         expect(context.location?.timestamp).toBeGreaterThan(0);
         expect(context.motion?.timestamp).toBeGreaterThan(0);
         expect(context.weather?.timestamp).toBeGreaterThan(0);
-        expect(context.light?.timestamp).toBeGreaterThan(0);
       });
     });
   });
@@ -173,7 +166,6 @@ describe('Environmental Sensors Integration (T118)', () => {
         expect(context.location).toBeDefined();
         expect(context.motion).toBeDefined();
         expect(context.weather).toBeDefined();
-        expect(context.light).toBeDefined();
         expect(context.biome).toBeDefined();
         expect(context.time_of_day).toBeDefined();
         expect(context.environmental_xp_modifier).toBeGreaterThan(0);
@@ -195,9 +187,6 @@ describe('Environmental Sensors Integration (T118)', () => {
         expect(context.weather!.temperature).toBeDefined();
         expect(context.weather!.humidity).toBeGreaterThanOrEqual(0);
         expect(context.weather!.humidity).toBeLessThanOrEqual(100);
-
-        // Verify light data
-        expect(context.light!.illuminance).toBeGreaterThanOrEqual(0);
       });
     });
   });
@@ -244,7 +233,6 @@ describe('Environmental Sensors Integration (T118)', () => {
     it('should correctly identify night conditions', () => {
       const context = mockSensorData_Walking_Night;
       expect(context.weather?.is_night).toBe(true);
-      expect(context.light?.illuminance).toBeLessThan(100);
     });
 
     it('should correctly identify snow conditions', () => {

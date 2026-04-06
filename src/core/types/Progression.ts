@@ -10,7 +10,6 @@ import type {
     GeolocationData,
     MotionData,
     WeatherData,
-    LightData,
     EnvironmentalContext
 } from './Environmental.js';
 
@@ -22,7 +21,6 @@ export type {
     GeolocationData,
     MotionData,
     WeatherData,
-    LightData,
     EnvironmentalContext
 } from './Environmental.js';
 

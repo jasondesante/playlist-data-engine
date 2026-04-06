@@ -1,4 +1,4 @@
-export type SensorType = 'geolocation' | 'motion' | 'weather' | 'light';
+export type SensorType = 'geolocation' | 'motion' | 'weather';
 
 /**
  * Performance metrics for API calls
@@ -189,18 +189,12 @@ export interface SolarInfo {
     timestamp: number;
 }
 
-export interface LightData {
-    illuminance: number; // lux
-    timestamp: number;
-}
-
 export type BiomeType = 'urban' | 'forest' | 'desert' | 'mountain' | 'valley' | 'water' | 'tundra' | 'plains' | 'jungle' | 'swamp' | 'taiga' | 'savanna';
 
 export interface EnvironmentalContext {
     geolocation?: GeolocationData;
     motion?: MotionData;
     weather?: WeatherData;
-    light?: LightData;
     biome?: BiomeType;
     timestamp: number;
     environmental_xp_modifier?: number;
