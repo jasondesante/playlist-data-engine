@@ -3,10 +3,90 @@
  * Manages spell slots, saving throws, and spell damage
  */
 
-import type { Combatant, SpellCastResult, StatusEffect, DiceRollerAPI } from '../types/Combat';
+import type { Combatant, SpellCastResult, StatusEffect, StatusEffectMechanics, DiceRollerAPI } from '../types/Combat';
 import type { Spell } from '../types/Character';
 import { DiceRoller } from './DiceRoller';
 import { getFullCasterSlotsForLevel } from '../../constants/SpellSlots.js';
+
+/**
+ * Maps spell tags to status effect configurations.
+ * Used by castSpell() to apply status effects based on tags (preferred)
+ * with fallback to string matching on description/effect text.
+ *
+ * To add a new status-effect-producing tag, add an entry here and
+ * tag the relevant spells in SpellcastingGenerator.ts.
+ */
+const TAG_STATUS_EFFECTS: Readonly<Record<string, {
+  name: string;
+  requiresConcentration: boolean;
+  mechanicalEffects?: StatusEffectMechanics;
+}>> = {
+  charm: {
+    name: 'Charmed',
+    requiresConcentration: true,
+    mechanicalEffects: {
+      disadvantageOnAttackNonSource: true,
+    },
+  },
+  frighten: {
+    name: 'Frightened',
+    requiresConcentration: true,
+    mechanicalEffects: {
+      disadvantageOnAttack: true,
+      disadvantageOnAbilityChecks: true,
+    },
+  },
+  stun: {
+    name: 'Stunned',
+    requiresConcentration: false,
+    mechanicalEffects: {
+      disadvantageOnDexSaves: true,
+      speedZero: true,
+      skipTurn: true,
+    },
+  },
+  paralyze: {
+    name: 'Paralyzed',
+    requiresConcentration: false,
+    mechanicalEffects: {
+      disadvantageOnDexSaves: true,
+      speedZero: true,
+      skipTurn: true,
+    },
+  },
+  restrain: {
+    name: 'Restrained',
+    requiresConcentration: true,
+    mechanicalEffects: {
+      disadvantageOnDexSaves: true,
+      speedZero: true,
+    },
+  },
+  poison: {
+    name: 'Poisoned',
+    requiresConcentration: false,
+    mechanicalEffects: {
+      disadvantageOnAttack: true,
+      disadvantageOnAbilityChecks: true,
+    },
+  },
+  blind: {
+    name: 'Blinded',
+    requiresConcentration: false,
+    mechanicalEffects: {
+      disadvantageOnAttack: true,
+      disadvantageOnAbilityChecks: true,
+    },
+  },
+  deafen: {
+    name: 'Deafened',
+    requiresConcentration: false,
+  },
+  burn: {
+    name: 'Burning',
+    requiresConcentration: false,
+  },
+};
 
 /**
  * SpellCaster - D&D 5e spell casting system
@@ -96,29 +176,53 @@ export class SpellCaster {
     // Build spell effects (status effects, buffs, debuffs).
     // These are returned in effectsApplied for the caller (e.g. CombatEngine)
     // to apply via applyStatusEffect() which handles stacking and concentration.
-    // Check both 'description' (player spells) and 'effect' (enemy InnateSpell) for status effects.
+    //
+    // Priority: tags (structured, reliable) > description/effect text (fallback for player spells).
+    const tags = spell.tags ?? [];
+    const matchedEffectNames = new Set<string>();
+
+    // Check tags first for status effects
+    for (const tag of tags) {
+      const tagConfig = TAG_STATUS_EFFECTS[tag];
+      if (tagConfig) {
+        matchedEffectNames.add(tagConfig.name);
+        const effect: StatusEffect = {
+          name: tagConfig.name,
+          description: `${tagConfig.name} by ${caster.character.name}`,
+          duration: 1,
+          source: caster.id,
+          hasConcentration: tagConfig.requiresConcentration,
+          mechanicalEffects: tagConfig.mechanicalEffects,
+        };
+        for (const target of targets) {
+          effectsApplied.push({ ...effect });
+        }
+      }
+    }
+
+    // Fallback: check description/effect text for status effect keywords.
+    // Only applies effects that weren't already matched by tags.
     const effectText = [spell.description, spell.effect].filter(Boolean).join(' ').toLowerCase();
-    if (effectText.includes('charm')) {
+    if (!matchedEffectNames.has('Charmed') && effectText.includes('charm')) {
       const charmed: StatusEffect = {
         name: 'Charmed',
         description: `Charmed by ${caster.character.name}`,
         duration: 1,
         source: caster.id,
-        hasConcentration: true
+        hasConcentration: true,
       };
       for (const target of targets) {
-        // Create a fresh copy per target so they don't share references
         effectsApplied.push({ ...charmed });
       }
     }
 
-    if (effectText.includes('frighten')) {
+    if (!matchedEffectNames.has('Frightened') && effectText.includes('frighten')) {
       const frightened: StatusEffect = {
         name: 'Frightened',
         description: `Frightened of ${caster.character.name}`,
         duration: 1,
         source: caster.id,
-        hasConcentration: true
+        hasConcentration: true,
       };
       for (const target of targets) {
         effectsApplied.push({ ...frightened });
@@ -294,5 +398,87 @@ export class SpellCaster {
     (spell as any).level = originalLevel;
 
     return result;
+  }
+
+  // ─── Static helpers for AI decision-making ───────────────────────────────
+
+  /**
+   * Check if a spell has a specific tag.
+   * Tags are set on enemy InnateSpell objects and used by the AI
+   * for spell classification and decision-making.
+   */
+  static hasSpellTag(spell: Spell, tag: string): boolean {
+    return Array.isArray(spell.tags) && spell.tags.includes(tag);
+  }
+
+  /**
+   * Get all tags for a spell.
+   * Returns an empty array if the spell has no tags.
+   */
+  static getSpellTags(spell: Spell): string[] {
+    return Array.isArray(spell.tags) ? [...spell.tags] : [];
+  }
+
+  /**
+   * Check if a spell deals damage.
+   * Uses tags (preferred) or falls back to checking damage dice fields.
+   */
+  static isDamageSpell(spell: Spell): boolean {
+    return SpellCaster.hasSpellTag(spell, 'damage') ||
+      !!(spell.damage_dice || spell.damage);
+  }
+
+  /**
+   * Check if a spell requires concentration.
+   */
+  static requiresConcentration(spell: Spell): boolean {
+    return spell.concentration === true;
+  }
+
+  /**
+   * Check if a spell has an area-of-effect component.
+   */
+  static isAOESpell(spell: Spell): boolean {
+    return SpellCaster.hasSpellTag(spell, 'aoe');
+  }
+
+  /**
+   * Check if a spell targets multiple creatures.
+   */
+  static isMultiTargetSpell(spell: Spell): boolean {
+    return SpellCaster.hasSpellTag(spell, 'multi-target');
+  }
+
+  /**
+   * Check if a spell can be used as a bonus action.
+   */
+  static isBonusActionSpell(spell: Spell): boolean {
+    return SpellCaster.hasSpellTag(spell, 'bonus-action');
+  }
+
+  /**
+   * Check if a spell can only target allies (healing, buffs).
+   */
+  static isAllySpell(spell: Spell): boolean {
+    return SpellCaster.hasSpellTag(spell, 'ally');
+  }
+
+  /**
+   * Check if a spell only targets the caster.
+   */
+  static isSelfSpell(spell: Spell): boolean {
+    return SpellCaster.hasSpellTag(spell, 'self');
+  }
+
+  /**
+   * Get the tag-to-status-effect mapping.
+   * Used by tests and the AI to understand which tags produce which effects.
+   */
+  static getStatusEffectTags(): Readonly<Record<string, {
+    name: string;
+    requiresConcentration: boolean;
+    mechanicalEffects?: StatusEffectMechanics;
+  }>> {
+    return TAG_STATUS_EFFECTS;
   }
 }

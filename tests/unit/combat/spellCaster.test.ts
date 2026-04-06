@@ -1158,4 +1158,405 @@ describe('SpellCaster', () => {
       expect(nonProficientRate).toBeLessThan(0.55);
     });
   });
+
+  // ─── Tag-based status effect detection ─────────────────────────────────────
+
+  describe('tag-based status effect detection', () => {
+    it('applies Charmed effect when spell has charm tag (no description keyword)', () => {
+      const caster = new SpellCaster();
+      const wizard = makeWizard();
+      const target = makeTarget('Goblin');
+      const spell = makeSpell({
+        name: 'Charm Person',
+        description: 'A friendly suggestion',
+        tags: ['charm'],
+        damage_dice: undefined,
+        damage_type: undefined,
+      });
+
+      const result = caster.castSpell(wizard, spell, [target]);
+
+      expect(result.success).toBe(true);
+      expect(result.effectsApplied).toHaveLength(1);
+      expect(result.effectsApplied[0].name).toBe('Charmed');
+      expect(result.effectsApplied[0].source).toBe('wizard_0');
+      expect(result.effectsApplied[0].hasConcentration).toBe(true);
+    });
+
+    it('applies Frightened effect when spell has frighten tag (no description keyword)', () => {
+      const caster = new SpellCaster();
+      const wizard = makeWizard();
+      const target = makeTarget('Goblin');
+      const spell = makeSpell({
+        name: 'Cause Fear',
+        description: 'The target cowers in terror',
+        tags: ['frighten'],
+        damage_dice: undefined,
+        damage_type: undefined,
+      });
+
+      const result = caster.castSpell(wizard, spell, [target]);
+
+      expect(result.success).toBe(true);
+      expect(result.effectsApplied).toHaveLength(1);
+      expect(result.effectsApplied[0].name).toBe('Frightened');
+      expect(result.effectsApplied[0].source).toBe('wizard_0');
+    });
+
+    it('includes mechanicalEffects from tag mapping', () => {
+      const caster = new SpellCaster();
+      const wizard = makeWizard();
+      const target = makeTarget('Goblin');
+      const spell = makeSpell({
+        name: 'Charm Person',
+        tags: ['charm'],
+        damage_dice: undefined,
+        damage_type: undefined,
+      });
+
+      const result = caster.castSpell(wizard, spell, [target]);
+      expect(result.effectsApplied[0].mechanicalEffects).toBeDefined();
+      expect(result.effectsApplied[0].mechanicalEffects?.disadvantageOnAttackNonSource).toBe(true);
+    });
+
+    it('applies Stunned effect from stun tag with correct mechanics', () => {
+      const caster = new SpellCaster();
+      const wizard = makeWizard();
+      const target = makeTarget('Goblin');
+      const spell = makeSpell({
+        name: 'Stunning Strike',
+        tags: ['stun'],
+        damage_dice: undefined,
+        damage_type: undefined,
+      });
+
+      const result = caster.castSpell(wizard, spell, [target]);
+      expect(result.effectsApplied).toHaveLength(1);
+      expect(result.effectsApplied[0].name).toBe('Stunned');
+      expect(result.effectsApplied[0].hasConcentration).toBe(false);
+      expect(result.effectsApplied[0].mechanicalEffects?.skipTurn).toBe(true);
+      expect(result.effectsApplied[0].mechanicalEffects?.speedZero).toBe(true);
+      expect(result.effectsApplied[0].mechanicalEffects?.disadvantageOnDexSaves).toBe(true);
+    });
+
+    it('applies Restrained effect from restrain tag', () => {
+      const caster = new SpellCaster();
+      const wizard = makeWizard();
+      const target = makeTarget('Goblin');
+      const spell = makeSpell({
+        name: 'Web',
+        tags: ['restrain', 'aoe'],
+        save: 'DEX',
+        damage_dice: undefined,
+        damage_type: undefined,
+      });
+
+      const result = caster.castSpell(wizard, spell, [target]);
+      expect(result.effectsApplied).toHaveLength(1);
+      expect(result.effectsApplied[0].name).toBe('Restrained');
+      expect(result.effectsApplied[0].hasConcentration).toBe(true);
+      expect(result.effectsApplied[0].mechanicalEffects?.speedZero).toBe(true);
+    });
+
+    it('applies Poisoned effect from poison tag', () => {
+      const caster = new SpellCaster();
+      const wizard = makeWizard();
+      const target = makeTarget('Goblin');
+      const spell = makeSpell({
+        name: 'Ray of Sickness',
+        tags: ['poison'],
+        damage_dice: undefined,
+        damage_type: undefined,
+      });
+
+      const result = caster.castSpell(wizard, spell, [target]);
+      expect(result.effectsApplied).toHaveLength(1);
+      expect(result.effectsApplied[0].name).toBe('Poisoned');
+      expect(result.effectsApplied[0].mechanicalEffects?.disadvantageOnAttack).toBe(true);
+    });
+
+    it('applies Blinded effect from blind tag', () => {
+      const caster = new SpellCaster();
+      const wizard = makeWizard();
+      const target = makeTarget('Goblin');
+      const spell = makeSpell({
+        name: 'Blindness',
+        tags: ['blind'],
+        damage_dice: undefined,
+        damage_type: undefined,
+      });
+
+      const result = caster.castSpell(wizard, spell, [target]);
+      expect(result.effectsApplied).toHaveLength(1);
+      expect(result.effectsApplied[0].name).toBe('Blinded');
+      expect(result.effectsApplied[0].mechanicalEffects?.disadvantageOnAttack).toBe(true);
+    });
+
+    it('applies Paralyzed effect from paralyze tag', () => {
+      const caster = new SpellCaster();
+      const wizard = makeWizard();
+      const target = makeTarget('Goblin');
+      const spell = makeSpell({
+        name: 'Hold Person',
+        tags: ['paralyze'],
+        damage_dice: undefined,
+        damage_type: undefined,
+      });
+
+      const result = caster.castSpell(wizard, spell, [target]);
+      expect(result.effectsApplied).toHaveLength(1);
+      expect(result.effectsApplied[0].name).toBe('Paralyzed');
+      expect(result.effectsApplied[0].mechanicalEffects?.skipTurn).toBe(true);
+    });
+
+    it('applies Burning effect from burn tag', () => {
+      const caster = new SpellCaster();
+      const wizard = makeWizard();
+      const target = makeTarget('Goblin');
+      const spell = makeSpell({
+        name: 'Scorch',
+        tags: ['burn'],
+        damage_dice: undefined,
+        damage_type: undefined,
+      });
+
+      const result = caster.castSpell(wizard, spell, [target]);
+      expect(result.effectsApplied).toHaveLength(1);
+      expect(result.effectsApplied[0].name).toBe('Burning');
+      expect(result.effectsApplied[0].hasConcentration).toBe(false);
+    });
+
+    it('tags take priority over description text (no duplicate effects)', () => {
+      const caster = new SpellCaster();
+      const wizard = makeWizard();
+      const target = makeTarget('Goblin');
+      const spell = makeSpell({
+        name: 'Charm',
+        description: 'charm the target', // Would trigger fallback
+        tags: ['charm'], // Tag takes priority
+        damage_dice: undefined,
+        damage_type: undefined,
+      });
+
+      const result = caster.castSpell(wizard, spell, [target]);
+      expect(result.effectsApplied).toHaveLength(1);
+      expect(result.effectsApplied[0].name).toBe('Charmed');
+      // Tag-based effect includes mechanicalEffects
+      expect(result.effectsApplied[0].mechanicalEffects).toBeDefined();
+    });
+
+    it('non-status-effect tags are ignored for status effect detection', () => {
+      const caster = new SpellCaster();
+      const wizard = makeWizard();
+      const target = makeTarget('Goblin');
+      const spell = makeSpell({
+        name: 'Fireball',
+        tags: ['damage', 'aoe', 'ranged'],
+        damage_dice: '8d6',
+        damage_type: 'fire',
+      });
+
+      const result = caster.castSpell(wizard, spell, [target]);
+      expect(result.effectsApplied).toHaveLength(0);
+    });
+
+    it('applies tag-based effects to all targets', () => {
+      const caster = new SpellCaster();
+      const wizard = makeWizard();
+      const targets = [makeTarget('A'), makeTarget('B'), makeTarget('C')];
+      const spell = makeSpell({
+        tags: ['charm'],
+        damage_dice: undefined,
+        damage_type: undefined,
+      });
+
+      const result = caster.castSpell(wizard, spell, targets);
+      expect(result.effectsApplied).toHaveLength(3);
+      for (const effect of result.effectsApplied) {
+        expect(effect.name).toBe('Charmed');
+      }
+    });
+
+    it('spells with no tags fall back to description text', () => {
+      const caster = new SpellCaster();
+      const wizard = makeWizard();
+      const target = makeTarget('Goblin');
+      const spell = makeSpell({
+        description: 'charm the target',
+        // No tags field
+        damage_dice: undefined,
+        damage_type: undefined,
+      });
+
+      const result = caster.castSpell(wizard, spell, [target]);
+      expect(result.effectsApplied).toHaveLength(1);
+      expect(result.effectsApplied[0].name).toBe('Charmed');
+    });
+
+    it('spells with empty tags fall back to description text', () => {
+      const caster = new SpellCaster();
+      const wizard = makeWizard();
+      const target = makeTarget('Goblin');
+      const spell = makeSpell({
+        description: 'charm the target',
+        tags: [],
+        damage_dice: undefined,
+        damage_type: undefined,
+      });
+
+      const result = caster.castSpell(wizard, spell, [target]);
+      expect(result.effectsApplied).toHaveLength(1);
+      expect(result.effectsApplied[0].name).toBe('Charmed');
+    });
+
+    it('multiple status effect tags apply multiple effects', () => {
+      const caster = new SpellCaster();
+      const wizard = makeWizard();
+      const target = makeTarget('Goblin');
+      const spell = makeSpell({
+        name: 'Horrifying Charm',
+        tags: ['charm', 'frighten'],
+        damage_dice: undefined,
+        damage_type: undefined,
+      });
+
+      const result = caster.castSpell(wizard, spell, [target]);
+      expect(result.effectsApplied).toHaveLength(2);
+      const names = result.effectsApplied.map(e => e.name);
+      expect(names).toContain('Charmed');
+      expect(names).toContain('Frightened');
+    });
+  });
+
+  // ─── Static helper methods for AI ─────────────────────────────────────────
+
+  describe('static helpers for AI decision-making', () => {
+    it('hasSpellTag returns true when spell has the tag', () => {
+      const spell = makeSpell({ tags: ['damage', 'aoe'] });
+      expect(SpellCaster.hasSpellTag(spell, 'damage')).toBe(true);
+      expect(SpellCaster.hasSpellTag(spell, 'aoe')).toBe(true);
+    });
+
+    it('hasSpellTag returns false when spell does not have the tag', () => {
+      const spell = makeSpell({ tags: ['healing'] });
+      expect(SpellCaster.hasSpellTag(spell, 'damage')).toBe(false);
+    });
+
+    it('hasSpellTag returns false when spell has no tags', () => {
+      const spell = makeSpell({ tags: undefined });
+      expect(SpellCaster.hasSpellTag(spell, 'damage')).toBe(false);
+    });
+
+    it('hasSpellTag returns false when tags is not an array', () => {
+      const spell = makeSpell({ tags: 'damage' as any });
+      expect(SpellCaster.hasSpellTag(spell, 'damage')).toBe(false);
+    });
+
+    it('getSpellTags returns copy of tags array', () => {
+      const spell = makeSpell({ tags: ['damage', 'ranged'] });
+      const tags = SpellCaster.getSpellTags(spell);
+      expect(tags).toEqual(['damage', 'ranged']);
+      // Mutation safety
+      tags.push('new-tag');
+      expect(spell.tags).toEqual(['damage', 'ranged']);
+    });
+
+    it('getSpellTags returns empty array when no tags', () => {
+      const spell = makeSpell({ tags: undefined });
+      expect(SpellCaster.getSpellTags(spell)).toEqual([]);
+    });
+
+    it('isDamageSpell returns true for damage tag', () => {
+      const spell = makeSpell({ tags: ['damage'], damage_dice: undefined, damage_type: undefined });
+      expect(SpellCaster.isDamageSpell(spell)).toBe(true);
+    });
+
+    it('isDamageSpell returns true for damage_dice field (no tag)', () => {
+      const spell = makeSpell({ damage_dice: '3d6', damage_type: 'fire' });
+      expect(SpellCaster.isDamageSpell(spell)).toBe(true);
+    });
+
+    it('isDamageSpell returns true for damage field (no tag, enemy style)', () => {
+      const spell = makeSpell({ damage: '2d8', damageType: 'cold', damage_dice: undefined, damage_type: undefined });
+      expect(SpellCaster.isDamageSpell(spell)).toBe(true);
+    });
+
+    it('isDamageSpell returns false for non-damage spell', () => {
+      const spell = makeSpell({ tags: ['buff', 'healing'], damage_dice: undefined, damage_type: undefined, damage: undefined, damageType: undefined });
+      expect(SpellCaster.isDamageSpell(spell)).toBe(false);
+    });
+
+    it('requiresConcentration returns true for concentration spell', () => {
+      const spell = makeSpell({ concentration: true });
+      expect(SpellCaster.requiresConcentration(spell)).toBe(true);
+    });
+
+    it('requiresConcentration returns false for non-concentration spell', () => {
+      const spell = makeSpell({ concentration: false });
+      expect(SpellCaster.requiresConcentration(spell)).toBe(false);
+    });
+
+    it('requiresConcentration returns false when undefined', () => {
+      const spell = makeSpell({});
+      expect(SpellCaster.requiresConcentration(spell)).toBe(false);
+    });
+
+    it('isAOESpell returns true for aoe tag', () => {
+      expect(SpellCaster.isAOESpell(makeSpell({ tags: ['aoe'] }))).toBe(true);
+      expect(SpellCaster.isAOESpell(makeSpell({ tags: ['damage'] }))).toBe(false);
+    });
+
+    it('isMultiTargetSpell returns true for multi-target tag', () => {
+      expect(SpellCaster.isMultiTargetSpell(makeSpell({ tags: ['multi-target'] }))).toBe(true);
+      expect(SpellCaster.isMultiTargetSpell(makeSpell({ tags: ['damage'] }))).toBe(false);
+    });
+
+    it('isBonusActionSpell returns true for bonus-action tag', () => {
+      expect(SpellCaster.isBonusActionSpell(makeSpell({ tags: ['bonus-action'] }))).toBe(true);
+      expect(SpellCaster.isBonusActionSpell(makeSpell({ tags: ['damage'] }))).toBe(false);
+    });
+
+    it('isAllySpell returns true for ally tag', () => {
+      expect(SpellCaster.isAllySpell(makeSpell({ tags: ['ally'] }))).toBe(true);
+      expect(SpellCaster.isAllySpell(makeSpell({ tags: ['damage'] }))).toBe(false);
+    });
+
+    it('isSelfSpell returns true for self tag', () => {
+      expect(SpellCaster.isSelfSpell(makeSpell({ tags: ['self'] }))).toBe(true);
+      expect(SpellCaster.isSelfSpell(makeSpell({ tags: ['damage'] }))).toBe(false);
+    });
+
+    it('getStatusEffectTags returns the tag-to-effect mapping', () => {
+      const mapping = SpellCaster.getStatusEffectTags();
+      expect(mapping.charm).toBeDefined();
+      expect(mapping.charm.name).toBe('Charmed');
+      expect(mapping.frighten).toBeDefined();
+      expect(mapping.frighten.name).toBe('Frightened');
+      expect(mapping.stun).toBeDefined();
+      expect(mapping.stun.name).toBe('Stunned');
+      expect(mapping.restrain).toBeDefined();
+      expect(mapping.restrain.name).toBe('Restrained');
+      expect(mapping.poison).toBeDefined();
+      expect(mapping.poison.name).toBe('Poisoned');
+      expect(mapping.blind).toBeDefined();
+      expect(mapping.blind.name).toBe('Blinded');
+      expect(mapping.paralyze).toBeDefined();
+      expect(mapping.paralyze.name).toBe('Paralyzed');
+      expect(mapping.burn).toBeDefined();
+      expect(mapping.burn.name).toBe('Burning');
+      expect(mapping.deafen).toBeDefined();
+      expect(mapping.deafen.name).toBe('Deafened');
+    });
+
+    it('getStatusEffectTags includes mechanicalEffects for relevant tags', () => {
+      const mapping = SpellCaster.getStatusEffectTags();
+      expect(mapping.charm.mechanicalEffects?.disadvantageOnAttackNonSource).toBe(true);
+      expect(mapping.frighten.mechanicalEffects?.disadvantageOnAttack).toBe(true);
+      expect(mapping.stun.mechanicalEffects?.skipTurn).toBe(true);
+      expect(mapping.paralyze.mechanicalEffects?.skipTurn).toBe(true);
+      expect(mapping.restrain.mechanicalEffects?.speedZero).toBe(true);
+      // deafen has no mechanicalEffects
+      expect(mapping.deafen.mechanicalEffects).toBeUndefined();
+    });
+  });
 });
