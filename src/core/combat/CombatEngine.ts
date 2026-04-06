@@ -10,7 +10,8 @@ import type {
   CombatAction,
   CombatConfig,
   CombatResult,
-  DiceRollerAPI
+  DiceRollerAPI,
+  StatusEffect
 } from '../types/Combat';
 import type { EnvironmentalContext } from '../types/Progression';
 import type { Equipment } from '../../utils/constants.js';
@@ -879,6 +880,82 @@ export class CombatEngine {
    */
   applyTemporaryHP(combatant: Combatant, tempHP: number): void {
     combatant.temporaryHP = Math.max(combatant.temporaryHP || 0, tempHP);
+  }
+
+  /**
+   * Apply a status effect to a combatant.
+   *
+   * Handles stacking rules:
+   * - If an effect with the same name already exists on the combatant,
+   *   the duration is refreshed to the new effect's duration (take the higher).
+   * - If the new effect has `damage`, keep the higher damage value.
+   * - Otherwise, the new effect is pushed onto the combatant's statusEffects array.
+   *
+   * Returns the effect that is now active on the combatant (either the existing
+   * refreshed effect or the newly pushed one).
+   */
+  applyStatusEffect(combatant: Combatant, effect: StatusEffect): StatusEffect {
+    const existingIndex = combatant.statusEffects.findIndex(
+      e => e.name === effect.name
+    );
+
+    if (existingIndex !== -1) {
+      const existing = combatant.statusEffects[existingIndex];
+
+      // Refresh duration — take the higher value
+      existing.duration = Math.max(existing.duration, effect.duration);
+
+      // Take higher damage if both have damage values
+      if (effect.damage !== undefined) {
+        existing.damage = Math.max(existing.damage ?? 0, effect.damage);
+      }
+
+      // Carry over source if the new effect specifies one
+      if (effect.source !== undefined) {
+        existing.source = effect.source;
+      }
+
+      // Carry over mechanical effects if the new effect specifies them
+      if (effect.mechanicalEffects) {
+        existing.mechanicalEffects = {
+          ...existing.mechanicalEffects,
+          ...effect.mechanicalEffects,
+        };
+      }
+
+      // Carry over concentration flag
+      if (effect.hasConcentration) {
+        existing.hasConcentration = true;
+      }
+
+      // Carry over damage type if the new effect specifies one
+      if (effect.damageType) {
+        existing.damageType = effect.damageType;
+      }
+
+      return existing;
+    }
+
+    combatant.statusEffects.push(effect);
+    return effect;
+  }
+
+  /**
+   * Remove expired status effects from a combatant.
+   *
+   * Filters out all effects where `duration <= 0`.
+   * Returns the array of removed effects for logging purposes.
+   */
+  removeExpiredStatusEffects(combatant: Combatant): StatusEffect[] {
+    const expired: StatusEffect[] = combatant.statusEffects.filter(
+      e => e.duration <= 0
+    );
+
+    combatant.statusEffects = combatant.statusEffects.filter(
+      e => e.duration > 0
+    );
+
+    return expired;
   }
 
   /**
