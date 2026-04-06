@@ -578,11 +578,31 @@ export class CombatEngine {
   }
 
   /**
-   * Initialize spell slots for a character based on their class
+   * Initialize spell slots for a character.
+   *
+   * Priority:
+   * 1. If `character.spells.spell_slots` is populated (e.g. generated enemies),
+   *    convert `{ [level]: { total, used } }` → `{ [level]: total - used }`.
+   * 2. Fall back to the D&D 5e full-caster table for known spellcasting classes.
+   * 3. Return undefined for non-spellcasters with no spell slot data.
    */
   private initializeSpellSlots(character: CharacterSheet): {
     [level: number]: number;
   } | undefined {
+    // 1. Use character's spell_slots if available (generated enemies, custom chars)
+    const sourceSlots = character.spells?.spell_slots;
+    if (sourceSlots && Object.keys(sourceSlots).length > 0) {
+      const result: { [level: number]: number } = {};
+      for (const [level, slot] of Object.entries(sourceSlots)) {
+        const remaining = slot.total - slot.used;
+        if (remaining > 0) {
+          result[Number(level)] = remaining;
+        }
+      }
+      return Object.keys(result).length > 0 ? result : undefined;
+    }
+
+    // 2. Fall back to hardcoded table for known spellcasting classes
     const spellcastingClasses = ['Wizard', 'Cleric', 'Sorcerer', 'Bard', 'Druid', 'Warlock', 'Paladin', 'Ranger'];
 
     if (!spellcastingClasses.includes(character.class)) {
