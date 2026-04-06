@@ -335,6 +335,9 @@ export type {
 
 export { isValidAIPlayStyle } from './core/types/CombatAI.js';
 
+// Combat AI
+export { CombatAI } from './core/combat/AI/CombatAI.js';
+
 // Feature types
 export type {
     ClassFeature,
