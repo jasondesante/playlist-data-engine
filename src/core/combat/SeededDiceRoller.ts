@@ -10,6 +10,15 @@
 
 import { SeededRNG } from '../../utils/random.js';
 
+/**
+ * Factory: create a SeededDiceRoller from a seed string.
+ * Each call produces a fresh roller with its own RNG state —
+ * this is what CombatSimulator will call per simulation run.
+ */
+export function createSeededRoller(seed: string): SeededDiceRoller {
+  return new SeededDiceRoller(seed);
+}
+
 export class SeededDiceRoller {
   private rng: SeededRNG;
 
