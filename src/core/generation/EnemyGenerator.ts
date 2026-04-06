@@ -36,6 +36,7 @@ import { SpellcastingGenerator, type SpellcastingConfig } from './SpellcastingGe
 import { LegendaryGenerator, type LegendaryAction, type LegendaryConfig } from './LegendaryGenerator.js';
 import { DEFAULT_EQUIPMENT } from '../../constants/DefaultEquipment.js';
 import { crToLevel } from './CRLevelConverter.js';
+import { getDamageModifierForStats } from '../../constants/StatScaling.js';
 
 /**
  * EnemyGenerator - Static class for enemy generation
@@ -363,18 +364,26 @@ export class EnemyGenerator {
      * Generate a signature ability with rarity-scaled damage die
      *
      * Creates a Feature-compatible object from the template's signature ability,
-     * scaling the damage die based on rarity tier.
+     * scaling the damage die based on rarity tier and computing damage modifier
+     * from actual scaled ability scores.
      *
      * @param signatureAbility - Base signature ability from template
      * @param rarity - Rarity tier for die scaling
+     * @param scaledStats - Scaled ability scores for damage modifier computation
+     * @param level - Effective level for damage modifier scaling
+     * @param archetype - Enemy archetype for determining primary stat
      * @returns Scaled signature ability as a feature object
      */
     private static scaleSignatureAbility(
         signatureAbility: SignatureAbility,
-        rarity: EnemyRarity
+        rarity: EnemyRarity,
+        scaledStats: AbilityScores,
+        level: number,
+        archetype: EnemyArchetype
     ): Record<string, unknown> {
         const config = getRarityConfig(rarity);
         const scaledDie = `d${config.signatureDieSize}`;
+        const damageModifier = getDamageModifierForStats(scaledStats, level, archetype);
 
         // Build feature object compatible with ClassFeature format
         return {
@@ -390,7 +399,7 @@ export class EnemyGenerator {
             // Include attack data for combat use
             attack: {
                 name: signatureAbility.name,
-                damage: `${scaledDie} + ${EnemyGenerator.getAbilityModifierForRarity(rarity)}`,
+                damage: `${scaledDie} + ${damageModifier}`,
                 damage_dice: scaledDie,
                 damage_type: signatureAbility.damageType,
                 type: signatureAbility.attackType,
@@ -398,25 +407,6 @@ export class EnemyGenerator {
                 properties: signatureAbility.properties
             }
         };
-    }
-
-    /**
-     * Get ability modifier value for rarity (for damage bonus)
-     *
-     * Returns an appropriate modifier based on rarity tier.
-     * Common: +2, Uncommon: +3, Elite: +4, Boss: +6
-     *
-     * @param rarity - Rarity tier
-     * @returns Ability modifier
-     */
-    private static getAbilityModifierForRarity(rarity: EnemyRarity): number {
-        const modifiers: Record<EnemyRarity, number> = {
-            common: 2,
-            uncommon: 3,
-            elite: 4,
-            boss: 6
-        };
-        return modifiers[rarity] || 2;
     }
 
     /**
@@ -732,11 +722,13 @@ export class EnemyGenerator {
      * @param template - Enemy template
      * @param rarity - Enemy rarity tier
      * @param rng - Seeded RNG for deterministic selection
+     * @param scaledStats - Scaled ability scores for damage modifier computation
+     * @param level - Effective level for damage modifier scaling
      * @returns Array of ability objects compatible with CharacterSheet
      *
      * @example
      * ```typescript
-     * const abilities = generateAbilities(orcTemplate, 'elite', rng);
+     * const abilities = generateAbilities(orcTemplate, 'elite', rng, undefined, scaledStats, level);
      * // Returns: [scaledSignatureAbility, extraFeature1, extraFeature2]
      * ```
      */
@@ -744,13 +736,26 @@ export class EnemyGenerator {
         template: EnemyTemplate,
         rarity: EnemyRarity,
         rng: SeededRNG,
-        cr?: number
+        cr?: number,
+        scaledStats?: AbilityScores,
+        level?: number
     ): { abilities: Record<string, unknown>[]; spellConfig?: SpellcastingConfig } {
-        // Start with signature ability
-        const signatureAbility = EnemyGenerator.scaleSignatureAbility(
-            template.signatureAbility,
-            rarity
-        );
+        // Start with signature ability — use ability-score-based modifier if stats available
+        const signatureAbility = scaledStats && level
+            ? EnemyGenerator.scaleSignatureAbility(
+                template.signatureAbility,
+                rarity,
+                scaledStats,
+                level,
+                template.archetype
+            )
+            : EnemyGenerator.scaleSignatureAbility(
+                template.signatureAbility,
+                rarity,
+                template.baseStats,
+                1,
+                template.archetype
+            );
 
         const abilities: Record<string, unknown>[] = [signatureAbility];
         let spellConfig: SpellcastingConfig | undefined;
@@ -994,7 +999,7 @@ export class EnemyGenerator {
         const shouldHaveSpells = SpellcastingGenerator.shouldHaveSpellcasting(template.archetype, rarity);
 
         // Generate all abilities (signature + extras from FeatureQuery)
-        const { abilities: generatedAbilities, spellConfig } = EnemyGenerator.generateAbilities(template, rarity, rng, cr);
+        const { abilities: generatedAbilities, spellConfig } = EnemyGenerator.generateAbilities(template, rarity, rng, cr, scaledStats, level);
 
         // Apply boss-specific enhancements for boss rarity
         // This replaces the signature ability with an enhanced version (double damage dice)
@@ -1059,6 +1064,9 @@ export class EnemyGenerator {
         });
 
         // Build weapon array from equipment config
+        // Compute damage modifier from actual scaled ability scores
+        const damageModifier = getDamageModifierForStats(scaledStats, level, template.archetype);
+
         const weapons: Array<{ name: string; damage: string; damage_dice: string; damage_type: string; type: string; range?: number; properties?: string[]; equipped: boolean }> = [];
 
         if (equipmentConfig.weapon) {
@@ -1070,7 +1078,7 @@ export class EnemyGenerator {
                 const signatureDamageDie = EnemyGenerator.getDamageDieForRarity(rarity);
                 weapons.push({
                     name: weaponName,
-                    damage: `${signatureDamageDie} + ${EnemyGenerator.getAbilityModifierForRarity(rarity)}`,
+                    damage: `${signatureDamageDie} + ${damageModifier}`,
                     damage_dice: signatureDamageDie,
                     damage_type: weaponData.damage?.damageType || template.signatureAbility.damageType,
                     type: template.signatureAbility.attackType,
@@ -1085,7 +1093,7 @@ export class EnemyGenerator {
         if (weapons.length === 0) {
             weapons.push({
                 name: template.signatureAbility.name,
-                damage: `${EnemyGenerator.getDamageDieForRarity(rarity)} + ${EnemyGenerator.getAbilityModifierForRarity(rarity)}`,
+                damage: `${EnemyGenerator.getDamageDieForRarity(rarity)} + ${damageModifier}`,
                 damage_dice: EnemyGenerator.getDamageDieForRarity(rarity),
                 damage_type: template.signatureAbility.damageType,
                 type: template.signatureAbility.attackType,
