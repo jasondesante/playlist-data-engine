@@ -418,6 +418,31 @@ export function isValidEnemyArchetype(value: unknown): value is EnemyArchetype {
 }
 
 /**
+ * Stat Level Overrides — Allow HP, attack, and defense to scale independently
+ *
+ * Normally all enemy stats scale together as a unit determined by CR + rarity.
+ * StatLevelOverrides allows each axis to be independently set to a different
+ * effective level, enabling creative encounter designs:
+ * - **Tank**: high HP level, normal attack, high defense
+ * - **Glass cannon**: low HP, high attack, low defense
+ * - **Brute**: high HP, high attack, low defense
+ * - **Standard**: all at CR level (default, no overrides needed)
+ *
+ * When all three levels match CR, output is identical to current generation
+ * (backward compatible). The AI and simulator don't need to know about this —
+ * they read the final CharacterSheet stats. This is purely a generation-layer
+ * feature.
+ */
+export interface StatLevelOverrides {
+    /** Override HP to this effective level (default: CR-derived level) */
+    hpLevel?: number;
+    /** Override attack scaling to this effective level (damage die + modifier + attack bonus) */
+    attackLevel?: number;
+    /** Override defense scaling to this effective level (AC) */
+    defenseLevel?: number;
+}
+
+/**
  * Equipment template for enemy generation
  *
  * Defines equipment options for enemies based on archetype and rarity.
