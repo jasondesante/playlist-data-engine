@@ -210,7 +210,10 @@ export class SteamAPIClient {
 
     /**
      * Get currently played game for a Steam user
-     * Uses IPlayerService/GetRecentlyPlayedGames to determine active game
+     * Uses ISteamUser/GetPlayerSummaries to detect real-time "in-game" status.
+     * GetPlayerSummaries returns `gameextrainfo` and `gameid` only when the user
+     * is actively in a game right now — unlike GetRecentlyPlayedGames which only
+     * shows games played in the last 2 weeks with no "currently playing" indicator.
      */
     async getCurrentGame(steamUserId: string): Promise<{
         name: string;
@@ -227,8 +230,8 @@ export class SteamAPIClient {
         let success = false;
 
         try {
-            const url = `${this.baseUrl}/IPlayerService/GetRecentlyPlayedGames/v1/?` +
-                `steamid=${steamUserId}&count=1&appid_only=false&key=${this.apiKey}`;
+            const url = `${this.baseUrl}/ISteamUser/GetPlayerSummaries/v2/?` +
+                `key=${this.apiKey}&steamids=${steamUserId}`;
 
             const response = await fetch(url);
 
@@ -237,19 +240,18 @@ export class SteamAPIClient {
             }
 
             const data = await response.json();
+            const player = data.response?.players?.[0];
 
-            if (!data.response?.games || data.response.games.length === 0) {
+            if (!player?.gameextrainfo) {
+                // Player exists but is not currently in a game
                 return null;
             }
 
-            const game = data.response.games[0];
-
             success = true;
             return {
-                name: game.name,
-                appId: game.appid,
+                name: player.gameextrainfo,
+                appId: parseInt(player.gameid, 10),
                 source: 'steam',
-                sessionDuration: game.playtime_2weeks ?? game.playtime_forever
             };
         } catch (error) {
             this.logger.error('Failed to fetch current Steam game', { error });

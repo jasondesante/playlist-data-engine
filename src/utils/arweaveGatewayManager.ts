@@ -363,6 +363,20 @@ export class ArweaveGatewayManager {
     }
 
     /**
+     * Wrap a promise with a timeout to prevent hanging indefinitely.
+     * Useful for third-party calls (e.g., Wayfinder) that have no built-in timeout.
+     */
+    private withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
+        return new Promise<T>((resolve, reject) => {
+            const timer = setTimeout(() => reject(new Error(message)), ms);
+            promise.then(
+                (value) => { clearTimeout(timer); resolve(value); },
+                (error) => { clearTimeout(timer); reject(error); },
+            );
+        });
+    }
+
+    /**
      * Resolve an Arweave URL using AR.IO Wayfinder as the primary strategy,
      * with static gateways as fallback.
      *
@@ -451,11 +465,15 @@ export class ArweaveGatewayManager {
         this.missCount++;
         this.logger.debug('Finding gateway for txId', { txId, pathSuffix });
 
-        // Try Wayfinder resolution if available
+        // Try Wayfinder resolution if available (with timeout to prevent hanging)
         if (this.wayfinder) {
             try {
                 this.logger.debug('Attempting Wayfinder resolution', { txId });
-                const wayfinderUrlObj = await this.wayfinder.resolveUrl({ originalUrl: url });
+                const wayfinderUrlObj = await this.withTimeout(
+                    this.wayfinder.resolveUrl({ originalUrl: url }),
+                    this.timeout,
+                    'Wayfinder resolution timed out'
+                );
                 const wayfinderHost = wayfinderUrlObj.hostname;
                 const wayfinderProtocol = wayfinderUrlObj.protocol.replace(':', '') as 'http' | 'https';
 
