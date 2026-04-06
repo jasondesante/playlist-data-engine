@@ -325,6 +325,16 @@ export type {
     CombatConfig
 } from './core/types/Combat.js';
 
+// Combat AI types
+export type {
+    AIPlayStyle,
+    AIConfig,
+    AIDecision,
+    AIThreatAssessment
+} from './core/types/CombatAI.js';
+
+export { isValidAIPlayStyle } from './core/types/CombatAI.js';
+
 // Feature types
 export type {
     ClassFeature,
