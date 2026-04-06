@@ -22,6 +22,7 @@ import { DiceRoller } from './DiceRoller';
 import { DEFAULT_EQUIPMENT } from '../../constants/DefaultEquipment.js';
 import { SeededRNG } from '../../utils/random.js';
 import { getFullCasterSlotsForLevel } from '../../constants/SpellSlots.js';
+import { getXPForCR } from '../../constants/EncounterBalance.js';
 
 /**
  * Describes a single validation issue found in spell slot data.
@@ -935,8 +936,13 @@ export class CombatEngine {
     // Count turns (each full round of combat = 1 round)
     totalTurns = Math.ceil(combat.history.length / Math.max(1, combat.combatants.length));
 
-    // Calculate XP awarded (simple formula: 50 XP per defeated enemy)
-    const xpAwarded = enemies.filter(e => e.isDefeated).length * 50;
+    // Calculate XP awarded based on defeated enemy CR
+    const xpAwarded = enemies
+      .filter(e => e.isDefeated)
+      .reduce((sum, e) => {
+        const cr = e.character.cr ?? e.character.level;
+        return sum + getXPForCR(cr);
+      }, 0);
 
     const description = combat.winner
       ? `${combat.winner.character.name} won the combat!`

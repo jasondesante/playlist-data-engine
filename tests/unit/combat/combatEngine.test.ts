@@ -1063,13 +1063,13 @@ describe('CombatEngine.getCombatResult()', () => {
     expect(result!.defeated).toContainEqual(enemyC);
   });
 
-  it('calculates XP as 50 per defeated enemy', () => {
+  it('calculates XP from defeated enemy CR using getXPForCR', () => {
     const engine = new CombatEngine();
     const player = createMockPartyCharacter(1, { name: 'Hero' });
     const enemies = [
-      createMockPartyCharacter(1, { name: 'Goblin A' }),
-      createMockPartyCharacter(1, { name: 'Goblin B' }),
-      createMockPartyCharacter(1, { name: 'Goblin C' }),
+      createMockPartyCharacter(1, { name: 'Goblin A', cr: 0.25 }),
+      createMockPartyCharacter(1, { name: 'Goblin B', cr: 0.25 }),
+      createMockPartyCharacter(1, { name: 'Goblin C', cr: 0.25 }),
     ];
     const combat = engine.startCombat([player], enemies);
 
@@ -1085,9 +1085,9 @@ describe('CombatEngine.getCombatResult()', () => {
     const forceEndEngine = new CombatEngine({ maxTurnsBeforeDraw: 1 });
     const player2 = createMockPartyCharacter(1, { name: 'Hero2' });
     const enemies2 = [
-      createMockPartyCharacter(1, { name: 'Goblin D' }),
-      createMockPartyCharacter(1, { name: 'Goblin E' }),
-      createMockPartyCharacter(1, { name: 'Goblin F' }),
+      createMockPartyCharacter(1, { name: 'Goblin D', cr: 0.25 }),
+      createMockPartyCharacter(1, { name: 'Goblin E', cr: 0.25 }),
+      createMockPartyCharacter(1, { name: 'Goblin F', cr: 0.25 }),
     ];
     const combat2 = forceEndEngine.startCombat([player2], enemies2);
 
@@ -1107,7 +1107,8 @@ describe('CombatEngine.getCombatResult()', () => {
     forceEndEngine.nextTurn(combat2);
     const result = forceEndEngine.getCombatResult(combat2);
 
-    expect(result!.xpAwarded).toBe(100); // 2 defeated * 50
+    // getXPForCR(0.25) = 50, so 2 defeated × 50 = 100
+    expect(result!.xpAwarded).toBe(100);
   });
 
   it('awards 0 XP when no enemies are defeated', () => {
