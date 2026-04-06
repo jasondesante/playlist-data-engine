@@ -27,6 +27,7 @@ export const PlaylistTrackSchema = z.object({
     image_url: z.string().url(),
     image_thumb_url: z.string().url().optional(),
     audio_url: z.string().url(),
+    audio_url_lossless: z.string().url().optional(),
     duration: z.number().nonnegative(),
     genre: z.string(),
     tags: z.array(z.string()),

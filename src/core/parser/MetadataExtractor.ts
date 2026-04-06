@@ -5,7 +5,7 @@
 
 export class MetadataExtractor {
     /**
-     * Extract audio URL with priority (see specs/001-core-engine/SPEC.md):
+     * Extract primary (compressed) audio URL with priority:
      * 1. mp3_url (Standard web audio - preferred)
      * 2. lossy_audio (Compressed)
      * 3. audio_url (Explicit audio field)
@@ -13,9 +13,26 @@ export class MetadataExtractor {
      * 5. animation_url (OpenSea standard - often audio, but could be video)
      */
     static extractAudioUrl(data: Record<string, unknown>): string | null {
-        const priorities = ['mp3_url', 'lossy_audio', 'audio_url', 'lossless_audio', 'animation_url'];
+        const compressedPriorities = ['mp3_url', 'lossy_audio', 'audio_url', 'lossless_audio', 'animation_url'];
 
-        for (const key of priorities) {
+        for (const key of compressedPriorities) {
+            if (data[key] && typeof data[key] === 'string') {
+                return data[key];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Extract optional lossless audio URL (uncompressed/high-fidelity source).
+     * Returns a lossless URL only if it differs from the primary audio URL.
+     * Priority: lossless_audio > animation_url (only if it looks like a lossless format)
+     */
+    static extractAudioUrlLossless(data: Record<string, unknown>): string | null {
+        const losslessPriorities = ['lossless_audio', 'wav_url', 'flac_url'];
+
+        for (const key of losslessPriorities) {
             if (data[key] && typeof data[key] === 'string') {
                 return data[key];
             }

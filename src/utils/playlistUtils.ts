@@ -18,6 +18,7 @@ export interface SimpleTrack {
     title: string;
     artist: string;
     audio_url: string;
+    audio_url_lossless?: string;
     image_url: string;
     image_thumb_url?: string;
 }
@@ -27,6 +28,7 @@ export interface VRMTrack {
     title: string;
     artist: string;
     audio_url: string;
+    audio_url_lossless?: string;
     image_url: string;
     image_thumb_url?: string;
     vrm: string;
@@ -50,6 +52,26 @@ function extractAudioUrlFromTrack(track: PlaylistTrack | RawArweavePlaylist['tra
         const parsed = MetadataExtractor.parseMetadata(track.metadata);
         if (parsed) {
             return MetadataExtractor.extractAudioUrl(parsed);
+        }
+    }
+
+    return null;
+}
+
+/**
+ * Extract lossless audio URL from a track (handles both parsed and raw)
+ */
+function extractAudioUrlLosslessFromTrack(track: PlaylistTrack | RawArweavePlaylist['tracks'][number]): string | null {
+    // Parsed track - has audio_url_lossless directly
+    if ('audio_url_lossless' in track && typeof track.audio_url_lossless === 'string') {
+        return track.audio_url_lossless;
+    }
+
+    // Raw track - needs metadata parsing
+    if ('metadata' in track) {
+        const parsed = MetadataExtractor.parseMetadata(track.metadata);
+        if (parsed) {
+            return MetadataExtractor.extractAudioUrlLossless(parsed);
         }
     }
 
@@ -397,6 +419,12 @@ export function getTracks(playlist: PlaylistInput): SimpleTrack[] {
                 image_url: image_url || ''
             };
 
+            // Add lossless audio URL if present and different from primary
+            const audio_url_lossless = extractAudioUrlLosslessFromTrack(track);
+            if (audio_url_lossless && audio_url_lossless !== audio_url) {
+                simpleTrack.audio_url_lossless = audio_url_lossless;
+            }
+
             // Only add image_thumb_url if present
             if (image_thumb_url) {
                 simpleTrack.image_thumb_url = image_thumb_url;
@@ -432,6 +460,9 @@ export function getFullTracks(playlist: PlaylistInput): Array<Record<string, unk
         if ('metadata' in track) {
             const parsed = MetadataExtractor.parseMetadata(track.metadata);
             if (parsed) {
+                const audioUrlLossless = MetadataExtractor.extractAudioUrlLossless(parsed);
+                const primaryAudioUrl = MetadataExtractor.extractAudioUrl(parsed);
+
                 tracks.push({
                     id: track.chain_name === 'AR'
                         ? `AR-${track.tx_id}`
@@ -443,7 +474,7 @@ export function getFullTracks(playlist: PlaylistInput): Array<Record<string, unk
                     platform: track.platform,
                     title: MetadataExtractor.extractTitle(parsed),
                     artist: MetadataExtractor.extractArtist(parsed),
-                    audio_url: MetadataExtractor.extractAudioUrl(parsed),
+                    audio_url: primaryAudioUrl,
                     image_url: MetadataExtractor.extractImageUrl(parsed),
                     image_thumb_url: MetadataExtractor.extractImageThumbUrl(parsed),
                     duration: parsed.duration,
@@ -453,7 +484,8 @@ export function getFullTracks(playlist: PlaylistInput): Array<Record<string, unk
                     key: parsed.key,
                     album: parsed.album,
                     description: parsed.description,
-                    attributes: MetadataExtractor.convertAttributes(parsed.attributes)
+                    attributes: MetadataExtractor.convertAttributes(parsed.attributes),
+                    ...(audioUrlLossless && audioUrlLossless !== primaryAudioUrl ? { audio_url_lossless: audioUrlLossless } : {}),
                 });
             }
         }

@@ -32,6 +32,54 @@ describe('MetadataExtractor', () => {
         });
     });
 
+    describe('extractAudioUrlLossless', () => {
+        it('should extract lossless_audio when present', () => {
+            const data = {
+                mp3_url: 'https://example.com/track.mp3',
+                lossless_audio: 'https://example.com/track.wav',
+            };
+            expect(MetadataExtractor.extractAudioUrlLossless(data)).toBe('https://example.com/track.wav');
+        });
+
+        it('should prioritize lossless_audio over wav_url and flac_url', () => {
+            const data = {
+                lossless_audio: 'https://example.com/track.wav',
+                wav_url: 'https://example.com/track-alt.wav',
+                flac_url: 'https://example.com/track.flac',
+            };
+            expect(MetadataExtractor.extractAudioUrlLossless(data)).toBe('https://example.com/track.wav');
+        });
+
+        it('should fall back to wav_url when lossless_audio is missing', () => {
+            const data = {
+                wav_url: 'https://example.com/track.wav',
+            };
+            expect(MetadataExtractor.extractAudioUrlLossless(data)).toBe('https://example.com/track.wav');
+        });
+
+        it('should fall back to flac_url when lossless_audio and wav_url are missing', () => {
+            const data = {
+                flac_url: 'https://example.com/track.flac',
+            };
+            expect(MetadataExtractor.extractAudioUrlLossless(data)).toBe('https://example.com/track.flac');
+        });
+
+        it('should return null when no lossless field is present', () => {
+            const data = {
+                mp3_url: 'https://example.com/track.mp3',
+                audio_url: 'https://example.com/track.wav',
+            };
+            expect(MetadataExtractor.extractAudioUrlLossless(data)).toBeNull();
+        });
+
+        it('should return null for empty string values', () => {
+            const data = {
+                lossless_audio: '',
+            };
+            expect(MetadataExtractor.extractAudioUrlLossless(data)).toBeNull();
+        });
+    });
+
     describe('extractImageUrl', () => {
         it('should prioritize image_small over other formats', () => {
             const data = {
@@ -285,6 +333,101 @@ describe('PlaylistParser', () => {
 
             expect(result.tracks).toHaveLength(1);
             expect(result.tracks[0].title).toBe('Valid Track');
+        });
+
+        it('should populate audio_url_lossless when lossless audio differs from primary', async () => {
+            const parser = new PlaylistParser();
+            const rawData = {
+                name: 'Test Playlist',
+                image: 'https://example.com/playlist.jpg',
+                creator: '0xCreator',
+                tracks: [
+                    {
+                        chain_name: 'ethereum',
+                        token_address: '0xabc',
+                        token_id: '1',
+                        platform: 'sound',
+                        metadata: JSON.stringify({
+                            name: 'Track 1',
+                            artist: 'Artist 1',
+                            mp3_url: 'https://example.com/track1.mp3',
+                            lossless_audio: 'https://example.com/track1.wav',
+                            image_small: 'https://example.com/image1.jpg',
+                            duration: 180,
+                            genre: 'Electronic',
+                            tags: ['test'],
+                        }),
+                    },
+                ],
+            };
+
+            const result = await parser.parse(rawData);
+
+            expect(result.tracks[0].audio_url).toBe('https://example.com/track1.mp3');
+            expect(result.tracks[0].audio_url_lossless).toBe('https://example.com/track1.wav');
+        });
+
+        it('should omit audio_url_lossless when lossless is the same as primary', async () => {
+            const parser = new PlaylistParser();
+            const rawData = {
+                name: 'Test Playlist',
+                image: 'https://example.com/playlist.jpg',
+                creator: '0xCreator',
+                tracks: [
+                    {
+                        chain_name: 'ethereum',
+                        token_address: '0xabc',
+                        token_id: '1',
+                        platform: 'sound',
+                        metadata: JSON.stringify({
+                            name: 'Track 1',
+                            artist: 'Artist 1',
+                            audio_url: 'https://example.com/track1.wav',
+                            lossless_audio: 'https://example.com/track1.wav',
+                            image_small: 'https://example.com/image1.jpg',
+                            duration: 180,
+                            genre: 'Electronic',
+                            tags: [],
+                        }),
+                    },
+                ],
+            };
+
+            const result = await parser.parse(rawData);
+
+            expect(result.tracks[0].audio_url).toBe('https://example.com/track1.wav');
+            expect(result.tracks[0].audio_url_lossless).toBeUndefined();
+        });
+
+        it('should omit audio_url_lossless when no lossless field exists', async () => {
+            const parser = new PlaylistParser();
+            const rawData = {
+                name: 'Test Playlist',
+                image: 'https://example.com/playlist.jpg',
+                creator: '0xCreator',
+                tracks: [
+                    {
+                        chain_name: 'ethereum',
+                        token_address: '0xabc',
+                        token_id: '1',
+                        platform: 'sound',
+                        metadata: JSON.stringify({
+                            name: 'Track 1',
+                            artist: 'Artist 1',
+                            mp3_url: 'https://example.com/track1.mp3',
+                            image_small: 'https://example.com/image1.jpg',
+                            duration: 180,
+                            genre: 'Electronic',
+                            tags: [],
+                        }),
+                    },
+                ],
+            };
+
+            const result = await parser.parse(rawData);
+
+            expect(result.tracks[0].audio_url).toBe('https://example.com/track1.mp3');
+            expect(result.tracks[0].audio_url_lossless).toBeUndefined();
         });
 
         it('should convert OpenSea attributes', async () => {

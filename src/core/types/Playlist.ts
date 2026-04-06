@@ -46,7 +46,9 @@ export interface PlaylistTrack {
     image_url: string;      // The result of the Image Extraction Logic
     /** Optional thumbnail URL extracted from image_thumb or image_thumb_url fields */
     image_thumb_url?: string;
-    audio_url: string;      // The result of the Audio Extraction Logic
+    audio_url: string;              // The result of the Audio Extraction Logic (compressed/preferred)
+    /** Optional uncompressed audio URL for high-fidelity playback */
+    audio_url_lossless?: string;    // Lossless audio (WAV/FLAC) when available
     duration: number;       // In seconds (parsed or estimated)
 
     // --- Meta Tags ---

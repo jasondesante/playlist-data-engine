@@ -149,6 +149,7 @@ export class PlaylistParser {
         const imageUrl = MetadataExtractor.extractImageUrl(parsedMetadata || {});
         const imageThumbUrl = MetadataExtractor.extractImageThumbUrl(parsedMetadata || {});
         const audioUrl = MetadataExtractor.extractAudioUrl(parsedMetadata || {});
+        const audioUrlLossless = MetadataExtractor.extractAudioUrlLossless(parsedMetadata || {});
 
         // Step 6: Validate - If audio_url is empty, mark as "Unsummonable"
         if (!audioUrl) {
@@ -203,6 +204,7 @@ export class PlaylistParser {
             album,
             image_url: imageUrl,
             audio_url: audioUrl,
+            audio_url_lossless: audioUrlLossless && audioUrlLossless !== audioUrl ? audioUrlLossless : undefined,
             duration,
             genre,
             tags: Array.isArray(tags) ? tags.map(t => String(t).toLowerCase()) : [],

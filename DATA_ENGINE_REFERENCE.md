@@ -312,7 +312,7 @@ Type definitions for all core data structures.
 | Type | Description | Key Properties |
 |------|-------------|----------------|
 | `ServerlessPlaylist` | Main container object returned by `PlaylistParser` | `name`, `tracks`, `image`, `creator`, `genre?`, `tags?` |
-| `PlaylistTrack` | Flattened track object containing audio_url | `audio_url` (critical), `title`, `artist`, `image_url`, `image_thumb_url?`, chain data |
+| `PlaylistTrack` | Flattened track object containing audio_url | `audio_url` (critical), `audio_url_lossless?`, `title`, `artist`, `image_url`, `image_thumb_url?`, chain data |
 | `RawArweavePlaylist` | Raw input schema received from Arweave before parsing | `tracks[].metadata` (stringified JSON), blockchain shell data |
 
 ### AudioProfile
@@ -1334,6 +1334,7 @@ Extracts metadata fields from playlist track data. All methods are static.
 | Method | Returns | Description |
 |--------|---------|-------------|
 | `static extractAudioUrl(data)` | `string \| null` | Extracts audio URL with priority: mp3_url > lossy_audio > audio_url > lossless_audio > animation_url |
+| `static extractAudioUrlLossless(data)` | `string \| null` | Extracts lossless audio URL with priority: lossless_audio > wav_url > flac_url |
 | `static extractImageUrl(data)` | `string \| null` | Extracts image URL with priority: image_small > image > image_large > image_thumb |
 | `static extractImageThumbUrl(data)` | `string \| null` | Extracts thumbnail URL with priority: image_thumb_url > image_thumb |
 | `static extractTitle(data)` | `string \| null` | Extracts name/title with priority: name > title |
@@ -1364,7 +1365,7 @@ Simple functions that return arrays of basic data from playlists. Works with bot
 
 | Function | Returns | Description |
 |----------|---------|-------------|
-| `getTracks(playlist)` | `SimpleTrack[]` | Simplified objects: `{ title, artist, audio_url, image_url, image_thumb_url? }` |
+| `getTracks(playlist)` | `SimpleTrack[]` | Simplified objects: `{ title, artist, audio_url, audio_url_lossless?, image_url, image_thumb_url? }` |
 | `getFullTracks(playlist)` | `object[]` | All available track data as plain objects |
 
 #### VRM Extraction Functions
@@ -1372,7 +1373,7 @@ Simple functions that return arrays of basic data from playlists. Works with bot
 | Function | Returns | Description |
 |----------|---------|-------------|
 | `getVRMs(playlist)` | `string[]` | VRM URLs from tracks that have the optional `vrm` field |
-| `getVRMTracks(playlist)` | `VRMTrack[]` | Track objects with VRM data: `{ title, artist, audio_url, image_url, image_thumb_url?, vrm }` |
+| `getVRMTracks(playlist)` | `VRMTrack[]` | Track objects with VRM data: `{ title, artist, audio_url, audio_url_lossless?, image_url, image_thumb_url?, vrm }` |
 
 #### Types
 
@@ -1381,8 +1382,8 @@ Simple functions that return arrays of basic data from playlists. Works with bot
 | Type | Description |
 |------|-------------|
 | `PlaylistInput` | Union of `ServerlessPlaylist` or `RawArweavePlaylist` |
-| `SimpleTrack` | Simplified track: `{ title, artist, audio_url, image_url, image_thumb_url? }` |
-| `VRMTrack` | Track with VRM: `{ title, artist, audio_url, image_url, image_thumb_url?, vrm }` |
+| `SimpleTrack` | Simplified track: `{ title, artist, audio_url, audio_url_lossless?, image_url, image_thumb_url? }` |
+| `VRMTrack` | Track with VRM: `{ title, artist, audio_url, audio_url_lossless?, image_url, image_thumb_url?, vrm }` |
 
 *For usage examples, see [USAGE_IN_OTHER_PROJECTS.md](USAGE_IN_OTHER_PROJECTS.md#playlist-utilities).*
 
