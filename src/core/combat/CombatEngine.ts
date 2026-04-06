@@ -484,6 +484,38 @@ export class CombatEngine {
   }
 
   /**
+   * Use a legendary resistance to automatically succeed a saving throw.
+   *
+   * Per D&D 5e: If the boss fails a saving throw, it can choose to use one
+   * legendary resistance to succeed instead. This is a per-day resource
+   * (tracked by `legendaryResistancesRemaining` on the Combatant).
+   *
+   * @param combat - Combat instance (for history logging)
+   * @param bossCombatant - The boss combatant using the resistance
+   * @returns true if the resistance was available and used, false if no resistances remain
+   */
+  useLegendaryResistance(combat: CombatInstance, bossCombatant: Combatant): boolean {
+    const resistancesRemaining = bossCombatant.legendaryResistancesRemaining ?? 0;
+
+    if (resistancesRemaining <= 0) {
+      return false;
+    }
+
+    bossCombatant.legendaryResistancesRemaining = resistancesRemaining - 1;
+
+    combat.history.push({
+      type: 'statusEffectTick',
+      actor: bossCombatant,
+      result: {
+        success: true,
+        description: `${bossCombatant.character.name} used legendary resistance (${bossCombatant.legendaryResistancesRemaining} remaining today)`,
+      },
+    });
+
+    return true;
+  }
+
+  /**
    * Execute a dodge action (increase AC by 2)
    */
   executeDodge(combat: CombatInstance, combatant: Combatant): CombatAction {
