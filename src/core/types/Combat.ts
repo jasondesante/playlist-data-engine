@@ -6,6 +6,7 @@
 import type { CharacterSheet, Attack, Spell } from './Character';
 import type { EnvironmentalContext } from './Progression';
 import type { Equipment } from '../../utils/constants.ts';
+import type { LegendaryAction } from './Enemy';
 
 /**
  * DiceRollerAPI - Common interface for dice rolling implementations.
@@ -38,6 +39,38 @@ export interface DiceRollerAPI {
 }
 
 /**
+ * StatusEffectMechanics - Mechanical impact of a status effect on combat
+ *
+ * Used by CombatEngine to enforce combat rules for conditions like
+ * Charmed (disadvantage on attacks vs non-source), Frightened (disadvantage
+ * on attacks/checks while source visible), Stunned (skip turn), etc.
+ */
+export interface StatusEffectMechanics {
+  /** Combatant has disadvantage on attack rolls against targets other than source */
+  disadvantageOnAttackNonSource?: boolean;
+  /** Combatant has disadvantage on attack rolls (unconditional) */
+  disadvantageOnAttack?: boolean;
+  /** Combatant has disadvantage on ability checks */
+  disadvantageOnAbilityChecks?: boolean;
+  /** Melee attacks against this combatant have advantage */
+  advantageOnMeleeAttackAgainst?: boolean;
+  /** Ranged attacks against this combatant have advantage */
+  advantageOnRangedAttackAgainst?: boolean;
+  /** Combatant has disadvantage on DEX saving throws */
+  disadvantageOnDexSaves?: boolean;
+  /** Combatant's speed is set to 0 */
+  speedZero?: boolean;
+  /** Combatant skips their turn entirely */
+  skipTurn?: boolean;
+  /** Combatant is immune to a specific damage type while this effect is active */
+  damageImmunity?: DamageType;
+  /** Combatant has resistance to a specific damage type while this effect is active */
+  damageResistance?: DamageType;
+  /** Combatant has vulnerability to a specific damage type while this effect is active */
+  damageVulnerability?: DamageType;
+}
+
+/**
  * StatusEffect - Temporary condition affecting a combatant
  */
 export interface StatusEffect {
@@ -52,6 +85,15 @@ export interface StatusEffect {
 
   /** Optional image URL for larger display */
   image?: string;
+
+  /** Damage dealt at the start of each of the affected combatant's turns (e.g., Burning) */
+  damage?: number;
+
+  /** Damage type for the effect's damage (e.g., 'fire' for Burning) */
+  damageType?: DamageType;
+
+  /** Mechanical effects that CombatEngine enforces during combat */
+  mechanicalEffects?: StatusEffectMechanics;
 }
 
 /**
@@ -81,12 +123,14 @@ export interface Combatant {
  * CombatAction - An action taken during combat
  */
 export interface CombatAction {
-  type: 'attack' | 'spell' | 'dodge' | 'dash' | 'disengage' | 'help' | 'hide' | 'ready' | 'flee';
+  type: 'attack' | 'spell' | 'dodge' | 'dash' | 'disengage' | 'help' | 'hide' | 'ready' | 'flee' | 'useItem' | 'legendaryAction';
   actor: Combatant;
   target?: Combatant;
   targets?: Combatant[];
   attack?: Attack;
   spell?: Spell;
+  item?: Equipment;
+  legendaryAction?: LegendaryAction;
   result?: CombatActionResult;
 }
 

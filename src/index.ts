@@ -311,6 +311,7 @@ export type {
 // Combat types
 export type {
     StatusEffect,
+    StatusEffectMechanics,
     Combatant,
     CombatAction,
     CombatActionResult,
