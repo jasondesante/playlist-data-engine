@@ -153,6 +153,10 @@ export class CombatEngine {
 
   /**
    * Execute an attack action
+   *
+   * Checks attacker and target status effects for advantage/disadvantage
+   * (e.g., Charmed → disadvantage vs non-source, Frightened → disadvantage,
+   * Prone target → advantage on melee/ranged).
    */
   executeAttack(
     combat: CombatInstance,
@@ -160,7 +164,16 @@ export class CombatEngine {
     target: Combatant,
     attack: Attack
   ): CombatAction {
-    const result = this.attackResolver.resolveAttack(attacker, target, attack);
+    const advDisadv = this.getAttackAdvantageDisadvantage(attacker, target, attack);
+
+    let result;
+    if (advDisadv === 'advantage') {
+      result = this.attackResolver.attackWithAdvantage(attacker, target, attack);
+    } else if (advDisadv === 'disadvantage') {
+      result = this.attackResolver.attackWithDisadvantage(attacker, target, attack);
+    } else {
+      result = this.attackResolver.resolveAttack(attacker, target, attack);
+    }
 
     const action: CombatAction = {
       type: 'attack',
@@ -455,40 +468,121 @@ export class CombatEngine {
 
   /**
    * Advance to the next turn
-   * Resets action trackers and moves to next combatant
+   * Resets action trackers and moves to next combatant.
+   *
+   * Handles skipTurn effects (Stunned, Unconscious): the combatant's
+   * actions are marked as used and the turn auto-advances. Damage
+   * effects (Burning, Poison) are processed before the skip.
+   *
+   * Uses a loop instead of recursion to avoid resetting stunned
+   * combatants' action flags when advancing past them.
    */
   nextTurn(combat: CombatInstance): CombatInstance {
-    const current = combat.combatants[combat.currentTurnIndex];
+    // Reset action trackers for the combatant whose turn is ending
+    // (done once before the loop, not per-iteration)
+    const turnEnding = combat.combatants[combat.currentTurnIndex];
+    turnEnding.actionUsed = false;
+    turnEnding.bonusActionUsed = false;
+    turnEnding.reactionUsed = false;
 
-    // Reset action trackers for current combatant
-    current.actionUsed = false;
-    current.bonusActionUsed = false;
-    current.reactionUsed = false;
+    // Advance to next valid combatant, skipping stunned/defeated ones
+    const maxIterations = (this.config.maxTurnsBeforeDraw || 100) + combat.combatants.length;
 
-    // Move to next combatant
-    const nextIndex = (combat.currentTurnIndex + 1) % combat.combatants.length;
-    const isNewRound = nextIndex === 0;
+    for (let i = 0; i < maxIterations; i++) {
+      // Move to next combatant
+      const nextIndex = (combat.currentTurnIndex + 1) % combat.combatants.length;
+      const isNewRound = nextIndex === 0;
 
-    if (isNewRound) {
-      combat.roundNumber++;
+      if (isNewRound) {
+        combat.roundNumber++;
+      }
 
-      // Reset spell slots at end of each round (in some variants)
-      // This is optional based on variant rules
-    }
+      combat.currentTurnIndex = nextIndex;
+      combat.lastUpdated = Date.now();
 
-    combat.currentTurnIndex = nextIndex;
-    combat.lastUpdated = Date.now();
+      const nextCombatant = combat.combatants[nextIndex];
 
-    // Tick down status effects for the new current combatant
-    const nextCombatant = combat.combatants[nextIndex];
-    if (!nextCombatant.isDefeated) {
+      // Skip defeated combatants
+      if (nextCombatant.isDefeated) {
+        continue;
+      }
+
+      // Process start-of-turn damage effects (Burning, Poison)
+      this.processStartOfTurnDamage(combat, nextCombatant);
+
+      // If damage killed the combatant, check combat status and move on
+      if (nextCombatant.isDefeated) {
+        this.checkCombatStatus(combat);
+        if (!combat.isActive) return combat;
+        continue;
+      }
+
+      // Check for skipTurn BEFORE decrementing durations
+      // (so a duration-1 stun still causes the turn to be skipped)
+      if (this.shouldSkipTurn(nextCombatant)) {
+        nextCombatant.actionUsed = true;
+        nextCombatant.bonusActionUsed = true;
+        nextCombatant.reactionUsed = true;
+
+        const skipEffects = nextCombatant.statusEffects
+          .filter(e => e.mechanicalEffects?.skipTurn)
+          .map(e => e.name);
+
+        combat.history.push({
+          type: 'statusEffectTick',
+          actor: nextCombatant,
+          result: {
+            success: true,
+            description: `${nextCombatant.character.name}'s turn is skipped (${skipEffects.join(', ')})`,
+          },
+        });
+
+        // Decrement durations after skip (stun of duration 1: skip, then expire)
+        this.tickStatusEffects(combat, nextCombatant);
+
+        this.checkCombatStatus(combat);
+        if (!combat.isActive) return combat;
+
+        // Continue the loop to advance past this stunned combatant
+        continue;
+      }
+
+      // Normal turn: tick status effects (decrement durations)
       this.tickStatusEffects(combat, nextCombatant);
+
+      // Found a valid combatant — stop advancing
+      break;
     }
 
     // Check for combat end conditions
     this.checkCombatStatus(combat);
 
     return combat;
+  }
+
+  /**
+   * Process start-of-turn damage effects (Burning, Poison, etc.).
+   *
+   * Deals damage equal to each effect's `damage` value and logs it
+   * in combat history. Called before the skip-turn check so that
+   * stunned combatants still take damage from burning/poison.
+   */
+  private processStartOfTurnDamage(combat: CombatInstance, combatant: Combatant): void {
+    for (const effect of combatant.statusEffects) {
+      if (effect.damage && effect.damage > 0) {
+        const actualDamage = this.applyDamage(combatant, effect.damage);
+        combat.history.push({
+          type: 'statusEffectTick',
+          actor: combatant,
+          result: {
+            success: true,
+            damage: actualDamage,
+            damageType: effect.damageType,
+            description: `${combatant.character.name} takes ${actualDamage} ${effect.damageType ?? ''} damage from ${effect.name}`,
+          },
+        });
+      }
+    }
   }
 
   /**
@@ -521,6 +615,72 @@ export class CombatEngine {
         },
       });
     }
+  }
+
+  /**
+   * Determine whether an attack should be rolled with advantage, disadvantage,
+   * or normally, based on the attacker's and target's active status effects.
+   *
+   * Advantage and disadvantage cancel each other out per D&D 5e rules.
+   *
+   * Sources of advantage:
+   * - Target has `advantageOnMeleeAttackAgainst` and attack is melee (Prone)
+   * - Target has `advantageOnRangedAttackAgainst` and attack is ranged (Prone)
+   *
+   * Sources of disadvantage:
+   * - Attacker has `disadvantageOnAttack` (Frightened, Prone attacker)
+   * - Attacker has `disadvantageOnAttackNonSource` and target is not the source (Charmed)
+   */
+  private getAttackAdvantageDisadvantage(
+    attacker: Combatant,
+    target: Combatant,
+    attack: Attack,
+  ): 'advantage' | 'disadvantage' | 'normal' {
+    let hasAdvantage = false;
+    let hasDisadvantage = false;
+    const attackType = attack.type ?? 'melee';
+
+    // Check attacker's effects for disadvantage
+    for (const effect of attacker.statusEffects) {
+      if (!effect.mechanicalEffects) continue;
+
+      if (effect.mechanicalEffects.disadvantageOnAttack) {
+        hasDisadvantage = true;
+      }
+
+      if (effect.mechanicalEffects.disadvantageOnAttackNonSource && effect.source !== target.id) {
+        hasDisadvantage = true;
+      }
+    }
+
+    // Check target's effects for advantage against them
+    for (const effect of target.statusEffects) {
+      if (!effect.mechanicalEffects) continue;
+
+      if (effect.mechanicalEffects.advantageOnMeleeAttackAgainst && attackType === 'melee') {
+        hasAdvantage = true;
+      }
+
+      if (effect.mechanicalEffects.advantageOnRangedAttackAgainst && attackType === 'ranged') {
+        hasAdvantage = true;
+      }
+    }
+
+    // Advantage and disadvantage cancel out (D&D 5e)
+    if (hasAdvantage && hasDisadvantage) return 'normal';
+    if (hasAdvantage) return 'advantage';
+    if (hasDisadvantage) return 'disadvantage';
+    return 'normal';
+  }
+
+  /**
+   * Check if a combatant has any status effect that causes them to skip
+   * their turn (e.g., Stunned, Unconscious).
+   */
+  private shouldSkipTurn(combatant: Combatant): boolean {
+    return combatant.statusEffects.some(
+      e => e.mechanicalEffects?.skipTurn
+    );
   }
 
   /**

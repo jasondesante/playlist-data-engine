@@ -67,7 +67,12 @@ export class SpellCaster {
 
         // Apply effects to targets based on saving throw
         for (const target of targets) {
-          const saveResult = this.makeSavingThrow(target, spell.saving_throw, saveDC);
+          // Check for disadvantage on the save ability (e.g., Stunned → disadvantage on DEX saves)
+          const disadvantagedAbility = spell.saving_throw.toLowerCase();
+          const hasDisadvantage = disadvantagedAbility === 'dexterity' &&
+            target.statusEffects.some(e => e.mechanicalEffects?.disadvantageOnDexSaves);
+
+          const saveResult = this.makeSavingThrow(target, spell.saving_throw, saveDC, hasDisadvantage);
           if (!saveResult) {
             damage = this.diceRoller
               ? this.diceRoller.calculateDamage(spell.damage_dice, 0, false)
@@ -183,8 +188,13 @@ export class SpellCaster {
   /**
    * Make a saving throw against a spell
    * Returns true if save succeeds, false if fails
+   *
+   * @param target - The combatant making the save
+   * @param saveAbility - The ability score used for the save (e.g., 'dexterity')
+   * @param saveDC - The difficulty class to meet or exceed
+   * @param disadvantage - If true, roll with disadvantage (roll twice, take lower)
    */
-  makeSavingThrow(target: Combatant, saveAbility: string, saveDC: number): boolean {
+  makeSavingThrow(target: Combatant, saveAbility: string, saveDC: number, disadvantage: boolean = false): boolean {
     const abilityKey = saveAbility.toLowerCase() as keyof typeof target.character.ability_modifiers;
     const abilityModifier = target.character.ability_modifiers[abilityKey] || 0;
 
@@ -194,9 +204,19 @@ export class SpellCaster {
 
     const proficiencyBonus = hasProficiency ? target.character.proficiency_bonus : 0;
 
-    const saveRoll = this.diceRoller
-      ? this.diceRoller.rollSavingThrow(abilityModifier, proficiencyBonus)
-      : DiceRoller.rollSavingThrow(abilityModifier, proficiencyBonus);
+    let saveRoll: number;
+
+    if (disadvantage) {
+      // Roll with disadvantage: roll twice, take the lower
+      const disadvantageResult = this.diceRoller
+        ? this.diceRoller.rollWithDisadvantage()
+        : DiceRoller.rollWithDisadvantage();
+      saveRoll = disadvantageResult.result + abilityModifier + proficiencyBonus;
+    } else {
+      saveRoll = this.diceRoller
+        ? this.diceRoller.rollSavingThrow(abilityModifier, proficiencyBonus)
+        : DiceRoller.rollSavingThrow(abilityModifier, proficiencyBonus);
+    }
 
     return saveRoll >= saveDC;
   }
