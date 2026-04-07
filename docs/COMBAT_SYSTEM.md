@@ -10,19 +10,72 @@ Complete guide to the combat system in the Playlist Data Engine.
    - [Enemy Generation](#enemy-generation)
    - [Treasure](#treasure)
    - [Box Rewards](#box-rewards)
+     - [Awarding Boxes as Treasure](#awarding-boxes-as-treasure)
+     - [Opening Box Rewards After Combat](#opening-box-rewards-after-combat)
+     - [Box Behavior in Combat Rewards](#box-behavior-in-combat-rewards)
      - [Locked Box Rewards](#locked-box-rewards)
+     - [Checking if a Reward Is a Box](#checking-if-a-reward-is-a-box)
+     - [Example: Boss Loot Box Configuration](#example-boss-loot-box-configuration)
    - [Spell Casting](#spell-casting)
    - [Combat Actions](#combat-actions)
    - [HP Management](#hp-management)
    - [Query Methods](#query-methods)
    - [Action Economy](#action-economy)
    - [Status Effects](#status-effects)
+     - [StatusEffect Interface](#statuseffect-interface)
+     - [StatusEffectMechanics Interface](#statuseffectmechanics-interface)
+     - [Mechanically Enforced Conditions](#mechanically-enforced-conditions)
+     - [Duration Tracking Lifecycle](#duration-tracking-lifecycle)
+     - [Applying Status Effects](#applying-status-effects)
+     - [Stacking Rules](#stacking-rules)
+     - [Concentration Tracking](#concentration-tracking)
+     - [Removing Expired Effects](#removing-expired-effects)
+     - [Spell-Based Status Effects](#spell-based-status-effects)
+     - [Advantage/Disadvantage from Effects](#advantagedisadvantage-from-effects)
    - [Combat History](#combat-history)
    - [Spell Slots](#spell-slots)
    - [Multiple Equipped Weapons](#multiple-equipped-weapons)
    - [Unarmed Combat](#unarmed-combat)
    - [Manual Attack Objects](#manual-attack-objects)
-2. [Dice Roller](#dice-roller)
+   - [Legendary Actions](#legendary-actions)
+     - [LegendaryAction Interface](#legendaryaction-interface)
+     - [Combatant Legendary Tracking](#combatant-legendary-tracking)
+     - [Action Point Tracking](#action-point-tracking)
+     - [Executing Legendary Actions](#executing-legendary-actions)
+     - [Legendary Resistances](#legendary-resistances)
+     - [AI and Legendary Actions](#ai-and-legendary-actions)
+   - [Combat AI](#combat-ai)
+     - [AIPlayStyle](#aiplaystyle)
+     - [AIConfig](#aiconfig)
+     - [AIDecision](#aidecision)
+     - [Decision-Making Process](#decision-making-process)
+     - [Target Selection](#target-selection)
+     - [Weapon Selection](#weapon-selection)
+     - [Spell Selection](#spell-selection)
+     - [Support Archetype AI](#support-archetype-ai)
+     - [AIThreatAssessment](#aithreatassessment)
+     - [AICombatRunner](#aicombatrunner)
+     - [CombatantMetrics](#combatantmetrics)
+   - [Monte Carlo Simulation](#monte-carlo-simulation)
+     - [CombatSimulator](#combatsimulator)
+     - [SimulationConfig](#simulationconfig)
+     - [SimulationResults](#simulationresults)
+     - [SimulationSummary](#simulationsummary)
+     - [CombatantSimulationMetrics](#combatantsimulationmetrics)
+     - [HistogramBucket](#histogrambucket)
+     - [Detailed Run Logs](#detailed-run-logs)
+     - [Code Examples](#code-examples)
+     - [Determinism](#determinism)
+     - [Recommended Run Counts](#recommended-run-counts)
+2. [Seeded Dice Rolling](#seeded-dice-rolling)
+   - [When to Use Seeded vs Random Rolling](#when-to-use-seeded-vs-random-rolling)
+   - [Creating a Seeded Roller](#creating-a-seeded-roller)
+   - [Injecting into CombatEngine](#injecting-into-combatengine)
+   - [Determinism Guarantees](#determinism-guarantees)
+   - [API Reference](#api-reference)
+   - [How CombatSimulator Manages Seeding](#how-combatsimulator-manages-seeding)
+3. [Dice Roller](#dice-roller)
+4. [See Also](#see-also)
 
 ---
 
@@ -613,36 +666,192 @@ Action economy enforcement is manual - check flags before executing actions that
 
 ### Status Effects
 
-Combatants can have active conditions applied:
+Status effects are temporary conditions that modify how a combatant functions in combat. They can deal damage, impose advantage/disadvantage, skip turns, and more. The engine tracks durations, enforces mechanical effects, and manages concentration.
+
+#### StatusEffect Interface
 
 ```typescript
-// Access status effects on a combatant
-const combatant = combatInstance.combatants[0];
-combatant.statusEffects;
-// [
-//   { name: 'Burning', duration: 3, source: 'Fireball', concentration: false },
-//   { name: 'Charmed', duration: 1, source: 'Enchant', concentration: true },
-//   ...
-// ]
-
-// StatusEffect interface
 interface StatusEffect {
-  name: string;           // Condition name (e.g., 'Burning', 'Charmed')
-  duration: number;       // Remaining rounds (0 = expires at end of turn)
-  source: string;         // What applied the effect
-  concentration: boolean; // Requires caster concentration
+  name: string;           // e.g., 'Burning', 'Charmed', 'Stunned'
+  description: string;    // Human-readable description
+  duration: number;       // Rounds remaining (decremented each turn)
+  source?: string;        // Combatant ID that applied the effect
+  hasConcentration?: boolean;  // Requires caster to maintain concentration
+
+  icon?: string;          // Optional icon URL for UI display
+  image?: string;         // Optional image URL for larger display
+
+  damage?: number;        // Damage dealt at start of each of the affected combatant's turns
+  damageType?: DamageType; // Damage type for the effect's damage (e.g., 'fire')
+
+  mechanicalEffects?: StatusEffectMechanics;  // Combat rules enforced by the engine
 }
-
-// Example conditions
-'Burning'    // Ongoing fire damage
-'Charmed'    // Cannot attack caster, disadvantage on some checks
-'Frightened' // Disadvantage on attacks while source is visible
-'Prone'      // Disadvantage on melee attacks, advantage on ranged attacks
-'Stunned'    // Incapacitated, disadvantage on Dex saves, speed 0
-
-// Effects are typically applied via spell casting
-// See SpellCaster.applyStatusEffect() for effect application logic
 ```
+
+#### StatusEffectMechanics Interface
+
+The `mechanicalEffects` field controls what the engine enforces automatically:
+
+```typescript
+interface StatusEffectMechanics {
+  disadvantageOnAttackNonSource?: boolean;  // Charmed: disadvantage on attacks vs non-source
+  disadvantageOnAttack?: boolean;           // Frightened/Prone: disadvantage on all attacks
+  disadvantageOnAbilityChecks?: boolean;    // Frightened: disadvantage on ability checks
+  advantageOnMeleeAttackAgainst?: boolean;  // Prone: melee attacks against this target have advantage
+  advantageOnRangedAttackAgainst?: boolean; // Prone: ranged attacks against this target have advantage
+  disadvantageOnDexSaves?: boolean;         // Stunned/Paralyzed/Restrained: disadvantage on DEX saves
+  speedZero?: boolean;                      // Stunned/Paralyzed/Restrained: speed set to 0
+  skipTurn?: boolean;                       // Stunned/Paralyzed: skip turn entirely
+  damageImmunity?: DamageType;              // Immune to a specific damage type
+  damageResistance?: DamageType;            // Resist a specific damage type (half damage)
+  damageVulnerability?: DamageType;         // Vulnerable to a specific damage type (double damage)
+}
+```
+
+#### Mechanically Enforced Conditions
+
+The engine automatically enforces combat rules for the following conditions:
+
+| Condition | Concentration | Mechanical Effects |
+|-----------|:---:|---|
+| **Charmed** | Yes | Disadvantage on attack rolls against targets other than the source |
+| **Frightened** | Yes | Disadvantage on attack rolls and ability checks |
+| **Stunned** | No | Disadvantage on DEX saves, speed 0, skip turn entirely |
+| **Paralyzed** | No | Disadvantage on DEX saves, speed 0, skip turn entirely |
+| **Restrained** | Yes | Disadvantage on DEX saves, speed 0 |
+| **Poisoned** | No | Disadvantage on attack rolls and ability checks |
+| **Blinded** | No | Disadvantage on attack rolls and ability checks |
+| **Deafened** | No | (No mechanical effects — tagged for spell system use) |
+| **Burning** | No | Deals `damage` fire damage at start of each turn |
+
+> **Note:** Prone is listed in D&D 5e rules but is not currently mapped as a tag-based status effect. It can be applied manually with `advantageOnMeleeAttackAgainst`, `advantageOnRangedAttackAgainst`, and `disadvantageOnAttack` flags.
+
+#### Duration Tracking Lifecycle
+
+Status effects follow this lifecycle during combat:
+
+```
+Applied → Active (each turn: damage → skip check → decrement) → Expired → Removed
+```
+
+Each combatant's turn in `nextTurn()` processes in this order:
+
+1. **Start-of-turn damage** — effects with `damage > 0` deal damage (Burning, Poison)
+2. **Skip-turn check** — if any effect has `mechanicalEffects.skipTurn`, the turn is skipped entirely. Incapacitated combatants also lose concentration.
+3. **Duration decrement** — all effect durations are decremented by 1
+4. **Expiration removal** — effects with `duration <= 0` are removed. If a concentrated effect expires, `concentratingOn` is cleared.
+
+A `statusEffectTick` action is recorded in combat history whenever effects expire, damage is dealt, turns are skipped, or concentration is lost.
+
+#### Applying Status Effects
+
+Use `CombatEngine.applyStatusEffect()` to apply effects. This handles stacking, concentration tracking, and one-concentration-per-combatant rules:
+
+```typescript
+// Apply a Burning effect with damage
+combat.applyStatusEffect(target, {
+  name: 'Burning',
+  description: 'On fire from Fireball',
+  duration: 3,
+  source: caster.id,
+  damage: 6,
+  damageType: 'fire',
+  mechanicalEffects: {
+    // Burning has no mechanical effects beyond damage
+  }
+});
+
+// Apply a concentration effect (e.g., Charmed)
+combat.applyStatusEffect(target, {
+  name: 'Charmed',
+  description: `Charmed by ${caster.character.name}`,
+  duration: 1,
+  source: caster.id,
+  hasConcentration: true,
+  mechanicalEffects: {
+    disadvantageOnAttackNonSource: true,
+  }
+});
+```
+
+#### Stacking Rules
+
+When an effect with the **same name** already exists on the combatant:
+
+- **Duration** — refreshed to the higher of the existing and new durations
+- **Damage** — keeps the higher damage value
+- **Mechanical effects** — merged (new flags overwrite existing)
+- **Source** — updated to the new source
+- **Damage type** — updated to the new type
+- **Concentration** — new concentration effect replaces old concentration effect
+
+Different-named effects stack independently — a combatant can be both Charmed and Frightened simultaneously.
+
+#### Concentration Tracking
+
+A combatant can maintain concentration on **one effect at a time**. The `Combatant.concentratingOn` field tracks the name of the concentrated effect.
+
+**Concentration is broken when:**
+- The concentrating combatant takes damage and fails a CON save (DC 10 or half damage, whichever is higher)
+- A new concentration spell is cast (replaces the old one)
+- The combatant becomes incapacitated (Stunned, Paralyzed)
+- The combatant is defeated (HP reaches 0)
+- The concentrated effect expires naturally
+
+```typescript
+// Check if a combatant is concentrating
+combatant.concentratingOn;  // e.g., 'Charmed' or undefined
+
+// Check concentration when damage is taken (automatic via executeAttack)
+// Or check manually:
+const broken = combat.checkConcentration(combatInstance, combatant, 15);
+// Returns true if concentration was broken
+
+// Drop concentration manually
+const dropped = combat.dropConcentration(combatant, 'Voluntarily ended');
+// Returns the dropped StatusEffect or undefined
+```
+
+#### Removing Expired Effects
+
+```typescript
+// Remove effects with duration <= 0
+const expired = combat.removeExpiredStatusEffects(combatant);
+// Returns array of removed StatusEffect objects
+// Also clears combatant.concentratingOn if the concentrated effect expired
+```
+
+This is called automatically by `nextTurn()` during the duration tick-down step. You typically don't need to call it manually.
+
+#### Spell-Based Status Effects
+
+`SpellCaster` maps spell tags to status effects via the `TAG_STATUS_EFFECTS` constant:
+
+| Tag | Effect Name | Concentration |
+|-----|-------------|:---:|
+| `charm` | Charmed | Yes |
+| `frighten` | Frightened | Yes |
+| `stun` | Stunned | No |
+| `paralyze` | Paralyzed | No |
+| `restrain` | Restrained | Yes |
+| `poison` | Poisoned | No |
+| `blind` | Blinded | No |
+| `deafen` | Deafened | No |
+| `burn` | Burning | No |
+
+Spells can also apply status effects via keyword matching on `spell.description` and `spell.effect` text (fallback when no tags are present). Tag-based matching takes priority over text matching to prevent duplicates.
+
+#### Advantage/Disadvantage from Effects
+
+The engine checks status effects automatically during `executeAttack()` and `castSpell()`:
+
+- **`disadvantageOnAttackNonSource`** — attacker has disadvantage if the target is not the source combatant (Charmed)
+- **`disadvantageOnAttack`** — attacker has disadvantage unconditionally (Frightened, Poisoned, Blinded)
+- **`advantageOnMeleeAttackAgainst`** — melee attacks against this target have advantage (Prone)
+- **`advantageOnRangedAttackAgainst`** — ranged attacks against this target have advantage (Prone)
+- **`disadvantageOnDexSaves`** — target rolls DEX saving throws with disadvantage (Stunned, Paralyzed, Restrained)
+
+Per D&D 5e rules, advantage and disadvantage cancel each other out — if a combatant has both advantage and disadvantage on a roll, the roll is made normally.
 
 ### Combat History
 
@@ -660,7 +869,7 @@ combatInstance.history;
 // ]
 
 // CombatAction properties
-action.type;     // 'attack' | 'spell' | 'dodge' | 'dash' | 'disengage' | 'help' | 'hide' | 'ready' | 'flee'
+action.type;     // 'attack' | 'spell' | 'dodge' | 'dash' | 'disengage' | 'help' | 'hide' | 'ready' | 'flee' | 'useItem' | 'legendaryAction' | 'statusEffectTick'
 action.actor;    // Combatant who performed the action
 action.target;   // Single target (for attacks)
 action.targets;  // Multiple targets (for spells)
@@ -723,6 +932,764 @@ combat.executeWeaponAttack(combatInstance, current, target);
 ### Manual Attack Objects
 
 For special cases, you can still manually construct `Attack` objects using `executeAttack()` directly. See `Attack` type in DATA_ENGINE_REFERENCE.md for all available properties.
+
+### Legendary Actions
+
+Legendary actions are special abilities available to boss-tier enemies. Unlike regular actions, legendary actions are taken **outside the boss's own turn** — other creatures can take legendary actions at the end of another creature's turn. A boss starts each round with 3 legendary action points and spends them to use its abilities. The cost of each action varies (1, 2, or 3 points).
+
+#### LegendaryAction Interface
+
+Each legendary action is defined on the boss's `character.legendary_config.actions` array:
+
+```typescript
+interface LegendaryAction {
+  id: string;           // Unique identifier (e.g., 'tail_sweep')
+  name: string;         // Display name (e.g., 'Tail Sweep')
+  description: string;  // What the action does
+  cost: number;         // Action points consumed (1, 2, or 3)
+  effect: string;       // Combat system effect description
+  damage?: string;      // Dice formula if it deals damage (e.g., '2d8 + 5')
+  damageType?: string;  // Damage type (e.g., 'bludgeoning')
+  archetypes: EnemyArchetype[];
+  tags?: string[];      // Tags for AI filtering (e.g., 'damage', 'control', 'healing')
+}
+
+interface LegendaryConfig {
+  resistances: number;       // Legendary resistances per day
+  actions: LegendaryAction[]; // Available legendary actions
+  lairActionHint?: string;    // Optional lair action hint
+}
+```
+
+#### Combatant Legendary Tracking
+
+Boss combatants have two additional fields for tracking legendary resources:
+
+```typescript
+interface Combatant {
+  // ... standard fields ...
+  legendaryActionsRemaining?: number;   // Reset to 3 at the start of each round
+  legendaryResistancesRemaining?: number; // Per-day resource, set from config at combat start
+}
+```
+
+These are initialized automatically by `CombatEngine.createCombatant()` when a character has `legendary_config`.
+
+#### Action Point Tracking
+
+- Each round, all non-defeated boss combatants have their legendary action points reset to **3**
+- Reset happens at the start of each new round (when `nextTurn()` wraps around to turn index 0)
+- Points are spent when `executeLegendaryAction()` is called, deducted by the action's `cost`
+- If a boss doesn't have enough points for an action, the engine throws an error
+
+```
+Round 1 starts → boss gets 3 points
+  Player turn ends → boss uses "Tail Sweep" (cost 2) → 1 point remaining
+  Player turn ends → boss uses "Frightening Presence" (cost 1) → 0 points remaining
+  Player turn ends → boss tries action → throws: not enough points
+Round 2 starts → boss gets 3 points again
+  ...
+```
+
+#### Executing Legendary Actions
+
+Use `CombatEngine.executeLegendaryAction()` to have a boss use a legendary action:
+
+```typescript
+// Find a boss combatant
+const boss = combatInstance.combatants.find(c => c.character.legendary_config);
+const target = combat.getLivingCombatants(combatInstance).find(c => c.id !== boss.id);
+
+// Get a legendary action from the boss's config
+const action = boss.character.legendary_config.actions[0];
+// e.g., { id: 'tail_sweep', name: 'Tail Sweep', cost: 2, damage: '2d8+5', ... }
+
+// Execute the legendary action
+const legendaryAction = combat.executeLegendaryAction(combatInstance, boss, action, target);
+
+console.log(legendaryAction.result.description);
+// "Dragon Lord uses Tail Sweep on Aragorn for 12 bludgeoning damage (2 action points spent, 1 remaining)"
+
+// Check remaining points
+boss.legendaryActionsRemaining; // 1
+```
+
+**Parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `combat` | `CombatInstance` | The active combat instance |
+| `bossCombatant` | `Combatant` | The boss using the legendary action |
+| `action` | `{ id, name, cost, effect, damage?, damage_type?, ... }` | The action to execute (must belong to the boss) |
+| `target?` | `Combatant` | Optional target for damaging actions |
+
+**What the engine does:**
+1. Validates the action exists on the boss's `legendary_config.actions`
+2. Checks that enough action points are available
+3. Spends the action points (deducts `cost` from `legendaryActionsRemaining`)
+4. If the action has a `damage` formula and a target is provided, rolls damage and applies it
+5. Records a `legendaryAction` entry in combat history
+6. Checks if the target was defeated (updates combat status)
+
+#### Legendary Resistances
+
+Legendary resistances allow a boss to automatically succeed on a failed saving throw. This is a **per-day resource** (not per-round).
+
+```typescript
+// Boss fails a saving throw against a spell
+const failedSave = false;
+
+if (!failedSave) {
+  // Use legendary resistance to succeed instead
+  const used = combat.useLegendaryResistance(combatInstance, boss);
+  if (used) {
+    console.log(`${boss.character.name} used legendary resistance!`);
+    console.log(`Remaining today: ${boss.legendaryResistancesRemaining}`);
+  } else {
+    console.log('No legendary resistances remaining — boss suffers the effect');
+  }
+}
+```
+
+- Returns `true` if a resistance was available and consumed
+- Returns `false` if no resistances remain (`legendaryResistancesRemaining` is 0)
+- Resistant count is set from `legendary_config.resistances` at combat start
+- Resistant count does **not** reset between rounds (per-day, not per-round)
+- Usage is recorded in combat history
+
+#### AI and Legendary Actions
+
+The combat AI (`CombatAI`) automatically selects and uses legendary actions for boss enemies via `selectLegendaryAction()`. After each non-boss turn, the `AICombatRunner` checks if any boss has remaining legendary action points and chains actions until the budget is exhausted or no valid actions remain.
+
+- **Normal AI**: prefers lowest-cost damage actions (spread points across the round for sustained pressure)
+- **Aggressive AI**: prefers highest-cost damage actions (maximize immediate impact)
+
+### Combat AI
+
+The combat AI controls both player characters and enemies during simulated combat. It produces a decision for each combatant's turn based on a threat assessment of the battlefield and a configurable play style. The AI is **deterministic** — given the same combat state, it always makes the same decision. All randomness comes from the dice roller when the `AICombatRunner` executes the decision.
+
+#### AIPlayStyle
+
+Two fundamental strategies drive all AI decisions:
+
+```typescript
+type AIPlayStyle = 'normal' | 'aggressive';
+```
+
+| Style | Philosophy | Targeting | Spells | Resources | Defensive |
+|-------|-----------|-----------|--------|-----------|-----------|
+| **Normal** | Baseline difficulty measurement | Lowest AC (easiest to hit) | Cantrips preferred; leveled only when clearly better | Conserves spell slots; saves for later rounds | Dodges when isolated + low HP |
+| **Aggressive** | Maximum threat ceiling | Lowest HP (finish them off) | Always highest damage; burns all slots | No conservation; proactive healing to maintain max HP | Never dodges, never flees |
+
+Comparing Normal vs Aggressive results reveals the true difficulty range of an encounter.
+
+#### AIConfig
+
+Controls how both sides fight. Each side can have a different style, and individual combatants can be overridden:
+
+```typescript
+import { CombatAI, AICombatRunner } from 'playlist-data-engine';
+
+// Everyone plays the same style
+const balancedConfig = {
+  playerStyle: 'normal',
+  enemyStyle: 'normal',
+};
+
+// Mixed: players are cautious, enemies go all-out
+const threatConfig = {
+  playerStyle: 'normal',
+  enemyStyle: 'aggressive',
+};
+
+// Per-combatant overrides (combatant ID → style)
+const customConfig = {
+  playerStyle: 'normal',
+  enemyStyle: 'normal',
+  overrides: new Map([
+    ['enemy_4', 'aggressive'],  // This specific boss fights aggressively
+  ]),
+};
+
+// Optional: enable class features (Sneak Attack, Divine Smite, etc.)
+const classFeaturesConfig = {
+  playerStyle: 'aggressive',
+  enemyStyle: 'aggressive',
+  enableClassFeatures: true,
+};
+```
+
+#### AIDecision
+
+The output of the AI for each turn. Contains everything needed to execute one combatant's action:
+
+```typescript
+interface AIDecision {
+  action: 'attack' | 'castSpell' | 'dodge' | 'dash' | 'disengage'
+        | 'flee' | 'useItem' | 'legendaryAction' | 'skip';
+  target?: string;           // Single-target combatant ID
+  targetIds?: string[];      // Multi-target spell combatant IDs
+  weaponName?: string;       // Weapon to attack with
+  spellName?: string;        // Spell to cast
+  itemName?: string;         // Consumable to use
+  legendaryActionId?: string; // Legendary action to execute
+  reasoning?: string;        // Human-readable explanation
+}
+```
+
+The `reasoning` field explains why the AI chose its action — useful for debugging and UI tooltips.
+
+#### Decision-Making Process
+
+Each turn, the AI follows a priority chain:
+
+```
+1. Assess Threat
+   └─ Evaluate: HP%, ally/enemy counts, spell slots, items, round number
+
+2. Spell Selection (highest priority)
+   ├─ Healing needed? → Cast heal on lowest-HP ally
+   ├─ Damage spell better than attack? → Cast it
+   ├─ Control spell useful? (2+ enemies, normal style) → Cast it
+   └─ Buff available? (healthy, normal style) → Buff strongest ally
+
+3. Item Usage
+   └─ Low HP + no spell slots? → Use healing item
+
+4. Defensive Actions
+   └─ Isolated + low HP + multiple enemies (normal only)? → Dodge
+
+5. Weapon Attack (fallback)
+   └─ Pick best weapon → Attack selected target
+```
+
+The AI never wastes a turn. If no spell/item/defensive action is warranted, it always falls through to a weapon attack.
+
+#### Target Selection
+
+| Style | Strategy | Rationale |
+|-------|----------|-----------|
+| **Normal** | Lowest AC enemy | Consistent damage output — easier to hit |
+| **Aggressive** | Lowest HP enemy | Action economy — removing enemies reduces incoming damage |
+
+#### Weapon Selection
+
+Evaluates all equipped weapons + unarmed strike. Scores based on expected damage and attack bonus:
+
+```typescript
+// Normal: balanced score (damage + small bonus for attack accuracy)
+score = expectedDamage + attackBonus * 0.1
+
+// Aggressive: pure damage
+score = expectedDamage
+```
+
+Ranged weapons use DEX, melee weapons use STR for attack bonus calculation.
+
+#### Spell Selection
+
+Spells are evaluated by tag (via `SpellCaster` static helpers) and expected damage:
+
+| Category | Tag Detection | Normal Behavior | Aggressive Behavior |
+|----------|--------------|-----------------|-------------------|
+| **Damage** | `damage` | Cantrips preferred; leveled only if 50%+ better | Always highest damage spell |
+| **Healing** | `healing`, `ally`, `self` | Heal allies below 50%; self when below 25% | Heal anyone below 75% |
+| **Control** | `control`, `debuff` | Use when 2+ enemies | Never (wastes damage turns) |
+| **Buff** | `buff` | Buff strongest ally when healthy | Never (wastes damage turns) |
+| **AoE/Multi** | `aoe`, `multi-target` | Damage × target count (cap 4) | Always if available |
+
+AoE and multi-target spells get an expected damage multiplier based on enemy count. Leveled spells get a 1.5× bonus over cantrips to account for their resource cost.
+
+#### Support Archetype AI
+
+The AI detects support combatants (healers/buffers) by checking spell tags:
+
+```typescript
+const ai = new CombatAI(config);
+const isSupport = ai.isSupportArchetype(combatant);
+// true if combatant has healing or buff spells
+```
+
+Support AI differences:
+- Prioritizes healing the lowest-HP ally over dealing damage
+- Normal support only heals allies below 50% HP; aggressive heals everyone below 75%
+- Buff spells target the ally with highest STR/DEX (best damage dealer)
+
+#### AIThreatAssessment
+
+Computed each turn to drive all decisions. Provides a battlefield snapshot:
+
+```typescript
+interface AIThreatAssessment {
+  myHPPercent: number;           // 0.0 – 1.0
+  myAC: number;                 // Armor class
+  lowestAllyHPPercent: number;  // 1.0 if no allies
+  lowestEnemyHP: number;        // Infinity if no enemies
+  highestEnemyDamage: number;   // Estimated enemy DPR
+  partySize: number;            // Living allies (incl. self)
+  enemyCount: number;           // Living enemies
+  roundNumber: number;          // Current round
+  isLowHP: boolean;             // Below 25%
+  isCriticalHP: boolean;        // Below 10%
+  hasHealingItems: boolean;     // Usable items in inventory
+  hasSpellSlots: boolean;       // Remaining leveled spell slots
+  hasRemainingLimitedAbilities: boolean; // Legendary actions/resistances
+}
+```
+
+Access the assessment directly for custom AI logic:
+
+```typescript
+const ai = new CombatAI(config);
+const threat = ai.assessThreat(combatant, combatInstance);
+console.log(`${combatant.character.name}: ${Math.round(threat.myHPPercent * 100)}% HP, ${threat.enemyCount} enemies`);
+```
+
+#### AICombatRunner
+
+The `AICombatRunner` orchestrates full combat encounters. It bridges the gap between `CombatAI` (decisions) and `CombatEngine` (execution):
+
+```typescript
+import { AICombatRunner, createSeededRoller } from 'playlist-data-engine';
+
+const runner = new AICombatRunner();
+
+const { combat, result, metrics } = runner.runFullCombat(
+  players,          // CharacterSheet[]
+  enemies,          // CharacterSheet[]
+  {
+    playerStyle: 'normal',
+    enemyStyle: 'aggressive',
+  },
+  { maxTurnsBeforeDraw: 50 },  // Optional combat config
+  createSeededRoller('sim-seed-42'),  // Optional: deterministic rolls
+);
+
+console.log(result.winnerSide);     // 'player' | 'enemy' | 'draw'
+console.log(result.roundsElapsed);  // Number of rounds
+console.log(result.xpAwarded);      // XP from defeated enemies
+
+// Per-combatant metrics
+for (const [id, m] of metrics) {
+  console.log(`${m.name}: ${m.totalDamageDealt} damage, ${m.roundsSurvived} rounds, survived=${m.survived}`);
+}
+```
+
+**AICombatResult interface:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `combat` | `CombatInstance` | Full combat instance with complete action history |
+| `result` | `CombatResult` | Final result (winner, XP, rounds, treasure) |
+| `metrics` | `Map<string, CombatantMetrics>` | Per-combatant stats computed from history |
+
+**Combat lifecycle inside the runner:**
+
+```
+startCombat()
+  └─ For each turn while combat is active:
+      ├─ Skip defeated combatants
+      ├─ Skip stunned/unconscious combatants (skipTurn effects)
+      ├─ AI decides → executeDecision()
+      │   ├─ attack → executeWeaponAttack()
+      │   ├─ castSpell → executeCastSpell()
+      │   ├─ dodge/dash/disengage → engine methods
+      │   ├─ flee → executeFlee() (fallback to attack if disabled)
+      │   ├─ useItem → log in history (no mechanical effect yet)
+      │   ├─ legendaryAction → executeLegendaryAction()
+      │   └─ skip → log and advance
+      ├─ Process boss legendary actions (chain until budget exhausted)
+      └─ nextTurn()
+  └─ getCombatResult() → computeMetrics()
+```
+
+**Without a seeded roller**, the runner uses `Math.random()` — suitable for live gameplay:
+
+```typescript
+// Random combat (live gameplay)
+const { combat, result } = runner.runFullCombat(players, enemies, {
+  playerStyle: 'normal',
+  enemyStyle: 'normal',
+});
+```
+
+#### CombatantMetrics
+
+Per-combatant statistics computed from combat history by `CombatMetricsTracker`:
+
+```typescript
+interface CombatantMetrics {
+  combatantId: string;
+  name: string;
+  side: 'player' | 'enemy';
+  totalDamageDealt: number;    // All damage sources (attacks + spells + legendary)
+  totalDamageTaken: number;
+  totalHealingDone: number;
+  spellsCast: number;
+  itemsUsed: number;
+  criticalHits: number;
+  roundsSurvived: number;
+  survived: boolean;
+  actionsByType: Record<string, number>;  // e.g., { attack: 12, spell: 3, dodge: 1 }
+  damagePerRound: number[];     // [avg DPR] computed from aggregate
+}
+```
+
+These metrics are the foundation for Monte Carlo simulation aggregation — the simulator averages them across hundreds of runs to produce per-combatant DPR, survival rate, and kill rate.
+
+### Monte Carlo Simulation
+
+The `CombatSimulator` runs N independent combat encounters using AI-controlled combatants, each with a unique seeded RNG. It aggregates the outcomes into statistical summaries and per-combatant metrics. This is the core analysis tool — it answers *"Given this party and these enemies, how often does each side win, how many rounds do fights last, and how much damage does each combatant deal?"*
+
+The simulator is stateless between `run()` calls. Each call produces a fresh, independent set of results.
+
+#### CombatSimulator
+
+```typescript
+import { CombatSimulator } from 'playlist-data-engine';
+
+const simulator = new CombatSimulator();
+
+const results = simulator.run(
+  party,    // CharacterSheet[]
+  enemies,  // CharacterSheet[]
+  {
+    runCount: 1000,
+    baseSeed: 'encounter-analysis',
+    aiConfig: { playerStyle: 'normal', enemyStyle: 'aggressive' },
+  }
+);
+
+console.log(`Player win rate: ${(results.summary.playerWinRate * 100).toFixed(1)}%`);
+console.log(`Average rounds: ${results.summary.averageRounds.toFixed(1)}`);
+console.log(`Player deaths: ${results.summary.totalPlayerDeaths}`);
+```
+
+Internally, each run creates a fresh `SeededDiceRoller` and `AICombatRunner`. The seed for run `i` is `"${baseSeed}-${i}"`, ensuring every run is independent and the full simulation is reproducible.
+
+#### SimulationConfig
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `runCount` | `number` | required | Number of simulations to run (100–10000 recommended) |
+| `baseSeed` | `string` | required | Base seed — each run gets `baseSeed-index` |
+| `aiConfig` | `AIConfig` | required | AI play styles per side |
+| `combatConfig` | `CombatConfig` | — | Optional combat engine overrides (max turns, flee, etc.) |
+| `collectDetailedLogs` | `boolean` | `false` | Save full combat log per run (memory-intensive for large runCount) |
+| `onProgress` | `(completed, total) => void` | — | Progress callback after each run |
+| `abortSignal` | `AbortSignal` | — | Cancel long-running simulations; returns partial results |
+
+#### SimulationResults
+
+The top-level result object returned by `simulator.run()`:
+
+```typescript
+interface SimulationResults {
+  config: SimulationConfig;                              // Input config echo
+  summary: SimulationSummary;                            // Aggregate statistics
+  party: PartyConfig;                                    // Party snapshot (memberCount, averageLevel, names)
+  encounter: EncounterConfig;                            // Enemy snapshot (enemyCount, averageCR, names)
+  perCombatantMetrics: Map<string, CombatantSimulationMetrics>;  // Per-combatant stats
+  runDetails?: SimulationRunDetail[];                    // Per-run data (only if collectDetailedLogs)
+  wasCancelled: boolean;                                 // true if aborted before completion
+}
+```
+
+#### SimulationSummary
+
+Aggregate statistics across all runs — the core output for balance decisions:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `totalRuns` | `number` | Completed simulation runs |
+| `playerWins` | `number` | Runs where all enemies were defeated |
+| `enemyWins` | `number` | Runs where all players were defeated |
+| `draws` | `number` | Runs ending in a draw (max turns, mutual kill) |
+| `playerWinRate` | `number` | Player win rate (0.0–1.0) |
+| `averageRounds` | `number` | Average rounds across all runs |
+| `medianRounds` | `number` | Median rounds across all runs |
+| `averageRoundsOnWin` | `number` | Average rounds in player-win runs |
+| `averageRoundsOnLoss` | `number` | Average rounds in player-loss runs |
+| `averagePlayerHPPercentRemaining` | `number` | Average remaining HP % for players in winning runs |
+| `totalPlayerDeaths` | `number` | Total player deaths across all runs |
+| `averageRoundsPerPlayerDeath` | `number` | Average round at which each player death occurred |
+| `totalEnemyDeaths` | `number` | Total enemy deaths across all runs |
+| `averageRoundsPerEnemyDeath` | `number` | Average round at which each enemy death occurred |
+
+Invariant: `playerWins + enemyWins + draws = totalRuns`.
+
+#### CombatantSimulationMetrics
+
+Per-combatant aggregate stats across all simulation runs. Keyed by combatant ID in `perCombatantMetrics`:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `combatantId` | `string` | Combatant ID (matches CombatEngine scheme) |
+| `name` | `string` | Display name |
+| `side` | `'player' \| 'enemy'` | Which side this combatant was on |
+| `averageDamagePerRound` | `number` | Average DPR across all runs |
+| `medianDamagePerRound` | `number` | Median DPR across all runs |
+| `averageTotalDamageDealt` | `number` | Average total damage dealt per run |
+| `averageTotalDamageTaken` | `number` | Average total damage taken per run |
+| `averageHealingDone` | `number` | Average healing per run |
+| `averageRoundsSurvived` | `number` | Average rounds survived per run |
+| `survivalRate` | `number` | Survival rate (0.0–1.0) |
+| `killRate` | `number` | Final blow rate (0.0–1.0) |
+| `criticalHitRate` | `number` | Crit rate across all attack actions (0.0–1.0) |
+| `averageSpellSlotsUsed` | `number` | Average spell slots consumed per run |
+| `mostUsedAction` | `string` | Most frequent action type (`attack`, `castSpell`, etc.) |
+| `damageDistribution` | `HistogramBucket[]` | DPR distribution for visualization |
+| `hpRemainingDistribution` | `HistogramBucket[]` | HP remaining distribution for visualization |
+
+#### HistogramBucket
+
+Distribution data for chart visualization. Used in `damageDistribution` and `hpRemainingDistribution`:
+
+```typescript
+interface HistogramBucket {
+  rangeStart: number;   // Start of range (inclusive)
+  rangeEnd: number;     // End of range (exclusive, except last bucket)
+  count: number;        // Data points in this bucket
+  percent: number;      // Percentage of total (0–100)
+}
+```
+
+Histograms are built with 20 buckets by default. Bucket percentages sum to 100%. When all values are identical, a single bucket is returned.
+
+#### Detailed Run Logs
+
+When `collectDetailedLogs: true`, each run produces a `SimulationRunDetail`:
+
+```typescript
+interface SimulationRunDetail {
+  runIndex: number;                              // 0-based run index
+  seed: string;                                  // Seed used for this run
+  result: CombatResult;                          // Final combat result
+  metrics: Map<string, CombatantMetrics>;        // Per-combatant metrics for this run
+}
+```
+
+Detailed logs are memory-intensive — a 1000-run simulation with 8 combatants stores 1000 full combat histories. Use for small-scale analysis or debugging, not for large sweeps.
+
+#### Code Examples
+
+**Basic simulation with progress:**
+
+```typescript
+import { CombatSimulator } from 'playlist-data-engine';
+
+const simulator = new CombatSimulator();
+
+const results = simulator.run(party, enemies, {
+  runCount: 500,
+  baseSeed: 'balance-test',
+  aiConfig: {
+    playerStyle: 'normal',
+    enemyStyle: 'normal',
+  },
+  onProgress: (completed, total) => {
+    console.log(`${completed}/${total} runs complete`);
+  },
+});
+
+console.log(`Win rate: ${(results.summary.playerWinRate * 100).toFixed(1)}%`);
+console.log(`Avg rounds: ${results.summary.averageRounds.toFixed(1)}`);
+console.log(`Player HP remaining: ${results.summary.averagePlayerHPPercentRemaining.toFixed(0)}%`);
+```
+
+**Cancellation with AbortController:**
+
+```typescript
+const controller = new AbortController();
+
+// Cancel after 2 seconds
+setTimeout(() => controller.abort(), 2000);
+
+const results = simulator.run(party, enemies, {
+  runCount: 10000,
+  baseSeed: 'long-sim',
+  aiConfig: { playerStyle: 'aggressive', enemyStyle: 'aggressive' },
+  abortSignal: controller.signal,
+});
+
+console.log(`Completed ${results.summary.totalRuns} of 10000 runs`);
+console.log(`Was cancelled: ${results.wasCancelled}`);
+// Results are still valid — partial data is usable
+```
+
+**Collecting detailed logs for debugging:**
+
+```typescript
+const results = simulator.run(party, enemies, {
+  runCount: 50,
+  baseSeed: 'debug-run',
+  aiConfig: { playerStyle: 'normal', enemyStyle: 'normal' },
+  collectDetailedLogs: true,
+});
+
+// Inspect a specific run
+const run3 = results.runDetails![3];
+console.log(`Run 3 seed: ${run3.seed}`);
+console.log(`Run 3 winner: ${run3.result.winnerSide}`);
+for (const [id, m] of run3.metrics) {
+  console.log(`  ${m.name}: ${m.totalDamageDealt} damage, survived=${m.survived}`);
+}
+```
+
+#### Determinism
+
+The simulator guarantees reproducibility:
+
+```typescript
+// Same inputs → byte-identical results
+const a = simulator.run(party, enemies, { runCount: 100, baseSeed: 'test', aiConfig });
+const b = simulator.run(party, enemies, { runCount: 100, baseSeed: 'test', aiConfig });
+// a.summary === b.summary (all fields identical)
+// a.perCombatantMetrics === b.perCombatantMetrics (all fields identical)
+
+// Different seeds → different results
+const c = simulator.run(party, enemies, { runCount: 100, baseSeed: 'other', aiConfig });
+// c.summary.playerWinRate !== a.summary.playerWinRate (almost certainly)
+```
+
+This extends to full combat history: the same party, enemies, seed, and AI config produce an identical combat history entry-by-entry within each run.
+
+#### Recommended Run Counts
+
+| Purpose | Runs | Speed | Confidence |
+|---------|------|-------|------------|
+| Quick exploration | 100 | Instant | Rough estimate |
+| Standard analysis | 500 | Fast | Reasonable for most decisions |
+| Thorough validation | 2000 | Moderate | High confidence for balance patches |
+| Publication-quality | 5000+ | Slow | Very high confidence |
+
+The simulator processes 5,000–10,000+ runs per second for standard party-vs-encounter compositions, so even 2000-run simulations complete in well under a second.
+
+---
+
+## Seeded Dice Rolling
+
+For reproducible combat simulations, the engine provides `SeededDiceRoller` — a deterministic alternative to the standard `DiceRoller`. Both classes expose the same API, but `SeededDiceRoller` uses `SeededRNG` (MurmurHash V3) internally instead of `Math.random()`.
+
+### When to Use Seeded vs Random Rolling
+
+| Use Case | Roller | Why |
+|----------|--------|-----|
+| Live gameplay (UI combat) | `DiceRoller` (default) | Unpredictable outcomes, no need for reproducibility |
+| Monte Carlo simulation | `SeededDiceRoller` | Same seed + same config = identical results every time |
+| Unit tests | Either | Seeded for exact assertions, random for statistical sampling |
+| Balance analysis | `SeededDiceRoller` | Compare configurations fairly with identical RNG sequences |
+
+### Creating a Seeded Roller
+
+```typescript
+import { SeededDiceRoller, createSeededRoller } from 'playlist-data-engine';
+
+// Option 1: Factory function (recommended)
+const roller = createSeededRoller('my-simulation-seed');
+
+// Option 2: Direct constructor with a seed string
+const roller = new SeededDiceRoller('my-simulation-seed');
+
+// Option 3: Direct constructor with an existing SeededRNG instance
+import { SeededRNG } from 'playlist-data-engine';
+const rng = new SeededRNG('shared-seed');
+const roller = new SeededDiceRoller(rng);
+```
+
+Each `SeededDiceRoller` instance maintains its own internal counter. Two instances created from the same seed produce identical sequences of rolls — this is what makes simulation results reproducible.
+
+### Injecting into CombatEngine
+
+Pass a `SeededDiceRoller` (or any object implementing `DiceRollerAPI`) as the second argument to the `CombatEngine` constructor. All attack rolls, damage rolls, initiative, saving throws, and spell rolls will use it.
+
+```typescript
+import { CombatEngine, createSeededRoller } from 'playlist-data-engine';
+
+// Deterministic combat — every roll is reproducible
+const roller = createSeededRoller('combat-run-42');
+const combat = new CombatEngine({}, roller);
+
+const instance = combat.startCombat(party, enemies);
+
+// Every subsequent call uses the seeded roller:
+// - Initiative rolls
+// - Attack rolls (d20 + bonus)
+// - Damage rolls (dice formula + modifier)
+// - Critical hit/miss detection
+// - Saving throws
+// - Spell attack rolls
+```
+
+Without a roller, `CombatEngine` falls back to the static `DiceRoller` (uses `Math.random()`). This is backward compatible — existing code works unchanged.
+
+### Determinism Guarantees
+
+Given the same seed and the same call sequence, `SeededDiceRoller` always produces identical results:
+
+```typescript
+const a = createSeededRoller('test-seed');
+const b = createSeededRoller('test-seed');
+
+a.rollD20() === b.rollD20();  // true — first roll always the same
+a.rollD20() === b.rollD20();  // true — second roll always the same
+a.rollD20() === b.rollD20();  // true — and so on
+
+// Different seeds produce different sequences
+const c = createSeededRoller('other-seed');
+a.rollD20() !== c.rollD20();  // true (almost certainly)
+```
+
+This extends to full combat: the same party, enemies, seed, and AI config will produce an identical combat history entry-by-entry.
+
+### API Reference
+
+`SeededDiceRoller` mirrors the static API of `DiceRoller` but as instance methods:
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `rollDie(sides)` | `number` | Single die roll (1–sides) |
+| `rollD20()` | `number` | d20 roll |
+| `rollWithAdvantage()` | `{ roll1, roll2, result }` | Two d20s, take higher |
+| `rollWithDisadvantage()` | `{ roll1, roll2, result }` | Two d20s, take lower |
+| `rollMultipleDice(count, sides)` | `number[]` | N dice, returns all results |
+| `parseDiceFormula(formula)` | `{ diceCount, diceSides, modifier, rolls, total }` | Parse and roll `"2d6+3"` |
+| `calculateDamage(formula, modifier, isCritical?)` | `{ diceFormula, rolls, modifier, total, isCritical }` | Damage with crit doubling |
+| `rollSavingThrow(abilityMod, profBonus?)` | `number` | d20 + modifiers |
+| `rollAbilityCheck(abilityMod, profBonus?)` | `number` | d20 + modifiers |
+| `rollInitiative(dexMod)` | `number` | d20 + DEX modifier |
+| `rollPercentile()` | `number` | d100 roll |
+| `isCriticalHit(roll)` | `boolean` | True if roll is 20 |
+| `isCriticalMiss(roll)` | `boolean` | True if roll is 1 |
+| `doubleDamage(rolls)` | `number[]` | Double dice for crits |
+
+### How CombatSimulator Manages Seeding
+
+The `CombatSimulator` creates a fresh `SeededDiceRoller` per simulation run, deriving each seed from the base seed and run index:
+
+```typescript
+import { CombatSimulator } from 'playlist-data-engine';
+
+const simulator = new CombatSimulator();
+
+const results = simulator.run(party, enemies, {
+  runCount: 1000,
+  baseSeed: 'encounter-analysis',
+  aiConfig: { playerStyle: 'normal', enemyStyle: 'normal' },
+  onProgress: (completed, total) => {
+    console.log(`${completed}/${total} runs complete`);
+  }
+});
+
+// Internally, each run uses:
+// Run 0: seed = "encounter-analysis-0"
+// Run 1: seed = "encounter-analysis-1"
+// Run 2: seed = "encounter-analysis-2"
+// ...
+// This ensures every run is independent and the full simulation is reproducible.
+```
+
+Running the same `simulator.run()` call again with the same inputs produces byte-identical `SimulationResults`.
 
 ---
 

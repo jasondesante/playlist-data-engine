@@ -45,6 +45,15 @@ Complete API reference for the Playlist Data Engine. Contains all type definitio
 9. [Environmental Sensors](#environmental-sensors)
 10. [Gaming Integration](#gaming-integration)
 11. [Combat System](#combat-system)
+    - [SeededDiceRoller](#seededdiceroller)
+    - [CombatAI](#combatai)
+    - [AICombatRunner](#aicombatrunner)
+    - [CombatMetricsTracker](#combatmetricstracker)
+    - [CombatSimulator](#combatsimulator)
+    - [BalanceValidator](#balancevalidator)
+    - [ParameterSweep](#parametersweep)
+    - [ComparativeAnalyzer](#comparativeanalyzer)
+    - [DifficultyCalculator](#difficultycalculator)
 12. [Enemy Generation](#enemy-generation)
 13. [Equipment System](#equipment-system)
    - [Equipment Types](#equipment-types)
@@ -164,8 +173,26 @@ A concise overview of all main exports from the library, organized by category.
 | `AttackResolver` | Resolve attack rolls | [Combat System](#combat-system) |
 | `SpellCaster` | Cast spells in combat | [Combat System](#combat-system) |
 | `DiceRoller` | Standalone dice rolling utilities | [Combat System](#combat-system) |
+| `SeededDiceRoller` | Deterministic dice rolling for simulations | [Combat System](#seededdiceroller) |
+| `createSeededRoller` | Factory for creating seeded dice rollers | [Combat System](#seededdiceroller) |
+| `CombatAI` | AI decision engine for combatants | [Combat System](#combatai) |
+| `AICombatRunner` | Runs full AI-controlled combat encounters | [Combat System](#aicombatrunner) |
+| `CombatMetricsTracker` | Computes per-combatant stats from combat history | [Combat System](#combatmetricstracker) |
+| `CombatSimulator` | Monte Carlo combat simulation engine | [Combat System](#combatsimulator) |
+| `BalanceValidator` | Validates encounter balance via simulation | [Combat System](#balancevalidator) |
+| `ParameterSweep` | Sweeps a parameter across a range with simulations | [Combat System](#parametersweep) |
+| `ComparativeAnalyzer` | Compares two encounter configurations | [Combat System](#comparativeanalyzer) |
+| `DifficultyCalculator` | Suggests enemy CR for target difficulty | [Combat System](#difficultycalculator) |
 | `EnemyGenerator` | Generate enemies and encounters | [Enemy Generation](#enemy-generation) |
 | `PartyAnalyzer` | Analyze party strength for encounters | [Enemy Generation](#enemy-generation) |
+
+**Combat AI Types:** `AIPlayStyle`, `AIConfig`, `AIDecision`, `AIThreatAssessment`, `CombatantMetrics` — see [Combat AI Types](#combat-ai-types)
+
+**Combat Types:** `StatusEffect`, `StatusEffectMechanics`, `CombatAction`, `CombatResult`, `Combatant`, `CombatInstance`, `DamageRoll`, `DiceRollerAPI` — see [Combat Types](#combat-types)
+
+**Simulation Types:** `SimulationConfig`, `SimulationResults`, `SimulationSummary`, `CombatantSimulationMetrics`, `HistogramBucket`, `PartyConfig`, `EncounterConfig`, `SimulationRunDetail` — see [CombatSimulator](#combatsimulator)
+
+**Analysis Types:** `BalanceReport`, `BalanceRecommendation`, `DifficultyVariance`, `EXPECTED_WIN_RATES`, `SweepVariable`, `SweepParams`, `SweepResults`, `SweepDataPoint`, `SweepEnemyConfig`, `ComparisonConfig`, `ComparisonOptions`, `ComparisonResult`, `DeltaMetrics`, `CombatantDelta`, `SignificanceResult`, `DifficultyCalculatorOptions`, `DifficultyEnemyTemplate`, `DifficultySuggestion`, `DifficultyProbe` — see individual sections below
 
 ### Beat Detection
 
@@ -269,7 +296,13 @@ All TypeScript types are exported, including:
 
 **Box Types:** `BoxDropPool`, `BoxDrop`, `BoxContents`, `BoxOpenResult`, `BoxOpenRequirement`, `BoxOpenError` — see [BoxOpener](#boxopener)
 
-**Enemy Types:** `EnemyCategory`, `EnemyRarity`, `EnemyArchetype`, `EnemyMixMode`, `EncounterDifficulty`, `SignatureAbility`, `AudioPreference`, `EnemyTemplate`, `RarityConfig`, `EnemyGenerationOptions`, `EncounterGenerationOptions`, `EnemyMetadata`, `EnemyFeature` — see [Enemy Generation](#enemy-generation)
+**Enemy Types:** `EnemyCategory`, `EnemyRarity`, `EnemyArchetype`, `EnemyMixMode`, `EncounterDifficulty`, `SignatureAbility`, `AudioPreference`, `EnemyTemplate`, `RarityConfig`, `EnemyGenerationOptions`, `EncounterGenerationOptions`, `EnemyMetadata`, `EnemyFeature`, `StatLevelOverrides`, `LegendaryAction`, `LegendaryConfig`, `InnateSpell`, `SpellcastingConfig` — see [Enemy Generation](#enemy-generation)
+
+**Combat AI Types:** `AIPlayStyle`, `AIConfig`, `AIDecision`, `AIThreatAssessment`, `CombatantMetrics` — see [Combat AI](#combatai)
+
+**Simulation Types:** `SimulationConfig`, `SimulationResults`, `SimulationSummary`, `CombatantSimulationMetrics`, `HistogramBucket`, `PartyConfig`, `EncounterConfig`, `SimulationRunDetail`, `AICombatResult` — see [CombatSimulator](#combatsimulator)
+
+**Balance Analysis Types:** `BalanceReport`, `BalanceRecommendation`, `DifficultyVariance`, `SweepVariable`, `SweepRange`, `SweepParams`, `SweepResults`, `SweepDataPoint`, `SweepEnemyConfig`, `ComparisonConfig`, `ComparisonOptions`, `ComparisonResult`, `DeltaMetrics`, `CombatantDelta`, `SignificanceResult`, `DifficultyCalculatorOptions`, `DifficultyEnemyTemplate`, `DifficultySuggestion`, `DifficultyProbe` — see individual sections in [Combat System](#combat-system)
 
 **Beat Detection Types:** `Beat`, `BeatMap`, `BeatMapMetadata`, `BeatEvent`, `BeatEventType`, `BeatStreamCallback`, `AudioSyncState`, `BeatMapGeneratorOptions`, `BeatStreamOptions`, `BeatMapJSON`, `BeatAccuracy`, `ButtonPressResult`, `AccuracyThresholds`, `DifficultyPreset`, `TempoEstimate`, `OSEConfig`, `BeatTrackerConfig`, `TempoDetectorConfig`, `TimeSignatureConfig`, `DownbeatSegment`, `DownbeatConfig`, `BeatMapGenerationProgress` — see [Beat Detection](#beat-detection) and [docs/AUDIO_ANALYSIS.md](docs/AUDIO_ANALYSIS.md)
 
@@ -617,7 +650,7 @@ Combat attack representation.
 
 *Location:* *[src/core/types/Character.ts](src/core/types/Character.ts)*
 
-Spell representation for casting.
+Unified spell representation for casting. Supports both player spells (with `damage_dice`, `saving_throw`) and enemy spells (with `damage`, `save`, `tags`). `SpellCaster` handles both naming conventions via fallback (e.g., `spell.damage_dice ?? spell.damage`).
 
 | Property | Type | Description |
 |----------|------|-------------|
@@ -625,16 +658,75 @@ Spell representation for casting.
 | level | number? | Spell level (0-9) |
 | school | string? | Magic school |
 | casting_time | string? | Casting time (e.g., "1 action") |
-| range | string? | Spell range |
+| range | string? | Spell range (string form) |
+| rangeFeet? | number | Spell range in feet (numeric form, used by enemy spells) |
 | duration | string? | Duration |
 | components | string[]? | Components (V, S, M) |
 | description | string? | Spell description |
+| effect? | string | Effect text (enemy spells — combined with description for status effect detection) |
 | icon | string? | Optional icon URL for small UI display |
 | image | string? | Optional image URL for larger display |
-| damage_dice | string? | Damage dice |
-| damage_type | string? | Damage type |
+| damage_dice | string? | Damage dice (player spell format, e.g., "2d6") |
+| damage | string? | Damage dice (enemy spell format — `SpellCaster` falls back to this if `damage_dice` is absent) |
+| damageType | string? | Damage type (enemy spell format — `SpellCaster` falls back to this if `damage_type` is absent) |
+| damage_type | string? | Damage type (player spell format) |
 | attack_roll | boolean? | Requires attack roll? |
-| saving_throw | string? | Saving throw ability |
+| saving_throw | string? | Saving throw ability (player spell format, e.g., "dexterity") |
+| save | string? | Saving throw ability (enemy spell format, e.g., "DEX") |
+| concentration? | boolean | Whether spell requires concentration |
+| tags? | string[] | Classification tags for AI decision-making and status effect detection (see below) |
+| id? | string | Unique spell identifier |
+
+**Spell Tags:**
+
+Used by `CombatAI` for spell selection and by `SpellCaster` for status effect detection.
+
+| Tag | AI Behavior | Status Effect |
+|-----|-------------|---------------|
+| `'damage'` | Selected as damage option | — |
+| `'healing'` | Used when allies are below HP threshold | — |
+| `'buff'` | Cast on highest-stat ally | — |
+| `'control'` | Used when 2+ enemies (normal style) | — |
+| `'aoe'` | Expected damage multiplied for multi-target | — |
+| `'multi-target'` | Targets all enemies | — |
+| `'debuff'` | — | — |
+| `'ally'` | Targets allies instead of enemies | — |
+| `'self'` | Targets caster | — |
+| `'bonus-action'` | Can be cast as bonus action | — |
+| `'ranged'` | Ranged spell | — |
+| `'melee'` | Melee spell | — |
+| `'charm'` | — | Charmed effect with `disadvantageOnAttackNonSource` |
+| `'frighten'` | — | Frightened effect with `disadvantageOnAttack` + `disadvantageOnAbilityChecks` |
+| `'stun'` | — | Stunned effect with `skipTurn` + `disadvantageOnDexSaves` + `speedZero` |
+| `'paralyze'` | — | Paralyzed effect with `skipTurn` + `disadvantageOnDexSaves` + `speedZero` |
+| `'restrain'` | — | Restrained effect with `disadvantageOnDexSaves` + `speedZero` |
+| `'poison'` | — | Poisoned effect |
+| `'blind'` | — | Blinded effect |
+| `'deafen'` | — | Deafened effect |
+| `'burn'` | — | Burning effect with per-turn fire damage |
+
+#### InnateSpell (extends Spell)
+
+*Location:* *[src/core/types/Enemy.ts](src/core/types/Enemy.ts)*
+
+Enemy-specific spell type. Extends `Spell` with required fields (`id`, `level`, `school`, `effect`) that are optional on the base `Spell` interface. Used by `SpellcastingGenerator` for enemy spell lists and stored in `CharacterSheet.combat_spells`.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | `string` | Unique identifier *(required on InnateSpell)* |
+| `name` | `string` | Display name |
+| `level` | `number` | Spell level (0 = cantrip, 1-9 = spell level) *(required)* |
+| `school` | `string` | Magical school (evocation, necromancy, etc.) *(required)* |
+| `effect` | `string` | Description of what spell does *(required)* |
+| `damage?` | `string` | Damage dice (e.g., "2d6") — falls back from `damage_dice` |
+| `save?` | `string` | Save type (e.g., "DEX") — falls back from `saving_throw` |
+| `damageType?` | `string` | Damage type for resistance calculations |
+| `range?` | `number` | Range in feet |
+| `concentration?` | `boolean` | Whether spell requires concentration |
+| `tags?` | `string[]` | Classification tags (see Spell Tags table above) |
+| `rangeFeet?` | `number` | Range in feet (same as `range`, from unified Spell) |
+
+> **Note:** `InnateSpell` extends `Spell`, so it also inherits all player spell fields (`damage_dice`, `damage_type`, `saving_throw`, `attack_roll`, `components`, `icon`, `image`, etc.). `SpellCaster.castSpell()` handles both naming conventions transparently.
 
 #### AbilityScores
 
@@ -897,9 +989,11 @@ State of an active combat encounter.
 | `environment?` | EnvironmentalContext | Optional environmental context |
 | `history` | CombatAction[] | Action log |
 | `isActive` | boolean | Whether combat is ongoing |
-| `winner?` | Combatant | Winner when combat ends |
+| `winner?` | Combatant | First surviving combatant on the winning side; `undefined` on draw |
+| `winnerSide?` | `'player' \| 'enemy' \| 'draw'` | Which side won; set by `checkCombatStatus()`; `undefined` while combat is active |
 | `startTime` | number | Combat start timestamp |
 | `lastUpdated` | number | Last update timestamp |
+| `metrics?` | Map<string, CombatantMetrics> | Per-combatant aggregate metrics (computed post-combat) |
 
 #### Combatant
 
@@ -919,6 +1013,9 @@ A character participating in combat.
 | `bonusActionUsed` | boolean | Bonus action used |
 | `reactionUsed` | boolean | Reaction used |
 | `spellSlots?` | Record<number, number> | Remaining slots by level |
+| `concentratingOn?` | string | Name of the status effect this combatant is concentrating on; cleared when concentration is broken or the effect expires |
+| `legendaryActionsRemaining?` | number | Legendary action points remaining this round (3/round for bosses, reset at start of each new round); undefined for non-boss combatants |
+| `legendaryResistancesRemaining?` | number | Legendary resistances remaining today (per-day resource, not reset per round); undefined for non-boss combatants |
 
 #### CombatAction
 
@@ -926,27 +1023,67 @@ An action taken during combat.
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `type` | ActionType | `'attack' | 'spell' | 'dodge' | 'dash' | 'disengage' | 'help' | 'hide' | 'ready'` |
+| `type` | ActionType | `'attack' | 'spell' | 'dodge' | 'dash' | 'disengage' | 'help' | 'hide' | 'ready' | 'flee' | 'useItem' | 'legendaryAction' | 'statusEffectTick'` |
 | `actor` | Combatant | Who performed the action |
 | `target?` | Combatant | Single target |
 | `targets?` | Combatant[] | Multiple targets |
 | `attack?` | Attack | Attack data |
 | `spell?` | Spell | Spell data |
 | `result?` | CombatActionResult | Outcome |
+| `item?` | Equipment | Item used (when `type = 'useItem'`) |
+| `legendaryAction?` | LegendaryAction | Legendary action executed (when `type = 'legendaryAction'`) |
+
+**Action Type Details:**
+
+| Type | Description |
+|------|-------------|
+| `'attack'` | Weapon or unarmed attack |
+| `'spell'` | Spell casting (consumes slot for leveled spells) |
+| `'dodge'` | Dodge action (disadvantage on attacks against this combatant) |
+| `'dash'` | Double movement speed |
+| `'disengage'` | No opportunity attacks when moving |
+| `'help'` | Give advantage to an ally's next attack |
+| `'hide'` | Hide action (stealth check) |
+| `'ready'` | Ready an action to trigger later |
+| `'flee'` | Leave combat (requires `allowFleeing: true`) |
+| `'useItem'` | Use an item from inventory (healing potions, etc.) |
+| `'legendaryAction'` | Boss legendary action (spends action points) |
+| `'statusEffectTick'` | Status effect processing (duration decrement, expiration, concentration break, start-of-turn damage) |
 
 #### StatusEffect
 
-Temporary condition affecting a combatant.
+Temporary condition affecting a combatant. Supports mechanical enforcement via `StatusEffectMechanics` — conditions like Charmed, Frightened, Stunned, Prone, and Burning are automatically enforced by the combat engine (advantage/disadvantage, damage, skip turn, etc.).
 
 *Also known as: Condition, debuff, buff*
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `name` | string | Effect name (e.g., "Charmed", "Frightened") |
+| `name` | string | Effect name (e.g., "Charmed", "Frightened", "Burning") |
 | `description` | string | Effect description |
-| `duration` | number | Rounds remaining |
+| `duration` | number | Rounds remaining (decremented each turn; removed when ≤ 0) |
 | `source?` | string | Which combatant applied it |
 | `hasConcentration?` | boolean | Requires concentration |
+| `damage?` | number | Per-turn damage dealt at start of affected combatant's turn (e.g., Burning) |
+| `damageType?` | DamageType | Damage type for the per-turn damage (e.g., "fire", "poison") |
+| `mechanicalEffects?` | StatusEffectMechanics | Mechanical enforcement flags — see below |
+
+**StatusEffectMechanics Interface:**
+
+Optional flags that control automatic combat behavior. The engine checks these flags during attacks, saving throws, turn processing, and damage resolution.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `disadvantageOnAttack?` | boolean | Disadvantage on all attack rolls (Frightened, general) |
+| `disadvantageOnAttackNonSource?` | boolean | Disadvantage on attacks against non-source targets (Charmed) |
+| `disadvantageOnAbilityChecks?` | boolean | Disadvantage on ability checks (Frightened) |
+| `advantageOnMeleeAttackAgainst?` | boolean | Melee attacks have advantage against this combatant (Prone) |
+| `advantageOnRangedAttackAgainst?` | boolean | Ranged attacks have advantage against this combatant (Prone) |
+| `disadvantageOnDexSaves?` | boolean | Disadvantage on DEX saving throws (Stunned, Restrained) |
+| `speedZero?` | boolean | Movement speed reduced to 0 (Paralyzed, Restrained) |
+| `skipTurn?` | boolean | Combatant's turn is automatically skipped (Stunned, Unconscious) |
+| `damageImmunity?` | DamageType | Immunity to a specific damage type |
+| `damageResistance?` | DamageType | Resistance to a specific damage type (halved damage) |
+| `damageVulnerability?` | DamageType | Vulnerability to a specific damage type (double damage) |
 
 #### TreasureConfig
 
@@ -971,9 +1108,33 @@ Configuration for custom combat loot rewards.
 | `AttackRoll` | Attack roll result (d20, bonus, hit/miss) |
 | `DamageRoll` | Damage roll result (dice, rolls, total) |
 | `SpellCastResult` | Spell casting outcome (success, save DC, effects) |
-| `CombatResult` | Final combat result (winner, XP, treasure) |
+| `CombatResult` | Final combat result (winner, winnerSide, XP, treasure) — see below |
 | `CombatConfig` | Combat configuration options (environment, music, tactical, treasure) |
 | `TreasureConfig` | Custom loot rewards (fixed gold, range, items) |
+
+**CombatResult Interface:**
+
+Final combat result produced by `getCombatResult()`.
+
+*Location:* *[src/core/types/Combat.ts](src/core/types/Combat.ts)*
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `winner?` | Combatant | First surviving combatant on the winning side; `undefined` on draw |
+| `winnerSide` | `'player' \| 'enemy' \| 'draw'` | Which side won; `'draw'` for mutual kills or max-turns-reached |
+| `xp` | number | Total XP awarded (CR-based via `getXPForCR()` for each defeated enemy) |
+| `treasure` | TreasureConfig | Loot rewards |
+| `roundsElapsed` | number | Total rounds the combat lasted |
+| `description` | string | Human-readable result description |
+
+**CombatInstance Updates:**
+
+The `CombatInstance` interface (see [CombatInstance](#combatinstance)) also has the following addition:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `winnerSide?` | `'player' \| 'enemy' \| 'draw'` | Set by `checkCombatStatus()` when combat ends; `undefined` while combat is active |
+| `metrics?` | Map<string, CombatantMetrics> | Per-combatant aggregate metrics (computed by `CombatMetricsTracker` after combat ends) |
 
 #### Combat Helper Types
 
@@ -4723,6 +4884,14 @@ D&D 5e turn-based combat engine with initiative, attacks, spell casting, and dam
 | `applyTemporaryHP(combatant, tempHP)` | Applies temporary hit points |
 | `getLivingCombatants(combat)` | Returns all non-defeated combatants |
 | `getDefeatedCombatants(combat)` | Returns all defeated combatants |
+| `applyStatusEffect(combatant, effect)` | Applies a status effect to a combatant with stacking rules: same-name effects refresh duration (take max) and merge damage/mechanicalEffects; concentration effects drop previous concentration; returns the active effect on the combatant |
+| `removeExpiredStatusEffects(combatant)` | Removes all effects with `duration <= 0`; clears `concentratingOn` if the concentrated effect expired; returns array of removed effects for logging |
+| `executeLegendaryAction(combat, bossCombatant, action, target?)` | Validates action belongs to boss, spends action points from budget (3/round), resolves damage from dice formula, records in combat history; throws if no legendary config, unknown action, or insufficient points |
+| `useLegendaryResistance(combat, bossCombatant)` | Auto-succeeds a saving throw by spending one legendary resistance (per-day resource); returns `true` if resistance was available and used, `false` if none remain |
+| `checkConcentration(combat, combatant, damage)` | Makes CON save (DC = 10 or half damage, whichever is higher) when a concentrating combatant takes damage; breaks concentration on failure and logs to history; returns `true` if concentration was broken |
+| `dropConcentration(combatant, reason?)` | Manually drops a combatant's concentration, removing the concentrated effect from statusEffects; clears `concentratingOn` tracking; returns the dropped `StatusEffect` or `undefined` |
+| `validateSpellSlots(character)` | Validates `character.spells.spell_slots` for data issues (negative totals, used > total, invalid level keys, non-numeric values); returns array of `SpellSlotValidationIssue` objects with severity ('error'/'warn') |
+| `validateCombatantSpellSlots(combatant)` | Verifies combatant's initialized spell slots match expected remaining slots from source character; returns array of `SpellSlotValidationIssue` objects |
 
 ### InitiativeRoller
 
@@ -4843,6 +5012,313 @@ Handles spell casting mechanics (spell slots, saving throws, spell damage).
 | `getSpellSlotInfo(caster)` | Returns formatted spell slot information |
 | `canUpcast(caster, spell, targetSlotLevel)` | Checks if spell can be upcast to higher level |
 | `upcastSpell(caster, spell, targets, slotLevelUsed)` | Upcasts spell using higher-level slot |
+
+### SeededDiceRoller
+
+*Also known as: Deterministic dice roller, simulation dice, seeded RNG*
+
+*Location:* *[src/core/combat/SeededDiceRoller.ts](src/core/combat/SeededDiceRoller.ts)*
+
+> **Note:** Instance class — create with `new SeededDiceRoller(seed)` or `createSeededRoller(seed)`
+
+Deterministic D&D-style dice rolling for reproducible combat simulations. Implements the same API as `DiceRoller` but uses `SeededRNG` internally, producing deterministic results given the same seed and call sequence.
+
+**Constructor:**
+
+| Constructor | Description |
+|-------------|-------------|
+| `new SeededDiceRoller(seed: string \| SeededRNG)` | Initialize with a seed string or existing `SeededRNG` instance |
+
+**Factory:**
+
+| Function | Description |
+|----------|-------------|
+| `createSeededRoller(seed: string): SeededDiceRoller` | Create a seeded roller from a seed string (convenience factory) |
+
+**Methods:**
+
+| Method | Description |
+|--------|-------------|
+| `rollDie(sides)` | Roll single die (1 to sides) |
+| `rollD20()` | Roll d20 |
+| `rollMultipleDice(count, sides)` | Roll multiple dice, return array |
+| `rollPercentile()` | Roll d100 |
+| `parseDiceFormula(formula)` | Parse and roll "2d6+3", returns parsed data and results |
+| `rollWithAdvantage()` | Roll twice, take higher |
+| `rollWithDisadvantage()` | Roll twice, take lower |
+| `rollInitiative(dexModifier)` | Roll d20 + DEX modifier |
+| `calculateDamage(formula, modifier, isCritical?)` | Calculate damage with optional modifier (doubles dice on crit) |
+| `rollSavingThrow(abilityModifier, proficiencyBonus?)` | Roll d20 + ability + proficiency |
+| `rollAbilityCheck(abilityModifier, proficiencyBonus?)` | Roll d20 + ability + proficiency |
+| `isCriticalHit(d20Roll)` | Returns true if natural 20 |
+| `isCriticalMiss(d20Roll)` | Returns true if natural 1 |
+| `doubleDamage(rolls)` | Double dice array for critical hit |
+
+### CombatAI
+
+*Also known as: AI decision engine, combat AI, NPC AI*
+
+*Location:* *[src/core/combat/AI/CombatAI.ts](src/core/combat/AI/CombatAI.ts)*
+
+> **Note:** Instance class — create with `new CombatAI(config)`
+
+Decision engine for AI-controlled combatants. Produces an `AIDecision` for each combatant's turn based on threat assessment, play style, and available actions. Deterministic given the same combat state — all randomness comes from the dice roller.
+
+**Constructor:**
+
+| Constructor | Description |
+|-------------|-------------|
+| `new CombatAI(config: AIConfig)` | Initialize with AI configuration (play styles per side) |
+
+**Public Methods:**
+
+| Method | Description |
+|--------|-------------|
+| `decide(combatant, combatInstance)` | Main entry point — evaluates battlefield and returns best `AIDecision` |
+| `assessThreat(combatant, combatInstance)` | Evaluates HP, AC, allies, enemies, resources — returns `AIThreatAssessment` |
+| `selectTarget(enemies, style)` | Normal: lowest AC; Aggressive: lowest HP |
+| `selectWeapon(combatant, style)` | Evaluates equipped weapons + unarmed; returns best by style |
+| `getAvailableSpells(combatant)` | Returns cantrips + slotted spells available to combatant |
+| `selectLegendaryAction(boss, combat)` | Boss-only: picks legendary action based on style and point budget |
+| `getStyleForCombatant(combatant)` | Returns effective play style (per-combatant overrides take priority) |
+| `getSide(combatant)` | Returns 'player' or 'enemy' |
+| `getEnemies(combatant, combat)` | Returns all living enemy combatants |
+| `getAllies(combatant, combat)` | Returns all living ally combatants (including self) |
+| `isSupportArchetype(combatant)` | Returns true if combatant has healing/buff spells |
+| `averageDamageFromFormula(formula)` | Calculates expected (average) damage from a dice formula string |
+
+#### Combat AI Types
+
+*Location:* *[src/core/types/CombatAI.ts](src/core/types/CombatAI.ts)*
+
+| Type | Description | Key Properties |
+|------|-------------|----------------|
+| `AIPlayStyle` | Play style for AI combatants: `'normal'` or `'aggressive'` | — |
+| `AIConfig` | Configuration for AI-controlled combat | `playerStyle`, `enemyStyle`, `overrides?`, `enableClassFeatures?` |
+| `AIDecision` | AI's decision for a single turn | `action`, `target?`, `weaponName?`, `spellName?`, `reasoning?` |
+| `AIThreatAssessment` | Battlefield state snapshot | `myHPPercent`, `myAC`, `lowestEnemyHP`, `enemyCount`, `isLowHP`, `hasSpellSlots` |
+| `CombatantMetrics` | Per-combatant stats from a single combat | `totalDamageDealt`, `totalDamageTaken`, `totalHealingDone`, `spellsCast`, `criticalHits`, `roundsSurvived`, `survived`, `actionsByType`, `damagePerRound` |
+
+### AICombatRunner
+
+*Also known as: AI combat orchestrator, simulation runner*
+
+*Location:* *[src/core/combat/AI/AICombatRunner.ts](src/core/combat/AI/AICombatRunner.ts)*
+
+> **Note:** Instance class — create with `new AICombatRunner()`
+
+Orchestrates full combat encounters with AI decision-making. Bridges `CombatAI` (decisions) and `CombatEngine` (execution). For each combatant's turn: asks AI for a decision, executes it via CombatEngine, processes legendary actions for bosses, then advances.
+
+**Methods:**
+
+| Method | Description |
+|--------|-------------|
+| `runFullCombat(players, enemies, aiConfig, combatConfig?, diceRoller?)` | Run a complete AI-controlled combat encounter. Returns `AICombatResult` with `combat`, `result`, and `metrics` |
+
+**Result Type:**
+
+| Type | Description |
+|------|-------------|
+| `AICombatResult` | `{ combat: CombatInstance, result: CombatResult, metrics: Map<string, CombatantMetrics> }` |
+
+### CombatMetricsTracker
+
+*Also known as: Combat statistics analyzer, metrics computer*
+
+*Location:* *[src/core/combat/AI/CombatMetricsTracker.ts](src/core/combat/AI/CombatMetricsTracker.ts)*
+
+> **Note:** Instance class — create with `new CombatMetricsTracker()`
+
+Post-hoc analysis that computes per-combatant statistics from a completed `CombatInstance` history without modifying the engine. Processes all action types: attack, spell, legendary action, use item.
+
+**Methods:**
+
+| Method | Description |
+|--------|-------------|
+| `computeMetrics(combat)` | Compute per-combatant metrics from completed combat. Returns `Map<string, CombatantMetrics>` |
+
+### CombatSimulator
+
+*Also known as: Monte Carlo simulator, combat simulation engine*
+
+*Location:* *[src/core/combat/Simulation/CombatSimulator.ts](src/core/combat/Simulation/CombatSimulator.ts)*
+
+> **Note:** Instance class — create with `new CombatSimulator()`
+
+Monte Carlo combat simulation engine. Runs N independent combat simulations with seeded RNG, aggregates statistical results, and returns structured data for balance analysis. Each run gets a unique seed (`baseSeed-runIndex`). Stateless between `run()` calls.
+
+**Methods:**
+
+| Method | Description |
+|--------|-------------|
+| `run(players, enemies, config)` | Run N simulations. Returns `SimulationResults` with summary and per-combatant metrics |
+
+**Configuration:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `runCount` | number | Number of simulations (100–10000 recommended) |
+| `baseSeed` | string | Base seed — each run gets `baseSeed + index` |
+| `aiConfig` | AIConfig | AI play styles per side |
+| `combatConfig?` | CombatConfig | Optional combat engine configuration |
+| `collectDetailedLogs?` | boolean | Save full combat log per run (memory-intensive) |
+| `onProgress?` | (completed, total) => void | Progress callback after each run |
+| `abortSignal?` | AbortSignal | Cancellation support (returns partial results) |
+
+**Result Types:**
+
+| Type | Description | Key Fields |
+|------|-------------|------------|
+| `SimulationResults` | Complete simulation results | `config`, `summary`, `party`, `encounter`, `perCombatantMetrics`, `runDetails?`, `wasCancelled` |
+| `SimulationSummary` | Aggregate statistics | `totalRuns`, `playerWins`, `enemyWins`, `draws`, `playerWinRate`, `averageRounds`, `medianRounds`, `totalPlayerDeaths`, `totalEnemyDeaths` |
+| `CombatantSimulationMetrics` | Per-combatant aggregate stats | `averageDamagePerRound`, `survivalRate`, `killRate`, `criticalHitRate`, `mostUsedAction`, `damageDistribution`, `hpRemainingDistribution` |
+| `HistogramBucket` | Distribution visualization bucket | `rangeStart`, `rangeEnd`, `count`, `percent` |
+| `PartyConfig` | Party configuration snapshot | `memberCount`, `averageLevel`, `memberNames` |
+| `EncounterConfig` | Encounter configuration snapshot | `enemyCount`, `averageCR`, `enemyNames` |
+| `SimulationRunDetail` | Single run detail (detailed logs only) | `runIndex`, `seed`, `result`, `metrics` |
+
+### BalanceValidator
+
+*Also known as: Encounter balance checker, difficulty validator*
+
+*Location:* *[src/core/combat/Analysis/BalanceValidator.ts](src/core/combat/Analysis/BalanceValidator.ts)*
+
+> **Note:** Instance class — create with `new BalanceValidator()`
+
+Validates encounter balance using Monte Carlo simulation results. Compares actual player win rate against expected win rates per difficulty tier. Produces a `BalanceReport` with balance score, variance classification, and actionable recommendations.
+
+**Methods:**
+
+| Method | Description |
+|--------|-------------|
+| `validate(players, enemies, intendedDifficulty, config)` | Run simulations and produce balance report (convenience method) |
+| `analyze(results, intendedDifficulty)` | Analyze existing simulation results against target difficulty |
+
+**Constants:**
+
+| Constant | Description |
+|----------|-------------|
+| `EXPECTED_WIN_RATES` | Expected win rate ranges per difficulty: Easy (90-100%), Medium (70-80%), Hard (50-60%), Deadly (30-40%) |
+
+**Result Types:**
+
+| Type | Description | Key Fields |
+|------|-------------|------------|
+| `BalanceReport` | Complete balance analysis | `intendedDifficulty`, `actualDifficulty`, `balanceScore` (0-100), `playerWinRate`, `difficultyVariance`, `confidence`, `recommendations` |
+| `BalanceRecommendation` | Actionable suggestion | `description`, `expectedImpact`, `confidence` |
+| `DifficultyVariance` | Variance classification | `'underpowered' \| 'balanced' \| 'overpowered'` |
+
+### ParameterSweep
+
+*Also known as: Parameter sweep, sweep analysis*
+
+*Location:* *[src/core/combat/Analysis/ParameterSweep.ts](src/core/combat/Analysis/ParameterSweep.ts)*
+
+> **Note:** Instance class — create with `new ParameterSweep()`
+
+Varies a single encounter parameter across a range and runs simulations at each data point. Produces `SweepResults` with one data point per parameter value, useful for finding difficulty sweet spots. Stateless between `sweep()` calls.
+
+**Methods:**
+
+| Method | Description |
+|--------|-------------|
+| `sweep(players, baseEncounter, params, onProgress?)` | Run parameter sweep. Returns `SweepResults` with data points |
+
+**Sweep Variables:** `'cr'`, `'enemyCount'`, `'partyLevel'`, `'difficultyMultiplier'`, `'rarity'`, `'hpLevel'`, `'attackLevel'`, `'defenseLevel'`
+
+**Configuration:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `variable` | SweepVariable | Which parameter to vary |
+| `range` | SweepRange | `{ min, max, step }` |
+| `simulationsPerPoint` | number | Simulations per data point |
+| `aiConfig` | AIConfig | AI configuration |
+| `baseSeed?` | string | Seed prefix — each point gets `baseSeed-value` |
+| `abortSignal?` | AbortSignal | Cancellation support |
+
+**Result Types:**
+
+| Type | Description | Key Fields |
+|------|-------------|------------|
+| `SweepResults` | Complete sweep results | `variable`, `range`, `simulationsPerPoint`, `dataPoints[]`, `wasCancelled` |
+| `SweepDataPoint` | Single data point | `parameterValue`, `playerWinRate`, `averageRounds`, `averageHPRemaining`, `totalPlayerDeaths`, `totalEnemyDeaths`, `medianRounds` |
+| `SweepEnemyConfig` | Base enemy config | `cr?`, `rarity?`, `category?`, `archetype?`, `templateId?`, `statLevels?`, `difficultyMultiplier?` |
+
+### ComparativeAnalyzer
+
+*Also known as: A/B comparison, config comparison*
+
+*Location:* *[src/core/combat/Analysis/ComparativeAnalyzer.ts](src/core/combat/Analysis/ComparativeAnalyzer.ts)*
+
+> **Note:** Instance class — create with `new ComparativeAnalyzer()`
+
+Compares two encounter configurations using identical-seed simulation. Both configs are simulated with the same seed sequence, eliminating dice roll variance so outcome differences are attributable to the configuration change. Stateless between `compare()` calls.
+
+**Methods:**
+
+| Method | Description |
+|--------|-------------|
+| `compare(configA, configB, options)` | Compare two configs. Returns `ComparisonResult` with deltas and significance |
+
+**Options:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `runCount` | number | Simulations per configuration |
+| `baseSeed` | string | Both configs use same seed sequence |
+| `aiConfig` | AIConfig | AI configuration |
+| `significanceThreshold?` | number | Alpha for significance test (default: 0.05) |
+| `abortSignal?` | AbortSignal | Cancellation support |
+| `onProgress?` | (completed, total, side) => void | Progress callback |
+
+**Result Types:**
+
+| Type | Description | Key Fields |
+|------|-------------|------------|
+| `ComparisonResult` | Full comparison | `labelA`, `labelB`, `resultsA`, `resultsB`, `deltas`, `combatantDeltas`, `winRateSignificance` |
+| `DeltaMetrics` | Aggregate deltas (positive = favors A) | `winRateDelta`, `averageRoundsDelta`, `averageHPRemainingDelta`, `totalPlayerDeathsDelta` |
+| `CombatantDelta` | Per-combatant deltas | `dprDelta`, `damageDealtDelta`, `damageTakenDelta`, `survivalRateDelta`, `killRateDelta`, `criticalHitRateDelta`, `healingDoneDelta` |
+| `SignificanceResult` | Statistical significance test | `isSignificant`, `pValue`, `threshold`, `interpretation` |
+| `ComparisonConfig` | One side of comparison | `players`, `enemies`, `label?`, `combatConfig?` |
+
+### DifficultyCalculator
+
+*Also known as: CR suggestion engine, difficulty finder*
+
+*Location:* *[src/core/combat/Analysis/DifficultyCalculator.ts](src/core/combat/Analysis/DifficultyCalculator.ts)*
+
+> **Note:** Instance class — create with `new DifficultyCalculator()`
+
+Suggests enemy CR for a target difficulty using simulation-driven binary search. Two-phase approach: (1) XP-budget initial CR estimate, (2) simulation-driven refinement adjusting CR up/down until win rate converges. Stateless between `suggest()` calls.
+
+**Methods:**
+
+| Method | Description |
+|--------|-------------|
+| `suggest(players, enemyTemplate, targetDifficulty, options)` | Suggest enemy CR. Returns `DifficultySuggestion` with recommended CR and simulation data |
+
+**Options:**
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `aiConfig` | AIConfig | — | AI configuration (required) |
+| `combatConfig?` | CombatConfig | — | Combat engine configuration |
+| `baseSeed?` | string | — | Seed prefix |
+| `simulationsPerProbe?` | number | 200 | Simulations per CR probe |
+| `maxIterations?` | number | 10 | Max binary search iterations |
+| `enemyCount?` | number | 1 | Number of enemies in encounter |
+| `abortSignal?` | AbortSignal | — | Cancellation support |
+| `onProgress?` | (iteration, max, cr) => void | — | Progress callback |
+
+**Result Types:**
+
+| Type | Description | Key Fields |
+|------|-------------|------------|
+| `DifficultySuggestion` | Complete suggestion | `recommendedCR`, `winRate`, `confidenceInterval`, `marginOfError`, `converged`, `probes`, `initialCREstimate`, `suggestedEnemy`, `wasCancelled` |
+| `DifficultyProbe` | Single search probe | `cr`, `winRate`, `totalRuns`, `averageRounds`, `averageHPRemaining` |
+| `DifficultyEnemyTemplate` | Enemy template config | `rarity?`, `category?`, `archetype?`, `templateId?`, `statLevels?`, `difficultyMultiplier?` |
+| `DifficultyCalculatorOptions` | Calculator options | See Options table above |
 
 ---
 
@@ -5064,19 +5540,21 @@ Generates innate spellcasting abilities for enemy casters. Unlike player spellca
 
 **InnateSpell Interface:**
 
+> **Note:** `InnateSpell` extends `Spell` (see [Spell](#spell)). The table below shows only the enemy-specific fields. All base `Spell` fields (`damage_dice`, `damage_type`, `saving_throw`, `attack_roll`, `components`, `icon`, `image`, etc.) are also available via inheritance. `SpellCaster.castSpell()` handles both naming conventions transparently (`spell.damage_dice ?? spell.damage`).
+
 | Property | Type | Description |
 |----------|------|-------------|
-| `id` | `string` | Unique identifier |
+| `id` | `string` | Unique identifier *(required on InnateSpell)* |
 | `name` | `string` | Display name |
-| `level` | `number` | Spell level (0 = cantrip, 1-9 = spell level) |
-| `school` | `string` | Magical school (evocation, necromancy, etc.) |
-| `effect` | `string` | Description of what spell does |
-| `damage?` | `string` | Damage dice (e.g., "2d6") for damaging spells |
-| `save?` | `string` | Save type (e.g., "DEX") |
+| `level` | `number` | Spell level (0 = cantrip, 1-9 = spell level) *(required)* |
+| `school` | `string` | Magical school (evocation, necromancy, etc.) *(required)* |
+| `effect` | `string` | Description of what spell does *(required)* |
+| `damage?` | `string` | Damage dice (e.g., "2d6") — enemy format; `SpellCaster` falls back from `damage_dice` |
+| `save?` | `string` | Save type (e.g., "DEX") — enemy format; `SpellCaster` falls back from `saving_throw` |
 | `damageType?` | `string` | Damage type for resistance calculations |
 | `range?` | `number` | Range in feet |
 | `concentration?` | `boolean` | Whether spell requires concentration |
-| `tags?` | `string[]` | Classification tags |
+| `tags?` | `string[]` | Classification tags for AI and status effect detection (see [Spell Tags](#spell)) |
 
 **SpellcastingConfig Interface:**
 

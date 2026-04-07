@@ -15,7 +15,12 @@ Complete guide to generating enemies and encounters in the Playlist Data Engine.
 7. [Template System](#template-system)
 8. [Audio Integration](#audio-integration)
 9. [Encounter Balance](#encounter-balance)
-10. [API Reference](#api-reference)
+10. [Simulation-Based Balance Validation](#simulation-based-balance-validation)
+11. [Parameter Sweep](#parameter-sweep)
+12. [Comparative Analysis](#comparative-analysis)
+13. [Difficulty Calculator](#difficulty-calculator)
+14. [Recommended Simulation Counts](#recommended-simulation-counts)
+15. [API Reference](#api-reference)
 
 ---
 
@@ -840,6 +845,704 @@ const enemies = EnemyGenerator.generateEncounter(party, {
 - **1.0** = Standard difficulty
 - **1.1-1.2** = Harder (for experienced players)
 - **0.8-0.9** = Easier (for newer players)
+
+---
+
+## Simulation-Based Balance Validation
+
+XP budgets (above) are **theoretical** — they use D&D 5e tables to estimate encounter difficulty. Simulation-based validation **tests actual difficulty** by running hundreds of AI-controlled combats and measuring real outcomes.
+
+### Why Simulation?
+
+| Aspect | XP Budget (Theoretical) | Simulation (Empirical) |
+|--------|------------------------|----------------------|
+| **What it measures** | Expected threat level | Actual win/loss outcomes |
+| **Accounts for** | CR, enemy count, party level | AI decisions, dice variance, action economy, abilities |
+| **Accuracy** | Approximate (designed for tabletop) | Precise (matches this game's combat engine) |
+| **Speed** | Instant (table lookup) | Seconds (hundreds of simulated combats) |
+| **Output** | "This is a Medium encounter" | "Players win 73% of the time in ~4 rounds" |
+
+**Use XP budgets for fast encounter generation, then validate with simulation when balance matters.**
+
+### Expected Win Rates
+
+The `BalanceValidator` uses these D&D 5e-inspired targets:
+
+| Difficulty | Player Win Rate | Meaning |
+|------------|----------------|---------|
+| **Easy** | 90–100% | Party almost always wins. Low risk, resource-conservative. |
+| **Medium** | 70–80% | Comfortable but not trivial. Occasional resource drain. |
+| **Hard** | 50–60% | Challenging. Real risk of character death. |
+| **Deadly** | 30–40% | Likely TPK. Major achievement to win. |
+
+These values are tunable via the `EXPECTED_WIN_RATES` constant.
+
+### BalanceValidator
+
+Validates an encounter by comparing simulated win rate against the intended difficulty tier.
+
+```typescript
+import {
+  BalanceValidator,
+  CombatSimulator,
+  AIPlayStyle
+} from 'playlist-data-engine';
+
+// ═══════════════════════════════════════════════════════════════
+// Option A: Validate from scratch (runs simulations internally)
+// ═══════════════════════════════════════════════════════════════
+const validator = new BalanceValidator();
+const report = validator.validate(
+  party,           // Player CharacterSheet[]
+  enemies,         // Enemy CharacterSheet[]
+  'medium',        // Intended difficulty
+  {
+    runCount: 500,
+    baseSeed: 'validation-seed',
+    aiConfig: {
+      playerStyle: 'normal',
+      enemyStyle: 'aggressive'
+    }
+  }
+);
+
+// ═══════════════════════════════════════════════════════════════
+// Option B: Analyze existing simulation results
+// ═══════════════════════════════════════════════════════════════
+const simulator = new CombatSimulator();
+const results = simulator.run(party, enemies, {
+  runCount: 500,
+  baseSeed: 'validation-seed',
+  aiConfig: {
+    playerStyle: 'normal',
+    enemyStyle: 'aggressive'
+  }
+});
+
+const report2 = validator.analyze(results, 'medium');
+```
+
+### BalanceReport Output
+
+The `validate()` and `analyze()` methods return a `BalanceReport`:
+
+```typescript
+interface BalanceReport {
+  intendedDifficulty: 'easy' | 'medium' | 'hard' | 'deadly';
+  actualDifficulty:   'easy' | 'medium' | 'hard' | 'deadly';
+  balanceScore: number;              // 0–100 (100 = perfect match)
+  playerWinRate: number;             // e.g., 0.73
+  expectedWinRate: { min: number; max: number }; // e.g., { min: 0.70, max: 0.80 }
+  difficultyVariance: 'underpowered' | 'balanced' | 'overpowered';
+  confidence: number;                // 0–1 (based on run count)
+  recommendations: BalanceRecommendation[];
+  averagePlayerHPPercentRemaining: number; // 0–100
+  totalRuns: number;
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `balanceScore` | 100 = win rate hits the midpoint of expected range. Decreases with deviation. |
+| `difficultyVariance` | `'underpowered'` = encounter too easy (win rate above expected), `'overpowered'` = too hard (below expected), `'balanced'` = within range. |
+| `confidence` | Statistical confidence based on run count: `1 - 1/√n`. 100 runs ≈ 0.90, 500 runs ≈ 0.96. |
+| `recommendations` | Actionable suggestions for adjusting difficulty (see below). |
+
+### Interpreting Results
+
+```typescript
+// Check if encounter is balanced for its intended difficulty
+if (report.difficultyVariance === 'balanced') {
+  console.log(`Well-balanced! Score: ${report.balanceScore}/100`);
+}
+
+// Check recommendations
+for (const rec of report.recommendations) {
+  console.log(`${rec.description} (${rec.expectedImpact})`);
+}
+// Example outputs:
+// "Reduce enemy CR by 1 level" (+8-12% player win rate)
+// "Add 1-2 additional enemies" (-6-10% player win rate)
+// "Encounter is well-balanced. No changes needed." (None — encounter is within target range)
+```
+
+### Recommendations
+
+The validator generates context-aware recommendations based on how far the win rate deviates:
+
+| Situation | Gap | Recommendations |
+|-----------|-----|----------------|
+| Way too hard | >30% below target | Reduce CR by 1-2, reduce enemy count |
+| Moderately too hard | 15-30% below | Reduce CR by 1 |
+| Slightly too hard | <15% below | Reduce CR by 1 or remove one ability |
+| Slightly too easy | <15% above | Increase CR by 1 or add one enemy |
+| Way too easy | >15% above | Increase CR by 1-2, add 1-2 enemies |
+| Balanced + high HP | Within range | Consider increasing difficulty slightly |
+| Balanced + low HP | Within range | Consider reducing enemy damage slightly |
+
+Each recommendation includes `expectedImpact` (estimated win rate change) and `confidence` (0-1).
+
+### AI Strategy Impact
+
+The AI style used during simulation significantly affects results:
+
+```typescript
+// Normal vs Normal — baseline difficulty measurement
+const normalReport = validator.validate(party, enemies, 'medium', {
+  runCount: 500,
+  aiConfig: { playerStyle: 'normal', enemyStyle: 'normal' }
+});
+
+// Normal players vs Aggressive enemies — maximum threat ceiling
+const aggressiveReport = validator.validate(party, enemies, 'medium', {
+  runCount: 500,
+  aiConfig: { playerStyle: 'normal', enemyStyle: 'aggressive' }
+});
+```
+
+- **Normal enemies** — balanced combat, basic attacks, conservative resources. Measures baseline difficulty.
+- **Aggressive enemies** — maximum effort, burns all spell slots and abilities. Measures difficulty ceiling.
+
+Comparing Normal vs Aggressive enemy results reveals how much enemy resource usage affects the encounter.
+
+### Parameter Sweep
+
+A **parameter sweep** systematically varies a single encounter parameter across a range and runs simulations at each data point. This answers questions like *"What CR makes this a Medium encounter?"* or *"How does adding more enemies change the difficulty curve?"*
+
+```typescript
+import { ParameterSweep } from 'playlist-data-engine';
+
+const sweeper = new ParameterSweep();
+
+// ═══════════════════════════════════════════════════════════════
+// Sweep CR from 1 to 10 to find the sweet spot for Medium
+// ═══════════════════════════════════════════════════════════════
+const results = sweeper.sweep(
+  party,                                    // Player CharacterSheet[]
+  { cr: 3, rarity: 'elite', category: 'humanoid', archetype: 'brute' },
+  {
+    variable: 'cr',
+    range: { min: 1, max: 10, step: 1 },   // 10 data points
+    simulationsPerPoint: 200,
+    aiConfig: {
+      playerStyle: 'normal',
+      enemyStyle: 'aggressive'
+    },
+    baseSeed: 'cr-sweep',
+  },
+  (completed, total) => console.log(`Sweep ${completed}/${total}`)
+);
+
+// Each data point has a parameter value and simulation summary
+for (const point of results.dataPoints) {
+  console.log(
+    `CR ${point.parameterValue}: ` +
+    `${(point.playerWinRate * 100).toFixed(1)}% win rate, ` +
+    `${point.averageRounds.toFixed(1)} avg rounds`
+  );
+}
+```
+
+#### SweepParams
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `variable` | `SweepVariable` | Which parameter to vary (see table below) |
+| `range` | `{ min, max, step }` | Range of values to sweep across |
+| `simulationsPerPoint` | `number` | Number of simulations at each data point |
+| `aiConfig` | `AIConfig` | AI strategy for all simulations in the sweep |
+| `combatConfig?` | `CombatConfig` | Optional combat engine overrides |
+| `baseSeed?` | `string` | Seed prefix — each point gets `baseSeed-value` |
+| `abortSignal?` | `AbortSignal` | Cancel the sweep mid-execution |
+
+#### SweepVariable — What You Can Sweep
+
+| Variable | Effect | Example Range |
+|----------|--------|---------------|
+| `'cr'` | Varies enemy Challenge Rating | `{ min: 1, max: 10, step: 1 }` |
+| `'enemyCount'` | Varies number of enemies generated | `{ min: 1, max: 8, step: 1 }` |
+| `'partyLevel'` | Scales all player levels (simplified) | `{ min: 1, max: 20, step: 1 }` |
+| `'difficultyMultiplier'` | Scales enemy stats proportionally | `{ min: 0.5, max: 2.0, step: 0.1 }` |
+| `'rarity'` | Maps 0–3 to common/uncommon/elite/boss | `{ min: 0, max: 3, step: 1 }` |
+| `'hpLevel'` | Overrides enemy HP to a different effective level | `{ min: 1, max: 20, step: 1 }` |
+| `'attackLevel'` | Overrides enemy attack to a different effective level | `{ min: 1, max: 20, step: 1 }` |
+| `'defenseLevel'` | Overrides enemy defense to a different effective level | `{ min: 1, max: 20, step: 1 }` |
+
+#### SweepResults
+
+The `sweep()` method returns a `SweepResults` object with one `SweepDataPoint` per value in the range, ordered from lowest to highest:
+
+```typescript
+interface SweepResults {
+  variable: SweepVariable;         // Which parameter was swept
+  range: SweepRange;               // The range that was swept
+  simulationsPerPoint: number;     // Sims per data point
+  dataPoints: SweepDataPoint[];    // One per value in the range
+  wasCancelled: boolean;           // True if cancelled before completion
+}
+```
+
+Each `SweepDataPoint` contains:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `parameterValue` | `number` | The value of the sweep parameter at this point |
+| `playerWinRate` | `number` | Player win rate (0.0–1.0) |
+| `averageRounds` | `number` | Average rounds to combat resolution |
+| `medianRounds` | `number` | Median rounds to combat resolution |
+| `averageHPRemaining` | `number` | Average player HP remaining % on wins |
+| `totalPlayerDeaths` | `number` | Total player deaths across all sims |
+| `totalEnemyDeaths` | `number` | Total enemy deaths across all sims |
+
+#### Interpreting Sweep Results
+
+Plot `playerWinRate` against `parameterValue` to see the difficulty curve. Key patterns:
+
+- **CR sweep**: Win rate should generally decrease as CR increases. The "sweet spot" for a given difficulty is where the win rate falls in the expected range.
+- **Enemy count sweep**: Similar to CR — more enemies means lower win rate. Watch for steep drop-offs (action economy tipping points).
+- **Difficulty multiplier sweep**: Produces the smoothest curves because it scales all enemy stats proportionally. Best for fine-tuning.
+- **Stat level sweeps** (`hpLevel`, `attackLevel`, `defenseLevel`): Reveal which stat axis has the most impact on difficulty. Useful for creating specialized enemies (tanks, glass cannons, brutes).
+
+```typescript
+// Find the CR range that produces Medium difficulty (70-80% win rate)
+const mediumPoints = results.dataPoints.filter(
+  p => p.playerWinRate >= 0.70 && p.playerWinRate <= 0.80
+);
+if (mediumPoints.length > 0) {
+  console.log(
+    `Medium difficulty CR range: ${mediumPoints[0].parameterValue}` +
+    `–${mediumPoints[mediumPoints.length - 1].parameterValue}`
+  );
+}
+
+// Find the exact CR closest to 75% win rate
+const closest = results.dataPoints.reduce((best, p) =>
+  Math.abs(p.playerWinRate - 0.75) < Math.abs(best.playerWinRate - 0.75)
+    ? p : best
+);
+console.log(`Best CR for Medium: ${closest.parameterValue} (${(closest.playerWinRate * 100).toFixed(1)}%)`);
+```
+
+#### Cancellation
+
+Like `CombatSimulator`, parameter sweeps support `AbortSignal` for cancellation. Partial results are returned:
+
+```typescript
+const controller = new AbortController();
+
+// Cancel after 3 seconds
+setTimeout(() => controller.abort(), 3000);
+
+const partialResults = sweeper.sweep(party, encounter, {
+  variable: 'cr',
+  range: { min: 1, max: 20, step: 1 },
+  simulationsPerPoint: 500,
+  aiConfig: { playerStyle: 'normal', enemyStyle: 'aggressive' },
+  abortSignal: controller.signal,
+});
+
+console.log(`Completed ${partialResults.dataPoints.length} of 20 points`);
+```
+
+### Comparative Analysis
+
+**Comparative analysis** runs two encounter configurations with identical seed sequences, isolating the effect of a single variable change. This answers questions like *"How much does +2 AC improve win rate?"* or *"Is adding a 5th party member statistically significant?"*
+
+Because both configurations use the same dice rolls (via deterministic seeding), any difference in outcomes is attributable to the configuration change itself — not random variance.
+
+```typescript
+import { ComparativeAnalyzer, EnemyGenerator } from 'playlist-data-engine';
+
+const analyzer = new ComparativeAnalyzer();
+
+// ═══════════════════════════════════════════════════════════════
+// Compare: "+2 AC" vs "No AC bonus" for a level 5 party
+// ═══════════════════════════════════════════════════════════════
+const enemiesA = [
+  EnemyGenerator.generate({ seed: 'base-enemy', cr: 3, rarity: 'elite' }),
+];
+const enemiesB = [
+  EnemyGenerator.generate({ seed: 'base-enemy', cr: 3, rarity: 'elite' }),
+];
+
+// Modify one config — e.g., boost enemy AC in config B
+enemiesB[0].ac! += 2;
+
+const comparison = analyzer.compare(
+  { players: party, enemies: enemiesA, label: 'Base' },
+  { players: party, enemies: enemiesB, label: '+2 AC' },
+  {
+    runCount: 500,
+    baseSeed: 'ac-comparison',
+    aiConfig: {
+      playerStyle: 'normal',
+      enemyStyle: 'aggressive',
+    },
+  },
+);
+
+console.log(`Win rate delta: ${(comparison.deltas.winRateDelta * 100).toFixed(1)}%`);
+console.log(`Significant: ${comparison.winRateSignificance.isSignificant}`);
+console.log(comparison.winRateSignificance.interpretation);
+```
+
+#### Identical-Seed Methodology
+
+Both configurations are simulated using the same seed sequence (`baseSeed-A` for config A, `baseSeed-B` for config B). This means:
+
+- **Same dice rolls**: Each run index uses deterministic seeds derived from the same base, so both configs experience the same attack rolls, damage rolls, saving throws, and initiative order.
+- **Isolated variable**: The only difference in outcomes comes from the configuration change (e.g., +2 AC, different party size, different CR).
+- **Pair-wise comparison**: Results are comparable run-by-run, not just in aggregate.
+
+This is more statistically powerful than running two independent simulations and comparing — the paired design eliminates dice variance as a confounding factor.
+
+#### ComparisonConfig
+
+Each side of the comparison is defined by a `ComparisonConfig`:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `players` | `CharacterSheet[]` | Player characters for this config |
+| `enemies` | `CharacterSheet[]` | Enemy characters for this config |
+| `label?` | `string` | Display name (e.g., `"Base"`, `"+2 AC"`). Default: `"Config A"` / `"Config B"` |
+| `combatConfig?` | `CombatConfig` | Optional combat engine overrides |
+
+#### ComparisonOptions
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `runCount` | `number` | Simulations per configuration (500+ recommended) |
+| `baseSeed` | `string` | Base seed — both configs use derived seeds from this |
+| `aiConfig` | `AIConfig` | AI strategy for all simulations |
+| `combatConfig?` | `CombatConfig` | Optional combat engine overrides (used if not set per-config) |
+| `significanceThreshold?` | `number` | Alpha level for significance test (default: `0.05`) |
+| `abortSignal?` | `AbortSignal` | Cancel the comparison mid-execution |
+| `onProgress?` | `(completed, total, side) => void` | Progress callback per side |
+
+#### ComparisonResult
+
+The `compare()` method returns a `ComparisonResult` with full data for both sides:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `labelA` | `string` | Label for configuration A |
+| `labelB` | `string` | Label for configuration B |
+| `resultsA` | `SimulationResults` | Full simulation results for config A |
+| `resultsB` | `SimulationResults` | Full simulation results for config B |
+| `summaryA` | `SimulationSummary` | Summary for config A |
+| `summaryB` | `SimulationSummary` | Summary for config B |
+| `deltas` | `DeltaMetrics` | Aggregate difference metrics |
+| `combatantDeltas` | `CombatantDelta[]` | Per-combatant differences |
+| `winRateSignificance` | `SignificanceResult` | Statistical significance of win rate difference |
+| `wasCancelled` | `boolean` | Whether comparison was cancelled |
+
+#### DeltaMetrics
+
+Aggregate differences between configurations. **Positive values favor config A** (A is better for players):
+
+| Field | Description |
+|-------|-------------|
+| `winRateDelta` | Win rate difference (e.g., `+0.15` = A wins 15% more) |
+| `averageRoundsDelta` | Average rounds difference |
+| `averageHPRemainingDelta` | Average player HP remaining % difference |
+| `totalPlayerDeathsDelta` | Player death count difference (negative = fewer deaths in A) |
+| `totalEnemyDeathsDelta` | Enemy death count difference |
+| `medianRoundsDelta` | Median rounds difference |
+
+#### CombatantDelta
+
+Per-combatant differences, matched by side and index position:
+
+| Field | Description |
+|-------|-------------|
+| `name` | Combatant name (from config A) |
+| `side` | `'player'` or `'enemy'` |
+| `dprDelta` | Damage per round difference |
+| `damageDealtDelta` | Average total damage dealt difference |
+| `damageTakenDelta` | Average total damage taken difference |
+| `survivalRateDelta` | Survival rate difference |
+| `killRateDelta` | Kill rate difference |
+| `criticalHitRateDelta` | Critical hit rate difference |
+| `healingDoneDelta` | Average healing done difference |
+
+Unmatched combatants (different party sizes) are marked with `(only in A)` or `(only in B)`.
+
+#### SignificanceResult
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `isSignificant` | `boolean` | Whether the difference is statistically significant |
+| `pValue` | `number` | Approximate p-value from the test |
+| `threshold` | `number` | The significance threshold used (alpha) |
+| `interpretation` | `string` | Human-readable explanation of the result |
+
+Significance is tested using a **normal approximation for the difference of proportions** (two-tailed test). For small samples (n < 30), a conservative minimum detectable effect threshold is used instead.
+
+#### Common Use Cases
+
+**Comparing stat changes:**
+```typescript
+// Does +2 AC on enemies meaningfully increase difficulty?
+const baseEnemy = EnemyGenerator.generate({ seed: 'goblin', cr: 2 });
+const tankyEnemy = EnemyGenerator.generate({ seed: 'goblin', cr: 2 });
+tankyEnemy.ac! += 2;
+
+const result = analyzer.compare(
+  { players: party, enemies: [baseEnemy], label: 'Base AC' },
+  { players: party, enemies: [tankyEnemy], label: '+2 AC' },
+  { runCount: 500, baseSeed: 'ac-test', aiConfig: { playerStyle: 'normal', enemyStyle: 'aggressive' } },
+);
+
+// Negative winRateDelta means B is harder (AC increase hurt players)
+console.log(result.deltas.winRateDelta); // e.g., -0.12 (12% lower win rate)
+```
+
+**Comparing party sizes:**
+```typescript
+// Is a 5th party member significantly impactful?
+const result = analyzer.compare(
+  { players: party4, enemies: encounter, label: '4 Players' },
+  { players: party5, enemies: encounter, label: '5 Players' },
+  { runCount: 500, baseSeed: 'party-size', aiConfig: { playerStyle: 'normal', enemyStyle: 'aggressive' } },
+);
+
+console.log(result.winRateSignificance.interpretation);
+// "Config 5 Players has a statistically significant 18.2% higher win rate (p=0.0012, n=500)"
+```
+
+**Comparing enemy CR:**
+```typescript
+// Is CR 5 meaningfully harder than CR 3?
+const enemies3 = Array.from({ length: 3 }, (_, i) =>
+  EnemyGenerator.generate({ seed: `cr3-${i}`, cr: 3, rarity: 'uncommon' })
+);
+const enemies5 = Array.from({ length: 3 }, (_, i) =>
+  EnemyGenerator.generate({ seed: `cr5-${i}`, cr: 5, rarity: 'uncommon' })
+);
+
+const result = analyzer.compare(
+  { players: party, enemies: enemies3, label: 'CR 3' },
+  { players: party, enemies: enemies5, label: 'CR 5' },
+  { runCount: 500, baseSeed: 'cr-compare', aiConfig: { playerStyle: 'normal', enemyStyle: 'aggressive' } },
+);
+```
+
+---
+
+## Difficulty Calculator
+
+> **"What CR should I use for a Hard encounter with this level 5 party?"**
+
+The `DifficultyCalculator` answers this question by combining **XP-budget theory** (D&D 5e encounter building math) with **simulation-driven refinement**. It runs actual combats at different CR values and uses binary search to find the CR that produces the target win rate for your desired difficulty.
+
+### How It Works
+
+The search uses a two-phase approach:
+
+1. **XP Budget Estimate** — `getXPBudgetForParty()` calculates the theoretical XP budget for the party at the target difficulty, adjusts for enemy count via encounter multiplier, then converts to a CR estimate via `getCRFromXP()`. This gives a reasonable starting point.
+
+2. **Simulation-Driven Refinement** — binary search over CR values. At each step, the calculator:
+   - Generates enemies from the template at the current CR
+   - Runs N simulations (default: 200 per probe)
+   - Checks if the player win rate falls within the target range
+   - Adjusts CR up (win rate too high → encounter too easy) or down (win rate too low → encounter too hard)
+
+The search converges when the win rate is within the expected range for the target difficulty, or after 10 iterations (whichever comes first).
+
+### CR Rounding
+
+CR values are rounded to standard D&D 5e steps: `0.125`, `0.25`, `0.5`, or integers. The search uses fractional CRs internally but reports rounded values in the final suggestion.
+
+### Confidence Intervals
+
+Each suggestion includes a **margin of error** calculated via normal approximation for proportions (z = 1.96, 95% confidence). This is expressed as a human-readable string:
+
+```
+"72% ± 5%"
+```
+
+The margin of error decreases with more simulations per probe. For higher confidence, increase `simulationsPerProbe`.
+
+### Usage
+
+```typescript
+import { DifficultyCalculator } from 'playlist-data-engine';
+
+const calculator = new DifficultyCalculator();
+
+const suggestion = calculator.suggest(
+  party,                                   // Player CharacterSheet[]
+  { rarity: 'elite', category: 'humanoid', archetype: 'brute' },
+  'hard',                                  // Target difficulty
+  {
+    aiConfig: {
+      playerStyle: 'normal',
+      enemyStyle: 'aggressive',
+    },
+    baseSeed: 'my-search',
+    simulationsPerProbe: 200,
+    enemyCount: 1,
+    onProgress: (iteration, maxIterations, currentCR) => {
+      console.log(`Probe ${iteration}/${maxIterations} — testing CR ${currentCR}`);
+    },
+  },
+);
+
+console.log(suggestion.recommendedCR);      // e.g., 3
+console.log(suggestion.winRate);            // e.g., 0.73
+console.log(suggestion.confidenceInterval); // e.g., "73% ± 5%"
+console.log(suggestion.converged);          // true
+console.log(suggestion.suggestedEnemy);     // Generated CharacterSheet at CR 3
+```
+
+### DifficultyCalculatorOptions
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `aiConfig` | `AIConfig` | *(required)* | AI configuration for simulations |
+| `combatConfig` | `CombatConfig` | `undefined` | Optional combat engine overrides |
+| `baseSeed` | `string` | `'difficulty-calc'` | Base seed — each probe gets a derived seed |
+| `simulationsPerProbe` | `number` | `200` | Simulation runs per CR probe |
+| `maxIterations` | `number` | `10` | Maximum binary search iterations |
+| `enemyCount` | `number` | `1` | Number of enemies in the encounter |
+| `abortSignal` | `AbortSignal` | `undefined` | Cancellation support |
+| `onProgress` | `function` | `undefined` | Callback: `(iteration, maxIterations, currentCR)` |
+
+### DifficultyEnemyTemplate
+
+Defines the "shape" of the enemy. CR is set automatically by the search — all other fields define the template.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `rarity` | `EnemyRarity` | `'elite'` | Rarity tier |
+| `category` | `EnemyCategory` | `'humanoid'` | Enemy category |
+| `archetype` | `EnemyArchetype` | `'brute'` | Combat archetype |
+| `templateId` | `string` | `undefined` | Force a specific template |
+| `statLevels` | `StatLevelOverrides` | `undefined` | HP/attack/defense level overrides |
+| `difficultyMultiplier` | `number` | `undefined` | Fine-tune enemy difficulty |
+
+### DifficultySuggestion
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `targetDifficulty` | `EncounterDifficulty` | The requested difficulty tier |
+| `recommendedCR` | `number` | Suggested CR (rounded to standard D&D step) |
+| `winRate` | `number` | Player win rate at the recommended CR (0–1) |
+| `expectedWinRateRange` | `{ min, max }` | Target win rate range for the difficulty |
+| `confidenceInterval` | `string` | Human-readable, e.g., `"73% ± 5%"` |
+| `marginOfError` | `number` | Statistical margin of error (±) |
+| `converged` | `boolean` | Whether the search found a CR within the target range |
+| `totalSimulationsRun` | `number` | Total simulations across all probes |
+| `iterationsUsed` | `number` | Number of probes actually performed |
+| `probes` | `DifficultyProbe[]` | Full search history (CR, win rate, etc. per probe) |
+| `initialCREstimate` | `number` | XP-budget-based CR estimate (before simulation) |
+| `suggestedEnemy` | `CharacterSheet` | Generated enemy at the recommended CR |
+| `wasCancelled` | `boolean` | Whether the search was cancelled |
+
+### DifficultyProbe
+
+Each entry in the `probes` array records one step of the binary search.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `cr` | `number` | CR value tested |
+| `winRate` | `number` | Player win rate from simulation |
+| `totalRuns` | `number` | Number of simulation runs |
+| `averageRounds` | `number` | Average rounds to resolution |
+| `averageHPRemaining` | `number` | Average player HP % remaining on wins |
+
+### Multi-Enemy Encounters
+
+For encounters with multiple enemies, set `enemyCount` to the desired number. The calculator adjusts the XP budget using the encounter multiplier (1 enemy = 1×, 2 enemies = 1.5×, 3–6 = 2×, 7–10 = 2.5×, 11–14 = 3×) and searches for a per-enemy CR that produces the target difficulty.
+
+```typescript
+const suggestion = calculator.suggest(
+  party,
+  { rarity: 'common', archetype: 'archer' },
+  'medium',
+  { aiConfig, enemyCount: 3, baseSeed: 'mob-search' },
+);
+
+// Recommended CR is per-enemy — all 3 enemies use this CR
+console.log(suggestion.recommendedCR); // e.g., 0.5
+```
+
+### Cancellation
+
+Like other long-running tools, the calculator supports `AbortController` for cancellation. Partial results are returned with `wasCancelled: true`.
+
+```typescript
+const controller = new AbortController();
+
+// Cancel after 3 seconds
+setTimeout(() => controller.abort(), 3000);
+
+const suggestion = calculator.suggest(
+  party, template, 'hard',
+  { aiConfig, baseSeed: 'quick', abortSignal: controller.signal },
+);
+
+console.log(suggestion.wasCancelled);  // true
+console.log(suggestion.probes.length); // 1–2 (partial results)
+```
+
+### When to Use
+
+| Scenario | Tool |
+|----------|------|
+| "Is this encounter balanced?" | `BalanceValidator` (validate existing config) |
+| "How does difficulty change across CR 1–10?" | `ParameterSweep` (curve exploration) |
+| "What CR should I use for Medium difficulty?" | **`DifficultyCalculator`** (inverse problem) |
+| "Is +2 AC meaningfully different?" | `ComparativeAnalyzer` (A/B testing) |
+
+---
+
+## Recommended Simulation Counts
+
+Choosing the right number of simulation runs balances confidence against speed. More runs = tighter confidence intervals, but diminishing returns set in quickly.
+
+### Quick Reference
+
+| Purpose | Runs | Speed* | Confidence | Margin of Error | Use When |
+|---------|------|--------|------------|-----------------|----------|
+| Quick exploration | 100 | <0.1s | Rough estimate | ~±10% | Prototyping, sanity checks, early iteration |
+| Standard analysis | 500 | <0.5s | Reasonable | ~±4% | Most balance decisions, parameter sweeps |
+| Thorough validation | 2,000 | ~1s | High | ~±2% | Final balance passes, shipping decisions |
+| Publication-quality | 5,000+ | ~2s | Very high | ~±1.5% | Documentation, balance patches, release notes |
+
+*\*Speed estimates based on standard 4v1 party-vs-encounter composition. Actual speed depends on encounter size and combat duration.*
+
+### How Margin of Error Works
+
+The simulator reports results as percentages (e.g., "72% player win rate"). With fewer runs, that percentage has more uncertainty:
+
+- **100 runs**: A reported 72% win rate means the true value is likely between 62–82% (±10%)
+- **500 runs**: A reported 72% win rate means the true value is likely between 68–76% (±4%)
+- **2,000 runs**: A reported 72% win rate means the true value is likely between 70–74% (±2%)
+
+The formula: `margin of error ≈ 1 / √(totalRuns)` (at 95% confidence).
+
+### Recommendations by Tool
+
+| Tool | Recommended Runs | Why |
+|------|-----------------|-----|
+| `BalanceValidator` | 500 | Single data point — 500 gives ±4% which is enough to classify difficulty |
+| `ParameterSweep` | 100–250 per point | Sweeps generate many data points — lower per-point counts are acceptable for curve shape |
+| `ComparativeAnalyzer` | 500–1,000 per config | Statistical significance testing needs sufficient sample size per config |
+| `DifficultyCalculator` | 250 per probe | Binary search makes multiple probes — lower per-probe counts with convergence checking |
+
+### When to Use More Runs
+
+- **Close to a difficulty boundary**: If win rate is near a threshold (e.g., 68–72% for Medium), use more runs to determine which side it falls on
+- **Comparing similar configurations**: Small differences need larger samples to detect as statistically significant
+- **Boss encounters**: Boss fights have higher variance (legendary actions, more abilities) — use 2× the normal count
+- **Final ship decisions**: Always validate with 2,000+ runs before committing balance changes
+
+### When Fewer Runs Are Fine
+
+- **Early iteration**: While adjusting CR, enemy count, or templates, 100 runs gives enough signal to guide direction
+- **Obviously broken balance**: A 5% or 95% win rate won't change meaningfully with more runs
+- **Sweep exploration**: A 20-point CR sweep at 100 runs/point completes in under a second and shows the trend clearly
 
 ---
 
