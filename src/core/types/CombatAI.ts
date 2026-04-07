@@ -154,6 +154,8 @@ export interface CombatantMetrics {
     actionsByType: Record<string, number>;
     /** Damage dealt per round (index = round number, value = damage that round) */
     damagePerRound: number[];
+    /** HP remaining at combat end (as percentage of max HP, 0–100). 0 if defeated. */
+    hpRemainingPercent: number;
 }
 
 /**

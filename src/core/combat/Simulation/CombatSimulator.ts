@@ -23,7 +23,7 @@
  */
 
 import type { CharacterSheet } from '../../types/Character.js';
-import type { CombatConfig, CombatResult } from '../../types/Combat.js';
+import type { CombatConfig, CombatInstance, CombatResult } from '../../types/Combat.js';
 import type { AIConfig, CombatantMetrics } from '../../types/CombatAI.js';
 import { AICombatRunner } from '../AI/AICombatRunner.js';
 import { createSeededRoller } from '../SeededDiceRoller.js';
@@ -193,6 +193,9 @@ export interface SimulationRunDetail {
 
   /** Seed used for this run */
   seed: string;
+
+  /** Full combat instance with complete action history */
+  combat: CombatInstance;
 
   /** Final combat result */
   result: CombatResult;
@@ -420,7 +423,7 @@ export class SimulationAggregator {
     runIndex: number,
     seed: string,
   ): void {
-    const { result, metrics } = runResult;
+    const { combat, result, metrics } = runResult;
 
     // Count outcomes
     switch (result.winnerSide) {
@@ -485,6 +488,7 @@ export class SimulationAggregator {
       this.runDetails.push({
         runIndex,
         seed,
+        combat,
         result,
         metrics: new Map(metrics), // shallow copy
       });
@@ -610,6 +614,11 @@ export class CombatantAccumulator {
     if (m.roundsSurvived > 0 && m.damagePerRound.length > 0) {
       const avgDPR = m.damagePerRound.reduce((a, b) => a + b, 0) / m.damagePerRound.length;
       this.damagePerRoundList.push(avgDPR);
+    }
+
+    // HP remaining: record for survivors only
+    if (m.survived && m.hpRemainingPercent > 0) {
+      this.hpRemainingList.push(m.hpRemainingPercent);
     }
 
     // Track kill: this combatant dealt the final blow to the last enemy.

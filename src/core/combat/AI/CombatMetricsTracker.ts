@@ -42,6 +42,7 @@ export class CombatMetricsTracker {
         survived: !c.isDefeated,
         actionsByType: {},
         damagePerRound: [],
+        hpRemainingPercent: 0,
       });
     }
 
@@ -181,6 +182,14 @@ export class CombatMetricsTracker {
       // Compute damage per round from aggregate data
       if (m.roundsSurvived > 0 && m.totalDamageDealt > 0) {
         m.damagePerRound = [m.totalDamageDealt / m.roundsSurvived];
+      }
+
+      // Compute HP remaining percent from combatant state
+      const combatant = combat.combatants.find(c => c.id === id);
+      if (combatant && combatant.character.hp.max > 0) {
+        m.hpRemainingPercent = m.survived
+          ? Math.round((combatant.currentHP / combatant.character.hp.max) * 100)
+          : 0;
       }
     }
 
