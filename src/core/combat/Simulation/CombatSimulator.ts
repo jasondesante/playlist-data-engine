@@ -341,7 +341,7 @@ export class CombatSimulator {
  * CombatResult and CombatantMetrics, building up running totals that
  * are finalized into SimulationResults when `getResults()` is called.
  */
-class SimulationAggregator {
+export class SimulationAggregator {
   private readonly config: SimulationConfig;
   private readonly party: PartyConfig;
   private readonly encounter: EncounterConfig;
@@ -557,7 +557,7 @@ class SimulationAggregator {
  * Accumulates metrics for a single combatant across many simulation runs.
  * Produces CombatantSimulationMetrics when finalized.
  */
-class CombatantAccumulator {
+export class CombatantAccumulator {
   readonly id: string;
   readonly name: string;
   readonly side: 'player' | 'enemy';

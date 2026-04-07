@@ -310,6 +310,7 @@ export type {
 
 // Combat types
 export type {
+    DiceRollerAPI,
     StatusEffect,
     StatusEffectMechanics,
     Combatant,
@@ -322,6 +323,7 @@ export type {
     CombatResult,
     DamageType,
     SavingThrowAbility,
+    TreasureConfig,
     CombatConfig
 } from './core/types/Combat.js';
 
@@ -343,7 +345,7 @@ export { CombatMetricsTracker } from './core/combat/AI/CombatMetricsTracker.js';
 export type { AICombatResult } from './core/combat/AI/AICombatRunner.js';
 
 // Combat Simulation
-export { CombatSimulator } from './core/combat/Simulation/CombatSimulator.js';
+export { CombatSimulator, SimulationAggregator, CombatantAccumulator } from './core/combat/Simulation/CombatSimulator.js';
 export type {
     SimulationConfig,
     SimulationResults,
@@ -832,7 +834,12 @@ export type {
     EnemyGenerationOptions,
     EncounterGenerationOptions,
     EnemyMetadata,
-    EnemyFeature
+    EnemyFeature,
+    StatLevelOverrides,
+    LegendaryAction,
+    LegendaryConfig,
+    InnateSpell,
+    SpellcastingConfig
 } from './core/types/Enemy.js';
 
 export {
@@ -991,6 +998,7 @@ export { CombatEngine } from './core/combat/CombatEngine.js';
 
 // Dice rolling utilities
 export { DiceRoller } from './core/combat/DiceRoller.js';
+export { SeededDiceRoller, createSeededRoller } from './core/combat/SeededDiceRoller.js';
 
 // Combat system classes
 export { InitiativeRoller } from './core/combat/InitiativeRoller.js';
