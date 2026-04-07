@@ -342,6 +342,19 @@ export { AICombatRunner } from './core/combat/AI/AICombatRunner.js';
 export { CombatMetricsTracker } from './core/combat/AI/CombatMetricsTracker.js';
 export type { AICombatResult } from './core/combat/AI/AICombatRunner.js';
 
+// Combat Simulation
+export { CombatSimulator } from './core/combat/Simulation/CombatSimulator.js';
+export type {
+    SimulationConfig,
+    SimulationResults,
+    SimulationSummary,
+    SimulationRunDetail,
+    CombatantSimulationMetrics,
+    HistogramBucket,
+    PartyConfig,
+    EncounterConfig,
+} from './core/combat/Simulation/CombatSimulator.js';
+
 // Feature types
 export type {
     ClassFeature,
