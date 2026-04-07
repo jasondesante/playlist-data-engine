@@ -257,6 +257,12 @@ export interface EnemyGenerationOptions {
      * ```
      */
     statLevels?: StatLevelOverrides;
+
+    /** Optional - Enemy category for template selection */
+    category?: EnemyCategory;
+
+    /** Optional - Combat archetype for template selection */
+    archetype?: EnemyArchetype;
 }
 
 /**

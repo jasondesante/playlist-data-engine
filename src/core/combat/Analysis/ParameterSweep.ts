@@ -379,12 +379,15 @@ export class ParameterSweep {
       ...player,
       level: intLevel,
       // Adjust HP proportionally to level change
-      hp: Math.round(
-        (player.hp / Math.max(1, player.level)) * intLevel
-      ),
-      max_hp: Math.round(
-        (player.max_hp / Math.max(1, player.level)) * intLevel
-      ),
+      hp: {
+        ...player.hp,
+        current: Math.round(
+          (player.hp.current / Math.max(1, player.level)) * intLevel
+        ),
+        max: Math.round(
+          (player.hp.max / Math.max(1, player.level)) * intLevel
+        ),
+      },
     }));
     return { modifiedPlayers, modifiedEnemies: this.generateEnemies(baseEncounter, 1) };
   }

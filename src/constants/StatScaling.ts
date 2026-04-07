@@ -219,7 +219,7 @@ export function getAttackAtLevel(
     archetype: EnemyArchetype
 ): { damageDie: string; damageModifier: number; attackBonus: number } {
     const primaryStat = getPrimaryStat(archetype);
-    const primaryMod = Math.floor((baseStats[primaryStat] - 10) / 2);
+    const primaryMod = Math.floor(((baseStats[primaryStat] ?? 10) - 10) / 2);
 
     // Proficiency bonus at this level
     const proficiency = Math.ceil(1 + (level - 1) / 4);
@@ -311,7 +311,7 @@ export function getDamageModifierForStats(
     archetype: EnemyArchetype
 ): number {
     const primaryStat = getPrimaryStat(archetype);
-    const primaryMod = Math.floor((baseStats[primaryStat] - 10) / 2);
+    const primaryMod = Math.floor(((baseStats[primaryStat] ?? 10) - 10) / 2);
     const baseMod = Math.floor(BASE_DAMAGE_MOD_PER_LEVEL * (level - 1));
     return primaryMod + baseMod;
 }
