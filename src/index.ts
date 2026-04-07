@@ -330,7 +330,8 @@ export type {
     AIPlayStyle,
     AIConfig,
     AIDecision,
-    AIThreatAssessment
+    AIThreatAssessment,
+    CombatantMetrics
 } from './core/types/CombatAI.js';
 
 export { isValidAIPlayStyle } from './core/types/CombatAI.js';
@@ -338,6 +339,7 @@ export { isValidAIPlayStyle } from './core/types/CombatAI.js';
 // Combat AI
 export { CombatAI } from './core/combat/AI/CombatAI.js';
 export { AICombatRunner } from './core/combat/AI/AICombatRunner.js';
+export { CombatMetricsTracker } from './core/combat/AI/CombatMetricsTracker.js';
 export type { AICombatResult } from './core/combat/AI/AICombatRunner.js';
 
 // Feature types

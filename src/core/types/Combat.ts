@@ -7,6 +7,7 @@ import type { CharacterSheet, Attack, Spell } from './Character';
 import type { EnvironmentalContext } from './Progression';
 import type { Equipment } from '../../utils/constants.ts';
 import type { LegendaryAction } from './Enemy';
+import type { CombatantMetrics } from './CombatAI';
 
 /**
  * DiceRollerAPI - Common interface for dice rolling implementations.
@@ -207,6 +208,8 @@ export interface CombatInstance {
   winnerSide?: 'player' | 'enemy' | 'draw';  // Set when combat ends
   startTime: number;
   lastUpdated: number;
+  /** Per-combatant metrics computed from combat history (populated by CombatMetricsTracker) */
+  metrics?: Map<string, CombatantMetrics>;
 }
 
 /**

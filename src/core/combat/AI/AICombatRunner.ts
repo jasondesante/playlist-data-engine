@@ -20,9 +20,10 @@ import type {
   CombatResult,
   DiceRollerAPI,
 } from '../../types/Combat.js';
-import type { AIConfig, AIDecision } from '../../types/CombatAI.js';
+import type { AIConfig, AIDecision, CombatantMetrics } from '../../types/CombatAI.js';
 import { CombatEngine } from '../CombatEngine.js';
 import { CombatAI } from './CombatAI.js';
+import { CombatMetricsTracker } from './CombatMetricsTracker.js';
 
 /**
  * Result of an AI-driven combat simulation.
@@ -33,6 +34,8 @@ export interface AICombatResult {
   combat: CombatInstance;
   /** Final combat result (winner, XP, rounds, etc.) */
   result: CombatResult;
+  /** Per-combatant metrics computed from combat history */
+  metrics: Map<string, CombatantMetrics>;
 }
 
 /**
@@ -75,6 +78,7 @@ export class AICombatRunner {
 
     // Edge case: no combatants
     if (combat.combatants.length === 0) {
+      const emptyMetrics = new Map<string, CombatantMetrics>();
       return {
         combat,
         result: {
@@ -85,6 +89,7 @@ export class AICombatRunner {
           xpAwarded: 0,
           description: 'No combatants — combat could not start.',
         },
+        metrics: emptyMetrics,
       };
     }
 
@@ -136,7 +141,11 @@ export class AICombatRunner {
       throw new Error('AICombatRunner: combat ended but getCombatResult returned null');
     }
 
-    return { combat, result };
+    // Compute per-combatant metrics from combat history
+    const tracker = new CombatMetricsTracker();
+    const metrics = tracker.computeMetrics(combat);
+
+    return { combat, result, metrics };
   }
 
   /**

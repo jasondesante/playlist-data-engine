@@ -121,6 +121,42 @@ export interface AIThreatAssessment {
 }
 
 /**
+ * CombatantMetrics - Per-combatant aggregate statistics from a single combat
+ *
+ * Computed from combat history by CombatMetricsTracker. Used by the
+ * Monte Carlo simulator to aggregate per-combatant performance across
+ * many simulation runs (DPR, survival rate, etc.).
+ */
+export interface CombatantMetrics {
+    /** Combatant ID */
+    combatantId: string;
+    /** Combatant display name */
+    name: string;
+    /** Which side this combatant was on */
+    side: 'player' | 'enemy';
+    /** Total damage dealt to enemies (via attacks, spells, legendary actions) */
+    totalDamageDealt: number;
+    /** Total damage taken from all sources */
+    totalDamageTaken: number;
+    /** Total HP restored via healing spells and items */
+    totalHealingDone: number;
+    /** Number of spells cast (successful and failed) */
+    spellsCast: number;
+    /** Number of consumable items used */
+    itemsUsed: number;
+    /** Number of critical hits scored */
+    criticalHits: number;
+    /** Number of rounds the combatant survived (0 if defeated in round 1) */
+    roundsSurvived: number;
+    /** Whether the combatant was still alive at combat end */
+    survived: boolean;
+    /** Breakdown of actions by type */
+    actionsByType: Record<string, number>;
+    /** Damage dealt per round (index = round number, value = damage that round) */
+    damagePerRound: number[];
+}
+
+/**
  * Type guard to check if a value is a valid AIPlayStyle
  */
 export function isValidAIPlayStyle(value: unknown): value is AIPlayStyle {
