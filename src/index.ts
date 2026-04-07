@@ -366,6 +366,17 @@ export type {
     SweepEnemyConfig,
 } from './core/combat/Analysis/ParameterSweep.js';
 
+// Comparative Analysis
+export { ComparativeAnalyzer } from './core/combat/Analysis/ComparativeAnalyzer.js';
+export type {
+    ComparisonConfig,
+    ComparisonOptions,
+    DeltaMetrics,
+    CombatantDelta,
+    SignificanceResult,
+    ComparisonResult,
+} from './core/combat/Analysis/ComparativeAnalyzer.js';
+
 // Feature types
 export type {
     ClassFeature,
