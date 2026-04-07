@@ -355,6 +355,17 @@ export type {
     EncounterConfig,
 } from './core/combat/Simulation/CombatSimulator.js';
 
+// Balance Analysis
+export { ParameterSweep } from './core/combat/Analysis/ParameterSweep.js';
+export type {
+    SweepVariable,
+    SweepRange,
+    SweepParams,
+    SweepDataPoint,
+    SweepResults,
+    SweepEnemyConfig,
+} from './core/combat/Analysis/ParameterSweep.js';
+
 // Feature types
 export type {
     ClassFeature,
