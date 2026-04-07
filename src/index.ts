@@ -356,6 +356,13 @@ export type {
 } from './core/combat/Simulation/CombatSimulator.js';
 
 // Balance Analysis
+export { BalanceValidator, EXPECTED_WIN_RATES } from './core/combat/Analysis/BalanceValidator.js';
+export type {
+    BalanceReport,
+    BalanceRecommendation,
+    DifficultyVariance,
+} from './core/combat/Analysis/BalanceValidator.js';
+
 export { ParameterSweep } from './core/combat/Analysis/ParameterSweep.js';
 export type {
     SweepVariable,
@@ -376,6 +383,15 @@ export type {
     SignificanceResult,
     ComparisonResult,
 } from './core/combat/Analysis/ComparativeAnalyzer.js';
+
+// Difficulty Calculator
+export { DifficultyCalculator } from './core/combat/Analysis/DifficultyCalculator.js';
+export type {
+    DifficultyCalculatorOptions,
+    DifficultyEnemyTemplate,
+    DifficultyProbe,
+    DifficultySuggestion,
+} from './core/combat/Analysis/DifficultyCalculator.js';
 
 // Feature types
 export type {
