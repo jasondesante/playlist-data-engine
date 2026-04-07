@@ -246,6 +246,9 @@ export interface SimulationResults {
 
   /** Detailed per-run data (only if collectDetailedLogs was true) */
   runDetails?: SimulationRunDetail[];
+
+  /** Whether the simulation was cancelled before completing all requested runs */
+  wasCancelled: boolean;
 }
 
 // ─── CombatSimulator Class ───────────────────────────────────────────────────
@@ -294,10 +297,12 @@ export class CombatSimulator {
     config: SimulationConfig,
   ): SimulationResults {
     const aggregator = new SimulationAggregator(config, players, enemies);
+    let wasCancelled = false;
 
     for (let i = 0; i < config.runCount; i++) {
       // Check for cancellation before each run
       if (config.abortSignal?.aborted) {
+        wasCancelled = true;
         break;
       }
 
@@ -323,7 +328,7 @@ export class CombatSimulator {
       }
     }
 
-    return aggregator.getResults();
+    return aggregator.getResults(wasCancelled);
   }
 }
 
@@ -489,7 +494,7 @@ class SimulationAggregator {
   /**
    * Compute final aggregated results from all accumulated runs.
    */
-  getResults(): SimulationResults {
+  getResults(wasCancelled: boolean = false): SimulationResults {
     const totalRuns = this.roundsList.length;
 
     const summary: SimulationSummary = {
@@ -524,6 +529,7 @@ class SimulationAggregator {
       runDetails: this.runDetails !== null && this.runDetails.length > 0
         ? this.runDetails
         : undefined,
+      wasCancelled,
     };
   }
 

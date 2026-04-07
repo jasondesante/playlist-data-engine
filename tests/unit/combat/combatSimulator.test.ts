@@ -518,6 +518,7 @@ describe('CombatSimulator - Cancellation', () => {
     expect(results.summary.playerWins).toBe(0);
     expect(results.summary.enemyWins).toBe(0);
     expect(results.summary.draws).toBe(0);
+    expect(results.wasCancelled).toBe(true);
   });
 
   it('cancellation mid-run returns partial results', () => {
@@ -546,6 +547,7 @@ describe('CombatSimulator - Cancellation', () => {
     expect(results.summary.totalRuns).toBeLessThan(50);
     // Should be roughly 5 (the abort point)
     expect(results.summary.totalRuns).toBeLessThanOrEqual(10);
+    expect(results.wasCancelled).toBe(true);
   });
 
   it('partial results have valid summary (wins + losses + draws = total)', () => {
@@ -566,15 +568,102 @@ describe('CombatSimulator - Cancellation', () => {
     const { totalRuns, playerWins, enemyWins, draws } = results.summary;
 
     expect(playerWins + enemyWins + draws).toBe(totalRuns);
+    expect(results.wasCancelled).toBe(true);
   });
 
-  it('no abort signal runs all runs', () => {
+  it('no abort signal runs all runs and wasCancelled is false', () => {
     const player = createArmedPlayer(5, 'Hero');
     const enemy = createEnemy(3, 'common', 'cancel-4');
     const simulator = new CombatSimulator();
 
     const results = simulator.run([player], [enemy], makeConfig({ runCount: 25 }));
     expect(results.summary.totalRuns).toBe(25);
+    expect(results.wasCancelled).toBe(false);
+  });
+
+  it('wasCancelled is false when all runs complete without signal', () => {
+    const player = createArmedPlayer(5, 'Hero');
+    const enemy = createEnemy(3, 'common', 'cancel-5');
+    const simulator = new CombatSimulator();
+    const controller = new AbortController();
+
+    // Provide signal but never abort
+    const results = simulator.run([player], [enemy], makeConfig({
+      runCount: 15,
+      abortSignal: controller.signal,
+    }));
+
+    expect(results.summary.totalRuns).toBe(15);
+    expect(results.wasCancelled).toBe(false);
+  });
+
+  it('wasCancelled is true even when 0 runs completed', () => {
+    const player = createArmedPlayer(5, 'Hero');
+    const enemy = createEnemy(3, 'common', 'cancel-6');
+    const simulator = new CombatSimulator();
+    const controller = new AbortController();
+    controller.abort();
+
+    const results = simulator.run([player], [enemy], makeConfig({
+      runCount: 100,
+      abortSignal: controller.signal,
+    }));
+
+    expect(results.summary.totalRuns).toBe(0);
+    expect(results.wasCancelled).toBe(true);
+  });
+
+  it('cancelled results still have valid per-combatant metrics', () => {
+    const player = createArmedPlayer(5, 'Hero');
+    const enemy = createEnemy(3, 'common', 'cancel-7');
+    const simulator = new CombatSimulator();
+    const controller = new AbortController();
+
+    const config = makeConfig({
+      runCount: 50,
+      abortSignal: controller.signal,
+      onProgress: (completed) => {
+        if (completed >= 3) controller.abort();
+      },
+    });
+
+    const results = simulator.run([player], [enemy], config);
+
+    expect(results.wasCancelled).toBe(true);
+    // Per-combatant metrics should still be present and valid
+    expect(results.perCombatantMetrics.size).toBe(2);
+    for (const [, metrics] of results.perCombatantMetrics) {
+      expect(metrics.survivalRate).toBeGreaterThanOrEqual(0);
+      expect(metrics.survivalRate).toBeLessThanOrEqual(1);
+      expect(metrics.averageDamagePerRound).toBeGreaterThanOrEqual(0);
+    }
+  });
+
+  it('cancelled detailed logs contain only completed runs', () => {
+    const player = createArmedPlayer(5, 'Hero');
+    const enemy = createEnemy(3, 'common', 'cancel-8');
+    const simulator = new CombatSimulator();
+    const controller = new AbortController();
+
+    const config = makeConfig({
+      runCount: 50,
+      abortSignal: controller.signal,
+      collectDetailedLogs: true,
+      onProgress: (completed) => {
+        if (completed >= 3) controller.abort();
+      },
+    });
+
+    const results = simulator.run([player], [enemy], config);
+
+    expect(results.wasCancelled).toBe(true);
+    expect(results.runDetails).toBeDefined();
+    expect(results.runDetails!.length).toBe(results.summary.totalRuns);
+    expect(results.runDetails!.length).toBeLessThan(50);
+    // Each run detail should have sequential indices
+    for (let i = 0; i < results.runDetails!.length; i++) {
+      expect(results.runDetails![i].runIndex).toBe(i);
+    }
   });
 });
 
