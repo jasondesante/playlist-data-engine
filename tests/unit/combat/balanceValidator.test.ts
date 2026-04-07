@@ -12,6 +12,7 @@ import type { SimulationResults, SimulationSummary, PartyConfig, EncounterConfig
 import type { AIConfig } from '../../../src/core/types/CombatAI.js';
 import { createMockPartyCharacter } from '../../helpers/enemyTestHelpers.js';
 import { EnemyGenerator } from '../../../src/core/generation/EnemyGenerator.js';
+import { CombatSimulator } from '../../../src/core/combat/Simulation/CombatSimulator.js';
 
 // ─── Test Helpers ────────────────────────────────────────────────────────────
 
@@ -711,6 +712,244 @@ describe('BalanceValidator', () => {
       expect(report.playerWinRate).toBeLessThan(0.3);
       expect(report.difficultyVariance).toBe('overpowered');
       expect(report.actualDifficulty).toBe('deadly');
+    });
+  });
+
+  // ─── Known Configuration Tests (4.5.1) ──────────────────────────────────────
+
+  describe('known configuration tests', () => {
+    /**
+     * Helper: create a mock party character with a moderate weapon and armor.
+     * Without weapons, mock characters can only do unarmed strikes (1 damage),
+     * making every fight unwinnable. This equips them like a typical martial character.
+     */
+    function createArmedCharacter(level: number, name: string) {
+      return createMockPartyCharacter(level, {
+        name,
+        equipment: {
+          weapons: [{
+            name: 'Longsword',
+            damage: { dice: '1d8+3', damageType: 'slashing' },
+            equipped: true,
+            weaponProperties: ['versatile'],
+            type: 'weapon',
+          }],
+          armor: [{
+            name: 'Chain Shirt',
+            ac: 15,
+            equipped: true,
+            type: 'armor',
+          }],
+          items: [],
+          totalWeight: 0,
+          equippedWeight: 0,
+        },
+      });
+    }
+
+    it('trivially easy fight (level 10 party vs CR 1 common) reports underpowered', () => {
+      const players = [
+        createArmedCharacter(10, 'Hero 0'),
+        createArmedCharacter(10, 'Hero 1'),
+        createArmedCharacter(10, 'Hero 2'),
+        createArmedCharacter(10, 'Hero 3'),
+      ];
+      const enemies = [EnemyGenerator.generate({ seed: 'known-easy', cr: 1, rarity: 'common' })];
+
+      const report = validator.validate(
+        players, enemies, 'medium',
+        { runCount: 200, baseSeed: 'known-easy-test', aiConfig: { playerStyle: 'normal', enemyStyle: 'normal' } },
+      );
+
+      // Near-100% win rate → encounter is underpowered for medium intent
+      expect(report.playerWinRate).toBeGreaterThan(0.90);
+      expect(report.difficultyVariance).toBe('underpowered');
+      expect(report.actualDifficulty).toBe('easy');
+      expect(report.balanceScore).toBeLessThan(70);
+      // Should recommend increasing difficulty
+      expect(report.recommendations.some(r =>
+        r.description.toLowerCase().includes('increase') ||
+        r.description.toLowerCase().includes('add'),
+      )).toBe(true);
+    });
+
+    it('trivially hard fight (level 1 solo vs CR 10 boss) reports overpowered', () => {
+      const players = [createMockPartyCharacter(1, { name: 'Hero 0' })];
+      const enemies = [EnemyGenerator.generate({ seed: 'known-hard', cr: 10, rarity: 'boss' })];
+
+      const report = validator.validate(
+        players, enemies, 'medium',
+        { runCount: 200, baseSeed: 'known-hard-test', aiConfig: { playerStyle: 'normal', enemyStyle: 'aggressive' } },
+      );
+
+      // Near-0% win rate → encounter is overpowered for medium intent
+      expect(report.playerWinRate).toBeLessThan(0.30);
+      expect(report.difficultyVariance).toBe('overpowered');
+      expect(report.actualDifficulty).toBe('deadly');
+      expect(report.balanceScore).toBeLessThan(70);
+      // Should recommend reducing difficulty
+      expect(report.recommendations.some(r =>
+        r.description.toLowerCase().includes('reduce') ||
+        r.description.toLowerCase().includes('remove'),
+      )).toBe(true);
+    });
+
+    it('balanced fight (controlled win rate from real simulation data) reports balanced for all tiers', () => {
+      // Run a real simulation to get authentic SimulationResults structure
+      const players = [
+        createArmedCharacter(5, 'Fighter'),
+        createArmedCharacter(5, 'Paladin'),
+        createArmedCharacter(5, 'Ranger'),
+        createArmedCharacter(5, 'Barbarian'),
+      ];
+      const enemies = [EnemyGenerator.generate({ seed: 'known-balanced', cr: 5, rarity: 'boss' })];
+      const simulator = new CombatSimulator();
+
+      const realResults: SimulationResults = simulator.run(players, enemies, {
+        runCount: 100,
+        baseSeed: 'known-balanced-test',
+        aiConfig: { playerStyle: 'normal', enemyStyle: 'normal' },
+      });
+
+      // Verify the real simulation produced valid results
+      expect(realResults.summary.totalRuns).toBe(100);
+      expect(typeof realResults.summary.playerWinRate).toBe('number');
+      expect(realResults.perCombatantMetrics.size).toBeGreaterThan(0);
+
+      // Test each difficulty tier by setting the win rate to the midpoint
+      // of that tier's expected range, using the real simulation data as the base.
+      const tierTests = [
+        { difficulty: 'easy' as const, winRate: 0.95, wins: 95, losses: 4, draws: 1 },
+        { difficulty: 'medium' as const, winRate: 0.75, wins: 75, losses: 20, draws: 5 },
+        { difficulty: 'hard' as const, winRate: 0.55, wins: 55, losses: 40, draws: 5 },
+        { difficulty: 'deadly' as const, winRate: 0.35, wins: 35, losses: 60, draws: 5 },
+      ];
+
+      for (const tier of tierTests) {
+        // Construct modified results with controlled win rate but real structure
+        const modifiedResults: SimulationResults = {
+          ...realResults,
+          summary: {
+            ...realResults.summary,
+            playerWinRate: tier.winRate,
+            playerWins: tier.wins,
+            enemyWins: tier.losses,
+            draws: tier.draws,
+            totalRuns: 100,
+          },
+        };
+
+        const report = validator.analyze(modifiedResults, tier.difficulty);
+
+        // Midpoint of expected range should always report balanced with score 100
+        expect(report.difficultyVariance).toBe('balanced');
+        expect(report.balanceScore).toBe(100);
+        expect(report.actualDifficulty).toBe(tier.difficulty);
+        // Report should have valid recommendations
+        expect(report.recommendations.length).toBeGreaterThanOrEqual(1);
+        for (const rec of report.recommendations) {
+          expect(typeof rec.description).toBe('string');
+          expect(rec.description.length).toBeGreaterThan(0);
+          expect(typeof rec.confidence).toBe('number');
+        }
+      }
+    });
+
+    it('real simulation classification is consistent with win rate ranges', () => {
+      // Run a real simulation and verify the difficulty classification
+      // matches the win rate range boundaries
+      const players = [
+        createArmedCharacter(3, 'P0'),
+        createArmedCharacter(3, 'P1'),
+        createArmedCharacter(3, 'P2'),
+        createArmedCharacter(3, 'P3'),
+      ];
+      const enemies = [EnemyGenerator.generate({ seed: 'known-classify', cr: 5, rarity: 'boss' })];
+      const simulator = new CombatSimulator();
+
+      const results: SimulationResults = simulator.run(players, enemies, {
+        runCount: 200,
+        baseSeed: 'known-classify-test',
+        aiConfig: { playerStyle: 'normal', enemyStyle: 'normal' },
+      });
+
+      const wr = results.summary.playerWinRate;
+      const report = validator.analyze(results, 'medium');
+
+      // The actual difficulty should match the win rate range
+      const expectedDifficulty = wr >= 0.90 ? 'easy' : wr >= 0.70 ? 'medium' : wr >= 0.50 ? 'hard' : 'deadly';
+      expect(report.actualDifficulty).toBe(expectedDifficulty);
+
+      // All report fields should be valid
+      expect(typeof report.balanceScore).toBe('number');
+      expect(report.balanceScore).toBeGreaterThanOrEqual(0);
+      expect(report.balanceScore).toBeLessThanOrEqual(100);
+      expect(['underpowered', 'balanced', 'overpowered']).toContain(report.difficultyVariance);
+      expect(report.confidence).toBeGreaterThan(0);
+      expect(report.confidence).toBeLessThanOrEqual(1);
+      expect(Array.isArray(report.recommendations)).toBe(true);
+      expect(report.intendedDifficulty).toBe('medium');
+      expect(report.playerWinRate).toBe(wr);
+      expect(report.totalRuns).toBe(200);
+    });
+
+    it('edge of expected range produces balanced but lower score', () => {
+      // At the boundary of the expected range, variance should still be balanced
+      // but the balance score should be lower than the midpoint
+      const results = makeResults(makeSummary({
+        playerWinRate: 0.70, // exact lower edge of medium range
+        playerWins: 700,
+        enemyWins: 250,
+        draws: 50,
+        totalRuns: 1000,
+      }));
+
+      const report = validator.analyze(results, 'medium');
+      expect(report.difficultyVariance).toBe('balanced');
+      expect(report.balanceScore).toBeGreaterThanOrEqual(65);
+      expect(report.balanceScore).toBeLessThan(100); // Lower than midpoint (100)
+
+      // Upper edge
+      const upperResults = makeResults(makeSummary({
+        playerWinRate: 0.80,
+        playerWins: 800,
+        enemyWins: 150,
+        draws: 50,
+        totalRuns: 1000,
+      }));
+
+      const upperReport = validator.analyze(upperResults, 'medium');
+      expect(upperReport.difficultyVariance).toBe('balanced');
+      expect(upperReport.balanceScore).toBeGreaterThanOrEqual(65);
+      expect(upperReport.balanceScore).toBeLessThan(100);
+    });
+
+    it('just outside expected range reports imbalanced', () => {
+      // Just below the expected range → overpowered
+      const belowResults = makeResults(makeSummary({
+        playerWinRate: 0.69,
+        playerWins: 690,
+        enemyWins: 260,
+        draws: 50,
+        totalRuns: 1000,
+      }));
+
+      const belowReport = validator.analyze(belowResults, 'medium');
+      expect(belowReport.difficultyVariance).toBe('overpowered');
+      expect(belowReport.balanceScore).toBeLessThan(70);
+
+      // Just above the expected range → underpowered
+      const aboveResults = makeResults(makeSummary({
+        playerWinRate: 0.81,
+        playerWins: 810,
+        enemyWins: 140,
+        draws: 50,
+        totalRuns: 1000,
+      }));
+
+      const aboveReport = validator.analyze(aboveResults, 'medium');
+      expect(aboveReport.difficultyVariance).toBe('underpowered');
+      expect(aboveReport.balanceScore).toBeLessThan(70);
     });
   });
 });
