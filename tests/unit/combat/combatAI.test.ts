@@ -590,12 +590,12 @@ describe('CombatAI', () => {
       expect(decision.reasoning).toContain('Goblin');
     });
 
-    it('returns dodge when no enemies available', () => {
+    it('returns skip when no enemies available', () => {
       const ai = new CombatAI(createNormalConfig());
       const player = createArmedCombatant({ id: 'player_0' });
       const combat = createMinimalCombat([player], []);
       const decision = ai.decide(player, combat);
-      expect(decision.action).toBe('dodge');
+      expect(decision.action).toBe('skip');
     });
   });
 

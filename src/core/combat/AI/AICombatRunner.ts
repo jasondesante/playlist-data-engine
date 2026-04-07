@@ -98,6 +98,22 @@ export class AICombatRunner {
         continue;
       }
 
+      // Safety: skip combatants with skipTurn effects (Stunned, Unconscious).
+      // nextTurn() handles this when advancing TO a combatant, but on the very
+      // first turn (turn 0), nextTurn hasn't been called yet.
+      if (this.hasSkipTurnEffect(current)) {
+        combat.history.push({
+          type: 'statusEffectTick',
+          actor: current,
+          result: {
+            success: true,
+            description: `${current.character.name}'s turn is skipped (${current.statusEffects.filter(e => e.mechanicalEffects?.skipTurn).map(e => e.name).join(', ')})`,
+          },
+        });
+        engine.nextTurn(combat);
+        continue;
+      }
+
       // Get AI decision for this combatant
       const decision = ai.decide(current, combat);
 
@@ -196,6 +212,18 @@ export class AICombatRunner {
         this.executeLegendaryDecision(engine, combat, combatant, decision);
         break;
       }
+
+      case 'skip':
+        // AI decided to skip (e.g., no valid targets). Log and do nothing.
+        combat.history.push({
+          type: 'statusEffectTick',
+          actor: combatant,
+          result: {
+            success: true,
+            description: `${combatant.character.name} skips their turn (${decision.reasoning ?? 'no action'})`,
+          },
+        });
+        break;
     }
   }
 
@@ -347,5 +375,15 @@ export class AICombatRunner {
     if (enemies.length > 0) {
       this.executeWeaponAttack(engine, combat, combatant, enemies[0], undefined);
     }
+  }
+
+  /**
+   * Check if a combatant has any status effect that forces turn skipping
+   * (e.g., Stunned, Unconscious).
+   */
+  private hasSkipTurnEffect(combatant: Combatant): boolean {
+    return combatant.statusEffects.some(
+      e => e.mechanicalEffects?.skipTurn
+    );
   }
 }

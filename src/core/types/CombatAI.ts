@@ -49,7 +49,7 @@ export interface AIConfig {
  */
 export interface AIDecision {
     /** The type of action to take */
-    action: 'attack' | 'castSpell' | 'dodge' | 'dash' | 'disengage' | 'flee' | 'useItem' | 'legendaryAction';
+    action: 'attack' | 'castSpell' | 'dodge' | 'dash' | 'disengage' | 'flee' | 'useItem' | 'legendaryAction' | 'skip';
 
     /** Target combatant ID (for single-target actions) */
     target?: string;

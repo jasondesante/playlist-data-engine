@@ -191,7 +191,7 @@ export class CombatAI {
 
     // No valid targets — skip turn (shouldn't happen if combat is active)
     if (enemies.length === 0) {
-      return { action: 'dodge', reasoning: 'No valid targets remaining' };
+      return { action: 'skip', reasoning: 'No valid targets remaining' };
     }
 
     // Consider spell casting first (spells can be more impactful than attacks)
