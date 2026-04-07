@@ -54,6 +54,9 @@ export interface SimulationConfig {
 
   /** Progress callback — called after each run completes */
   onProgress?: (completed: number, total: number) => void;
+
+  /** AbortSignal for cancelling long-running simulations. When aborted, returns partial results. */
+  abortSignal?: AbortSignal;
 }
 
 // ─── Simulation Result Types ─────────────────────────────────────────────────
@@ -290,12 +293,19 @@ export class CombatSimulator {
     enemies: CharacterSheet[],
     config: SimulationConfig,
   ): SimulationResults {
-    const runner = new AICombatRunner();
     const aggregator = new SimulationAggregator(config, players, enemies);
 
     for (let i = 0; i < config.runCount; i++) {
+      // Check for cancellation before each run
+      if (config.abortSignal?.aborted) {
+        break;
+      }
+
       const seed = `${config.baseSeed}-${i}`;
       const roller = createSeededRoller(seed);
+
+      // Fresh runner per run for clean state isolation
+      const runner = new AICombatRunner();
 
       const runResult = runner.runFullCombat(
         players,
@@ -378,10 +388,12 @@ class SimulationAggregator {
       enemyNames: enemies.map(e => e.name),
     };
 
-    // Track all combatant IDs
+    // Track all combatant IDs — must match CombatEngine's shared counter scheme:
+    // players get player_0..player_{N-1}, enemies get enemy_{N}..enemy_{N+M-1}
+    // where N = players.length and M = enemies.length
     this.combatantIds = [
       ...players.map((p, i) => ({ id: `player_${i}`, name: p.name, side: 'player' as const })),
-      ...enemies.map((e, i) => ({ id: `enemy_${i}`, name: e.name, side: 'enemy' as const })),
+      ...enemies.map((e, i) => ({ id: `enemy_${players.length + i}`, name: e.name, side: 'enemy' as const })),
     ];
 
     // Initialize accumulators for each combatant
