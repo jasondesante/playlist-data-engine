@@ -23,6 +23,7 @@ import type {
 } from '../../types/CombatAI';
 import type { Spell } from '../../types/Character';
 import type { LegendaryAction } from '../../types/Enemy';
+import { DEFAULT_EQUIPMENT } from '../../../constants/DefaultEquipment.js';
 import { SpellCaster } from '../SpellCaster';
 
 /**
@@ -136,7 +137,8 @@ export class CombatAI {
       const weapons = enemy.character.equipment?.weapons.filter(w => w.equipped) || [];
       let bestDamage = 5; // minimum expected damage (unarmed)
       for (const weapon of weapons) {
-        const dice = (weapon as any).damage?.dice || '1d6';
+        const weaponData = DEFAULT_EQUIPMENT[weapon.name];
+        const dice = weapon.damage?.dice || weaponData?.damage?.dice || '1d6';
         const avg = this.averageDamageFromFormula(dice);
         if (avg > bestDamage) bestDamage = avg;
       }
@@ -788,9 +790,10 @@ export class CombatAI {
     const equippedWeapons = combatant.character.equipment?.weapons.filter(w => w.equipped) || [];
 
     for (const weapon of equippedWeapons) {
-      const dice = (weapon as any).damage?.dice || '1d6';
+      const weaponData = DEFAULT_EQUIPMENT[weapon.name];
+      const dice = weapon.damage?.dice || weaponData?.damage?.dice || '1d6';
       const expectedDamage = this.averageDamageFromFormula(dice);
-      const isRanged = (weapon as any).weaponProperties?.includes('ranged') || false;
+      const isRanged = weapon.weaponProperties?.includes('ranged') || weaponData?.weaponProperties?.includes('ranged') || false;
 
       // Estimate attack bonus from character stats
       const ability = isRanged ? 'DEX' : 'STR';
@@ -802,7 +805,7 @@ export class CombatAI {
         expectedDamage,
         attackBonus,
         type: isRanged ? 'ranged' : 'melee',
-        properties: (weapon as any).weaponProperties || [],
+        properties: weapon.weaponProperties || weaponData?.weaponProperties || [],
       });
     }
 
@@ -850,9 +853,9 @@ export class CombatAI {
     if (enemies.length === 0) return null;
 
     // Separate actions by type
-    const damageActions = availableActions.filter(a => a.damage || (a as any).tags?.includes('damage'));
-    const healingActions = availableActions.filter(a => (a as any).tags?.includes('heal'));
-    const controlActions = availableActions.filter(a => (a as any).tags?.includes('control'));
+    const damageActions = availableActions.filter(a => a.damage || a.tags?.includes('damage'));
+    const healingActions = availableActions.filter(a => a.tags?.includes('heal'));
+    const controlActions = availableActions.filter(a => a.tags?.includes('control'));
 
     const threat = this.assessThreat(boss, combat);
 

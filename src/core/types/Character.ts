@@ -541,6 +541,12 @@ export interface CharacterSheet {
 
             /** Damage type for damaging actions */
             damage_type?: string;
+
+            /** Detailed description of what the action does */
+            description?: string;
+
+            /** Tags for filtering and categorization (e.g., 'damage', 'heal', 'control') */
+            tags?: string[];
         }>;
 
         /** Optional lair action hint for encounter design */

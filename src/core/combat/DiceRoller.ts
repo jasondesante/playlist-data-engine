@@ -147,6 +147,7 @@ export class DiceRoller {
    * @returns Total damage
    */
   static calculateDamage(formula: string, modifier: number, isCritical: boolean = false): {
+    diceFormula: string;
     rolls: number[];
     modifier: number;
     total: number;
@@ -163,6 +164,7 @@ export class DiceRoller {
     const total = rolls.reduce((sum, roll) => sum + roll, 0) + modifier;
 
     return {
+      diceFormula: formula,
       rolls,
       modifier,
       total,

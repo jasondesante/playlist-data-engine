@@ -234,6 +234,19 @@ export interface EnhancedInventoryItem {
 
     // NEW: Unique instance ID (for tracking individual items)
     instanceId?: string;
+
+    // Combat stats — populated at runtime for weapons and armor.
+    // These mirror the corresponding fields on the Equipment interface
+    // and are set by EnemyGenerator / EquipmentGenerator when building
+    // the character's inventory.
+    damage?: {
+        dice: string;
+        damageType: string;
+        versatile?: string;
+    };
+    weaponProperties?: string[];
+    type?: EquipmentType;
+    acBonus?: number;
 }
 
 /**

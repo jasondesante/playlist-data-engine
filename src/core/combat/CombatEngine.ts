@@ -391,7 +391,7 @@ export class CombatEngine {
   executeLegendaryAction(
     combat: CombatInstance,
     bossCombatant: Combatant,
-    action: { id: string; name: string; cost: number; effect: string; damage?: string; damage_type?: string },
+    action: { id: string; name: string; cost: number; effect: string; damage?: string; damage_type?: string; description?: string; tags?: string[] },
     target?: Combatant
   ): CombatAction {
     const config = bossCombatant.character.legendary_config;

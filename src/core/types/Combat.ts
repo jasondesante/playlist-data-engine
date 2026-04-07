@@ -20,12 +20,7 @@ export interface DiceRollerAPI {
   rollD20(): number;
   rollWithAdvantage(): { roll1: number; roll2: number; result: number };
   rollWithDisadvantage(): { roll1: number; roll2: number; result: number };
-  calculateDamage(formula: string, modifier: number, isCritical?: boolean): {
-    rolls: number[];
-    modifier: number;
-    total: number;
-    isCritical: boolean;
-  };
+  calculateDamage(formula: string, modifier: number, isCritical?: boolean): DamageRoll;
   rollSavingThrow(abilityModifier: number, proficiencyBonus?: number): number;
   rollAbilityCheck(abilityModifier: number, proficiencyBonus?: number): number;
   isCriticalHit(d20Roll: number): boolean;

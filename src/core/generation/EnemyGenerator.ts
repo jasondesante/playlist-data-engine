@@ -1269,7 +1269,9 @@ export class EnemyGenerator {
                         cost: action.cost,
                         effect: action.effect,
                         damage: action.damage,
-                        damage_type: action.damageType
+                        damage_type: action.damageType,
+                        description: action.description,
+                        tags: action.tags
                     })),
                     lair_action_hint: legendaryConfig.lairActionHint
                 }

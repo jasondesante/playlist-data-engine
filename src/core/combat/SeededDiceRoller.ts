@@ -151,6 +151,7 @@ export class SeededDiceRoller {
    * @returns Total damage
    */
   calculateDamage(formula: string, modifier: number, isCritical: boolean = false): {
+    diceFormula: string;
     rolls: number[];
     modifier: number;
     total: number;
@@ -165,7 +166,7 @@ export class SeededDiceRoller {
 
     const total = rolls.reduce((sum, roll) => sum + roll, 0) + modifier;
 
-    return { rolls, modifier, total, isCritical };
+    return { diceFormula: formula, rolls, modifier, total, isCritical };
   }
 
   /**

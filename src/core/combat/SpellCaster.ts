@@ -3,7 +3,7 @@
  * Manages spell slots, saving throws, and spell damage
  */
 
-import type { Combatant, SpellCastResult, StatusEffect, StatusEffectMechanics, DiceRollerAPI } from '../types/Combat';
+import type { Combatant, SpellCastResult, StatusEffect, StatusEffectMechanics, DamageRoll, DiceRollerAPI } from '../types/Combat';
 import type { Spell } from '../types/Character';
 import { DiceRoller } from './DiceRoller';
 import { getFullCasterSlotsForLevel } from '../../constants/SpellSlots.js';
@@ -130,7 +130,7 @@ export class SpellCaster {
 
     // Determine spell effects
     const effectsApplied: StatusEffect[] = [];
-    let damage: any;
+    let damage: DamageRoll | undefined;
     let saveDC: number | undefined;
 
     // Resolve damage dice and damage type from either naming convention
@@ -390,12 +390,12 @@ export class SpellCaster {
 
     // Temporarily modify spell level for slot consumption
     const originalLevel = spell.level;
-    (spell as any).level = slotLevelUsed;
+    spell.level = slotLevelUsed;
 
     const result = this.castSpell(caster, spell, targets);
 
     // Restore original spell level
-    (spell as any).level = originalLevel;
+    spell.level = originalLevel;
 
     return result;
   }
