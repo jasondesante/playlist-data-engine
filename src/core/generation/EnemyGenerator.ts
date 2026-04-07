@@ -1574,7 +1574,8 @@ export class EnemyGenerator {
             templates,
             audioProfile,
             track,
-            enableLeaderPromotion = true
+            enableLeaderPromotion = true,
+            statLevels
         } = options;
 
         // Validate: track required if audioProfile provided
@@ -1651,7 +1652,8 @@ export class EnemyGenerator {
                 rarity: rarityDistribution[i], // Use distributed rarity (Task 2.3)
                 difficultyMultiplier,
                 audioProfile,
-                track
+                track,
+                ...(statLevels ? { statLevels } : {}),
             });
 
             enemies.push(enemy);

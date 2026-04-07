@@ -357,6 +357,9 @@ export interface EncounterGenerationOptions {
 
     /** Optional - Cap maximum rarity for all enemies */
     maxRarity?: EnemyRarity;
+
+    /** Optional - Override effective levels for HP, attack, and defense independently */
+    statLevels?: StatLevelOverrides;
 }
 
 /**

@@ -682,4 +682,5 @@ console.log(`Player deaths: ${results.summary.totalPlayerDeaths} across ${result
 
 - [DATA_ENGINE_REFERENCE.md](../DATA_ENGINE_REFERENCE.md) - Complete API reference
 - [USAGE_IN_OTHER_PROJECTS.md](../USAGE_IN_OTHER_PROJECTS.md) - Usage examples
-- [COMBAT_SYSTEM.md](COMBAT_SYSTEM.md) - Combat system using dice rolling
+- [COMBAT_SYSTEM.md](COMBAT_SYSTEM.md) - Combat system (uses seeded dice for simulations)
+- [ENEMY_GENERATION.md](ENEMY_GENERATION.md) - Balance validation and simulation-based analysis

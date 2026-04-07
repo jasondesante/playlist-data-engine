@@ -850,6 +850,8 @@ const enemies = EnemyGenerator.generateEncounter(party, {
 
 ## Simulation-Based Balance Validation
 
+> **For the core simulation engine, Combat AI, and Monte Carlo simulation details, see [Monte Carlo Simulation](COMBAT_SYSTEM.md#monte-carlo-simulation) in COMBAT_SYSTEM.md.** This section covers balance validation, parameter sweeps, comparative analysis, and the difficulty calculator — tools built on top of the simulator.
+
 XP budgets (above) are **theoretical** — they use D&D 5e tables to estimate encounter difficulty. Simulation-based validation **tests actual difficulty** by running hundreds of AI-controlled combats and measuring real outcomes.
 
 ### Why Simulation?

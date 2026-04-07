@@ -186,13 +186,11 @@ A concise overview of all main exports from the library, organized by category.
 | `EnemyGenerator` | Generate enemies and encounters | [Enemy Generation](#enemy-generation) |
 | `PartyAnalyzer` | Analyze party strength for encounters | [Enemy Generation](#enemy-generation) |
 
-**Combat AI Types:** `AIPlayStyle`, `AIConfig`, `AIDecision`, `AIThreatAssessment`, `CombatantMetrics` — see [Combat AI Types](#combat-ai-types)
+**Combat AI Types:** `AIPlayStyle`, `AIConfig`, `AIDecision`, `AIThreatAssessment`, `CombatantMetrics` — see [CombatAI](#combatai)
 
 **Combat Types:** `StatusEffect`, `StatusEffectMechanics`, `CombatAction`, `CombatResult`, `Combatant`, `CombatInstance`, `DamageRoll`, `DiceRollerAPI` — see [Combat Types](#combat-types)
 
-**Simulation Types:** `SimulationConfig`, `SimulationResults`, `SimulationSummary`, `CombatantSimulationMetrics`, `HistogramBucket`, `PartyConfig`, `EncounterConfig`, `SimulationRunDetail` — see [CombatSimulator](#combatsimulator)
-
-**Analysis Types:** `BalanceReport`, `BalanceRecommendation`, `DifficultyVariance`, `EXPECTED_WIN_RATES`, `SweepVariable`, `SweepParams`, `SweepResults`, `SweepDataPoint`, `SweepEnemyConfig`, `ComparisonConfig`, `ComparisonOptions`, `ComparisonResult`, `DeltaMetrics`, `CombatantDelta`, `SignificanceResult`, `DifficultyCalculatorOptions`, `DifficultyEnemyTemplate`, `DifficultySuggestion`, `DifficultyProbe` — see individual sections below
+**Simulation & Analysis Types:** `SimulationConfig`, `SimulationResults`, `SimulationSummary`, `CombatantSimulationMetrics`, `HistogramBucket`, `PartyConfig`, `EncounterConfig`, `SimulationRunDetail`, `AICombatResult`, `BalanceReport`, `BalanceRecommendation`, `DifficultyVariance`, `SweepVariable`, `SweepParams`, `SweepResults`, `SweepDataPoint`, `SweepEnemyConfig`, `ComparisonConfig`, `ComparisonOptions`, `ComparisonResult`, `DeltaMetrics`, `CombatantDelta`, `SignificanceResult`, `DifficultyCalculatorOptions`, `DifficultyEnemyTemplate`, `DifficultySuggestion`, `DifficultyProbe` — see individual sections in [Combat System](#combat-system)
 
 ### Beat Detection
 
@@ -297,12 +295,6 @@ All TypeScript types are exported, including:
 **Box Types:** `BoxDropPool`, `BoxDrop`, `BoxContents`, `BoxOpenResult`, `BoxOpenRequirement`, `BoxOpenError` — see [BoxOpener](#boxopener)
 
 **Enemy Types:** `EnemyCategory`, `EnemyRarity`, `EnemyArchetype`, `EnemyMixMode`, `EncounterDifficulty`, `SignatureAbility`, `AudioPreference`, `EnemyTemplate`, `RarityConfig`, `EnemyGenerationOptions`, `EncounterGenerationOptions`, `EnemyMetadata`, `EnemyFeature`, `StatLevelOverrides`, `LegendaryAction`, `LegendaryConfig`, `InnateSpell`, `SpellcastingConfig` — see [Enemy Generation](#enemy-generation)
-
-**Combat AI Types:** `AIPlayStyle`, `AIConfig`, `AIDecision`, `AIThreatAssessment`, `CombatantMetrics` — see [Combat AI](#combatai)
-
-**Simulation Types:** `SimulationConfig`, `SimulationResults`, `SimulationSummary`, `CombatantSimulationMetrics`, `HistogramBucket`, `PartyConfig`, `EncounterConfig`, `SimulationRunDetail`, `AICombatResult` — see [CombatSimulator](#combatsimulator)
-
-**Balance Analysis Types:** `BalanceReport`, `BalanceRecommendation`, `DifficultyVariance`, `SweepVariable`, `SweepRange`, `SweepParams`, `SweepResults`, `SweepDataPoint`, `SweepEnemyConfig`, `ComparisonConfig`, `ComparisonOptions`, `ComparisonResult`, `DeltaMetrics`, `CombatantDelta`, `SignificanceResult`, `DifficultyCalculatorOptions`, `DifficultyEnemyTemplate`, `DifficultySuggestion`, `DifficultyProbe` — see individual sections in [Combat System](#combat-system)
 
 **Beat Detection Types:** `Beat`, `BeatMap`, `BeatMapMetadata`, `BeatEvent`, `BeatEventType`, `BeatStreamCallback`, `AudioSyncState`, `BeatMapGeneratorOptions`, `BeatStreamOptions`, `BeatMapJSON`, `BeatAccuracy`, `ButtonPressResult`, `AccuracyThresholds`, `DifficultyPreset`, `TempoEstimate`, `OSEConfig`, `BeatTrackerConfig`, `TempoDetectorConfig`, `TimeSignatureConfig`, `DownbeatSegment`, `DownbeatConfig`, `BeatMapGenerationProgress` — see [Beat Detection](#beat-detection) and [docs/AUDIO_ANALYSIS.md](docs/AUDIO_ANALYSIS.md)
 
@@ -707,26 +699,7 @@ Used by `CombatAI` for spell selection and by `SpellCaster` for status effect de
 
 #### InnateSpell (extends Spell)
 
-*Location:* *[src/core/types/Enemy.ts](src/core/types/Enemy.ts)*
-
-Enemy-specific spell type. Extends `Spell` with required fields (`id`, `level`, `school`, `effect`) that are optional on the base `Spell` interface. Used by `SpellcastingGenerator` for enemy spell lists and stored in `CharacterSheet.combat_spells`.
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `id` | `string` | Unique identifier *(required on InnateSpell)* |
-| `name` | `string` | Display name |
-| `level` | `number` | Spell level (0 = cantrip, 1-9 = spell level) *(required)* |
-| `school` | `string` | Magical school (evocation, necromancy, etc.) *(required)* |
-| `effect` | `string` | Description of what spell does *(required)* |
-| `damage?` | `string` | Damage dice (e.g., "2d6") — falls back from `damage_dice` |
-| `save?` | `string` | Save type (e.g., "DEX") — falls back from `saving_throw` |
-| `damageType?` | `string` | Damage type for resistance calculations |
-| `range?` | `number` | Range in feet |
-| `concentration?` | `boolean` | Whether spell requires concentration |
-| `tags?` | `string[]` | Classification tags (see Spell Tags table above) |
-| `rangeFeet?` | `number` | Range in feet (same as `range`, from unified Spell) |
-
-> **Note:** `InnateSpell` extends `Spell`, so it also inherits all player spell fields (`damage_dice`, `damage_type`, `saving_throw`, `attack_roll`, `components`, `icon`, `image`, etc.). `SpellCaster.castSpell()` handles both naming conventions transparently.
+> See [InnateSpell Interface](#innatespell-interface) under [SpellcastingGenerator](#spellcastinggenerator) for the full definition.
 
 #### AbilityScores
 
@@ -5020,6 +4993,8 @@ Handles spell casting mechanics (spell slots, saving throws, spell damage).
 *Location:* *[src/core/combat/SeededDiceRoller.ts](src/core/combat/SeededDiceRoller.ts)*
 
 > **Note:** Instance class — create with `new SeededDiceRoller(seed)` or `createSeededRoller(seed)`
+>
+> **For full documentation, see [Seeded Dice Roller](docs/ROLLS_AND_SEEDS.md#seeded-dice-roller) and [Seeded RNG in Combat Simulations](docs/ROLLS_AND_SEEDS.md#seeded-rng-in-combat-simulations) in ROLLS_AND_SEEDS.md.**
 
 Deterministic D&D-style dice rolling for reproducible combat simulations. Implements the same API as `DiceRoller` but uses `SeededRNG` internally, producing deterministic results given the same seed and call sequence.
 
@@ -5035,24 +5010,7 @@ Deterministic D&D-style dice rolling for reproducible combat simulations. Implem
 |----------|-------------|
 | `createSeededRoller(seed: string): SeededDiceRoller` | Create a seeded roller from a seed string (convenience factory) |
 
-**Methods:**
-
-| Method | Description |
-|--------|-------------|
-| `rollDie(sides)` | Roll single die (1 to sides) |
-| `rollD20()` | Roll d20 |
-| `rollMultipleDice(count, sides)` | Roll multiple dice, return array |
-| `rollPercentile()` | Roll d100 |
-| `parseDiceFormula(formula)` | Parse and roll "2d6+3", returns parsed data and results |
-| `rollWithAdvantage()` | Roll twice, take higher |
-| `rollWithDisadvantage()` | Roll twice, take lower |
-| `rollInitiative(dexModifier)` | Roll d20 + DEX modifier |
-| `calculateDamage(formula, modifier, isCritical?)` | Calculate damage with optional modifier (doubles dice on crit) |
-| `rollSavingThrow(abilityModifier, proficiencyBonus?)` | Roll d20 + ability + proficiency |
-| `rollAbilityCheck(abilityModifier, proficiencyBonus?)` | Roll d20 + ability + proficiency |
-| `isCriticalHit(d20Roll)` | Returns true if natural 20 |
-| `isCriticalMiss(d20Roll)` | Returns true if natural 1 |
-| `doubleDamage(rolls)` | Double dice array for critical hit |
+**Methods:** Mirrors the static `DiceRoller` API — see [ROLLS_AND_SEEDS.md](docs/ROLLS_AND_SEEDS.md#api-reference) for the full table.
 
 ### CombatAI
 
@@ -5144,6 +5102,8 @@ Post-hoc analysis that computes per-combatant statistics from a completed `Comba
 *Location:* *[src/core/combat/Simulation/CombatSimulator.ts](src/core/combat/Simulation/CombatSimulator.ts)*
 
 > **Note:** Instance class — create with `new CombatSimulator()`
+>
+> **For usage examples and detailed explanation, see [Monte Carlo Simulation](docs/COMBAT_SYSTEM.md#monte-carlo-simulation) in COMBAT_SYSTEM.md.**
 
 Monte Carlo combat simulation engine. Runs N independent combat simulations with seeded RNG, aggregates statistical results, and returns structured data for balance analysis. Each run gets a unique seed (`baseSeed-runIndex`). Stateless between `run()` calls.
 
@@ -5184,6 +5144,8 @@ Monte Carlo combat simulation engine. Runs N independent combat simulations with
 *Location:* *[src/core/combat/Analysis/BalanceValidator.ts](src/core/combat/Analysis/BalanceValidator.ts)*
 
 > **Note:** Instance class — create with `new BalanceValidator()`
+>
+> **For usage examples and detailed explanation, see [Simulation-Based Balance Validation](docs/ENEMY_GENERATION.md#simulation-based-balance-validation) in ENEMY_GENERATION.md.**
 
 Validates encounter balance using Monte Carlo simulation results. Compares actual player win rate against expected win rates per difficulty tier. Produces a `BalanceReport` with balance score, variance classification, and actionable recommendations.
 
@@ -5215,6 +5177,8 @@ Validates encounter balance using Monte Carlo simulation results. Compares actua
 *Location:* *[src/core/combat/Analysis/ParameterSweep.ts](src/core/combat/Analysis/ParameterSweep.ts)*
 
 > **Note:** Instance class — create with `new ParameterSweep()`
+>
+> **For usage examples and detailed explanation, see [Parameter Sweep](docs/ENEMY_GENERATION.md#parameter-sweep) in ENEMY_GENERATION.md.**
 
 Varies a single encounter parameter across a range and runs simulations at each data point. Produces `SweepResults` with one data point per parameter value, useful for finding difficulty sweet spots. Stateless between `sweep()` calls.
 
@@ -5252,6 +5216,8 @@ Varies a single encounter parameter across a range and runs simulations at each 
 *Location:* *[src/core/combat/Analysis/ComparativeAnalyzer.ts](src/core/combat/Analysis/ComparativeAnalyzer.ts)*
 
 > **Note:** Instance class — create with `new ComparativeAnalyzer()`
+>
+> **For usage examples and detailed explanation, see [Comparative Analysis](docs/ENEMY_GENERATION.md#comparative-analysis) in ENEMY_GENERATION.md.**
 
 Compares two encounter configurations using identical-seed simulation. Both configs are simulated with the same seed sequence, eliminating dice roll variance so outcome differences are attributable to the configuration change. Stateless between `compare()` calls.
 
@@ -5289,6 +5255,8 @@ Compares two encounter configurations using identical-seed simulation. Both conf
 *Location:* *[src/core/combat/Analysis/DifficultyCalculator.ts](src/core/combat/Analysis/DifficultyCalculator.ts)*
 
 > **Note:** Instance class — create with `new DifficultyCalculator()`
+>
+> **For usage examples and detailed explanation, see [Difficulty Calculator](docs/ENEMY_GENERATION.md#difficulty-calculator) in ENEMY_GENERATION.md.**
 
 Suggests enemy CR for a target difficulty using simulation-driven binary search. Two-phase approach: (1) XP-budget initial CR estimate, (2) simulation-driven refinement adjusting CR up/down until win rate converges. Stateless between `suggest()` calls.
 

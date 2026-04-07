@@ -25,8 +25,10 @@
 import type { CharacterSheet } from '../../types/Character.js';
 import type { CombatConfig, CombatInstance, CombatResult } from '../../types/Combat.js';
 import type { AIConfig, CombatantMetrics } from '../../types/CombatAI.js';
+import type { EncounterGenerationOptions } from '../../types/Enemy.js';
 import { AICombatRunner } from '../AI/AICombatRunner.js';
 import { createSeededRoller } from '../SeededDiceRoller.js';
+import { EnemyGenerator } from '../../generation/EnemyGenerator.js';
 
 // ─── Simulation Configuration ────────────────────────────────────────────────
 
@@ -51,6 +53,21 @@ export interface SimulationConfig {
 
   /** If true, save full combat log per run (memory-intensive for large runCount) */
   collectDetailedLogs?: boolean;
+
+  /**
+   * If provided, regenerate enemies per run using these options instead of
+   * reusing the same pre-generated enemies for all runs.
+   *
+   * Each run gets a unique seed derived from `baseSeed + runIndex`, producing
+   * different enemy templates/stats per run while keeping determinism.
+   * This captures the variance in enemy generation (different templates, etc.)
+   * across Monte Carlo iterations.
+   *
+   * The `enemies` array passed to `run()` is still used for:
+   * - Aggregator initialization (combatant IDs, encounter config)
+   * - Per-combatant metric slot naming
+   */
+  enemyRegeneration?: EncounterGenerationOptions;
 
   /** Progress callback — called after each run completes */
   onProgress?: (completed: number, total: number) => void;
@@ -312,12 +329,20 @@ export class CombatSimulator {
       const seed = `${config.baseSeed}-${i}`;
       const roller = createSeededRoller(seed);
 
+      // Optionally regenerate enemies per run to capture generation variance
+      const runEnemies = config.enemyRegeneration
+        ? EnemyGenerator.generateEncounterByCR({
+            ...config.enemyRegeneration,
+            seed: `${config.enemyRegeneration.seed}-${i}`,
+          })
+        : enemies;
+
       // Fresh runner per run for clean state isolation
       const runner = new AICombatRunner();
 
       const runResult = runner.runFullCombat(
         players,
-        enemies,
+        runEnemies,
         config.aiConfig,
         config.combatConfig,
         roller,
@@ -399,9 +424,15 @@ export class SimulationAggregator {
     // Track all combatant IDs — must match CombatEngine's shared counter scheme:
     // players get player_0..player_{N-1}, enemies get enemy_{N}..enemy_{N+M-1}
     // where N = players.length and M = enemies.length
+    // When enemyRegeneration is enabled, use generic slot names since templates vary per run.
+    const useGenericEnemyNames = !!config.enemyRegeneration;
     this.combatantIds = [
       ...players.map((p, i) => ({ id: `player_${i}`, name: p.name, side: 'player' as const })),
-      ...enemies.map((e, i) => ({ id: `enemy_${players.length + i}`, name: e.name, side: 'enemy' as const })),
+      ...enemies.map((e, i) => ({
+        id: `enemy_${players.length + i}`,
+        name: useGenericEnemyNames ? `Enemy ${i + 1}` : e.name,
+        side: 'enemy' as const,
+      })),
     ];
 
     // Initialize accumulators for each combatant
