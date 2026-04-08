@@ -1320,6 +1320,8 @@ interface CombatantMetrics {
   spellsCast: number;
   itemsUsed: number;
   criticalHits: number;
+  hits: number;               // Successful attack/spell hits
+  misses: number;             // Missed attack/spell attempts
   roundsSurvived: number;
   survived: boolean;
   actionsByType: Record<string, number>;  // e.g., { attack: 12, spell: 3, dodge: 1 }
@@ -1368,6 +1370,7 @@ Internally, each run creates a fresh `SeededDiceRoller` and `AICombatRunner`. Th
 | `aiConfig` | `AIConfig` | required | AI play styles per side |
 | `combatConfig` | `CombatConfig` | — | Optional combat engine overrides (max turns, flee, etc.) |
 | `collectDetailedLogs` | `boolean` | `false` | Save full combat log per run (memory-intensive for large runCount) |
+| `enemyRegeneration` | `EncounterGenerationOptions` | — | Regenerate enemies per run to capture generation variance; each run gets seed `enemyRegeneration.seed-runIndex` |
 | `onProgress` | `(completed, total) => void` | — | Progress callback after each run |
 | `abortSignal` | `AbortSignal` | — | Cancel long-running simulations; returns partial results |
 
@@ -1428,6 +1431,9 @@ Per-combatant aggregate stats across all simulation runs. Keyed by combatant ID 
 | `survivalRate` | `number` | Survival rate (0.0–1.0) |
 | `killRate` | `number` | Final blow rate (0.0–1.0) |
 | `criticalHitRate` | `number` | Crit rate across all attack actions (0.0–1.0) |
+| `averageHitRate` | `number` | Average hit rate across all runs (0.0–1.0) |
+| `averageHitsPerRun` | `number` | Average number of hits per run |
+| `averageMissesPerRun` | `number` | Average number of misses per run |
 | `averageSpellSlotsUsed` | `number` | Average spell slots consumed per run |
 | `mostUsedAction` | `string` | Most frequent action type (`attack`, `castSpell`, etc.) |
 | `damageDistribution` | `HistogramBucket[]` | DPR distribution for visualization |

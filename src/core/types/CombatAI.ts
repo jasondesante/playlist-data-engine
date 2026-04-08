@@ -146,6 +146,10 @@ export interface CombatantMetrics {
     itemsUsed: number;
     /** Number of critical hits scored */
     criticalHits: number;
+    /** Number of successful attack/spell hits */
+    hits: number;
+    /** Number of missed attack/spell attempts */
+    misses: number;
     /** Number of rounds the combatant survived (0 if defeated in round 1) */
     roundsSurvived: number;
     /** Whether the combatant was still alive at combat end */

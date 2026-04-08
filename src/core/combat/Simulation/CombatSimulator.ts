@@ -187,6 +187,15 @@ export interface CombatantSimulationMetrics {
   /** Rate of critical hits across all attack actions (0.0–1.0) */
   criticalHitRate: number;
 
+  /** Average hit rate across all runs (0.0–1.0) */
+  averageHitRate: number;
+
+  /** Average number of hits per run */
+  averageHitsPerRun: number;
+
+  /** Average number of misses per run */
+  averageMissesPerRun: number;
+
   /** Average number of spell slots consumed per run */
   averageSpellSlotsUsed: number;
 
@@ -604,6 +613,8 @@ export class CombatantAccumulator {
   private survivalCount = 0;
   private killCount = 0;
   private criticalHitSum = 0;
+  private hitsSum = 0;
+  private missesSum = 0;
   private totalAttackActions = 0;
   private spellsCastSum = 0;
   private actionTypeCounts = new Map<string, number>();
@@ -632,6 +643,8 @@ export class CombatantAccumulator {
     // Track critical hit rate
     const attacks = (m.actionsByType['attack'] ?? 0);
     this.criticalHitSum += m.criticalHits;
+    this.hitsSum += m.hits;
+    this.missesSum += m.misses;
     this.totalAttackActions += attacks;
 
     this.spellsCastSum += m.spellsCast;
@@ -699,6 +712,11 @@ export class CombatantAccumulator {
       criticalHitRate: this.totalAttackActions > 0
         ? this.criticalHitSum / this.totalAttackActions
         : 0,
+      averageHitRate: (this.hitsSum + this.missesSum) > 0
+        ? this.hitsSum / (this.hitsSum + this.missesSum)
+        : 0,
+      averageHitsPerRun: this.hitsSum / runCount,
+      averageMissesPerRun: this.missesSum / runCount,
       averageSpellSlotsUsed: this.spellsCastSum / runCount,
       mostUsedAction,
       damageDistribution,

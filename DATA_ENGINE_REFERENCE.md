@@ -5055,7 +5055,7 @@ Decision engine for AI-controlled combatants. Produces an `AIDecision` for each 
 | `AIConfig` | Configuration for AI-controlled combat | `playerStyle`, `enemyStyle`, `overrides?`, `enableClassFeatures?` |
 | `AIDecision` | AI's decision for a single turn | `action`, `target?`, `weaponName?`, `spellName?`, `reasoning?` |
 | `AIThreatAssessment` | Battlefield state snapshot | `myHPPercent`, `myAC`, `lowestEnemyHP`, `enemyCount`, `isLowHP`, `hasSpellSlots` |
-| `CombatantMetrics` | Per-combatant stats from a single combat | `totalDamageDealt`, `totalDamageTaken`, `totalHealingDone`, `spellsCast`, `criticalHits`, `roundsSurvived`, `survived`, `actionsByType`, `damagePerRound` |
+| `CombatantMetrics` | Per-combatant stats from a single combat | `totalDamageDealt`, `totalDamageTaken`, `totalHealingDone`, `spellsCast`, `criticalHits`, `hits`, `misses`, `roundsSurvived`, `survived`, `actionsByType`, `damagePerRound` |
 
 ### AICombatRunner
 
@@ -5131,7 +5131,7 @@ Monte Carlo combat simulation engine. Runs N independent combat simulations with
 |------|-------------|------------|
 | `SimulationResults` | Complete simulation results | `config`, `summary`, `party`, `encounter`, `perCombatantMetrics`, `runDetails?`, `wasCancelled` |
 | `SimulationSummary` | Aggregate statistics | `totalRuns`, `playerWins`, `enemyWins`, `draws`, `playerWinRate`, `averageRounds`, `medianRounds`, `totalPlayerDeaths`, `totalEnemyDeaths` |
-| `CombatantSimulationMetrics` | Per-combatant aggregate stats | `averageDamagePerRound`, `survivalRate`, `killRate`, `criticalHitRate`, `mostUsedAction`, `damageDistribution`, `hpRemainingDistribution` |
+| `CombatantSimulationMetrics` | Per-combatant aggregate stats | `averageDamagePerRound`, `survivalRate`, `killRate`, `criticalHitRate`, `averageHitRate`, `averageHitsPerRun`, `averageMissesPerRun`, `mostUsedAction`, `damageDistribution`, `hpRemainingDistribution` |
 | `HistogramBucket` | Distribution visualization bucket | `rangeStart`, `rangeEnd`, `count`, `percent` |
 | `PartyConfig` | Party configuration snapshot | `memberCount`, `averageLevel`, `memberNames` |
 | `EncounterConfig` | Encounter configuration snapshot | `enemyCount`, `averageCR`, `enemyNames` |
@@ -5365,8 +5365,8 @@ Bidirectional conversion between Challenge Rating (CR) and character level for e
 
 | Rarity | Stat Multiplier | Signature Die | Extra Abilities | Resistances |
 |--------|-----------------|----------------|-----------------|-------------|
-| `common` | 1.0× | d6 | 0 | None |
-| `uncommon` | 1.1× | d8 | 1 | None |
+| `common` | 1.0× | 1d6 | 0 | None |
+| `uncommon` | 1.1× | 1d8 | 1 | None |
 | `elite` | 1.25× | d10 | 2 | Type-based |
 | `boss` | 1.5× | d12 | 3 | Type-based |
 
@@ -5639,8 +5639,8 @@ Audio profile affects enemy stat distribution during generation. This is a subtl
 
 | Value | Stat Multiplier | Signature Die | Extra Abilities |
 |--------|-----------------|----------------|-----------------|
-| `common` | 1.0× | d6 | 0 |
-| `uncommon` | 1.1× | d8 | 1 |
+| `common` | 1.0× | 1d6 | 0 |
+| `uncommon` | 1.1× | 1d8 | 1 |
 | `elite` | 1.25× | d10 | 2 |
 | `boss` | 1.5× | d12 | 3 |
 

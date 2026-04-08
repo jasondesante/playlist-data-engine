@@ -38,6 +38,8 @@ export class CombatMetricsTracker {
         spellsCast: 0,
         itemsUsed: 0,
         criticalHits: 0,
+        hits: 0,
+        misses: 0,
         roundsSurvived: 0,
         survived: !c.isDefeated,
         actionsByType: {},
@@ -74,6 +76,16 @@ export class CombatMetricsTracker {
         case 'attack': {
           const damage = action.result?.damage ?? 0;
           const isCrit = action.result?.isCritical === true;
+          const isHit = action.result?.success === true;
+
+          // Track hit/miss
+          if (actorMetrics) {
+            if (isHit) {
+              actorMetrics.hits += 1;
+            } else {
+              actorMetrics.misses += 1;
+            }
+          }
 
           // Actor dealt damage
           if (actorMetrics && damage > 0) {
@@ -114,6 +126,11 @@ export class CombatMetricsTracker {
             } else if (damage > 0) {
               actorMetrics.totalDamageDealt += damage;
               actorMetrics.criticalHits += isCrit ? 1 : 0;
+              if (action.result?.success === true) {
+                actorMetrics.hits += 1;
+              } else {
+                actorMetrics.misses += 1;
+              }
             }
           }
 

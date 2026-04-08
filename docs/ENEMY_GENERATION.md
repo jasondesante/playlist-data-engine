@@ -216,12 +216,12 @@ The enemy generation system uses **two independent axes** to create diverse enem
 // SAME rarity, DIFFERENT power (CR determines stats/level)
 const grunt = EnemyGenerator.generate({ seed: 'a', templateId: 'goblin', cr: 0.25, rarity: 'common' });
 const beast = EnemyGenerator.generate({ seed: 'b', templateId: 'purple-worm', cr: 20, rarity: 'common' });
-// Both have d6 signature, 0 extras — but beast has 20x the stats
+// Both have 1d6 signature, 0 extras — but beast has 20x the stats
 
 // SAME power, DIFFERENT complexity (rarity determines abilities)
 const simple = EnemyGenerator.generate({ seed: 'c', templateId: 'dire-wolf', cr: 5, rarity: 'common' });
 const complex = EnemyGenerator.generate({ seed: 'd', templateId: 'werewolf', cr: 5, rarity: 'boss' });
-// Both are level 5 — but boss has d12 signature, 3 extras, legendary actions
+// Both are level 5 — but boss has 1d12 signature, 3 extras, legendary actions
 ```
 
 ---
@@ -232,8 +232,8 @@ Every enemy template can be generated at four rarity tiers. **Note**: Rarity aff
 
 | Rarity | Stat Multiplier | Signature Die | Extra Abilities | Resistances |
 |--------|-----------------|----------------|-----------------|-------------|
-| **Common** | 1.0× (base) | d6 | 0 | None |
-| **Uncommon** | 1.03× (+3%) | d8 | 1 | None |
+| **Common** | 1.0× (base) | 1d6 | 0 | None |
+| **Uncommon** | 1.03× (+3%) | 1d8 | 1 | None |
 | **Elite** | 1.07× (+7%) | d10 | 2 | Type-based |
 | **Boss** | 1.12× (+12%) | d12 | 3 | Type-based |
 
@@ -245,10 +245,10 @@ The signature ability is the core ability that defines an enemy type. It scales 
 
 | Rarity | Die Damage | Example (Orc Savage Strike) |
 |--------|-------------|----------------------------|
-| Common | d6 + 2 | 1d6 + 2 slashing damage |
-| Uncommon | d8 + 3 | 1d8 + 3 slashing damage |
-| Elite | d10 + 4 | 1d10 + 4 slashing damage |
-| Boss | d12 + 6 | 1d12 + 6 slashing damage |
+| Common | 1d6 + 2 | 1d6 + 2 slashing damage |
+| Uncommon | 1d8 + 3 | 1d8 + 3 slashing damage |
+| Elite | 1d10 + 4 | 1d10 + 4 slashing damage |
+| Boss | 1d12 + 6 | 1d12 + 6 slashing damage |
 
 The damage bonus (+2/+3/+4/+6) represents the increasing ability modifier based on rarity complexity. Note that the die size increases with rarity, while CR determines the underlying power level.
 
@@ -308,8 +308,8 @@ const enemies = EnemyGenerator.generateEncounter(party, {
 });
 
 // Result:
-// - 4 Common Orcs (15 HP, d6 signature)
-// - 1 Uncommon Orc leader (17 HP, d8 signature, +1 extra ability)
+// - 4 Common Orcs (15 HP, 1d6 signature)
+// - 1 Uncommon Orc leader (17 HP, 1d8 signature, +1 extra ability)
 ```
 
 **Promotion is capped at Boss rarity** - if promotion would exceed boss, the enemy becomes a boss.
@@ -1660,6 +1660,7 @@ interface EncounterGenerationOptions {
     lairFeatures?: boolean;              // Include lair actions for bosses
     minRarity?: EnemyRarity;             // Force minimum rarity
     maxRarity?: EnemyRarity;             // Cap maximum rarity
+    statLevels?: StatLevelOverrides;     // HP/attack/defense level overrides
 }
 ```
 
