@@ -190,7 +190,7 @@ A concise overview of all main exports from the library, organized by category.
 
 **Combat Types:** `StatusEffect`, `StatusEffectMechanics`, `CombatAction`, `CombatResult`, `Combatant`, `CombatInstance`, `DamageRoll`, `DiceRollerAPI` — see [Combat Types](#combat-types)
 
-**Simulation & Analysis Types:** `SimulationConfig`, `SimulationResults`, `SimulationSummary`, `CombatantSimulationMetrics`, `HistogramBucket`, `PartyConfig`, `EncounterConfig`, `SimulationRunDetail`, `AICombatResult`, `BalanceReport`, `BalanceRecommendation`, `DifficultyVariance`, `SweepVariable`, `SweepParams`, `SweepResults`, `SweepDataPoint`, `SweepEnemyConfig`, `ComparisonConfig`, `ComparisonOptions`, `ComparisonResult`, `DeltaMetrics`, `CombatantDelta`, `SignificanceResult`, `DifficultyCalculatorOptions`, `DifficultyEnemyTemplate`, `DifficultySuggestion`, `DifficultyProbe` — see individual sections in [Combat System](#combat-system)
+**Simulation & Analysis Types:** `SimulationConfig`, `SimulationResults`, `SimulationSummary`, `CombatantSimulationMetrics`, `EnemyGenerationRecord`, `HistogramBucket`, `PartyConfig`, `EncounterConfig`, `SimulationRunDetail`, `AICombatResult`, `BalanceReport`, `BalanceRecommendation`, `DifficultyVariance`, `SweepVariable`, `SweepParams`, `SweepResults`, `SweepDataPoint`, `SweepEnemyConfig`, `ComparisonConfig`, `ComparisonOptions`, `ComparisonResult`, `DeltaMetrics`, `CombatantDelta`, `SignificanceResult`, `DifficultyCalculatorOptions`, `DifficultyEnemyTemplate`, `DifficultySuggestion`, `DifficultyProbe` — see individual sections in [Combat System](#combat-system)
 
 ### Beat Detection
 
@@ -5129,7 +5129,8 @@ Monte Carlo combat simulation engine. Runs N independent combat simulations with
 
 | Type | Description | Key Fields |
 |------|-------------|------------|
-| `SimulationResults` | Complete simulation results | `config`, `summary`, `party`, `encounter`, `perCombatantMetrics`, `runDetails?`, `wasCancelled` |
+| `SimulationResults` | Complete simulation results | `config`, `summary`, `party`, `encounter`, `perCombatantMetrics`, `enemyGenerationStats?`, `runDetails?`, `wasCancelled` |
+| `EnemyGenerationRecord` | Per-enemy-type stats (regen enabled) | `name`, `count`, `hpRange`, `acRange`, `crRange` |
 | `SimulationSummary` | Aggregate statistics | `totalRuns`, `playerWins`, `enemyWins`, `draws`, `playerWinRate`, `averageRounds`, `medianRounds`, `totalPlayerDeaths`, `totalEnemyDeaths` |
 | `CombatantSimulationMetrics` | Per-combatant aggregate stats | `averageDamagePerRound`, `survivalRate`, `killRate`, `criticalHitRate`, `averageHitRate`, `averageHitsPerRun`, `averageMissesPerRun`, `mostUsedAction`, `damageDistribution`, `hpRemainingDistribution` |
 | `HistogramBucket` | Distribution visualization bucket | `rangeStart`, `rangeEnd`, `count`, `percent` |

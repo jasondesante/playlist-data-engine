@@ -1386,10 +1386,23 @@ interface SimulationResults {
   party: PartyConfig;                                    // Party snapshot (memberCount, averageLevel, names)
   encounter: EncounterConfig;                            // Enemy snapshot (enemyCount, averageCR, names)
   perCombatantMetrics: Map<string, CombatantSimulationMetrics>;  // Per-combatant stats
+  enemyGenerationStats?: EnemyGenerationRecord[];        // Per-enemy-type stats (only if enemyRegeneration)
   runDetails?: SimulationRunDetail[];                    // Per-run data (only if collectDetailedLogs)
   wasCancelled: boolean;                                 // true if aborted before completion
 }
 ```
+
+When `enemyRegeneration` is enabled, `enemyGenerationStats` provides aggregated per-enemy-type statistics across all runs. Each unique enemy name that appeared gets an `EnemyGenerationRecord`:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `name` | `string` | Enemy display name (e.g., "Goblin Scout") |
+| `count` | `number` | Number of runs this enemy appeared in |
+| `hpRange` | `{ min, max, avg }` | HP values observed across runs |
+| `acRange` | `{ min, max, avg }` | AC values observed across runs |
+| `crRange` | `{ min, max, avg }` | CR values observed across runs |
+
+Results are sorted by `count` descending (most common enemies first).
 
 #### SimulationSummary
 

@@ -273,11 +273,35 @@ export interface SimulationResults {
   /** Per-combatant aggregate metrics keyed by combatant ID */
   perCombatantMetrics: Map<string, CombatantSimulationMetrics>;
 
+  /**
+   * When enemyRegeneration is enabled, tracks per-enemy-type statistics
+   * aggregated across all runs. Each entry represents a unique enemy name
+   * that appeared during the simulation, with occurrence count and stat ranges.
+   */
+  enemyGenerationStats?: EnemyGenerationRecord[];
+
   /** Detailed per-run data (only if collectDetailedLogs was true) */
   runDetails?: SimulationRunDetail[];
 
   /** Whether the simulation was cancelled before completing all requested runs */
   wasCancelled: boolean;
+}
+
+/**
+ * Aggregated statistics for a unique enemy type across all simulation runs
+ * where enemyRegeneration was enabled.
+ */
+export interface EnemyGenerationRecord {
+  /** Enemy name (e.g., "Goblin Scout", "Orc Brute") */
+  name: string;
+  /** Number of runs this enemy appeared in */
+  count: number;
+  /** HP values observed across runs */
+  hpRange: { min: number; max: number; avg: number };
+  /** AC values observed across runs */
+  acRange: { min: number; max: number; avg: number };
+  /** CR values observed across runs */
+  crRange: { min: number; max: number; avg: number };
 }
 
 // ─── CombatSimulator Class ───────────────────────────────────────────────────
@@ -399,6 +423,9 @@ export class SimulationAggregator {
 
   // Optional detailed logs
   private runDetails: SimulationRunDetail[] | null = null;
+
+  // Enemy generation tracking (when enemyRegeneration is enabled)
+  private enemyGenTracker: Map<string, { count: number; hps: number[]; acs: number[]; crs: number[] }> = new Map();
 
   // Track all combatant IDs and names for initialization
   private readonly combatantIds: Array<{ id: string; name: string; side: 'player' | 'enemy' }>;
@@ -523,6 +550,20 @@ export class SimulationAggregator {
       }
     }
 
+    // Track enemy generation stats when regen is enabled
+    if (this.config.enemyRegeneration && combat) {
+      for (const c of combat.combatants) {
+        if (!c.id.startsWith('enemy')) continue;
+        const name = c.character.name;
+        const entry = this.enemyGenTracker.get(name) ?? { count: 0, hps: [], acs: [], crs: [] };
+        entry.count++;
+        entry.hps.push(c.character.hp.max);
+        entry.acs.push(c.character.armor_class);
+        entry.crs.push(c.character.cr ?? c.character.level ?? 1);
+        this.enemyGenTracker.set(name, entry);
+      }
+    }
+
     // Store detailed log if requested
     if (this.runDetails !== null) {
       this.runDetails.push({
@@ -564,12 +605,27 @@ export class SimulationAggregator {
       perCombatantMetrics.set(id, acc.toSimulationMetrics(totalRuns));
     }
 
+    // Build enemy generation stats (only when regen was enabled)
+    let enemyGenerationStats: EnemyGenerationRecord[] | undefined;
+    if (this.enemyGenTracker.size > 0) {
+      enemyGenerationStats = Array.from(this.enemyGenTracker.entries())
+        .sort((a, b) => b[1].count - a[1].count)
+        .map(([name, data]) => ({
+          name,
+          count: data.count,
+          hpRange: { min: Math.min(...data.hps), max: Math.max(...data.hps), avg: this.average(data.hps) },
+          acRange: { min: Math.min(...data.acs), max: Math.max(...data.acs), avg: this.average(data.acs) },
+          crRange: { min: Math.min(...data.crs), max: Math.max(...data.crs), avg: this.average(data.crs) },
+        }));
+    }
+
     return {
       config: this.config,
       summary,
       party: this.party,
       encounter: this.encounter,
       perCombatantMetrics,
+      enemyGenerationStats,
       runDetails: this.runDetails !== null && this.runDetails.length > 0
         ? this.runDetails
         : undefined,
