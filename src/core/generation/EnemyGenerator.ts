@@ -387,7 +387,7 @@ export class EnemyGenerator {
         // If attackLevel is overridden, use StatScaling for damage die
         const scaledDie = statLevels?.attackLevel !== undefined
             ? getAttackAtLevel(scaledStats, statLevels.attackLevel, rarity, archetype).damageDie
-            : `d${config.signatureDieSize}`;
+            : `1d${config.signatureDieSize}`;
         // If attackLevel is overridden, use StatScaling for damage modifier
         const damageModifier = statLevels?.attackLevel !== undefined
             ? getAttackAtLevel(scaledStats, statLevels.attackLevel, rarity, archetype).damageModifier
@@ -1352,7 +1352,7 @@ export class EnemyGenerator {
      */
     private static getDamageDieForRarity(rarity: EnemyRarity): string {
         const config = getRarityConfig(rarity);
-        return `d${config.signatureDieSize}`;
+        return `1d${config.signatureDieSize}`;
     }
 
     /**

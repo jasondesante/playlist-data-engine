@@ -64,10 +64,10 @@ const ATTACK_BONUS_PER_LEVEL = 0.2;
  * - Levels 20: 2d8 (average 9, max 16)
  */
 const DAMAGE_DIE_BY_LEVEL: Array<{ minLevel: number; die: string }> = [
-    { minLevel: 1,  die: 'd6' },
-    { minLevel: 3,  die: 'd8' },
-    { minLevel: 6,  die: 'd10' },
-    { minLevel: 10, die: 'd12' },
+    { minLevel: 1,  die: '1d6' },
+    { minLevel: 3,  die: '1d8' },
+    { minLevel: 6,  die: '1d10' },
+    { minLevel: 10, die: '1d12' },
     { minLevel: 15, die: '2d6' },
     { minLevel: 20, die: '2d8' },
 ];

@@ -86,7 +86,7 @@ export function getRarityConfig(rarity: EnemyRarity): RarityConfig {
  * ```
  */
 export function getSignatureDie(rarity: EnemyRarity): string {
-    return `d${RARITY_CONFIGS[rarity].signatureDieSize}`;
+    return `1d${RARITY_CONFIGS[rarity].signatureDieSize}`;
 }
 
 /**
