@@ -40,6 +40,7 @@ export class CombatMetricsTracker {
         criticalHits: 0,
         hits: 0,
         misses: 0,
+        kills: 0,
         roundsSurvived: 0,
         survived: !c.isDefeated,
         actionsByType: {},
@@ -169,6 +170,37 @@ export class CombatMetricsTracker {
             actorMetrics.itemsUsed += 1;
           }
           break;
+        }
+      }
+    }
+
+    // Attribute kills: for each defeated combatant, find the last actor
+    // who dealt damage to them before their final action.
+    const lastDamager = new Map<string, string>(); // targetId → actorId
+    for (const action of combat.history) {
+      if ((action.type === 'attack' || action.type === 'spell' || action.type === 'legendaryAction') && action.target) {
+        const damage = action.result?.damage ?? 0;
+        if (damage > 0) {
+          lastDamager.set(action.target.id, action.actor.id);
+        }
+        // For multi-target spells, also track
+        if (action.targets) {
+          for (const t of action.targets) {
+            if (damage > 0) {
+              lastDamager.set(t.id, action.actor.id);
+            }
+          }
+        }
+      }
+    }
+    for (const c of combat.combatants) {
+      if (c.isDefeated) {
+        const killerId = lastDamager.get(c.id);
+        if (killerId) {
+          const killerMetrics = metrics.get(killerId);
+          if (killerMetrics) {
+            killerMetrics.kills += 1;
+          }
         }
       }
     }

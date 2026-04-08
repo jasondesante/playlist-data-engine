@@ -1322,6 +1322,7 @@ interface CombatantMetrics {
   criticalHits: number;
   hits: number;               // Successful attack/spell hits
   misses: number;             // Missed attack/spell attempts
+  kills: number;              // Enemies/opponents this combatant defeated
   roundsSurvived: number;
   survived: boolean;
   actionsByType: Record<string, number>;  // e.g., { attack: 12, spell: 3, dodge: 1 }

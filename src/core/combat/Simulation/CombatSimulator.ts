@@ -645,6 +645,7 @@ export class CombatantAccumulator {
     this.criticalHitSum += m.criticalHits;
     this.hitsSum += m.hits;
     this.missesSum += m.misses;
+    this.killCount += m.kills;
     this.totalAttackActions += attacks;
 
     this.spellsCastSum += m.spellsCast;
@@ -665,14 +666,8 @@ export class CombatantAccumulator {
       this.hpRemainingList.push(m.hpRemainingPercent);
     }
 
-    // Track kill: this combatant dealt the final blow to the last enemy.
-    // We detect this by checking if the combatant dealt damage and the
-    // enemy died during this combatant's turn. Approximation: if the
-    // combatant is on the winning side and survived, credit a kill.
-    // More precise kill tracking would require examining the combat history
-    // per-run, which is expensive. This approximation works well for
-    // the Monte Carlo use case where we care about aggregate rates.
-    // Kill tracking is best-effort — we use damage dealt as a proxy.
+    // Kill tracking is handled by CombatMetricsTracker which attributes
+    // each defeated combatant to the last actor who dealt damage to them.
   }
 
   /**

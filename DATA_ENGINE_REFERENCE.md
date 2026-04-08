@@ -5055,7 +5055,7 @@ Decision engine for AI-controlled combatants. Produces an `AIDecision` for each 
 | `AIConfig` | Configuration for AI-controlled combat | `playerStyle`, `enemyStyle`, `overrides?`, `enableClassFeatures?` |
 | `AIDecision` | AI's decision for a single turn | `action`, `target?`, `weaponName?`, `spellName?`, `reasoning?` |
 | `AIThreatAssessment` | Battlefield state snapshot | `myHPPercent`, `myAC`, `lowestEnemyHP`, `enemyCount`, `isLowHP`, `hasSpellSlots` |
-| `CombatantMetrics` | Per-combatant stats from a single combat | `totalDamageDealt`, `totalDamageTaken`, `totalHealingDone`, `spellsCast`, `criticalHits`, `hits`, `misses`, `roundsSurvived`, `survived`, `actionsByType`, `damagePerRound` |
+| `CombatantMetrics` | Per-combatant stats from a single combat | `totalDamageDealt`, `totalDamageTaken`, `totalHealingDone`, `spellsCast`, `criticalHits`, `hits`, `misses`, `kills`, `roundsSurvived`, `survived`, `actionsByType`, `damagePerRound` |
 
 ### AICombatRunner
 
