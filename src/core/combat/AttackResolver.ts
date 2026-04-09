@@ -23,6 +23,23 @@ export interface AttackResult {
 }
 
 /**
+ * Result of simulating multiple attack rolls
+ */
+export interface AttackSimulationResult {
+  iterations: number;
+  totalHits: number;
+  totalMisses: number;
+  totalCrits: number;
+  hitRate: number;
+  critRate: number;
+  missRate: number;
+  averageDamage: number;
+  maxDamage: number;
+  /** Sorted array of { damage, count, percentage } from 0 (misses) upward */
+  distribution: Array<{ damage: number; count: number; percentage: number }>;
+}
+
+/**
  * AttackResolver - D&D 5e attack and damage calculation
  */
 export class AttackResolver {
@@ -364,6 +381,96 @@ export class AttackResolver {
         isMiss
       },
       description
+    };
+  }
+
+  /**
+   * Simulate N attack rolls using the full engine attack resolution pipeline.
+   *
+   * Creates fresh Combatant wrappers each iteration so the target's HP is never
+   * permanently mutated. Uses the same resolveAttack logic as live combat
+   * (d20 + attack bonus vs AC, crit on nat 20, fumble on nat 1, doubled dice
+   * on crits, ability-modifier-based damage calculation).
+   *
+   * @param attacker  Character sheet of the attacking hero/enemy
+   * @param target    Character sheet of the defender
+   * @param attack    Attack object (weapon or spell) with damage_dice and attack_bonus
+   * @param iterations  Number of attacks to simulate (default 1000)
+   * @param diceRoller  Optional seeded/custom dice roller
+   */
+  static simulateAttacks(
+    attacker: CharacterSheet,
+    target: CharacterSheet,
+    attack: Attack,
+    iterations: number = 1000,
+    diceRoller?: DiceRollerAPI,
+  ): AttackSimulationResult {
+    const resolver = new AttackResolver(diceRoller);
+    const buckets = new Map<number, number>();
+    let totalHits = 0;
+    let totalCrits = 0;
+    let totalMisses = 0;
+
+    for (let i = 0; i < iterations; i++) {
+      // Fresh combatants each iteration — resolveAttack mutates HP/defeated state
+      const atkCombatant: Combatant = {
+        id: `sim-atk-${i}`,
+        character: attacker,
+        initiative: 0,
+        currentHP: attacker.hp.max,
+        statusEffects: [],
+        isDefeated: false,
+        actionUsed: false,
+        bonusActionUsed: false,
+        reactionUsed: false,
+      };
+
+      const tgtCombatant: Combatant = {
+        id: `sim-tgt-${i}`,
+        character: target,
+        initiative: 0,
+        currentHP: target.hp.max,
+        statusEffects: [],
+        isDefeated: false,
+        actionUsed: false,
+        bonusActionUsed: false,
+        reactionUsed: false,
+      };
+
+      const result = resolver.resolveAttack(atkCombatant, tgtCombatant, attack);
+      const damage = result.damageRoll?.total ?? 0;
+      buckets.set(damage, (buckets.get(damage) ?? 0) + 1);
+
+      if (result.attackRoll.isMiss || !result.attackRoll.hit) {
+        totalMisses++;
+      } else {
+        totalHits++;
+        if (result.attackRoll.isCritical) totalCrits++;
+      }
+    }
+
+    const distribution = Array.from(buckets.entries())
+      .map(([damage, count]) => ({
+        damage,
+        count,
+        percentage: (count / iterations) * 100,
+      }))
+      .sort((a, b) => a.damage - b.damage);
+
+    const averageDamage =
+      distribution.reduce((sum, b) => sum + b.damage * b.count, 0) / iterations;
+
+    return {
+      iterations,
+      totalHits,
+      totalMisses,
+      totalCrits,
+      hitRate: (totalHits / iterations) * 100,
+      critRate: (totalCrits / iterations) * 100,
+      missRate: (totalMisses / iterations) * 100,
+      averageDamage,
+      maxDamage: Math.max(...buckets.keys()),
+      distribution,
     };
   }
 }

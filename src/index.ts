@@ -478,7 +478,7 @@ export {
 
 // Combat result types
 export type { InitiativeResult } from './core/combat/InitiativeRoller.js';
-export type { AttackResult } from './core/combat/AttackResolver.js';
+export type { AttackResult, AttackSimulationResult } from './core/combat/AttackResolver.js';
 
 // ============================================================================
 // UTILITIES

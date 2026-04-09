@@ -1136,6 +1136,23 @@ The `CombatInstance` interface (see [CombatInstance](#combatinstance)) also has 
 | `hpAfterDamage?` | number | Target HP after damage |
 | `description` | string | Result description |
 
+**AttackSimulationResult**
+
+*Location:* *[src/core/combat/AttackResolver.ts](src/core/combat/AttackResolver.ts)*
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `iterations` | number | Number of attacks simulated |
+| `totalHits` | number | Count of hits (excluding misses) |
+| `totalMisses` | number | Count of misses |
+| `totalCrits` | number | Count of critical hits |
+| `hitRate` | number | Hit percentage (0–100) |
+| `critRate` | number | Critical hit percentage (0–100) |
+| `missRate` | number | Miss percentage (0–100) |
+| `averageDamage` | number | Mean damage across all iterations |
+| `maxDamage` | number | Highest single-hit damage observed |
+| `distribution` | Array\<{ damage, count, percentage }\> | Sorted damage buckets from 0 (misses) upward |
+
 **SpellSlots**
 
 *Location:* *[src/core/generation/SpellManager.ts](src/core/generation/SpellManager.ts)*
@@ -4963,6 +4980,7 @@ Handles melee and ranged attack resolution (d20 + attack bonus vs target AC).
 | `calculateAttackBonus(character, attackName, abilityModifier, isProficient)` | Calculates attack bonus (ability + proficiency if proficient) |
 | `attackWithAdvantage(attacker, target, attack)` | Resolves attack with advantage (roll twice, take higher) |
 | `attackWithDisadvantage(attacker, target, attack)` | Resolves attack with disadvantage (roll twice, take lower) |
+| `simulateAttacks(attacker, target, attack, iterations?, diceRoller?)` | **Static.** Simulates N attack rolls using the full resolution pipeline; returns hit/crit/miss rates, average/max damage, and damage distribution |
 
 ### SpellCaster
 
