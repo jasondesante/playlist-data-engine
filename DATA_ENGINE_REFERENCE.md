@@ -762,7 +762,7 @@ Three related types for equipment and inventory management.
 | Type | Location | Description |
 |------|----------|-------------|
 | **InventoryItem** | *[src/core/generation/EquipmentGenerator.ts](src/core/generation/EquipmentGenerator.ts)* | Basic inventory: name, quantity, equipped flag |
-| **EnhancedInventoryItem** | *[src/core/types/Equipment.ts](src/core/types/Equipment.ts)* | Adds: modifications, templateId, instanceId (for enchantments, per-instance tracking) |
+| **EnhancedInventoryItem** | *[src/core/types/Equipment.ts](src/core/types/Equipment.ts)* | Adds: modifications, templateId, instanceId, tags (for enchantments, per-instance tracking, combat item filtering) |
 | **CharacterEquipment** | *[src/core/types/Equipment.ts](src/core/types/Equipment.ts)* | Container: weapons[], armor[], items[], totalWeight, equippedWeight |
 
 **Key differences:**
@@ -1019,7 +1019,7 @@ An action taken during combat.
 | `'hide'` | Hide action (stealth check) |
 | `'ready'` | Ready an action to trigger later |
 | `'flee'` | Leave combat (requires `allowFleeing: true`) |
-| `'useItem'` | Use an item from inventory (healing potions, etc.) |
+| `'useItem'` | Use an item from inventory. Consumes one quantity (removes at 0). Only items with `'healing'` or `'consumable'` tags are considered by CombatAI. |
 | `'legendaryAction'` | Boss legendary action (spends action points) |
 | `'statusEffectTick'` | Status effect processing (duration decrement, expiration, concentration break, start-of-turn damage) |
 
@@ -1079,7 +1079,7 @@ Configuration for custom combat loot rewards.
 |------|-------------|
 | `CombatActionResult` | Outcome of a combat action (success, roll, damage) |
 | `AttackRoll` | Attack roll result (d20, bonus, hit/miss, damageScale) |
-| `DamageRoll` | Damage roll result (dice, rolls, total) |
+| `DamageRoll` | Damage roll result (dice, rolls, total, baseDamage, weaponRoll) — uses STR-based formula: `max(1, max(0, STR - AC) + max(1, floor(dice/4)))` |
 | `SpellCastResult` | Spell casting outcome (success, save DC, effects) |
 | `CombatResult` | Final combat result (winner, winnerSide, XP, treasure) — see below |
 | `CombatConfig` | Combat configuration options (environment, music, tactical, treasure, hitMode) |

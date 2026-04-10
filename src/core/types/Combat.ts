@@ -176,13 +176,19 @@ export interface AttackRoll {
 
 /**
  * DamageRoll - Result of a damage roll
+ *
+ * Damage formula: totalDamage = max(1, baseDamage + weaponBonus)
+ * - baseDamage = max(0, attacker.STR - defender.AC)
+ * - weaponBonus = max(1, floor(rawDiceSum / 4))
  */
 export interface DamageRoll {
   diceFormula: string;    // e.g., "2d6", "1d8+3"
   rolls: number[];        // Individual die rolls
-  modifier?: number;      // Ability modifier added
-  total: number;          // Sum of rolls + modifier
+  modifier?: number;      // Ability modifier added (0 in STR-based formula)
+  total: number;          // Final damage total
   isCritical: boolean;    // If critical hit, dice are doubled
+  baseDamage?: number;    // Flat damage from STR - AC difference
+  weaponRoll?: number;    // Raw weapon dice sum
 }
 
 /**

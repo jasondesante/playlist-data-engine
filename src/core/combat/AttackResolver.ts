@@ -70,7 +70,7 @@ export class AttackResolver {
       description = `${attacker.character.name} uses ${attack.name} against ${target.character.name} - Miss (rolled ${attackRoll.d20Roll}, needed ${attackRoll.targetAC})`;
     } else {
       // Attack hit - roll damage
-      damageRoll = this.rollDamage(attacker, attack, attackRoll.isCritical);
+      damageRoll = this.rollDamage(attacker, target, attack, attackRoll.isCritical);
 
       // Apply damage scaling (scaled hit mode)
       if (attackRoll.damageScale !== undefined && attackRoll.damageScale < 1) {
@@ -163,58 +163,45 @@ export class AttackResolver {
   }
 
   /**
-   * Extract ability modifier for damage based on attack type
-   * Melee attacks → STR modifier
-   * Ranged attacks → DEX modifier
-   * Finesse weapons → max(STR, DEX)
-   * Spells → typically no modifier (added to spell DC, not damage dice)
+   * Roll damage for an attack using STR-based damage formula.
+   *
+   * Formula: totalDamage = max(1, baseDamage + weaponBonus)
+   * - baseDamage = max(0, attacker.STR - defender.AC)  — the primary damage source
+   * - weaponBonus = max(1, floor(rawDiceSum / 4))       — small extra from weapon dice
+   *
+   * Design: baseDamage drives the bulk of damage at mid/high levels (STR > AC).
+   * The weapon dice provide a small bonus (1-3 depending on weapon size) so they
+   * add flavor without dominating. At low levels where STR ≈ AC, baseDamage is
+   * near-zero and the weapon bonus is all you get — keeping fights gritty.
    */
-  private getDamageModifier(attacker: Combatant, attack: Attack): number {
-    const attackType = attack.type ?? 'melee';
-    const abilityMods = attacker.character.ability_modifiers;
+  private rollDamage(attacker: Combatant, target: Combatant, attack: Attack, isCritical: boolean): DamageRoll {
+    const attackerSTR = attacker.character.ability_scores.STR ?? 10;
+    const defenderAC = target.character.armor_class;
 
-    if (attackType === 'ranged') {
-      return abilityMods.DEX ?? 0;
-    }
+    // Base damage: the primary damage driver (scales with STR vs AC gap)
+    const baseDamage = Math.max(0, attackerSTR - defenderAC);
 
-    if (attackType === 'spell') {
-      // Spells typically don't add ability modifier to damage dice
-      // The modifier is usually accounted for in the spell's damage formula
-      return 0;
-    }
-
-    // Melee attacks - check for finesse property
-    const properties = attack.properties ?? [];
-    if (properties.includes('finesse')) {
-      // Finesse weapons use the better of STR or DEX
-      const strMod = abilityMods.STR ?? 0;
-      const dexMod = abilityMods.DEX ?? 0;
-      return Math.max(strMod, dexMod);
-    }
-
-    // Default to STR for non-finesse melee attacks
-    return abilityMods.STR ?? 0;
-  }
-
-  /**
-   * Roll damage for an attack
-   * If critical hit, double the damage dice (not the modifier)
-   */
-  private rollDamage(attacker: Combatant, attack: Attack, isCritical: boolean): DamageRoll {
-    // Parse attack damage formula (e.g., "1d8", "2d6+3")
-    const abilityModifier = this.getDamageModifier(attacker, attack);
+    // Roll weapon dice — small bonus on top of base damage
     const damageDice = attack.damage_dice ?? '';
-
     const damageResult = this.diceRoller
-      ? this.diceRoller.calculateDamage(damageDice, abilityModifier, isCritical)
-      : DiceRoller.calculateDamage(damageDice, abilityModifier, isCritical);
+      ? this.diceRoller.calculateDamage(damageDice, 0, isCritical)
+      : DiceRoller.calculateDamage(damageDice, 0, isCritical);
+
+    const rawRoll = damageResult.rolls.reduce((sum, r) => sum + r, 0);
+
+    // Weapon bonus: dice contribute a small amount (d4→1, d6→1, d8→1-2, d12→2, 2d6→1-3)
+    const weaponBonus = Math.max(1, Math.floor(rawRoll / 4));
+
+    const total = Math.max(1, baseDamage + weaponBonus);
 
     return {
       diceFormula: damageDice,
       rolls: damageResult.rolls,
-      modifier: damageResult.modifier ?? 0,
-      total: damageResult.total,
-      isCritical: damageResult.isCritical
+      modifier: 0,
+      total,
+      isCritical: damageResult.isCritical,
+      baseDamage,
+      weaponRoll: rawRoll,
     };
   }
 
@@ -303,7 +290,7 @@ export class AttackResolver {
 
     // Construct result (same as normal attack if hit)
     if (hit && !isMiss) {
-      let damageRoll = this.rollDamage(attacker, attack, isCritical);
+      let damageRoll = this.rollDamage(attacker, target, attack, isCritical);
       if (damageScale !== undefined && damageScale < 1) {
         const scaledTotal = Math.max(1, Math.floor(damageRoll.total * damageScale));
         damageRoll = { ...damageRoll, total: scaledTotal };
@@ -401,7 +388,7 @@ export class AttackResolver {
 
     // Construct result
     if (hit && !isMiss) {
-      let damageRoll = this.rollDamage(attacker, attack, isCritical);
+      let damageRoll = this.rollDamage(attacker, target, attack, isCritical);
       if (damageScale !== undefined && damageScale < 1) {
         const scaledTotal = Math.max(1, Math.floor(damageRoll.total * damageScale));
         damageRoll = { ...damageRoll, total: scaledTotal };

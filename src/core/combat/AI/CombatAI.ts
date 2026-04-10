@@ -145,12 +145,12 @@ export class CombatAI {
       return Math.max(max, bestDamage);
     }, 0);
 
-    // Check for healing/consumable items in inventory
-    // EnhancedInventoryItem is minimal (name, quantity, equipped, templateId)
-    // We use a heuristic: any item with quantity > 0 that isn't equipped is potentially usable
+    // Check for healing items in inventory (tagged as 'healing' or 'consumable')
+    // Items without combat functionality should never be considered for use.
     const items = combatant.character.equipment?.items || [];
     const hasHealingItems = items.some(
-      item => item.quantity > 0 && !item.equipped
+      item => item.quantity > 0 && !item.equipped &&
+        item.tags?.some(tag => tag === 'healing' || tag === 'consumable')
     );
 
     // Check for remaining spell slots

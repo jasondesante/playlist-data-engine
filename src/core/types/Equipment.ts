@@ -247,6 +247,10 @@ export interface EnhancedInventoryItem {
     weaponProperties?: string[];
     type?: EquipmentType;
     acBonus?: number;
+
+    // Tags describing what the item is/does (e.g. 'healing', 'consumable', 'potion')
+    // Used by CombatAI to decide if an item is usable in combat
+    tags?: string[];
 }
 
 /**

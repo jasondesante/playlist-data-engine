@@ -203,14 +203,28 @@ export class AICombatRunner {
       }
 
       case 'useItem': {
-        // Items don't have defined combat mechanics in the engine yet.
-        // Record in history for logging/metrics; no mechanical effect.
+        // Consume the item from inventory. Item-specific effects (healing, buffs, etc.)
+        // are not yet implemented — only the consumption happens for now.
+        const items = combatant.character.equipment?.items || [];
+        const item = decision.itemName
+          ? items.find(i => i.name === decision.itemName && i.quantity > 0)
+          : undefined;
+        if (item) {
+          item.quantity -= 1;
+          // Remove from array if fully consumed
+          if (item.quantity <= 0) {
+            const idx = items.indexOf(item);
+            if (idx !== -1) items.splice(idx, 1);
+          }
+        }
         combat.history.push({
           type: 'useItem',
           actor: combatant,
           result: {
-            success: true,
-            description: `${combatant.character.name} uses ${decision.itemName ?? 'an item'} (item mechanics not yet implemented in engine)`,
+            success: !!item,
+            description: item
+              ? `${combatant.character.name} uses ${decision.itemName}`
+              : `${combatant.character.name} tries to use ${decision.itemName ?? 'an item'} — item not found`,
           },
         });
         break;
