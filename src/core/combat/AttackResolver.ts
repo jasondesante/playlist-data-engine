@@ -5,7 +5,7 @@
  * Critical misses (natural 1) always miss
  */
 
-import type { Combatant, AttackRoll, DamageRoll, DiceRollerAPI } from '../types/Combat';
+import type { Combatant, AttackRoll, DamageRoll, DiceRollerAPI, HitMode } from '../types/Combat';
 import type { Attack, CharacterSheet } from '../types/Character';
 import { DiceRoller } from './DiceRoller';
 
@@ -44,9 +44,11 @@ export interface AttackSimulationResult {
  */
 export class AttackResolver {
   private diceRoller?: DiceRollerAPI;
+  private hitMode: HitMode;
 
-  constructor(diceRoller?: DiceRollerAPI) {
+  constructor(diceRoller?: DiceRollerAPI, hitMode: HitMode = 'scaled') {
     this.diceRoller = diceRoller;
+    this.hitMode = hitMode;
   }
 
   /**
@@ -69,6 +71,12 @@ export class AttackResolver {
     } else {
       // Attack hit - roll damage
       damageRoll = this.rollDamage(attacker, attack, attackRoll.isCritical);
+
+      // Apply damage scaling (scaled hit mode)
+      if (attackRoll.damageScale !== undefined && attackRoll.damageScale < 1) {
+        const scaledTotal = Math.max(1, Math.floor(damageRoll.total * attackRoll.damageScale));
+        damageRoll = { ...damageRoll, total: scaledTotal };
+      }
 
       // Apply damage
       hpAfterDamage = target.currentHP - damageRoll.total;
@@ -103,6 +111,11 @@ export class AttackResolver {
   /**
    * Roll an attack (d20 + attack bonus vs AC)
    * Attack bonus = ability modifier + proficiency bonus (if proficient)
+   *
+   * Hit modes:
+   * - 'dnd': Classic — totalRoll >= AC to hit. Nat 1 miss, nat 20 crit.
+   * - 'scaled': AC reduces damage. Only nat 1 misses, nat 20 crits.
+   *   Each point below AC reduces damage by 5% (min 1 damage).
    */
   private rollAttack(_attacker: Combatant, target: Combatant, attack: Attack): AttackRoll {
     const d20Roll = this.diceRoller
@@ -118,7 +131,24 @@ export class AttackResolver {
     const isMiss = this.diceRoller
       ? this.diceRoller.isCriticalMiss(d20Roll)
       : DiceRoller.isCriticalMiss(d20Roll);
-    const hit = !isMiss && (isCritical || totalRoll >= targetAC);
+
+    let hit: boolean;
+    let damageScale: number | undefined;
+
+    if (this.hitMode === 'scaled') {
+      // Scaled mode: only nat 1 misses, nat 20 crits, everything else hits
+      // with damage scaled by how far below AC the roll fell
+      hit = !isMiss;
+      if (!isMiss && !isCritical && totalRoll < targetAC) {
+        const deficit = targetAC - totalRoll;
+        damageScale = Math.max(0.05, 1 - deficit * 0.05);
+      } else {
+        damageScale = 1.0;
+      }
+    } else {
+      // Classic D&D: totalRoll >= AC to hit
+      hit = !isMiss && (isCritical || totalRoll >= targetAC);
+    }
 
     return {
       d20Roll,
@@ -127,7 +157,8 @@ export class AttackResolver {
       targetAC,
       hit,
       isCritical,
-      isMiss
+      isMiss,
+      damageScale
     };
   }
 
@@ -253,13 +284,30 @@ export class AttackResolver {
     const isMiss = this.diceRoller
       ? this.diceRoller.isCriticalMiss(d20Roll)
       : DiceRoller.isCriticalMiss(d20Roll);
-    const hit = !isMiss && (isCritical || totalRoll >= targetAC);
+
+    let hit: boolean;
+    let damageScale: number | undefined;
+    if (this.hitMode === 'scaled') {
+      hit = !isMiss;
+      if (!isMiss && !isCritical && totalRoll < targetAC) {
+        const deficit = targetAC - totalRoll;
+        damageScale = Math.max(0.05, 1 - deficit * 0.05);
+      } else {
+        damageScale = 1.0;
+      }
+    } else {
+      hit = !isMiss && (isCritical || totalRoll >= targetAC);
+    }
 
     const description = `${attacker.character.name} attacks with advantage (rolled ${roll1} and ${roll2}, using ${d20Roll})`;
 
     // Construct result (same as normal attack if hit)
     if (hit && !isMiss) {
-      const damageRoll = this.rollDamage(attacker, attack, isCritical);
+      let damageRoll = this.rollDamage(attacker, attack, isCritical);
+      if (damageScale !== undefined && damageScale < 1) {
+        const scaledTotal = Math.max(1, Math.floor(damageRoll.total * damageScale));
+        damageRoll = { ...damageRoll, total: scaledTotal };
+      }
       const hpAfterDamage = target.currentHP - damageRoll.total;
 
       if (hpAfterDamage < 0) {
@@ -280,7 +328,8 @@ export class AttackResolver {
           targetAC,
           hit,
           isCritical,
-          isMiss
+          isMiss,
+          damageScale
         },
         damageRoll,
         hpAfterDamage: target.currentHP,
@@ -299,7 +348,8 @@ export class AttackResolver {
         targetAC,
         hit,
         isCritical,
-        isMiss
+        isMiss,
+        damageScale
       },
       description
     };
@@ -332,13 +382,30 @@ export class AttackResolver {
       : DiceRoller.isCriticalMiss(roll1)) || (this.diceRoller
       ? this.diceRoller.isCriticalMiss(roll2)
       : DiceRoller.isCriticalMiss(roll2));
-    const hit = !isMiss && (isCritical || totalRoll >= targetAC);
+
+    let hit: boolean;
+    let damageScale: number | undefined;
+    if (this.hitMode === 'scaled') {
+      hit = !isMiss;
+      if (!isMiss && !isCritical && totalRoll < targetAC) {
+        const deficit = targetAC - totalRoll;
+        damageScale = Math.max(0.05, 1 - deficit * 0.05);
+      } else {
+        damageScale = 1.0;
+      }
+    } else {
+      hit = !isMiss && (isCritical || totalRoll >= targetAC);
+    }
 
     const description = `${attacker.character.name} attacks with disadvantage (rolled ${roll1} and ${roll2}, using ${d20Roll})`;
 
     // Construct result
     if (hit && !isMiss) {
-      const damageRoll = this.rollDamage(attacker, attack, isCritical);
+      let damageRoll = this.rollDamage(attacker, attack, isCritical);
+      if (damageScale !== undefined && damageScale < 1) {
+        const scaledTotal = Math.max(1, Math.floor(damageRoll.total * damageScale));
+        damageRoll = { ...damageRoll, total: scaledTotal };
+      }
       const hpAfterDamage = target.currentHP - damageRoll.total;
 
       if (hpAfterDamage < 0) {
@@ -359,7 +426,8 @@ export class AttackResolver {
           targetAC,
           hit,
           isCritical,
-          isMiss
+          isMiss,
+          damageScale
         },
         damageRoll,
         hpAfterDamage: target.currentHP,
@@ -378,7 +446,8 @@ export class AttackResolver {
         targetAC,
         hit,
         isCritical,
-        isMiss
+        isMiss,
+        damageScale
       },
       description
     };
@@ -404,8 +473,9 @@ export class AttackResolver {
     attack: Attack,
     iterations: number = 1000,
     diceRoller?: DiceRollerAPI,
+    hitMode?: HitMode,
   ): AttackSimulationResult {
-    const resolver = new AttackResolver(diceRoller);
+    const resolver = new AttackResolver(diceRoller, hitMode);
     const buckets = new Map<number, number>();
     let totalHits = 0;
     let totalCrits = 0;

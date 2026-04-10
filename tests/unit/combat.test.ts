@@ -1110,7 +1110,7 @@ describe('Combat System (T107-T116)', () => {
       const attack: Attack = {
         name: 'Unarmed Strike',
         type: 'melee',
-        damage_dice: '1',
+        damage_dice: '1d1',
         damage_type: 'bludgeoning'
         // No properties array
       };

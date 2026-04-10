@@ -150,6 +150,17 @@ export interface CombatActionResult {
 }
 
 /**
+ * HitMode - Determines how attack rolls resolve hits and misses
+ *
+ * - 'dnd': Classic D&D 5e — d20 + bonus vs target AC. Below AC = miss.
+ * - 'scaled': AC reduces damage instead of determining hit/miss.
+ *   Only natural 1 misses. Natural 20 is always a critical hit.
+ *   For each point the total roll falls below AC, damage is reduced by 5%,
+ *   down to a minimum of 1 damage.
+ */
+export type HitMode = 'dnd' | 'scaled';
+
+/**
  * AttackRoll - Result of an attack roll
  */
 export interface AttackRoll {
@@ -160,6 +171,7 @@ export interface AttackRoll {
   hit: boolean;           // Whether attack hit
   isCritical: boolean;    // Natural 20
   isMiss: boolean;        // Natural 1
+  damageScale?: number;   // Damage multiplier (1.0 = full, used in 'scaled' mode)
 }
 
 /**
@@ -259,4 +271,5 @@ export interface CombatConfig {
   allowFleeing?: boolean;       // Can combatants attempt to flee
   seed?: string;                // Seed for deterministic RNG (treasure generation, etc.)
   treasure?: TreasureConfig;    // Custom treasure rewards (overrides default 0-99 gold)
+  hitMode?: HitMode;            // How attack rolls resolve: 'scaled' (default) or 'dnd'
 }

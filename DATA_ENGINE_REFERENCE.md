@@ -1078,11 +1078,12 @@ Configuration for custom combat loot rewards.
 | Type | Description |
 |------|-------------|
 | `CombatActionResult` | Outcome of a combat action (success, roll, damage) |
-| `AttackRoll` | Attack roll result (d20, bonus, hit/miss) |
+| `AttackRoll` | Attack roll result (d20, bonus, hit/miss, damageScale) |
 | `DamageRoll` | Damage roll result (dice, rolls, total) |
 | `SpellCastResult` | Spell casting outcome (success, save DC, effects) |
 | `CombatResult` | Final combat result (winner, winnerSide, XP, treasure) — see below |
-| `CombatConfig` | Combat configuration options (environment, music, tactical, treasure) |
+| `CombatConfig` | Combat configuration options (environment, music, tactical, treasure, hitMode) |
+| `HitMode` | Hit resolution mode: `'dnd'` (classic AC threshold) or `'scaled'` (AC reduces damage) |
 | `TreasureConfig` | Custom loot rewards (fixed gold, range, items) |
 
 **CombatResult Interface:**
@@ -4850,7 +4851,7 @@ D&D 5e turn-based combat engine with initiative, attacks, spell casting, and dam
 
 | Constructor | Description |
 |-------------|-------------|
-| `new CombatEngine(config?: CombatConfig)` | Initialize combat engine with optional configuration (useEnvironment, useMusic, tacticalMode, maxTurnsBeforeDraw, allowFleeing, seed, treasure) |
+| `new CombatEngine(config?: CombatConfig)` | Initialize combat engine with optional configuration (useEnvironment, useMusic, tacticalMode, maxTurnsBeforeDraw, allowFleeing, seed, treasure, hitMode) |
 
 **Methods:**
 
@@ -4969,9 +4970,14 @@ Utility class for D&D-style dice rolling mechanics.
 
 *Location:* *[src/core/combat/AttackResolver.ts](src/core/combat/AttackResolver.ts)*
 
-> **Note:** Instance class - create with `new AttackResolver()`
+> **Note:** Instance class - create with `new AttackResolver(diceRoller?, hitMode?)`
 
-Handles melee and ranged attack resolution (d20 + attack bonus vs target AC).
+Handles melee and ranged attack resolution (d20 + attack bonus vs target AC). Supports two hit resolution modes:
+
+- **`'dnd'`** (classic): totalRoll >= AC to hit. Natural 1 always misses, natural 20 always crits.
+- **`'scaled'`** (default): AC reduces damage instead of determining hit/miss. Only natural 1 misses. For each point the total roll falls below AC, damage is reduced by 5% (minimum 1 damage). Natural 20 always crits at full damage.
+
+The `damageScale` field on `AttackRoll` indicates the multiplier applied (1.0 = full damage, <1.0 = scaled down). Only present in `'scaled'` mode.
 
 | Method | Description |
 |--------|-------------|
@@ -4980,7 +4986,7 @@ Handles melee and ranged attack resolution (d20 + attack bonus vs target AC).
 | `calculateAttackBonus(character, attackName, abilityModifier, isProficient)` | Calculates attack bonus (ability + proficiency if proficient) |
 | `attackWithAdvantage(attacker, target, attack)` | Resolves attack with advantage (roll twice, take higher) |
 | `attackWithDisadvantage(attacker, target, attack)` | Resolves attack with disadvantage (roll twice, take lower) |
-| `simulateAttacks(attacker, target, attack, iterations?, diceRoller?)` | **Static.** Simulates N attack rolls using the full resolution pipeline; returns hit/crit/miss rates, average/max damage, and damage distribution |
+| `simulateAttacks(attacker, target, attack, iterations?, diceRoller?, hitMode?)` | **Static.** Simulates N attack rolls using the full resolution pipeline; returns hit/crit/miss rates, average/max damage, and damage distribution |
 
 ### SpellCaster
 
@@ -5784,10 +5790,11 @@ Static class for applying and removing equipment effects when equipping/unequipp
 
 | Method | Description |
 |--------|-------------|
-| `equipItem(character, equipment, instanceId?)` | Apply all effects from equipping an item (properties, features, skills, spells) |
+| `equipItem(character, equipment, instanceId?)` | Apply all effects from equipping an item (properties, features, skills, spells). Returns `EffectApplicationResult` with `applied: boolean` — `false` if stat requirements are not met |
 | `unequipItem(character, equipmentName, instanceId?)` | Remove all effects from unequipping an item |
 | `reapplyEquipmentEffects(character)` | Re-apply all equipment effects for updates/level-ups |
 | `getActiveEffects(character)` | Get array of all active equipment properties on character |
+| `evaluateACFormula(formula, dexMod)` | Evaluate an armor AC formula string. Supports flat values (`"16"`), light armor (`"11 + DEX"`), and medium armor (`"14 + min(DEX, 2)"`) |
 
 ### EquipmentValidator
 *Also known as: Equipment validation, equipment data checker, property validator*

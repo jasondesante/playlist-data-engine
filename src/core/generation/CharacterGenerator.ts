@@ -535,7 +535,11 @@ export class CharacterGenerator {
                 const equipData = EquipmentGenerator.getEquipmentDataStatic(item.name);
                 if (equipData) {
                     const instanceId = (item as { instanceId?: string }).instanceId;
-                    EquipmentEffectApplier.equipItem(characterSheet, equipData, instanceId);
+                    const result = EquipmentEffectApplier.equipItem(characterSheet, equipData, instanceId);
+                    if (!result.applied) {
+                        // Stat requirements or other validation failed — unequip the item
+                        item.equipped = false;
+                    }
                 }
             }
         }

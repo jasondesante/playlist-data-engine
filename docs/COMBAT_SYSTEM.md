@@ -37,6 +37,7 @@ Complete guide to the combat system in the Playlist Data Engine.
    - [Multiple Equipped Weapons](#multiple-equipped-weapons)
    - [Unarmed Combat](#unarmed-combat)
    - [Manual Attack Objects](#manual-attack-objects)
+   - [Hit Modes](#hit-modes)
    - [Legendary Actions](#legendary-actions)
      - [LegendaryAction Interface](#legendaryaction-interface)
      - [Combatant Legendary Tracking](#combatant-legendary-tracking)
@@ -924,6 +925,50 @@ combat.executeWeaponAttack(combatInstance, current, target);
 ### Manual Attack Objects
 
 For special cases, you can still manually construct `Attack` objects using `executeAttack()` directly. See `Attack` type in DATA_ENGINE_REFERENCE.md for all available properties.
+
+### Hit Modes
+
+The combat engine supports two hit resolution modes, configured via `CombatConfig.hitMode`:
+
+#### `'dnd'` — Classic D&D 5e (threshold-based)
+
+The default D&D 5e system: d20 + attack bonus is compared to the target's AC.
+
+- **Hit:** totalRoll >= AC (natural 20 always hits)
+- **Miss:** totalRoll < AC (natural 1 always misses)
+- **Critical:** Natural 20 — double damage dice
+
+```typescript
+const engine = new CombatEngine({ hitMode: 'dnd' });
+```
+
+#### `'scaled'` — Damage Scaling (default)
+
+AC reduces damage instead of determining hit/miss. This creates a smoother combat experience where every attack deals at least some damage.
+
+- **Only natural 1 misses** (5% chance, regardless of AC)
+- **Natural 20 always crits** at full damage
+- **All other rolls hit**, but damage is scaled based on how far below AC:
+  - Each point below AC reduces damage by 5%
+  - Minimum damage is always 1
+  - `damageScale` on `AttackRoll` indicates the multiplier (1.0 = full, 0.05–0.95 = scaled)
+
+| Roll vs AC | damageScale | Effect |
+|-----------|-------------|--------|
+| >= AC | 1.0 | Full damage |
+| AC - 1 | 0.95 | 95% damage |
+| AC - 10 | 0.50 | 50% damage |
+| AC - 19 | 0.05 | 5% damage (minimum) |
+
+```typescript
+// Scaled mode is the default — no config needed
+const engine = new CombatEngine();
+
+// Explicit (same result)
+const engine = new CombatEngine({ hitMode: 'scaled' });
+```
+
+**Why scaled mode?** In classic D&D, a high-AC character can make lower-level enemies effectively harmless (every attack misses). Scaled mode ensures those enemies still deal reduced damage, making encounter balance feel more granular.
 
 ### Legendary Actions
 

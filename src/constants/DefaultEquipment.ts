@@ -200,7 +200,7 @@ export const DEFAULT_EQUIPMENT: Record<string, Equipment> = {
         weight: 10,
         acBonus: 11,  // 11 + DEX (no max)
         properties: [
-            { type: 'passive_modifier', target: 'ac', value: 11, description: 'Base AC: 11 + DEX' }
+            { type: 'passive_modifier', target: 'ac', value: '11 + DEX', description: 'Base AC: 11 + DEX' }
         ],
         spawnWeight: 1.0,
         tags: ['armor', 'light'],
@@ -213,7 +213,7 @@ export const DEFAULT_EQUIPMENT: Record<string, Equipment> = {
         weight: 45,
         acBonus: 14,  // 14 + DEX (max 2)
         properties: [
-            { type: 'passive_modifier', target: 'ac', value: 14, description: 'Base AC: 14 + DEX (max 2)' },
+            { type: 'passive_modifier', target: 'ac', value: '14 + min(DEX, 2)', description: 'Base AC: 14 + DEX (max 2)' },
             { type: 'special_property', target: 'stealth_disadvantage', value: true, description: 'Stealth disadvantage' }
         ],
         spawnWeight: 1.0,
@@ -227,7 +227,7 @@ export const DEFAULT_EQUIPMENT: Record<string, Equipment> = {
         weight: 55,
         acBonus: 16,  // Fixed AC, no DEX
         properties: [
-            { type: 'passive_modifier', target: 'ac', value: 16, description: 'Fixed AC: 16' },
+            { type: 'passive_modifier', target: 'ac', value: '16', description: 'Fixed AC: 16' },
             { type: 'special_property', target: 'stealth_disadvantage', value: true, description: 'Stealth disadvantage' },
             { type: 'stat_requirement', target: 'STR', value: 13, description: 'Requires STR 13' }
         ],
@@ -242,7 +242,7 @@ export const DEFAULT_EQUIPMENT: Record<string, Equipment> = {
         weight: 65,
         acBonus: 18,  // Fixed AC, no DEX
         properties: [
-            { type: 'passive_modifier', target: 'ac', value: 18, description: 'Fixed AC: 18' },
+            { type: 'passive_modifier', target: 'ac', value: '18', description: 'Fixed AC: 18' },
             { type: 'special_property', target: 'stealth_disadvantage', value: true, description: 'Stealth disadvantage' },
             { type: 'stat_requirement', target: 'STR', value: 15, description: 'Requires STR 15' }
         ],

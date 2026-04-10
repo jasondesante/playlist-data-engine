@@ -14,6 +14,7 @@ import {
     getXPBudgetForParty,
     getAveragePartyLevel
 } from '../../constants/EncounterBalance.js';
+import { DiceRoller } from './DiceRoller.js';
 
 /**
  * Analysis result for a party's combat capabilities
@@ -266,34 +267,46 @@ export class PartyAnalyzer {
     /**
      * Estimate damage output for a single character
      *
-     * Uses simplified formula based on level and stats:
-     * - Base weapon damage (1d8 = 4.5 average for most classes)
-     * - Ability modifier (STR or DEX, whichever is higher)
-     * - Proficiency bonus (adds to hit chance, treated as damage here)
+     * Reads the character's actually equipped weapon to compute average damage
+     * per hit. Falls back to unarmed strike (1 + STR mod) if no weapon equipped.
      *
      * Private helper used by getAverageDamage().
      *
      * @param character - CharacterSheet to estimate
-     * @returns Estimated average damage per round
+     * @returns Estimated average damage per hit
      */
     private static estimateCharacterDamage(character: CharacterSheet): number {
-        const level = character.level || 1;
         const stats = character.ability_scores;
 
-        // Use higher of STR or DEX for damage
-        const str = stats?.STR ?? 10;
-        const dex = stats?.DEX ?? 10;
-        const primaryStat = Math.max(str, dex);
-        const statModifier = Math.floor((primaryStat - 10) / 2);
+        // Find the first equipped weapon
+        const equippedWeapon = character.equipment?.weapons?.find(w => w.equipped);
 
-        // Proficiency bonus scales with level
-        const profBonus = Math.ceil(1 + (level - 1) / 4);
+        let damageDice: string;
+        let abilityMod: number;
 
-        // Base weapon damage (d8 average = 4.5)
-        const baseDamage = 4.5;
+        if (equippedWeapon?.damage?.dice) {
+            damageDice = equippedWeapon.damage.dice;
+            const isRanged = equippedWeapon.weaponProperties?.includes('ranged') ?? false;
+            const isFinesse = equippedWeapon.weaponProperties?.includes('finesse') ?? false;
+            const ability = isRanged || isFinesse ? 'DEX' : 'STR';
+            abilityMod = Math.floor(((stats?.[ability] ?? 10) - 10) / 2);
+        } else {
+            // Unarmed strike: 1 + STR mod
+            damageDice = '1';
+            abilityMod = Math.floor(((stats?.STR ?? 10) - 10) / 2);
+        }
 
-        // Total: base + stat + proficiency
-        return baseDamage + statModifier + profBonus;
+        // Calculate average damage from dice using the engine's DiceRoller
+        let averageDamage: number;
+        try {
+            const parsed = DiceRoller.parseDiceFormula(damageDice);
+            averageDamage = parsed.diceCount * ((parsed.diceSides + 1) / 2) + parsed.modifier + abilityMod;
+        } catch {
+            // Fallback if dice formula can't be parsed
+            averageDamage = abilityMod + 1;
+        }
+
+        return Math.round(averageDamage * 10) / 10;
     }
 
     /**

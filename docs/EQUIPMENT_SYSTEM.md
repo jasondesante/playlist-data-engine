@@ -75,6 +75,12 @@ import { EquipmentEffectApplier } from 'playlist-data-engine';
 // Equip item and apply effects
 const result = EquipmentEffectApplier.equipItem(character, equipment);
 
+// Check if equip succeeded (e.g., stat requirements met)
+if (!result.applied) {
+    // Item was not equipped — requirements not satisfied
+    console.log('Equip failed:', result.reason);
+}
+
 // Unequip and remove effects
 EquipmentEffectApplier.unequipItem(character, 'Flaming Sword');
 ```
@@ -168,7 +174,7 @@ Equipment properties define how items affect gameplay. Each property has a type,
 | `stat_bonus` | Increases ability scores (STR, DEX, CON, INT, WIS, CHA) |
 | `skill_proficiency` | Grants skill proficiency or expertise |
 | `ability_unlock` | Unlocks special abilities (darkvision, flight, etc.) |
-| `passive_modifier` | Modifies passive values (AC, speed, HP, saving throws, etc.) |
+| `passive_modifier` | Modifies passive values. For AC, supports formula strings (e.g., `"11 + DEX"`, `"14 + min(DEX, 2)"`, `"16"`) which are evaluated by `EquipmentEffectApplier.evaluateACFormula()`. Numeric values are treated as additive bonuses (shields, rings, etc.) |
 | `special_property` | Game-specific properties (finesse, versatile, etc.) |
 | `damage_bonus` | Adds extra damage (fire, cold, lightning, etc.) |
 | `stat_requirement` | Minimum stat required to use item |
@@ -253,6 +259,13 @@ Equipment effects are applied when items are equipped and removed when unequippe
 - Two +1 AC items = +2 AC total
 - Stackable can be set to false for non-stacking effects
 
+**Armor AC Formulas:** When a `passive_modifier` with `target: 'ac'` has a string value, it is treated as a full AC formula rather than an additive bonus. The formula replaces the character's unarmored AC entirely. Supported patterns:
+- `"16"` — Flat AC (heavy armor, no DEX contribution)
+- `"11 + DEX"` — Base + full DEX modifier (light armor)
+- `"14 + min(DEX, 2)"` — Base + capped DEX modifier (medium armor)
+
+Numeric AC values (e.g., `value: 2`) are additive bonuses that stack on top of armor, such as from shields or magic items.
+
 ### Effect Application Flow
 
 ```
@@ -261,7 +274,11 @@ Equip Item
     v
 EquipmentEffectApplier.equipItem()
     |
-    +--> Apply properties (stat bonuses, skills, etc.)
+    +--> Check stat requirements (e.g., STR 13 for plate armor)
+    |       |
+    |       +--> Failed? Return { applied: false } — item not applied
+    |
+    +--> Apply properties (stat bonuses, AC formulas, skills, etc.)
     +--> Apply granted features
     +--> Apply granted skills
     +--> Apply granted spells
@@ -1034,7 +1051,8 @@ manager.register('equipment', [goblinChest, dragonHoard, treasureCache]);
 **For complete method reference**, see [DATA_ENGINE_REFERENCE.md - EquipmentEffectApplier](../DATA_ENGINE_REFERENCE.md#equipmenteffectapplier).
 
 **Key Methods:**
-- `equipItem(character, equipment, instanceId?)` - Apply all effects from equipping an item
+- `equipItem(character, equipment, instanceId?)` - Apply all effects from equipping an item. Returns `EffectApplicationResult` with `applied: boolean` (false if stat requirements not met)
+- `evaluateACFormula(formula, dexMod)` - Evaluate an armor AC formula string (e.g., `"11 + DEX"`, `"14 + min(DEX, 2)"`, `"16"`)
 - `unequipItem(character, equipmentName, instanceId?)` - Remove all effects from unequipping an item
 - `reapplyEquipmentEffects(character)` - Re-apply all equipment effects (for updates/level-ups)
 - `getActiveEffects(character)` - Get all active equipment effects
@@ -1143,7 +1161,7 @@ Static class for opening box-type equipment. See [Box Equipment Type](#box-equip
     condition: { type: 'vs_creature_type', value: 'troll' }
 }
 
-// Passive Modifier
+// Passive Modifier (additive — shield, ring of protection, etc.)
 {
     type: 'passive_modifier',
     target: 'ac',
@@ -1151,6 +1169,14 @@ Static class for opening box-type equipment. See [Box Equipment Type](#box-equip
     description: '+2 AC',
     stackable: true
 }
+
+// Passive Modifier (armor AC formula — replaces unarmored AC)
+// Light armor: full DEX
+{ type: 'passive_modifier', target: 'ac', value: '11 + DEX', description: 'Base AC: 11 + DEX' }
+// Medium armor: capped DEX
+{ type: 'passive_modifier', target: 'ac', value: '14 + min(DEX, 2)', description: 'Base AC: 14 + DEX (max 2)' }
+// Heavy armor: no DEX
+{ type: 'passive_modifier', target: 'ac', value: '16', description: 'Fixed AC: 16' }
 ```
 
 ### Registry Feature References

@@ -75,7 +75,7 @@ export class CombatEngine {
   constructor(config: CombatConfig = {}, diceRoller?: DiceRollerAPI) {
     this.diceRoller = diceRoller;
     this.initiativeRoller = new InitiativeRoller(diceRoller);
-    this.attackResolver = new AttackResolver(diceRoller);
+    this.attackResolver = new AttackResolver(diceRoller, config.hitMode);
     this.spellCaster = new SpellCaster(diceRoller);
     this.config = {
       useEnvironment: true,
@@ -308,7 +308,7 @@ export class CombatEngine {
 
     return {
       name: 'Unarmed Strike',
-      damage_dice: '1',
+      damage_dice: '1d1',
       damage_type: 'bludgeoning',
       type: 'melee',
       attack_bonus: strMod + profBonus,

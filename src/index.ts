@@ -324,7 +324,8 @@ export type {
     DamageType,
     SavingThrowAbility,
     TreasureConfig,
-    CombatConfig
+    CombatConfig,
+    HitMode
 } from './core/types/Combat.js';
 
 // Combat AI types

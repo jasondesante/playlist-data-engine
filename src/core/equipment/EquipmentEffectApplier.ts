@@ -321,6 +321,44 @@ export class EquipmentEffectApplier {
      * For property types that match FeatureEffect types (stat_bonus, skill_proficiency,
      * ability_unlock, passive_modifier), we apply them using dedicated methods for consistency.
      */
+    /**
+     * Evaluate an armor AC formula string against a character's DEX modifier.
+     *
+     * Supported patterns:
+     * - "16"              → flat AC (heavy armor, no DEX)
+     * - "11 + DEX"        → base + full DEX (light armor)
+     * - "14 + min(DEX, 2)"→ base + capped DEX (medium armor)
+     *
+     * @param formula - The AC formula string from equipment properties
+     * @param dexMod - The character's DEX modifier
+     * @returns Computed armor class
+     */
+    static evaluateACFormula(formula: string, dexMod: number): number {
+        const trimmed = formula.trim();
+
+        // Flat value (heavy armor): "16"
+        if (/^\d+$/.test(trimmed)) {
+            return parseInt(trimmed, 10);
+        }
+
+        // Medium armor: "14 + min(DEX, 2)"
+        const minMatch = trimmed.match(/^(\d+)\s*\+\s*min\(DEX,\s*(\d+)\)$/i);
+        if (minMatch) {
+            const base = parseInt(minMatch[1]!, 10);
+            const cap = parseInt(minMatch[2]!, 10);
+            return base + Math.min(dexMod, cap);
+        }
+
+        // Light armor: "11 + DEX"
+        const dexMatch = trimmed.match(/^(\d+)\s*\+\s*DEX$/i);
+        if (dexMatch) {
+            const base = parseInt(dexMatch[1]!, 10);
+            return base + dexMod;
+        }
+
+        throw new Error(`Unknown AC formula: "${formula}"`);
+    }
+
     private static applyProperty(
         character: CharacterSheet,
         property: EquipmentProperty,
@@ -450,9 +488,19 @@ export class EquipmentEffectApplier {
             return;
         }
 
-        // Handle AC modifiers directly
+        // Handle AC modifiers
+        // Armor defines the full AC formula as a string (e.g. "11 + DEX", "16").
+        // This replaces the unarmored formula entirely. Additive bonuses (shields,
+        // magic items — numeric values) stack on top.
         if (target === 'ac' || target === 'armor_class') {
-            character.armor_class += value;
+            if (typeof value === 'string') {
+                // Armor formula: evaluate and set AC directly
+                const dexMod = character.ability_modifiers.DEX ?? 0;
+                character.armor_class = EquipmentEffectApplier.evaluateACFormula(value, dexMod);
+            } else {
+                // Additive bonus (shield, ring of protection, etc.)
+                character.armor_class += value;
+            }
             return;
         }
 
@@ -565,7 +613,12 @@ export class EquipmentEffectApplier {
         if (target === 'speed') {
             character.speed -= value;
         } else if (target === 'ac' || target === 'armor_class') {
-            character.armor_class -= value;
+            if (typeof value === 'string') {
+                // Reverse armor formula: restore unarmored base (10 + DEX)
+                character.armor_class = 10 + (character.ability_modifiers.DEX ?? 0);
+            } else {
+                character.armor_class -= value;
+            }
         } else if (target === 'max_hp' || target === 'hp_max') {
             character.hp.max -= value;
             character.hp.current = Math.min(character.hp.current, character.hp.max);
