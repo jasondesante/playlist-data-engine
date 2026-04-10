@@ -949,7 +949,7 @@ AC reduces damage instead of determining hit/miss. This creates a smoother comba
 - **Only natural 1 misses** (5% chance, regardless of AC)
 - **Natural 20 always crits** at full damage
 - **All other rolls hit**, but damage is scaled based on how far below AC:
-  - Each point below AC reduces damage by 5%
+  - Each point below AC reduces damage by 10%
   - Minimum damage is always 1
   - `damageScale` on `AttackRoll` indicates the multiplier (1.0 = full, 0.05–0.95 = scaled)
 
@@ -957,8 +957,8 @@ AC reduces damage instead of determining hit/miss. This creates a smoother comba
 |-----------|-------------|--------|
 | >= AC | 1.0 | Full damage |
 | AC - 1 | 0.95 | 95% damage |
-| AC - 10 | 0.50 | 50% damage |
-| AC - 19 | 0.05 | 5% damage (minimum) |
+| AC - 5 | 0.50 | 50% damage |
+| AC - 9 | 0.10 | 10% damage (minimum) |
 
 ```typescript
 // Scaled mode is the default — no config needed

@@ -4975,7 +4975,7 @@ Utility class for D&D-style dice rolling mechanics.
 Handles melee and ranged attack resolution (d20 + attack bonus vs target AC). Supports two hit resolution modes:
 
 - **`'dnd'`** (classic): totalRoll >= AC to hit. Natural 1 always misses, natural 20 always crits.
-- **`'scaled'`** (default): AC reduces damage instead of determining hit/miss. Only natural 1 misses. For each point the total roll falls below AC, damage is reduced by 5% (minimum 1 damage). Natural 20 always crits at full damage.
+- **`'scaled'`** (default): AC reduces damage instead of determining hit/miss. Only natural 1 misses. For each point the total roll falls below AC, damage is reduced by 10% (minimum 1 damage). Natural 20 always crits at full damage.
 
 The `damageScale` field on `AttackRoll` indicates the multiplier applied (1.0 = full damage, <1.0 = scaled down). Only present in `'scaled'` mode.
 

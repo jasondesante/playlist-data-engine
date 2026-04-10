@@ -141,7 +141,7 @@ export class AttackResolver {
       hit = !isMiss;
       if (!isMiss && !isCritical && totalRoll < targetAC) {
         const deficit = targetAC - totalRoll;
-        damageScale = Math.max(0.05, 1 - deficit * 0.05);
+        damageScale = Math.max(0.10, 1 - deficit * 0.10);
       } else {
         damageScale = 1.0;
       }
@@ -291,7 +291,7 @@ export class AttackResolver {
       hit = !isMiss;
       if (!isMiss && !isCritical && totalRoll < targetAC) {
         const deficit = targetAC - totalRoll;
-        damageScale = Math.max(0.05, 1 - deficit * 0.05);
+        damageScale = Math.max(0.10, 1 - deficit * 0.10);
       } else {
         damageScale = 1.0;
       }
@@ -389,7 +389,7 @@ export class AttackResolver {
       hit = !isMiss;
       if (!isMiss && !isCritical && totalRoll < targetAC) {
         const deficit = targetAC - totalRoll;
-        damageScale = Math.max(0.05, 1 - deficit * 0.05);
+        damageScale = Math.max(0.10, 1 - deficit * 0.10);
       } else {
         damageScale = 1.0;
       }

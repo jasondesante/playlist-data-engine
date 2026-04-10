@@ -155,7 +155,7 @@ export interface CombatActionResult {
  * - 'dnd': Classic D&D 5e — d20 + bonus vs target AC. Below AC = miss.
  * - 'scaled': AC reduces damage instead of determining hit/miss.
  *   Only natural 1 misses. Natural 20 is always a critical hit.
- *   For each point the total roll falls below AC, damage is reduced by 5%,
+ *   For each point the total roll falls below AC, damage is reduced by 10%,
  *   down to a minimum of 1 damage.
  */
 export type HitMode = 'dnd' | 'scaled';
