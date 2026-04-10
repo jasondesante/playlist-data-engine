@@ -6,7 +6,7 @@
  * gateways for each transaction ID.
  *
  * Design decisions:
- * - Sequential gateway checking (primary -> fallbacks one-by-one)
+ * - Parallel gateway checking (race all gateways + Wayfinder, first to respond wins)
  * - localStorage persistence for active gateway across sessions
  * - 5 second timeout per gateway check
  * - 2 hour cache TTL
@@ -74,6 +74,10 @@ export interface ArweaveGatewayManagerConfig {
     timeout?: number;
     /** Cache TTL in milliseconds (default: 7200000 = 2 hours) */
     cacheTTL?: number;
+    /** Threshold in ms above which a fetch is considered "slow" (default: 8000) */
+    slowResponseThreshold?: number;
+    /** Number of consecutive slow responses before proactive gateway rotation (default: 3) */
+    maxSlowResponses?: number;
 }
 
 /**
@@ -257,12 +261,22 @@ export class ArweaveGatewayManager {
     private wayfinder: Wayfinder | null = null;
     /** The currently active dynamic gateway. Used globally to prevent constant switching. */
     private activeGateway: GatewayConfig | null = null;
+    /** Time of the most recent successful resolve/fetch for the active gateway (ms) */
+    private lastFetchTiming: number = 0;
+    /** Number of consecutive slow fetch responses from the active gateway */
+    private consecutiveSlowResponses: number = 0;
+    /** Threshold in ms above which a fetch is considered "slow" (default: 8000) */
+    private readonly slowResponseThreshold: number;
+    /** Number of consecutive slow responses before proactive gateway rotation (default: 3) */
+    private readonly maxSlowResponses: number;
 
     constructor(config?: ArweaveGatewayManagerConfig) {
         // Deep-clone gateways to avoid mutating the original config objects
         this.gateways = (config?.gateways ?? DEFAULT_GATEWAYS).map(g => ({ ...g }));
         this.timeout = config?.timeout ?? DEFAULT_TIMEOUT;
         this.cacheTTL = config?.cacheTTL ?? DEFAULT_CACHE_TTL;
+        this.slowResponseThreshold = config?.slowResponseThreshold ?? 8000;
+        this.maxSlowResponses = config?.maxSlowResponses ?? 3;
 
         // Sort gateways by priority
         this.gateways.sort((a, b) => a.priority - b.priority);
@@ -281,6 +295,9 @@ export class ArweaveGatewayManager {
                 this.wayfinder = mod.createWayfinderClient();
                 this.logger.info('Wayfinder client initialized');
             }
+        }).catch(() => {
+            // Wayfinder initialization failed — will use static gateways only
+            this.logger.debug('Wayfinder client initialization failed, using static gateways');
         });
 
         this.logger.info('Gateway manager initialized', {
@@ -387,10 +404,16 @@ export class ArweaveGatewayManager {
      * 4. Static gateway fallback
      *
      * @param url - The URL to resolve
-     * @returns A working URL (or original URL if all gateways fail)
+     * @param signal - Optional AbortSignal to cancel in-flight gateway checks
+     * @returns A working URL (or original URL if all gateways fail or signal is aborted)
      */
-    // async resolveUrlWayfinder(url: string): Promise<string> {
-    async resolveUrl(url: string): Promise<string> {
+    async resolveUrl(url: string, signal?: AbortSignal): Promise<string> {
+        // If already aborted, return original URL immediately
+        if (signal?.aborted) {
+            this.logger.debug('resolveUrl called with already-aborted signal, returning original URL');
+            return url;
+        }
+
         // Not an Arweave URL, return as-is
         if (!isArweaveUrl(url)) {
             return url;
@@ -416,7 +439,19 @@ export class ArweaveGatewayManager {
 
         // If we have an active gateway, use it directly without a HEAD check.
         // The caller should use reportGatewayFailure() if the actual fetch fails.
+        // However, if the active gateway has been consistently slow, proactively rotate.
         if (this.activeGateway) {
+            if (this.consecutiveSlowResponses >= this.maxSlowResponses) {
+                this.logger.warn('Active gateway has too many consecutive slow responses, rotating', {
+                    host: this.activeGateway.host,
+                    consecutiveSlow: this.consecutiveSlowResponses,
+                    maxAllowed: this.maxSlowResponses,
+                });
+                this.activeGateway = null;
+                this.cache.delete(txId);
+                this.clearPersistedGateway();
+                return this.findAndSetGateway(url, txId, pathSuffix, signal);
+            }
             this.setCache(txId, this.activeGateway);
             const workingUrl = constructGatewayUrl(txId, this.activeGateway, pathSuffix);
             this.logger.debug('Using active gateway (no HEAD check)', {
@@ -427,7 +462,7 @@ export class ArweaveGatewayManager {
         }
 
         // No active gateway yet — find one (this only runs on first resolve of a session)
-        return this.findAndSetGateway(url, txId, pathSuffix);
+        return this.findAndSetGateway(url, txId, pathSuffix, signal);
     }
 
     /**
@@ -437,104 +472,249 @@ export class ArweaveGatewayManager {
      * (e.g. fetch() returns a 4xx/5xx or throws). This clears the active gateway
      * and finds a new one, persisting the result to localStorage.
      *
+     * When reason is 'user-cancel-fast', the active gateway is preserved since
+     * the user intentionally cancelled and the gateway is likely fine.
+     *
      * @param url - The URL that failed
-     * @returns A new working URL (or original if all gateways fail)
+     * @param options - Optional signal for cancellation and reason to distinguish failure types
+     * @returns A new working URL (or original if all gateways fail or user cancelled quickly)
      */
-    async reportGatewayFailure(url: string): Promise<string> {
+    async reportGatewayFailure(
+        url: string,
+        options?: { signal?: AbortSignal; reason?: 'load-error' | 'user-cancel-slow' | 'user-cancel-fast' },
+    ): Promise<string> {
+        const { signal, reason } = options ?? {};
+
+        // If already aborted, return original URL immediately
+        if (signal?.aborted) {
+            this.logger.debug('reportGatewayFailure called with already-aborted signal, returning original URL');
+            return url;
+        }
+
+        // User cancelled quickly — gateway is probably fine, just return original URL
+        if (reason === 'user-cancel-fast') {
+            this.logger.debug('User cancelled quickly, keeping current gateway');
+            return url;
+        }
+
         const parsed = parseArweaveUrl(url);
         if (!parsed) return url;
         const { txId, pathSuffix } = parsed;
 
-        this.logger.warn('Real fetch failure reported, finding new gateway', {
+        this.logger.warn('Gateway failure reported, finding new gateway', {
             failedHost: this.activeGateway?.host,
             txId,
+            reason: reason ?? 'load-error',
         });
 
         this.activeGateway = null;
         this.cache.delete(txId);
         this.clearPersistedGateway();
 
-        return this.findAndSetGateway(url, txId, pathSuffix);
+        return this.findAndSetGateway(url, txId, pathSuffix, signal);
     }
 
     /**
-     * Find a working gateway by trying Wayfinder then static gateways,
-     * set it as the active gateway, cache it, and persist to localStorage.
+     * Report that a fetch succeeded with timing data.
+     *
+     * Callers invoke this after a successful fetch to feed timing data back to the manager.
+     * If the fetch was fast, the consecutive slow counter resets. If slow, it increments
+     * and may trigger proactive gateway rotation on the next resolveUrl() call.
+     *
+     * @param timingMs - The time the fetch took in milliseconds
      */
-    private async findAndSetGateway(url: string, txId: string, pathSuffix: string): Promise<string> {
+    reportFetchSuccess(timingMs: number): void {
+        this.lastFetchTiming = timingMs;
+
+        if (timingMs >= this.slowResponseThreshold) {
+            this.consecutiveSlowResponses++;
+            this.logger.warn('Slow fetch response recorded', {
+                timingMs,
+                threshold: this.slowResponseThreshold,
+                consecutiveSlow: this.consecutiveSlowResponses,
+                maxAllowed: this.maxSlowResponses,
+                gateway: this.activeGateway?.host ?? 'none',
+            });
+        } else {
+            if (this.consecutiveSlowResponses > 0) {
+                this.logger.info('Fetch timing recovered, resetting slow counter', {
+                    timingMs,
+                    previousSlowCount: this.consecutiveSlowResponses,
+                });
+            }
+            this.consecutiveSlowResponses = 0;
+        }
+    }
+
+    /**
+     * Find a working gateway by racing Wayfinder and all static gateways in parallel,
+     * set it as the active gateway, cache it, and persist to localStorage.
+     *
+     * Uses Promise.any() so the first gateway that responds wins. Each individual
+     * check still has its own AbortController with the configured timeout (5s).
+     * When one succeeds, all others are aborted to avoid wasted connections.
+     */
+    private async findAndSetGateway(url: string, txId: string, pathSuffix: string, signal?: AbortSignal): Promise<string> {
         this.missCount++;
         this.logger.debug('Finding gateway for txId', { txId, pathSuffix });
 
-        // Try Wayfinder resolution if available (with timeout to prevent hanging)
+        // If signal is already aborted, bail out immediately
+        if (signal?.aborted) {
+            this.logger.debug('findAndSetGateway called with already-aborted signal, returning original URL');
+            return url;
+        }
+
+        // Build a list of gateway candidates to race in parallel.
+        // Each candidate is a function that returns { gateway, url } on success or throws on failure.
+        type CandidateResult = { gateway: GatewayConfig; workingUrl: string };
+        const candidates: Array<{ label: string; check: () => Promise<CandidateResult>; abort: () => void }> = [];
+
+        // Add Wayfinder as a parallel contender
         if (this.wayfinder) {
-            try {
-                this.logger.debug('Attempting Wayfinder resolution', { txId });
-                const wayfinderUrlObj = await this.withTimeout(
-                    this.wayfinder.resolveUrl({ originalUrl: url }),
-                    this.timeout,
-                    'Wayfinder resolution timed out'
-                );
-                const wayfinderHost = wayfinderUrlObj.hostname;
-                const wayfinderProtocol = wayfinderUrlObj.protocol.replace(':', '') as 'http' | 'https';
-
-                const wayfinderGateway: GatewayConfig = {
-                    host: wayfinderHost,
-                    protocol: wayfinderProtocol,
-                    priority: 0,
-                };
-
-                const isWorking = await this.checkGateway(txId, wayfinderGateway, pathSuffix);
-                if (isWorking) {
-                    this.setActiveGateway(wayfinderGateway, txId);
-                    const workingUrl = constructGatewayUrl(txId, wayfinderGateway, pathSuffix);
-                    this.logger.info('Wayfinder resolution succeeded', {
-                        txId,
-                        gateway: wayfinderHost,
-                        pathSuffix,
-                        workingUrl,
-                    });
-                    return workingUrl;
-                }
-                this.logger.debug('Wayfinder gateway did not pass health check, falling back to static gateways', {
-                    txId,
-                    host: wayfinderHost,
-                });
-            } catch (error) {
-                this.logger.warn('Wayfinder resolution failed, falling back to static gateways', {
-                    txId,
-                    error: error instanceof Error ? error.message : String(error),
-                });
-            }
+            const wayfinderController = new AbortController();
+            candidates.push({
+                label: 'Wayfinder',
+                check: async () => {
+                    this.logger.debug('Starting Wayfinder resolution', { txId });
+                    const wayfinderUrlObj = await this.withTimeout(
+                        this.wayfinder!.resolveUrl({ originalUrl: url }),
+                        this.timeout,
+                        'Wayfinder resolution timed out'
+                    );
+                    if (signal?.aborted || wayfinderController.signal.aborted) {
+                        throw new Error('Aborted before Wayfinder health check');
+                    }
+                    const wayfinderHost = wayfinderUrlObj.hostname;
+                    const wayfinderProtocol = wayfinderUrlObj.protocol.replace(':', '') as 'http' | 'https';
+                    const wayfinderGateway: GatewayConfig = {
+                        host: wayfinderHost,
+                        protocol: wayfinderProtocol,
+                        priority: 0,
+                    };
+                    const isWorking = await this.checkGateway(txId, wayfinderGateway, pathSuffix, signal);
+                    if (!isWorking) throw new Error(`Wayfinder gateway ${wayfinderHost} did not pass health check`);
+                    return {
+                        gateway: wayfinderGateway,
+                        workingUrl: constructGatewayUrl(txId, wayfinderGateway, pathSuffix),
+                    };
+                },
+                abort: () => wayfinderController.abort(),
+            });
         }
 
-        // Fallback: Try each static gateway in priority order
-        for (const gateway of this.gateways) {
-            try {
-                const isWorking = await this.checkGateway(txId, gateway, pathSuffix);
-                if (isWorking) {
-                    this.setActiveGateway(gateway, txId);
-                    const workingUrl = constructGatewayUrl(txId, gateway, pathSuffix);
-                    this.logger.info('Gateway check succeeded', {
-                        txId,
-                        gateway: gateway.host,
-                        pathSuffix,
-                        workingUrl,
-                    });
-                    return workingUrl;
-                }
-            } catch (error) {
-                this.logger.debug('Gateway check failed', {
-                    txId,
-                    gateway: gateway.host,
-                    pathSuffix,
-                    error: error instanceof Error ? error.message : String(error),
+        // Add static gateways as parallel contenders, filtering out unhealthy ones.
+        // Skip gateways with >70% failure rate AND at least 3 checks, but always
+        // keep at least one candidate so we don't end up with zero options.
+        const HEALTHY_FAILURE_THRESHOLD = 0.70;
+        const MIN_CHECKS_FOR_FILTER = 3;
+
+        const healthyGateways = this.gateways.filter(gateway => {
+            const { rate, totalChecks } = this.getFailureRate(gateway.host);
+            if (totalChecks >= MIN_CHECKS_FOR_FILTER && rate > HEALTHY_FAILURE_THRESHOLD) {
+                this.logger.warn('Skipping gateway due to poor health', {
+                    host: gateway.host,
+                    failureRate: `${Math.round(rate * 100)}%`,
+                    totalChecks,
                 });
+                return false;
             }
+            return true;
+        });
+
+        // Always keep at least one candidate — if all were filtered out, use the original list
+        const gatewaysToTry = healthyGateways.length > 0 ? healthyGateways : this.gateways;
+
+        for (const gateway of gatewaysToTry) {
+            candidates.push({
+                label: gateway.host,
+                check: async () => {
+                    if (signal?.aborted) throw new Error('Aborted before gateway check');
+                    const isWorking = await this.checkGateway(txId, gateway, pathSuffix, signal);
+                    if (!isWorking) throw new Error(`Gateway ${gateway.host} check failed`);
+                    return {
+                        gateway,
+                        workingUrl: constructGatewayUrl(txId, gateway, pathSuffix),
+                    };
+                },
+                abort: () => {}, // checkGateway has its own AbortController with timeout
+            });
         }
 
-        // All gateways failed, return original URL
-        this.logger.warn('All gateways failed, returning original URL', { txId, pathSuffix, originalUrl: url });
-        return url;
+        // Race all candidates in parallel, collect successes, then pick the best.
+        // We wait for the first success, then give remaining candidates a short
+        // window (1s) to also respond so we can pick the one with the best
+        // historical fetch-time average from healthData.
+        const COLLECTION_WINDOW_MS = 1000;
+
+        try {
+            const checks = candidates.map(c => c.check());
+            const successes: CandidateResult[] = [];
+
+            // Wait for the first success
+            await new Promise<CandidateResult>((resolve, reject) => {
+                let remaining = checks.length;
+                if (remaining === 0) { reject(new Error('All candidates rejected')); return; }
+                checks.forEach(p => p.then(
+                    value => { successes.push(value); resolve(value); },
+                    () => { remaining--; if (remaining === 0) reject(new Error('All candidates rejected')); },
+                ));
+            });
+
+            // Give remaining candidates a short window to also succeed
+            if (checks.length > 1) {
+                await new Promise<void>(resolve => setTimeout(resolve, COLLECTION_WINDOW_MS));
+                // Collect any additional successes that resolved within the window
+                await Promise.allSettled(checks).then(results => {
+                    for (const r of results) {
+                        if (r.status === 'fulfilled') {
+                            const existing = successes.find(s => s.gateway.host === r.value.gateway.host);
+                            if (!existing) successes.push(r.value);
+                        }
+                    }
+                });
+            }
+
+            // Pick the best gateway: prefer the one with the lowest historical
+            // average response time from healthData (real fetch data), tie-break
+            // by priority (lower = better).
+            const best = successes.reduce((a, b) => {
+                const aAvg = this.getAverageResponseTime(a.gateway.host);
+                const bAvg = this.getAverageResponseTime(b.gateway.host);
+                if (aAvg > 0 && bAvg > 0) {
+                    return aAvg <= bAvg ? a : b;
+                }
+                // If only one has history, prefer the one with history
+                if (aAvg > 0) return a;
+                if (bAvg > 0) return b;
+                // No history for either — tie-break by priority
+                return a.gateway.priority <= b.gateway.priority ? a : b;
+            });
+
+            // Abort all candidates to clean up in-flight connections
+            for (const c of candidates) {
+                c.abort();
+            }
+
+            this.setActiveGateway(best.gateway, txId);
+            this.logger.info('Gateway resolved via parallel check', {
+                txId,
+                gateway: best.gateway.host,
+                pathSuffix,
+                workingUrl: best.workingUrl,
+                candidatesConsidered: successes.length,
+            });
+            return best.workingUrl;
+        } catch {
+            // Promise.any() rejects with AggregateError when ALL promises reject
+            if (signal?.aborted) {
+                this.logger.debug('Gateway search aborted by signal', { txId });
+                return url;
+            }
+
+            // All gateways failed, return original URL
+            this.logger.warn('All gateways failed, returning original URL', { txId, pathSuffix, originalUrl: url });
+            return url;
+        }
     }
 
     /**
@@ -542,6 +722,8 @@ export class ArweaveGatewayManager {
      */
     private setActiveGateway(gateway: GatewayConfig, txId: string): void {
         this.activeGateway = gateway;
+        this.lastFetchTiming = 0;
+        this.consecutiveSlowResponses = 0;
         this.setCache(txId, gateway);
         this.persistGateway(gateway);
     }
@@ -556,8 +738,15 @@ export class ArweaveGatewayManager {
             if (!stored) return null;
             const parsed = JSON.parse(stored);
             if (parsed && typeof parsed.host === 'string' && typeof parsed.protocol === 'string') {
+                const PERSISTED_GATEWAY_TTL_MS = 30 * 60 * 1000; // 30 minutes
+                if (typeof parsed.timestamp === 'number' && Date.now() - parsed.timestamp > PERSISTED_GATEWAY_TTL_MS) {
+                    this.logger.info('Ignoring persisted gateway — expired (older than 30 minutes)', { host: parsed.host });
+                    this.clearPersistedGateway();
+                    return null;
+                }
                 this.logger.info('Restored active gateway from localStorage', { host: parsed.host });
-                return parsed as GatewayConfig;
+                const { timestamp: _timestamp, ...gateway } = parsed;
+                return gateway as GatewayConfig;
             }
         } catch {
             // localStorage unavailable or corrupted — ignore
@@ -571,7 +760,8 @@ export class ArweaveGatewayManager {
     private persistGateway(gateway: GatewayConfig): void {
         try {
             if (typeof localStorage === 'undefined') return;
-            localStorage.setItem(ACTIVE_GATEWAY_STORAGE_KEY, JSON.stringify(gateway));
+            const data = { ...gateway, timestamp: Date.now() };
+            localStorage.setItem(ACTIVE_GATEWAY_STORAGE_KEY, JSON.stringify(data));
         } catch {
             // localStorage unavailable — ignore
         }
@@ -598,15 +788,20 @@ export class ArweaveGatewayManager {
      * @param txId - The transaction ID to check
      * @param gateway - The gateway to check
      * @param pathSuffix - Optional path suffix to append after txId
+     * @param signal - Optional external AbortSignal to cancel the check
      * @returns true if the gateway can serve the transaction
      */
-    async checkGateway(txId: string, gateway: GatewayConfig, pathSuffix: string = ''): Promise<boolean> {
+    async checkGateway(txId: string, gateway: GatewayConfig, pathSuffix: string = '', signal?: AbortSignal): Promise<boolean> {
         const url = constructGatewayUrl(txId, gateway, pathSuffix);
         const startTime = Date.now();
 
-        // Create AbortController for timeout
+        // Create AbortController for timeout, combined with external signal if provided
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+
+        // If an external signal is provided, abort our controller when it fires
+        const onExternalAbort = () => controller.abort();
+        signal?.addEventListener('abort', onExternalAbort, { once: true });
 
         try {
             // Use HEAD request to check availability without downloading content
@@ -617,6 +812,7 @@ export class ArweaveGatewayManager {
             });
 
             clearTimeout(timeoutId);
+            signal?.removeEventListener('abort', onExternalAbort);
             const responseTime = Date.now() - startTime;
 
             // Consider 2xx and 3xx responses as success
@@ -628,14 +824,16 @@ export class ArweaveGatewayManager {
             return success;
         } catch (error) {
             clearTimeout(timeoutId);
+            signal?.removeEventListener('abort', onExternalAbort);
             const responseTime = Date.now() - startTime;
 
             // Record failed response for health tracking
             this.recordGatewayResponse(gateway.host, responseTime, false);
 
-            // Handle timeout
+            // Handle timeout or external abort
             if (error instanceof Error && error.name === 'AbortError') {
-                this.logger.debug('Gateway check timed out', {
+                const wasExternal = signal?.aborted;
+                this.logger.debug(wasExternal ? 'Gateway check aborted by external signal' : 'Gateway check timed out', {
                     txId,
                     gateway: gateway.host,
                     timeout: this.timeout,
@@ -895,6 +1093,32 @@ export class ArweaveGatewayManager {
     }
 
     /**
+     * Get the average response time for a gateway from health data.
+     * Returns 0 if no records exist (indicates no history).
+     *
+     * @param host - Gateway hostname
+     * @returns Average response time in ms, or 0 if no data
+     */
+    /**
+     * Get the failure rate for a gateway based on health data.
+     *
+     * @param host - Gateway hostname
+     * @returns Object with failure rate (0-1) and total check count
+     */
+    private getFailureRate(host: string): { rate: number; totalChecks: number } {
+        const records = this.healthData.get(host);
+        if (!records || records.length === 0) return { rate: 0, totalChecks: 0 };
+        const failures = records.filter(r => !r.success).length;
+        return { rate: failures / records.length, totalChecks: records.length };
+    }
+
+    private getAverageResponseTime(host: string): number {
+        const records = this.healthData.get(host);
+        if (!records || records.length === 0) return 0;
+        return records.reduce((sum, r) => sum + r.responseTime, 0) / records.length;
+    }
+
+    /**
      * Record a gateway response for health tracking
      *
      * @param host - Gateway hostname
@@ -917,6 +1141,23 @@ export class ArweaveGatewayManager {
         if (records.length > this.MAX_HEALTH_RECORDS) {
             records.shift();
         }
+    }
+
+    /**
+     * Report real fetch timing data for a gateway.
+     *
+     * Callers invoke this after an actual data-transfer fetch (not just a HEAD check)
+     * to feed real performance data into health tracking. This is separate from the
+     * HEAD-based timing recorded by checkGateway(), and gives a more accurate picture
+     * of actual download performance.
+     *
+     * @param host - Gateway hostname that served the fetch
+     * @param timingMs - Time the full fetch took in milliseconds
+     * @param success - Whether the fetch succeeded
+     */
+    reportFetchTiming(host: string, timingMs: number, success: boolean): void {
+        this.recordGatewayResponse(host, timingMs, success);
+        this.logger.debug('Fetch timing reported', { host, timingMs, success });
     }
 
     /**

@@ -1678,7 +1678,7 @@ Genre models auto-detect their taxonomy from URL keywords (see [`GenreListType`]
 
 ### Arweave Gateway Resolution
 
-The engine includes a built-in Arweave gateway manager (`arweaveGatewayManager`) that provides automatic fallback to alternate gateways when Arweave URLs fail. `MusicClassifier`, `EssentiaPitchDetector`, `ColorExtractor`, and `PlaylistParser` all use this internally — no configuration needed.
+The engine includes a built-in Arweave gateway manager (`arweaveGatewayManager`) that provides automatic gateway fallback when Arweave URLs fail. `MusicClassifier`, `EssentiaPitchDetector`, `ColorExtractor`, and `PlaylistParser` all use this internally — no configuration needed.
 
 | Export | Description |
 |--------|-------------|
@@ -1686,7 +1686,32 @@ The engine includes a built-in Arweave gateway manager (`arweaveGatewayManager`)
 | `ArweaveGatewayManager` | Class: create custom instances with custom gateway lists |
 | `isArweaveUrl` | Utility: check if a URL is an Arweave transaction |
 
-**Gateway priority order:** arweave.net → ar.io → ardrive.net → turbo-gateway.com
+**Gateway resolution strategy:** All gateways (including Wayfinder) are checked in parallel. The first to respond wins. When multiple succeed within a 1s collection window, the one with the best historical fetch-time average is selected (tie-break by priority).
+
+**Default gateways:** arweave.net → ar.io → ardrive.net → turbo-gateway.com
+
+#### Key Public Methods
+
+| Method | Description |
+|--------|-------------|
+| `resolveUrl(url, signal?)` | Resolve an Arweave URL to a working gateway URL. Supports `AbortSignal` for cancellation. |
+| `reportGatewayFailure(url, options?)` | Report a failed fetch. Options: `{ signal?, reason?: 'load-error' \| 'user-cancel-slow' \| 'user-cancel-fast' }`. Fast user cancels preserve the active gateway. |
+| `reportFetchSuccess(timingMs)` | Feed timing data back to the manager. Resets the slow-response counter on fast fetches; increments it on slow ones. Triggers proactive rotation after `maxSlowResponses` consecutive slow fetches. |
+| `reportFetchTiming(host, timingMs, success)` | Record real data-transfer timing for a gateway (separate from HEAD-based health checks). |
+
+#### Configuration
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `gateways` | `GatewayConfig[]` | 4 defaults | Gateway list |
+| `timeout` | `number` | `5000` | Per-gateway HEAD check timeout (ms) |
+| `cacheTTL` | `number` | `7200000` | Per-txId cache TTL (ms, default 2 hours) |
+| `slowResponseThreshold` | `number` | `8000` | Threshold above which a fetch is "slow" (ms) |
+| `maxSlowResponses` | `number` | `3` | Consecutive slow responses before proactive gateway rotation |
+
+**Persisted gateway:** The active gateway is saved to `localStorage` with a 30-minute TTL. Expired persisted gateways are ignored on the next session, forcing fresh discovery.
+
+**Health-aware filtering:** Gateways with >70% failure rate (and at least 3 checks) are skipped during resolution, unless all gateways would be filtered out.
 
 All model loading includes exponential backoff retries (1s, 2s, 4s) on transient failures, combined with automatic gateway resolution. Non-Arweave URLs pass through unchanged.
 

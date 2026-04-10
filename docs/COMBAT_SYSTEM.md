@@ -928,7 +928,7 @@ For special cases, you can still manually construct `Attack` objects using `exec
 
 ### Hit Modes
 
-The combat engine supports two hit resolution modes, configured via `CombatConfig.hitMode`:
+The combat engine supports two hit resolution modes, configured via `CombatConfig.hitMode`. Each mode also uses a different damage formula.
 
 #### `'dnd'` — Classic D&D 5e (threshold-based)
 
@@ -937,6 +937,8 @@ The default D&D 5e system: d20 + attack bonus is compared to the target's AC.
 - **Hit:** totalRoll >= AC (natural 20 always hits)
 - **Miss:** totalRoll < AC (natural 1 always misses)
 - **Critical:** Natural 20 — double damage dice
+
+**Damage formula (dnd):** Rolls weapon dice + ability modifier. Finesse and ranged weapons use DEX; melee weapons use STR. Crits double the dice (not the modifier).
 
 ```typescript
 const engine = new CombatEngine({ hitMode: 'dnd' });
@@ -959,6 +961,8 @@ AC reduces damage instead of determining hit/miss. This creates a smoother comba
 | AC - 1 | 0.95 | 95% damage |
 | AC - 5 | 0.50 | 50% damage |
 | AC - 9 | 0.10 | 10% damage (minimum) |
+
+**Damage formula (scaled):** No dice rolls. `max(1, floor(level * 2 + (STR - AC) * 0.3))` + flat weapon bonus from die size tier (d4→1, d6→1, d8→2, d10→2, d12→3, 2d6→3, 2d8→4). Level is the primary damage driver. Crits multiply the level base by 1.5x (weapon bonus unaffected).
 
 ```typescript
 // Scaled mode is the default — no config needed

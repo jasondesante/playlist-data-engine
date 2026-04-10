@@ -163,46 +163,111 @@ export class AttackResolver {
   }
 
   /**
-   * Roll damage for an attack using STR-based damage formula.
+   * Roll damage for an attack.
    *
-   * Formula: totalDamage = max(1, baseDamage + weaponBonus)
-   * - baseDamage = max(0, attacker.STR - defender.AC)  — the primary damage source
-   * - weaponBonus = max(1, floor(rawDiceSum / 4))       — small extra from weapon dice
+   * Hit mode determines the damage system:
    *
-   * Design: baseDamage drives the bulk of damage at mid/high levels (STR > AC).
-   * The weapon dice provide a small bonus (1-3 depending on weapon size) so they
-   * add flavor without dominating. At low levels where STR ≈ AC, baseDamage is
-   * near-zero and the weapon bonus is all you get — keeping fights gritty.
+   * 'dnd' — Traditional dice-based damage (D&D 5e style).
+   *   Rolls weapon dice + ability modifier. Crits double the dice.
+   *
+   * 'scaled' — Formula-based damage (Pokemon/Earthbound style).
+   *   No dice rolls. Damage = max(1, floor(attackerLevel * 2 + (STR - AC) * 0.3)).
+   *   Crits multiply by 1.5x. Scales smoothly with level — starts low (1-2 at
+   *   level 1) and grows with stat gaps at higher levels.
    */
   private rollDamage(attacker: Combatant, target: Combatant, attack: Attack, isCritical: boolean): DamageRoll {
+    if (this.hitMode === 'dnd') {
+      return this.rollDamageDND(attacker, target, attack, isCritical);
+    }
+    return this.rollDamageScaled(attacker, target, attack, isCritical);
+  }
+
+  /**
+   * DND mode: traditional dice-based damage.
+   * Rolls weapon dice + ability modifier (STR for melee, DEX for finesse/ranged).
+   * Crits double the dice (not the modifier).
+   */
+  private rollDamageDND(attacker: Combatant, _target: Combatant, attack: Attack, isCritical: boolean): DamageRoll {
     const attackerSTR = attacker.character.ability_scores.STR ?? 10;
-    const defenderAC = target.character.armor_class;
+    const attackerDEX = attacker.character.ability_scores.DEX ?? 10;
 
-    // Base damage: the primary damage driver (scales with STR vs AC gap)
-    const baseDamage = Math.max(0, attackerSTR - defenderAC);
+    // Determine ability modifier from weapon properties
+    const isFinesse = attack.properties?.includes('finesse') ?? false;
+    const isRanged = attack.properties?.includes('ranged') ?? false;
+    const abilityMod = (isFinesse || isRanged)
+      ? Math.floor((attackerDEX - 10) / 2)
+      : Math.floor((attackerSTR - 10) / 2);
 
-    // Roll weapon dice — small bonus on top of base damage
     const damageDice = attack.damage_dice ?? '';
     const damageResult = this.diceRoller
-      ? this.diceRoller.calculateDamage(damageDice, 0, isCritical)
-      : DiceRoller.calculateDamage(damageDice, 0, isCritical);
+      ? this.diceRoller.calculateDamage(damageDice, abilityMod, isCritical)
+      : DiceRoller.calculateDamage(damageDice, abilityMod, isCritical);
 
-    const rawRoll = damageResult.rolls.reduce((sum, r) => sum + r, 0);
-
-    // Weapon bonus: dice contribute a small amount (d4→1, d6→1, d8→1-2, d12→2, 2d6→1-3)
-    const weaponBonus = Math.max(1, Math.floor(rawRoll / 4));
-
-    const total = Math.max(1, baseDamage + weaponBonus);
+    const total = Math.max(1, damageResult.total);
 
     return {
       diceFormula: damageDice,
       rolls: damageResult.rolls,
-      modifier: 0,
+      modifier: abilityMod,
       total,
       isCritical: damageResult.isCritical,
-      baseDamage,
-      weaponRoll: rawRoll,
+      baseDamage: 0,
+      weaponRoll: damageResult.total - abilityMod,
     };
+  }
+
+  /**
+   * Scaled mode: formula-based damage (no dice rolls).
+   *
+   * Formula: max(1, levelBase + weaponBonus)
+   * - levelBase = max(1, floor(attackerLevel * 2 + (STR - AC) * 0.3))
+   * - weaponBonus = round(avgDiceRoll / 2.5)
+   *
+   * Level is the primary driver. The weapon's die size provides a flat bonus
+   * based on its tier (d4→1, d6→1, d8→2, d10→2, d12→3) so weapon choice
+   * matters without dice variance. Crits multiply levelBase by 1.5x.
+   */
+  private rollDamageScaled(attacker: Combatant, target: Combatant, attack: Attack, isCritical: boolean): DamageRoll {
+    const attackerLevel = attacker.character.level ?? 1;
+    const attackerSTR = attacker.character.ability_scores.STR ?? 10;
+    const defenderAC = target.character.armor_class;
+
+    // Level-based base damage (primary driver)
+    const levelBase = Math.max(1, Math.floor(attackerLevel * 2 + (attackerSTR - defenderAC) * 0.3));
+
+    // Weapon bonus from die size (flat, no rolling)
+    const weaponBonus = AttackResolver.getWeaponBonus(attack.damage_dice);
+
+    // Crits boost the level base but not the weapon bonus
+    const total = isCritical
+      ? Math.max(1, Math.floor(levelBase * 1.5) + weaponBonus)
+      : Math.max(1, levelBase + weaponBonus);
+
+    return {
+      diceFormula: attack.damage_dice ?? '',
+      rolls: [],
+      modifier: 0,
+      total,
+      isCritical,
+      baseDamage: levelBase,
+      weaponRoll: weaponBonus,
+    };
+  }
+
+  /**
+   * Convert a damage dice string to a flat weapon bonus.
+   * Uses the dice average divided by 2.5, giving clean tiers:
+   * d4→1, d6→1, d8→2, d10→2, d12→3, 2d6→3, 2d8→4
+   */
+  static getWeaponBonus(damageDice?: string): number {
+    if (!damageDice) return 0;
+    try {
+      const parsed = DiceRoller.parseDiceFormula(damageDice);
+      const avg = parsed.diceCount * (parsed.diceSides + 1) / 2;
+      return Math.round(avg / 2.5);
+    } catch {
+      return 0;
+    }
   }
 
   /**
