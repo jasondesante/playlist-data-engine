@@ -258,21 +258,23 @@ export class CombatEngine {
     }
 
     // Build Attack object from weapon data
-    const attack = this.buildAttackFromWeapon(selectedWeapon.name, attacker.character);
+    // Pass the weapon object so generated damage_dice (from enemy generation) takes priority
+    const attack = this.buildAttackFromWeapon(selectedWeapon, attacker.character);
 
     return this.executeAttack(combat, attacker, target, attack);
   }
 
   /**
-   * Build an Attack object from a weapon name
-   * Looks up weapon data from DEFAULT_EQUIPMENT and constructs proper Attack
-   * Uses character's stats to calculate attack bonus
+   * Build an Attack object from a weapon
+   * Prefers damage_dice set during enemy generation (on the weapon object),
+   * falling back to DEFAULT_EQUIPMENT for player characters using standard gear.
+   * Uses character's stats to calculate attack bonus.
    */
-  private buildAttackFromWeapon(weaponName: string, character: CharacterSheet): Attack {
-    const weaponData = DEFAULT_EQUIPMENT[weaponName];
+  private buildAttackFromWeapon(weapon: { name: string; damage_dice?: string }, character: CharacterSheet): Attack {
+    const weaponData = DEFAULT_EQUIPMENT[weapon.name];
 
     if (!weaponData) {
-      throw new Error(`Weapon "${weaponName}" not found in equipment database`);
+      throw new Error(`Weapon "${weapon.name}" not found in equipment database`);
     }
 
     const weaponProps = weaponData.weaponProperties || [];
@@ -286,8 +288,9 @@ export class CombatEngine {
     );
 
     return {
-      name: weaponName,
-      damage_dice: weaponData.damage?.dice || '1d6',
+      name: weapon.name,
+      // Use damage_dice from enemy generation if set, otherwise fall back to DEFAULT_EQUIPMENT
+      damage_dice: weapon.damage_dice || weaponData.damage?.dice || '1d6',
       damage_type: weaponData.damage?.damageType || 'bludgeoning',
       type: isRanged ? 'ranged' : 'melee',
       attack_bonus: attackBonus,

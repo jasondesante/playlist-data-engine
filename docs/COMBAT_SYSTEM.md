@@ -1356,7 +1356,7 @@ const { combat, result } = runner.runFullCombat(players, enemies, {
 
 #### CombatantMetrics
 
-Per-combatant statistics computed from combat history by `CombatMetricsTracker`:
+Per-combatant statistics computed from combat history by `CombatMetricsTracker`. `roundsSurvived` reflects the total combat duration (`combat.roundNumber`) for all combatants. DPR (`damagePerRound`) divides total damage by turns taken rather than rounds survived, which correctly handles combatants that don't act every round (e.g., in asymmetric fights).
 
 ```typescript
 interface CombatantMetrics {
@@ -1372,10 +1372,10 @@ interface CombatantMetrics {
   hits: number;               // Successful attack/spell hits
   misses: number;             // Missed attack/spell attempts
   kills: number;              // Enemies/opponents this combatant defeated
-  roundsSurvived: number;
+  roundsSurvived: number;      // Total combat rounds (from combat.roundNumber)
   survived: boolean;
   actionsByType: Record<string, number>;  // e.g., { attack: 12, spell: 3, dodge: 1 }
-  damagePerRound: number[];     // [avg DPR] computed from aggregate
+  damagePerRound: number[];     // [avg damage per turn] totalDamageDealt / turns taken
 }
 ```
 

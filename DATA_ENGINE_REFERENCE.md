@@ -5019,7 +5019,7 @@ The `damageScale` field on `AttackRoll` indicates the multiplier applied (1.0 = 
 | `computeAttackBonus(abilityScores, weaponProperties, proficiency)` | **Static.** DEX for ranged/finesse weapons, STR otherwise. Shared by `CombatEngine.buildWeaponAttack` and estimation methods. |
 | `formatWeaponDamage(dice, damageType, damageDisplay)` | **Static.** Formats weapon damage for display: scaled mode shows flat bonus (e.g. "+2 piercing"), dnd mode shows dice string (e.g. "1d8 piercing"). |
 | `estimateDamagePerHit(opts)` | **Static.** Estimates average damage per hit for a given hitMode. Mirrors actual combat formulas so pre-simulation estimates match simulator output. |
-| `estimateDPR(opts)` | **Static.** Estimates damage per round including hit rate. Iterates all 20 d20 outcomes to match actual combat mechanics exactly. |
+| `estimateDPR(opts)` | **Static.** Estimates damage per round including hit rate. Iterates all 20 d20 outcomes to match actual combat mechanics exactly. Note: this estimates per-attack damage rate; CombatMetricsTracker uses the same per-turn denominator. |
 
 ### SpellCaster
 
@@ -5145,6 +5145,10 @@ Orchestrates full combat encounters with AI decision-making. Bridges `CombatAI` 
 > **Note:** Instance class — create with `new CombatMetricsTracker()`
 
 Post-hoc analysis that computes per-combatant statistics from a completed `CombatInstance` history without modifying the engine. Processes all action types: attack, spell, legendary action, use item.
+
+**Metric computation details:**
+- `roundsSurvived`: Set to `combat.roundNumber` for all combatants (both survived and defeated), representing total combat duration.
+- `damagePerRound`: Computed as `totalDamageDealt / turns taken` (where turns = count of real turn actions like attack, spell, dodge, etc.). Uses turns as denominator rather than rounds survived to correctly handle asymmetric fights where not all combatants act every round.
 
 **Methods:**
 

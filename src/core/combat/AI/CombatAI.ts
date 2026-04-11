@@ -138,7 +138,10 @@ export class CombatAI {
       let bestDamage = 5; // minimum expected damage (unarmed)
       for (const weapon of weapons) {
         const weaponData = DEFAULT_EQUIPMENT[weapon.name];
-        const dice = weapon.damage?.dice || weaponData?.damage?.dice || '1d6';
+        const dice = (weapon as any).damage_dice
+          || (typeof weapon.damage !== 'string' ? weapon.damage?.dice : undefined)
+          || weaponData?.damage?.dice
+          || '1d6';
         const avg = this.averageDamageFromFormula(dice);
         if (avg > bestDamage) bestDamage = avg;
       }
@@ -791,7 +794,13 @@ export class CombatAI {
 
     for (const weapon of equippedWeapons) {
       const weaponData = DEFAULT_EQUIPMENT[weapon.name];
-      const dice = weapon.damage?.dice || weaponData?.damage?.dice || '1d6';
+      // Enemy generation sets damage as a flat string with damage_dice alongside it;
+      // properly-formed EnhancedInventoryItem uses damage as { dice, damageType }.
+      // Prefer damage_dice (enemy gen), then damage.dice (proper), then DEFAULT_EQUIPMENT.
+      const dice = (weapon as any).damage_dice
+        || (typeof weapon.damage !== 'string' ? weapon.damage?.dice : undefined)
+        || weaponData?.damage?.dice
+        || '1d6';
       const expectedDamage = this.averageDamageFromFormula(dice);
       const isRanged = weapon.weaponProperties?.includes('ranged') || weaponData?.weaponProperties?.includes('ranged') || false;
 

@@ -49,13 +49,11 @@ export class CombatMetricsTracker {
       });
     }
 
-    // Action types that represent a combatant's actual turn (not supplementary actions)
+    // Track turns per combatant (for DPR calculation)
     const TURN_ACTION_TYPES = new Set([
       'attack', 'spell', 'dodge', 'dash', 'disengage', 'flee',
       'help', 'hide', 'ready', 'useItem', 'skip',
     ]);
-
-    // Track actions per combatant for round estimation
     const actionCounts = new Map<string, number>();
 
     // Process each action in history
@@ -63,12 +61,10 @@ export class CombatMetricsTracker {
       const actorId = action.actor.id;
       const actorMetrics = metrics.get(actorId);
 
-      // Count action type
+      // Count action type and turns
       if (actorMetrics) {
         actorMetrics.actionsByType[action.type] = (actorMetrics.actionsByType[action.type] || 0) + 1;
       }
-
-      // Count real turns for round estimation
       if (TURN_ACTION_TYPES.has(action.type)) {
         actionCounts.set(actorId, (actionCounts.get(actorId) ?? 0) + 1);
       }
@@ -207,30 +203,24 @@ export class CombatMetricsTracker {
 
     // Compute rounds survived and damage-per-round for each combatant.
     //
-    // The combat history is a flat list with no round markers, so we estimate
-    // rounds survived from action counts: each combatant gets one turn per
-    // round, so rounds ≈ turn count / combatant count.
+    // roundsSurvived = total combat rounds (for display: "how long was this
+    // combatant in the fight"). Uses combat.roundNumber for both survived
+    // and defeated combatants.
     //
-    // For damage-per-round, we compute the single average DPR value
-    // (totalDamage / roundsSurvived) since per-round breakdown isn't
-    // available from the flat history.
+    // DPR = totalDamage / turns taken. This matches estimateDPR() which
+    // computes damage per attack (once per turn). Using combat rounds as
+    // denominator would undercount for combatants that don't act every
+    // round (e.g., enemy acts in ~half the combat rounds in a 2-sided fight).
     const totalRounds = combat.roundNumber;
-    const combatantCount = combat.combatants.length;
 
     for (const [id, m] of metrics) {
-      if (m.survived) {
-        m.roundsSurvived = totalRounds;
-      } else {
-        // Defeated: estimate rounds from turn count
-        const turns = actionCounts.get(id) ?? 0;
-        m.roundsSurvived = combatantCount > 0
-          ? Math.max(1, Math.round(turns / combatantCount))
-          : 1;
-      }
+      m.roundsSurvived = Math.max(1, totalRounds);
 
       // Compute damage per round from aggregate data
-      if (m.roundsSurvived > 0 && m.totalDamageDealt > 0) {
-        m.damagePerRound = [m.totalDamageDealt / m.roundsSurvived];
+      // Use turns taken as denominator (matches estimateDPR per-attack rate)
+      const turns = actionCounts.get(id) ?? 0;
+      if (turns > 0 && m.totalDamageDealt > 0) {
+        m.damagePerRound = [m.totalDamageDealt / turns];
       }
 
       // Compute HP remaining percent from combatant state
