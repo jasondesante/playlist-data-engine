@@ -18,6 +18,7 @@ export default defineConfig({
         'essentia.js',
         '@tensorflow/tfjs',
         '@ar.io/wayfinder-core',
+        '@ar.io/sdk',
       ],
       output: {
         globals: {

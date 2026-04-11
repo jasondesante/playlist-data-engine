@@ -58,10 +58,10 @@ export class EquipmentEffectApplier {
             character.equipment_effects = [];
         }
 
-        // Check if this equipment is already equipped
+        // Check if this equipment is already equipped (idempotent — return success)
         const existing = this.findEquipmentEffect(character, equipment.name, instanceId);
         if (existing) {
-            result.errors.push(`Equipment "${equipment.name}" is already equipped`);
+            result.applied = true;
             return result;
         }
 
@@ -135,7 +135,7 @@ export class EquipmentEffectApplier {
 
         // Store equipment effect entry
         character.equipment_effects.push(equipmentEffect);
-        result.applied = result.count > 0;
+        result.applied = result.errors.length === 0;
 
         return result;
     }

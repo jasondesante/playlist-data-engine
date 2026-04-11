@@ -275,26 +275,23 @@ export class CombatEngine {
       throw new Error(`Weapon "${weaponName}" not found in equipment database`);
     }
 
-    // Check if it's a ranged weapon
-    const isRanged = weaponData.weaponProperties?.includes('ranged') || false;
-    const isFinesse = weaponData.weaponProperties?.includes('finesse') || false;
-
-    // Calculate ability modifier based on weapon type
-    // Melee/unarmed: STR, Ranged/finesse: DEX
-    const ability = isRanged || isFinesse ? 'DEX' : 'STR';
-    const abilityMod = Math.floor((character.ability_scores[ability] - 10) / 2);
-
-    // Check proficiency (proficient if weapon is simple or character is proficient with weapon type)
-    // Simplified: assume proficiency with simple weapons for now
+    const weaponProps = weaponData.weaponProperties || [];
+    const isRanged = weaponProps.includes('ranged');
     const profBonus = character.proficiency_bonus;
+
+    const attackBonus = AttackResolver.computeAttackBonus(
+      character.ability_scores,
+      weaponProps,
+      profBonus,
+    );
 
     return {
       name: weaponName,
       damage_dice: weaponData.damage?.dice || '1d6',
       damage_type: weaponData.damage?.damageType || 'bludgeoning',
       type: isRanged ? 'ranged' : 'melee',
-      attack_bonus: abilityMod + profBonus,
-      properties: weaponData.weaponProperties || []
+      attack_bonus: attackBonus,
+      properties: weaponProps
     };
   }
 

@@ -1686,7 +1686,9 @@ The engine includes a built-in Arweave gateway manager (`arweaveGatewayManager`)
 | `ArweaveGatewayManager` | Class: create custom instances with custom gateway lists |
 | `isArweaveUrl` | Utility: check if a URL is an Arweave transaction |
 
-**Gateway resolution strategy:** All gateways (including Wayfinder) are checked in parallel. The first to respond wins. When multiple succeed within a 1s collection window, the one with the best historical fetch-time average is selected (tie-break by priority).
+**Gateway resolution strategy:** Sequential fallback — arweave.net first (most reliable), then the persisted gateway from localStorage, then AR.IO Wayfinder (wider pool via `FastestPingRoutingStrategy` + `RandomRoutingStrategy` fallback), then remaining static gateways. Each gateway is verified with a real fetch before being used. Dead persisted gateways are cleared automatically.
+
+**Wayfinder configuration:** Uses `NetworkGatewaysProvider` (top 10 gateways by operator stake) as the primary candidate pool with `FastestPingRoutingStrategy` (3s timeout). Falls back to a wider pool of 20 gateways via `RandomRoutingStrategy`. Requires both `@ar.io/wayfinder-core` and `@ar.io/sdk`.
 
 **Default gateways:** arweave.net → ar.io → ardrive.net → turbo-gateway.com
 
@@ -1695,7 +1697,7 @@ The engine includes a built-in Arweave gateway manager (`arweaveGatewayManager`)
 | Method | Description |
 |--------|-------------|
 | `resolveUrl(url, signal?)` | Resolve an Arweave URL to a working gateway URL. Supports `AbortSignal` for cancellation. |
-| `reportGatewayFailure(url, options?)` | Report a failed fetch. Options: `{ signal?, reason?: 'load-error' \| 'user-cancel-slow' \| 'user-cancel-fast' }`. Fast user cancels preserve the active gateway. |
+| `reportGatewayFailure(url, options?)` | Report a failed fetch. Options: `{ signal?, reason?: 'load-error' \| 'user-cancel-slow' \| 'user-cancel-fast', excludeHost? }`. Fast user cancels preserve the active gateway. `excludeHost` skips a specific gateway during retry. |
 | `reportFetchSuccess(timingMs)` | Feed timing data back to the manager. Resets the slow-response counter on fast fetches; increments it on slow ones. Triggers proactive rotation after `maxSlowResponses` consecutive slow fetches. |
 | `reportFetchTiming(host, timingMs, success)` | Record real data-transfer timing for a gateway (separate from HEAD-based health checks). |
 
@@ -5012,6 +5014,12 @@ The `damageScale` field on `AttackRoll` indicates the multiplier applied (1.0 = 
 | `attackWithAdvantage(attacker, target, attack)` | Resolves attack with advantage (roll twice, take higher) |
 | `attackWithDisadvantage(attacker, target, attack)` | Resolves attack with disadvantage (roll twice, take lower) |
 | `simulateAttacks(attacker, target, attack, iterations?, diceRoller?, hitMode?)` | **Static.** Simulates N attack rolls using the full resolution pipeline; returns hit/crit/miss rates, average/max damage, and damage distribution |
+| `computeScaledDamage(level, str, targetAC, damageDice, isCritical)` | **Static.** Core scaled-mode damage formula: `max(1, floor(level * 2 + (STR - AC) * 0.3)) + weaponBonus`. Crits multiply level base by 1.5x. Always uses STR. |
+| `computeDamageScale(totalRoll, targetAC)` | **Static.** Returns damage multiplier for below-AC rolls in scaled mode: 1.0 if >= AC, else `max(0.10, 1 - deficit * 0.10)`. |
+| `computeAttackBonus(abilityScores, weaponProperties, proficiency)` | **Static.** DEX for ranged/finesse weapons, STR otherwise. Shared by `CombatEngine.buildWeaponAttack` and estimation methods. |
+| `formatWeaponDamage(dice, damageType, damageDisplay)` | **Static.** Formats weapon damage for display: scaled mode shows flat bonus (e.g. "+2 piercing"), dnd mode shows dice string (e.g. "1d8 piercing"). |
+| `estimateDamagePerHit(opts)` | **Static.** Estimates average damage per hit for a given hitMode. Mirrors actual combat formulas so pre-simulation estimates match simulator output. |
+| `estimateDPR(opts)` | **Static.** Estimates damage per round including hit rate. Iterates all 20 d20 outcomes to match actual combat mechanics exactly. |
 
 ### SpellCaster
 
@@ -5815,7 +5823,7 @@ Static class for applying and removing equipment effects when equipping/unequipp
 
 | Method | Description |
 |--------|-------------|
-| `equipItem(character, equipment, instanceId?)` | Apply all effects from equipping an item (properties, features, skills, spells). Returns `EffectApplicationResult` with `applied: boolean` — `false` if stat requirements are not met |
+| `equipItem(character, equipment, instanceId?)` | Apply all effects from equipping an item (properties, features, skills, spells). Returns `EffectApplicationResult` with `applied: boolean` — `false` if stat requirements are not met. Idempotent: re-equipping the same item returns `applied: true` without duplicating effects. |
 | `unequipItem(character, equipmentName, instanceId?)` | Remove all effects from unequipping an item |
 | `reapplyEquipmentEffects(character)` | Re-apply all equipment effects for updates/level-ups |
 | `getActiveEffects(character)` | Get array of all active equipment properties on character |

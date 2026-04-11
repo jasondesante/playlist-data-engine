@@ -149,7 +149,7 @@ describe('Gateway priority ordering', () => {
 // ============================================================
 
 describe('Wayfinder Integration', () => {
-    it('should try Wayfinder resolution and use it if it passes health check', async () => {
+    it('should use Wayfinder when all static gateways fail', async () => {
         const manager = new ArweaveGatewayManager();
 
         // Wait for Wayfinder to initialize (async in constructor)
@@ -158,59 +158,51 @@ describe('Wayfinder Integration', () => {
         // Mock Wayfinder to return a specific gateway
         mockWayfinderInstance.resolveUrl.mockResolvedValueOnce(new URL('https://wayfinder-gateway.io/' + VALID_TX_ID));
 
-        // All fetches succeed (parallel check fires all gateways + Wayfinder)
-        mockFetch.mockResolvedValue(new Response(null, { status: 200 }));
+        // Static gateways all fail, Wayfinder gateway succeeds
+        mockFetch.mockImplementation(async (url: string) => {
+            if (url.includes('wayfinder-gateway.io')) {
+                return new Response(null, { status: 200 });
+            }
+            return new Response(null, { status: 500 });
+        });
 
         const result = await manager.resolveUrl(ARWEAVE_URL);
 
         expect(mockWayfinderInstance.resolveUrl).toHaveBeenCalled();
-        // Wayfinder gateway should be used (it has priority 0 and responds first in candidates)
         expect(result).toContain('wayfinder-gateway.io');
     });
 
-    it('should fallback to static gateways if Wayfinder resolution fails', async () => {
+    it('should not try Wayfinder when static gateways succeed', async () => {
         const manager = new ArweaveGatewayManager({
             gateways: CUSTOM_GATEWAYS
         });
 
         await vi.advanceTimersByTimeAsync(0);
 
-        // Wayfinder resolution throws an error
-        mockWayfinderInstance.resolveUrl.mockRejectedValueOnce(new Error('Wayfinder error'));
-
-        // Static gateways succeed
+        // Static gateways succeed — Wayfinder should never be called
         mockFetch.mockResolvedValue(new Response(null, { status: 200 }));
 
         const result = await manager.resolveUrl(ARWEAVE_URL);
 
-        expect(mockWayfinderInstance.resolveUrl).toHaveBeenCalled();
-        // Should use a static gateway as fallback
+        expect(mockWayfinderInstance.resolveUrl).not.toHaveBeenCalled();
         expect(result).toContain('example.com');
     });
 
-    it('should fallback to static gateways if Wayfinder gateway fails health check', async () => {
+    it('should fallback gracefully when both static and Wayfinder fail', async () => {
         const manager = new ArweaveGatewayManager({
             gateways: CUSTOM_GATEWAYS
         });
 
         await vi.advanceTimersByTimeAsync(0);
 
-        // Wayfinder returns a gateway
-        mockWayfinderInstance.resolveUrl.mockResolvedValueOnce(new URL('https://failed-gateway.io/' + VALID_TX_ID));
-
-        // Wayfinder gateway fails health check (500), static gateways succeed
-        mockFetch.mockImplementation(async (url: string) => {
-            if (url.includes('failed-gateway.io')) {
-                return new Response(null, { status: 500 });
-            }
-            return new Response(null, { status: 200 });
-        });
+        // Wayfinder resolution throws an error, static gateways also fail
+        mockWayfinderInstance.resolveUrl.mockRejectedValueOnce(new Error('Wayfinder error'));
+        mockFetch.mockResolvedValue(new Response(null, { status: 500 }));
 
         const result = await manager.resolveUrl(ARWEAVE_URL);
 
-        expect(mockWayfinderInstance.resolveUrl).toHaveBeenCalled();
-        // Should use a static gateway since Wayfinder's failed
-        expect(result).toContain('example.com');
+        // Should return the original URL when everything fails
+        expect(result).toContain('arweave.net');
     });
 
     it('should not try Wayfinder if client initialization failed', async () => {

@@ -6,7 +6,7 @@
  */
 
 import type { Combatant, AttackRoll, DamageRoll, DiceRollerAPI, HitMode } from '../types/Combat';
-import type { Attack, CharacterSheet } from '../types/Character';
+import type { Attack, CharacterSheet, AbilityScores } from '../types/Character';
 import { DiceRoller } from './DiceRoller';
 
 /**
@@ -50,6 +50,62 @@ export class AttackResolver {
     this.diceRoller = diceRoller;
     this.hitMode = hitMode;
   }
+
+  // ─── Shared formula helpers ──────────────────────────────────────────────
+  //
+  // These static methods contain the core damage/hit formulas.
+  // Both the combat methods (rollDamageScaled, rollAttack) and the
+  // estimation methods (estimateDPR) call these, so changing a formula
+  // here updates both combat and estimates in one place.
+
+  /**
+   * Compute scaled mode damage from raw stats.
+   *
+   * Formula: max(1, levelBase + weaponBonus)
+   * - levelBase = max(1, floor(level * 2 + (STR - AC) * 0.3))
+   * - weaponBonus = getWeaponBonus(damageDice)
+   * - Crits multiply levelBase by 1.5x (weapon bonus unaffected).
+   *
+   * NOTE: Always uses STR, even for finesse weapons (by design).
+   */
+  static computeScaledDamage(level: number, str: number, targetAC: number, damageDice: string, isCritical: boolean): number {
+    const levelBase = Math.max(1, Math.floor(level * 2 + (str - targetAC) * 0.3));
+    const weaponBonus = AttackResolver.getWeaponBonus(damageDice);
+    if (isCritical) return Math.max(1, Math.floor(levelBase * 1.5)) + weaponBonus;
+    return Math.max(1, levelBase + weaponBonus);
+  }
+
+  /**
+   * Compute the damage scale factor for a below-AC roll in scaled mode.
+   *
+   * Returns 1.0 if totalRoll >= targetAC (full damage).
+   * Otherwise returns max(0.10, 1 - deficit * 0.10).
+   */
+  static computeDamageScale(totalRoll: number, targetAC: number): number {
+    if (totalRoll >= targetAC) return 1.0;
+    const deficit = targetAC - totalRoll;
+    return Math.max(0.10, 1 - deficit * 0.10);
+  }
+
+  /**
+   * Compute the attack bonus for a weapon.
+   *
+   * DEX for ranged or finesse weapons, STR otherwise.
+   * Matches CombatEngine.buildWeaponAttack.
+   */
+  static computeAttackBonus(
+    abilityScores: AbilityScores,
+    weaponProperties: string[],
+    proficiency: number,
+  ): number {
+    const isRanged = weaponProperties.includes('ranged');
+    const isFinesse = weaponProperties.includes('finesse');
+    const ability = (isRanged || isFinesse) ? 'DEX' : 'STR';
+    const abilityMod = Math.floor(((abilityScores[ability] ?? 10) - 10) / 2);
+    return abilityMod + proficiency;
+  }
+
+  // ─── Combat methods (use shared helpers above) ─────────────────────────
 
   /**
    * Resolve an attack action
@@ -115,7 +171,7 @@ export class AttackResolver {
    * Hit modes:
    * - 'dnd': Classic — totalRoll >= AC to hit. Nat 1 miss, nat 20 crit.
    * - 'scaled': AC reduces damage. Only nat 1 misses, nat 20 crits.
-   *   Each point below AC reduces damage by 5% (min 1 damage).
+   *   Each point below AC reduces damage by 10% (min 10%).
    */
   private rollAttack(_attacker: Combatant, target: Combatant, attack: Attack): AttackRoll {
     const d20Roll = this.diceRoller
@@ -139,9 +195,8 @@ export class AttackResolver {
       // Scaled mode: only nat 1 misses, nat 20 crits, everything else hits
       // with damage scaled by how far below AC the roll fell
       hit = !isMiss;
-      if (!isMiss && !isCritical && totalRoll < targetAC) {
-        const deficit = targetAC - totalRoll;
-        damageScale = Math.max(0.10, 1 - deficit * 0.10);
+      if (!isMiss && !isCritical) {
+        damageScale = AttackResolver.computeDamageScale(totalRoll, targetAC);
       } else {
         damageScale = 1.0;
       }
@@ -232,16 +287,9 @@ export class AttackResolver {
     const attackerSTR = attacker.character.ability_scores.STR ?? 10;
     const defenderAC = target.character.armor_class;
 
-    // Level-based base damage (primary driver)
     const levelBase = Math.max(1, Math.floor(attackerLevel * 2 + (attackerSTR - defenderAC) * 0.3));
-
-    // Weapon bonus from die size (flat, no rolling)
     const weaponBonus = AttackResolver.getWeaponBonus(attack.damage_dice);
-
-    // Crits boost the level base but not the weapon bonus
-    const total = isCritical
-      ? Math.max(1, Math.floor(levelBase * 1.5) + weaponBonus)
-      : Math.max(1, levelBase + weaponBonus);
+    const total = AttackResolver.computeScaledDamage(attackerLevel, attackerSTR, defenderAC, attack.damage_dice ?? '', isCritical);
 
     return {
       diceFormula: attack.damage_dice ?? '',
@@ -268,6 +316,111 @@ export class AttackResolver {
     } catch {
       return 0;
     }
+  }
+
+  /**
+   * Format weapon damage for display based on the damage display mode.
+   *
+   * 'scaled': Shows flat damage bonus derived from the dice (e.g. "+2 piercing")
+   * 'dnd':    Shows the raw dice string (e.g. "1d8 piercing")
+   */
+  static formatWeaponDamage(
+    dice: string,
+    damageType: string,
+    damageDisplay: 'dnd' | 'scaled',
+  ): string {
+    if (damageDisplay === 'scaled') {
+      const bonus = AttackResolver.getWeaponBonus(dice);
+      return bonus > 0 ? `+${bonus} ${damageType}` : damageType;
+    }
+    return `${dice} ${damageType}`;
+  }
+
+  /**
+   * Estimate average damage per hit for a given hitMode.
+   *
+   * This mirrors the actual combat damage formulas so pre-simulation
+   * estimates match what the simulator produces.
+   *
+   * - 'scaled': `max(1, floor(level * 2 + (STR - targetAC) * 0.3)) + weaponBonus`
+   *   NOTE: Scaled mode always uses STR (matches rollDamageScaled).
+   * - 'dnd':    dice average + ability modifier (caller picks STR or DEX)
+   */
+  static estimateDamagePerHit(opts: {
+    hitMode: HitMode;
+    level: number;
+    abilityScore: number;
+    targetAC: number;
+    damageDice: string;
+    proficiencyBonus?: number;
+  }): number {
+    if (opts.hitMode === 'scaled') {
+      return AttackResolver.computeScaledDamage(opts.level, opts.abilityScore, opts.targetAC, opts.damageDice, false);
+    }
+    // DND mode: dice average + ability modifier
+    const abilityMod = Math.floor((opts.abilityScore - 10) / 2);
+    try {
+      const parsed = DiceRoller.parseDiceFormula(opts.damageDice);
+      const diceAvg = parsed.diceCount * (parsed.diceSides + 1) / 2;
+      return diceAvg + parsed.modifier + abilityMod;
+    } catch {
+      return abilityMod + 1;
+    }
+  }
+
+  /**
+   * Estimate Damage Per Round including hit rate.
+   *
+   * Iterates over all 20 d20 outcomes to compute the true average,
+   * matching the actual combat mechanics exactly:
+   *
+   * - 'scaled': Only nat 1 misses. Rolls below AC deal scaled damage
+   *   (max(10%, 1 - deficit * 10%)). Always uses STR for the damage
+   *   formula (matches rollDamageScaled).
+   * - 'dnd':    `max(5%, (21 - (targetAC - attackBonus)) / 20)` hit rate.
+   */
+  static estimateDPR(opts: {
+    hitMode: HitMode;
+    level: number;
+    abilityScore: number;
+    targetAC: number;
+    damageDice: string;
+    proficiencyBonus?: number;
+    attackBonus?: number;
+    attackCount?: number;
+  }): number {
+    const attackCount = opts.attackCount ?? 1;
+
+    if (opts.hitMode === 'scaled') {
+      const baseDamage = AttackResolver.computeScaledDamage(opts.level, opts.abilityScore, opts.targetAC, opts.damageDice, false);
+      const critDamage = AttackResolver.computeScaledDamage(opts.level, opts.abilityScore, opts.targetAC, opts.damageDice, true);
+
+      // Attack bonus for damage scaling on low rolls
+      const proficiency = opts.proficiencyBonus ?? Math.ceil(1 + ((opts.level || 1) - 1) / 4);
+      const ab = opts.attackBonus ?? (Math.floor((opts.abilityScore - 10) / 2) + proficiency);
+
+      // Compute true average over all 20 d20 outcomes
+      let totalDamage = 0;
+      for (let d20 = 1; d20 <= 20; d20++) {
+        if (d20 === 1) continue; // Natural 1 = miss (0 damage)
+        if (d20 === 20) {
+          totalDamage += critDamage;
+          continue;
+        }
+        const totalRoll = d20 + ab;
+        const scale = AttackResolver.computeDamageScale(totalRoll, opts.targetAC);
+        totalDamage += Math.max(1, Math.floor(baseDamage * scale));
+      }
+      return (totalDamage / 20) * attackCount;
+    }
+
+    // DND mode
+    const damagePerHit = AttackResolver.estimateDamagePerHit(opts);
+    const proficiency = opts.proficiencyBonus ?? Math.ceil(1 + ((opts.level || 1) - 1) / 4);
+    const abilityMod = Math.floor((opts.abilityScore - 10) / 2);
+    const atkBonus = opts.attackBonus ?? (abilityMod + proficiency);
+    const hitRate = Math.max(0.05, Math.min(0.95, (21 - (opts.targetAC - atkBonus)) / 20));
+    return damagePerHit * hitRate * attackCount;
   }
 
   /**

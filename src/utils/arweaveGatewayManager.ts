@@ -38,6 +38,14 @@ async function loadWayfinder(): Promise<typeof import('@ar.io/wayfinder-core') |
     }
 }
 
+async function loadArioSdk(): Promise<typeof import('@ar.io/sdk') | null> {
+    try {
+        return await import('@ar.io/sdk');
+    } catch {
+        return null;
+    }
+}
+
 /**
  * Configuration for the gateway cache entry
  */
@@ -289,14 +297,52 @@ export class ArweaveGatewayManager {
         // Restore active gateway from localStorage (persists across sessions)
         this.activeGateway = this.loadPersistedGateway();
 
-        // Initialize Wayfinder lazily (deferred to avoid bundling Node.js crypto polyfills)
-        loadWayfinder().then(mod => {
-            if (mod) {
-                this.wayfinder = mod.createWayfinderClient();
-                this.logger.info('Wayfinder client initialized');
+        // Initialize Wayfinder lazily with FastestPing routing strategy.
+        // Uses NetworkGatewaysProvider (top 10 gateways by operator stake) for
+        // a much larger candidate pool than the 4 hardcoded static gateways.
+        // Falls back to RandomRoutingStrategy from a wider pool if all pings fail.
+        Promise.all([loadWayfinder(), loadArioSdk()]).then(([wfMod, sdkMod]) => {
+            if (wfMod && sdkMod) {
+                try {
+                    const { FastestPingRoutingStrategy, RandomRoutingStrategy, CompositeRoutingStrategy, NetworkGatewaysProvider } = wfMod;
+                    const ARIO = sdkMod.ARIO;
+
+                    const primaryProvider = new NetworkGatewaysProvider({
+                        ario: ARIO.mainnet(),
+                        sortBy: 'operatorStake',
+                        limit: 10,
+                    });
+
+                    const fallbackProvider = new NetworkGatewaysProvider({
+                        ario: ARIO.mainnet(),
+                        sortBy: 'operatorStake',
+                        limit: 20,
+                    });
+
+                    this.wayfinder = wfMod.createWayfinderClient({
+                        routingStrategy: new CompositeRoutingStrategy({
+                            strategies: [
+                                new FastestPingRoutingStrategy({
+                                    timeoutMs: 3000,
+                                    gatewaysProvider: primaryProvider,
+                                }),
+                                new RandomRoutingStrategy({
+                                    gatewaysProvider: fallbackProvider,
+                                }),
+                            ],
+                        }),
+                    }) as Wayfinder;
+                    this.logger.info('Wayfinder client initialized with FastestPing + Random fallback routing');
+                } catch (err) {
+                    this.logger.warn('Failed to configure Wayfinder routing strategy, using defaults', { error: err });
+                    this.wayfinder = wfMod.createWayfinderClient() as Wayfinder;
+                    this.logger.info('Wayfinder client initialized with default routing');
+                }
+            } else if (wfMod) {
+                this.wayfinder = wfMod.createWayfinderClient() as Wayfinder;
+                this.logger.info('Wayfinder client initialized with default routing (SDK unavailable)');
             }
         }).catch(() => {
-            // Wayfinder initialization failed — will use static gateways only
             this.logger.debug('Wayfinder client initialization failed, using static gateways');
         });
 
@@ -394,14 +440,10 @@ export class ArweaveGatewayManager {
     }
 
     /**
-     * Resolve an Arweave URL using AR.IO Wayfinder as the primary strategy,
-     * with static gateways as fallback.
+     * Resolve an Arweave URL to a working gateway URL.
      *
-     * This is the experimental Wayfinder-powered resolver. It tries:
-     * 1. Cache
-     * 2. Previously active gateway
-     * 3. AR.IO Wayfinder dynamic resolution
-     * 4. Static gateway fallback
+     * Strategy: try static gateways first with real fetch checks (not HEAD),
+     * fall back to Wayfinder only if all static gateways fail.
      *
      * @param url - The URL to resolve
      * @param signal - Optional AbortSignal to cancel in-flight gateway checks
@@ -437,32 +479,37 @@ export class ArweaveGatewayManager {
             return workingUrl;
         }
 
-        // If we have an active gateway, use it directly without a HEAD check.
-        // The caller should use reportGatewayFailure() if the actual fetch fails.
-        // However, if the active gateway has been consistently slow, proactively rotate.
-        if (this.activeGateway) {
-            if (this.consecutiveSlowResponses >= this.maxSlowResponses) {
-                this.logger.warn('Active gateway has too many consecutive slow responses, rotating', {
-                    host: this.activeGateway.host,
-                    consecutiveSlow: this.consecutiveSlowResponses,
-                    maxAllowed: this.maxSlowResponses,
-                });
-                this.activeGateway = null;
-                this.cache.delete(txId);
-                this.clearPersistedGateway();
-                return this.findAndSetGateway(url, txId, pathSuffix, signal);
-            }
-            this.setCache(txId, this.activeGateway);
-            const workingUrl = constructGatewayUrl(txId, this.activeGateway, pathSuffix);
-            this.logger.debug('Using active gateway (no HEAD check)', {
-                txId,
-                host: this.activeGateway.host,
-            });
-            return workingUrl;
+        // Step 1: Try arweave.net first (the official gateway — most reliable)
+        const arweaveNet = this.gateways.find(g => g.host === 'arweave.net');
+        if (arweaveNet) {
+            const result = await this.checkAndSetGateway(url, txId, pathSuffix, arweaveNet, signal);
+            if (result) return result;
         }
 
-        // No active gateway yet — find one (this only runs on first resolve of a session)
-        return this.findAndSetGateway(url, txId, pathSuffix, signal);
+        // Step 2: Try persisted gateway (if different from arweave.net and not excluded)
+        if (this.activeGateway && this.activeGateway.host !== 'arweave.net') {
+            const result = await this.checkAndSetGateway(url, txId, pathSuffix, this.activeGateway, signal);
+            if (result) return result;
+            // Persisted gateway is dead — clear it
+            this.activeGateway = null;
+            this.clearPersistedGateway();
+        }
+
+        // Step 3: Try Wayfinder as middle ground (wider pool, but slower)
+        if (this.wayfinder) {
+            this.logger.debug('Primary gateways failed, trying Wayfinder', { txId });
+            const wayfinderResult = await this.tryWayfinder(url, txId, pathSuffix, signal);
+            if (wayfinderResult) return wayfinderResult;
+        }
+
+        // Step 4: Fallback — try remaining static gateways
+        const fallbackGateways = this.gateways.filter(g => g.host !== 'arweave.net');
+        const fallbackResult = await this.tryFallbackGateways(url, txId, pathSuffix, signal);
+        if (fallbackResult) return fallbackResult;
+
+        // Everything failed
+        this.logger.warn('All gateways (arweave.net + Wayfinder + fallbacks) failed, returning original URL', { txId, pathSuffix, originalUrl: url });
+        return url;
     }
 
     /**
@@ -481,9 +528,9 @@ export class ArweaveGatewayManager {
      */
     async reportGatewayFailure(
         url: string,
-        options?: { signal?: AbortSignal; reason?: 'load-error' | 'user-cancel-slow' | 'user-cancel-fast' },
+        options?: { signal?: AbortSignal; reason?: 'load-error' | 'user-cancel-slow' | 'user-cancel-fast'; excludeHost?: string },
     ): Promise<string> {
-        const { signal, reason } = options ?? {};
+        const { signal, reason, excludeHost } = options ?? {};
 
         // If already aborted, return original URL immediately
         if (signal?.aborted) {
@@ -507,11 +554,35 @@ export class ArweaveGatewayManager {
             reason: reason ?? 'load-error',
         });
 
+        // Capture failed host before clearing active gateway
+        const failedHost = this.activeGateway?.host ?? excludeHost;
+
         this.activeGateway = null;
         this.cache.delete(txId);
         this.clearPersistedGateway();
 
-        return this.findAndSetGateway(url, txId, pathSuffix, signal);
+        // Retry with same order: arweave.net → Wayfinder → fallbacks
+        const arweaveNet = this.gateways.find(g => g.host === 'arweave.net' && g.host !== failedHost);
+        if (arweaveNet) {
+            const result = await this.checkAndSetGateway(url, txId, pathSuffix, arweaveNet, signal);
+            if (result) return result;
+        }
+
+        if (this.wayfinder) {
+            const wayfinderResult = await this.tryWayfinder(url, txId, pathSuffix, signal);
+            if (wayfinderResult) return wayfinderResult;
+        }
+
+        // Temporarily exclude the failed gateway from fallbacks
+        const origGateways = this.gateways;
+        if (failedHost) {
+            this.gateways = this.gateways.filter(g => g.host !== failedHost);
+        }
+        const fallbackResult = await this.tryFallbackGateways(url, txId, pathSuffix, signal);
+        this.gateways = origGateways;
+        if (fallbackResult) return fallbackResult;
+
+        return url;
     }
 
     /**
@@ -547,174 +618,112 @@ export class ArweaveGatewayManager {
     }
 
     /**
-     * Find a working gateway by racing Wayfinder and all static gateways in parallel,
-     * set it as the active gateway, cache it, and persist to localStorage.
-     *
-     * Uses Promise.any() so the first gateway that responds wins. Each individual
-     * check still has its own AbortController with the configured timeout (5s).
-     * When one succeeds, all others are aborted to avoid wasted connections.
+     * Check a single gateway and set it as active if it works.
+     * Returns the working URL, or null if the check failed.
      */
-    private async findAndSetGateway(url: string, txId: string, pathSuffix: string, signal?: AbortSignal): Promise<string> {
-        this.missCount++;
-        this.logger.debug('Finding gateway for txId', { txId, pathSuffix });
+    private async checkAndSetGateway(url: string, txId: string, pathSuffix: string, gateway: GatewayConfig, signal?: AbortSignal): Promise<string | null> {
+        if (signal?.aborted) return null;
 
-        // If signal is already aborted, bail out immediately
-        if (signal?.aborted) {
-            this.logger.debug('findAndSetGateway called with already-aborted signal, returning original URL');
-            return url;
-        }
-
-        // Build a list of gateway candidates to race in parallel.
-        // Each candidate is a function that returns { gateway, url } on success or throws on failure.
-        type CandidateResult = { gateway: GatewayConfig; workingUrl: string };
-        const candidates: Array<{ label: string; check: () => Promise<CandidateResult>; abort: () => void }> = [];
-
-        // Add Wayfinder as a parallel contender
-        if (this.wayfinder) {
-            const wayfinderController = new AbortController();
-            candidates.push({
-                label: 'Wayfinder',
-                check: async () => {
-                    this.logger.debug('Starting Wayfinder resolution', { txId });
-                    const wayfinderUrlObj = await this.withTimeout(
-                        this.wayfinder!.resolveUrl({ originalUrl: url }),
-                        this.timeout,
-                        'Wayfinder resolution timed out'
-                    );
-                    if (signal?.aborted || wayfinderController.signal.aborted) {
-                        throw new Error('Aborted before Wayfinder health check');
-                    }
-                    const wayfinderHost = wayfinderUrlObj.hostname;
-                    const wayfinderProtocol = wayfinderUrlObj.protocol.replace(':', '') as 'http' | 'https';
-                    const wayfinderGateway: GatewayConfig = {
-                        host: wayfinderHost,
-                        protocol: wayfinderProtocol,
-                        priority: 0,
-                    };
-                    const isWorking = await this.checkGateway(txId, wayfinderGateway, pathSuffix, signal);
-                    if (!isWorking) throw new Error(`Wayfinder gateway ${wayfinderHost} did not pass health check`);
-                    return {
-                        gateway: wayfinderGateway,
-                        workingUrl: constructGatewayUrl(txId, wayfinderGateway, pathSuffix),
-                    };
-                },
-                abort: () => wayfinderController.abort(),
+        const isWorking = await this.checkGateway(txId, gateway, pathSuffix, signal);
+        if (isWorking) {
+            this.setActiveGateway(gateway, txId);
+            const workingUrl = constructGatewayUrl(txId, gateway, pathSuffix);
+            this.logger.info('Gateway resolved', {
+                txId,
+                gateway: gateway.host,
+                pathSuffix,
+                workingUrl,
             });
+            return workingUrl;
         }
 
-        // Add static gateways as parallel contenders, filtering out unhealthy ones.
-        // Skip gateways with >70% failure rate AND at least 3 checks, but always
-        // keep at least one candidate so we don't end up with zero options.
+        return null;
+    }
+
+    /**
+     * Try remaining fallback gateways (everything except arweave.net).
+     * Returns the URL of the first gateway that responds, or null if all fail.
+     */
+    private async tryFallbackGateways(url: string, txId: string, pathSuffix: string, signal?: AbortSignal): Promise<string | null> {
+        this.missCount++;
+
         const HEALTHY_FAILURE_THRESHOLD = 0.70;
         const MIN_CHECKS_FOR_FILTER = 3;
 
-        const healthyGateways = this.gateways.filter(gateway => {
+        const fallbackGateways = this.gateways.filter(g => g.host !== 'arweave.net');
+        const healthyGateways = fallbackGateways.filter(gateway => {
             const { rate, totalChecks } = this.getFailureRate(gateway.host);
-            if (totalChecks >= MIN_CHECKS_FOR_FILTER && rate > HEALTHY_FAILURE_THRESHOLD) {
-                this.logger.warn('Skipping gateway due to poor health', {
-                    host: gateway.host,
-                    failureRate: `${Math.round(rate * 100)}%`,
-                    totalChecks,
-                });
-                return false;
-            }
+            if (totalChecks >= MIN_CHECKS_FOR_FILTER && rate > HEALTHY_FAILURE_THRESHOLD) return false;
             return true;
         });
 
-        // Always keep at least one candidate — if all were filtered out, use the original list
-        const gatewaysToTry = healthyGateways.length > 0 ? healthyGateways : this.gateways;
+        const gatewaysToTry = healthyGateways.length > 0 ? healthyGateways : fallbackGateways;
 
         for (const gateway of gatewaysToTry) {
-            candidates.push({
-                label: gateway.host,
-                check: async () => {
-                    if (signal?.aborted) throw new Error('Aborted before gateway check');
-                    const isWorking = await this.checkGateway(txId, gateway, pathSuffix, signal);
-                    if (!isWorking) throw new Error(`Gateway ${gateway.host} check failed`);
-                    return {
-                        gateway,
-                        workingUrl: constructGatewayUrl(txId, gateway, pathSuffix),
-                    };
-                },
-                abort: () => {}, // checkGateway has its own AbortController with timeout
-            });
+            if (signal?.aborted) return null;
+
+            const isWorking = await this.checkGateway(txId, gateway, pathSuffix, signal);
+            if (isWorking) {
+                this.setActiveGateway(gateway, txId);
+                const workingUrl = constructGatewayUrl(txId, gateway, pathSuffix);
+                this.logger.info('Gateway resolved via fallback', {
+                    txId,
+                    gateway: gateway.host,
+                    pathSuffix,
+                    workingUrl,
+                });
+                return workingUrl;
+            }
         }
 
-        // Race all candidates in parallel, collect successes, then pick the best.
-        // We wait for the first success, then give remaining candidates a short
-        // window (1s) to also respond so we can pick the one with the best
-        // historical fetch-time average from healthData.
-        const COLLECTION_WINDOW_MS = 1000;
+        return null;
+    }
+
+    /**
+     * Try Wayfinder as a last resort when all static gateways fail.
+     * Returns the URL of a working Wayfinder-selected gateway, or null if it fails.
+     */
+    private async tryWayfinder(url: string, txId: string, pathSuffix: string, signal?: AbortSignal): Promise<string | null> {
+        if (!this.wayfinder) return null;
 
         try {
-            const checks = candidates.map(c => c.check());
-            const successes: CandidateResult[] = [];
+            this.logger.debug('Resolving via Wayfinder', { txId });
+            const wayfinderUrlObj = await this.withTimeout(
+                this.wayfinder.resolveUrl({ originalUrl: url }),
+                this.timeout + 2000,
+                'Wayfinder resolution timed out'
+            );
 
-            // Wait for the first success
-            await new Promise<CandidateResult>((resolve, reject) => {
-                let remaining = checks.length;
-                if (remaining === 0) { reject(new Error('All candidates rejected')); return; }
-                checks.forEach(p => p.then(
-                    value => { successes.push(value); resolve(value); },
-                    () => { remaining--; if (remaining === 0) reject(new Error('All candidates rejected')); },
-                ));
-            });
+            if (signal?.aborted) return null;
 
-            // Give remaining candidates a short window to also succeed
-            if (checks.length > 1) {
-                await new Promise<void>(resolve => setTimeout(resolve, COLLECTION_WINDOW_MS));
-                // Collect any additional successes that resolved within the window
-                await Promise.allSettled(checks).then(results => {
-                    for (const r of results) {
-                        if (r.status === 'fulfilled') {
-                            const existing = successes.find(s => s.gateway.host === r.value.gateway.host);
-                            if (!existing) successes.push(r.value);
-                        }
-                    }
+            const wayfinderHost = wayfinderUrlObj.hostname;
+            const wayfinderProtocol = wayfinderUrlObj.protocol.replace(':', '') as 'http' | 'https';
+            const wayfinderGateway: GatewayConfig = {
+                host: wayfinderHost,
+                protocol: wayfinderProtocol,
+                priority: 0,
+            };
+
+            // Verify the Wayfinder-selected gateway actually has the file
+            const isWorking = await this.checkGateway(txId, wayfinderGateway, pathSuffix, signal);
+            if (isWorking) {
+                this.setActiveGateway(wayfinderGateway, txId);
+                const workingUrl = constructGatewayUrl(txId, wayfinderGateway, pathSuffix);
+                this.logger.info('Gateway resolved via Wayfinder (static fallback)', {
+                    txId,
+                    gateway: wayfinderHost,
+                    pathSuffix,
+                    workingUrl,
                 });
+                return workingUrl;
             }
 
-            // Pick the best gateway: prefer the one with the lowest historical
-            // average response time from healthData (real fetch data), tie-break
-            // by priority (lower = better).
-            const best = successes.reduce((a, b) => {
-                const aAvg = this.getAverageResponseTime(a.gateway.host);
-                const bAvg = this.getAverageResponseTime(b.gateway.host);
-                if (aAvg > 0 && bAvg > 0) {
-                    return aAvg <= bAvg ? a : b;
-                }
-                // If only one has history, prefer the one with history
-                if (aAvg > 0) return a;
-                if (bAvg > 0) return b;
-                // No history for either — tie-break by priority
-                return a.gateway.priority <= b.gateway.priority ? a : b;
-            });
-
-            // Abort all candidates to clean up in-flight connections
-            for (const c of candidates) {
-                c.abort();
-            }
-
-            this.setActiveGateway(best.gateway, txId);
-            this.logger.info('Gateway resolved via parallel check', {
-                txId,
-                gateway: best.gateway.host,
-                pathSuffix,
-                workingUrl: best.workingUrl,
-                candidatesConsidered: successes.length,
-            });
-            return best.workingUrl;
-        } catch {
-            // Promise.any() rejects with AggregateError when ALL promises reject
-            if (signal?.aborted) {
-                this.logger.debug('Gateway search aborted by signal', { txId });
-                return url;
-            }
-
-            // All gateways failed, return original URL
-            this.logger.warn('All gateways failed, returning original URL', { txId, pathSuffix, originalUrl: url });
-            return url;
+            this.logger.debug('Wayfinder gateway did not pass check', { host: wayfinderHost });
+        } catch (err) {
+            this.logger.debug('Wayfinder resolution failed', { error: err });
         }
+
+        return null;
     }
 
     /**
