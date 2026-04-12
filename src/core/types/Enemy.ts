@@ -155,8 +155,11 @@ export interface EnemyTemplate {
  * Defines how enemies scale across rarity tiers
  */
 export interface RarityConfig {
-    /** Multiplier applied to base stats */
+    /** Multiplier applied to base ability scores */
     statMultiplier: number;
+
+    /** Multiplier applied to HP on top of stat scaling (separate for dramatic HP differences) */
+    hpMultiplier: number;
 
     /** Die size for signature ability (6 = d6, 8 = d8, etc.) */
     signatureDieSize: number;

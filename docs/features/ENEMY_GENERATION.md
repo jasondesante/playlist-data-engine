@@ -228,16 +228,16 @@ const complex = EnemyGenerator.generate({ seed: 'd', templateId: 'werewolf', cr:
 
 ## Rarity Tiers
 
-Every enemy template can be generated at four rarity tiers. **Note**: Rarity affects complexity, not power (CR handles power).
+Every enemy template can be generated at four rarity tiers. Higher rarities have meaningfully stronger ability scores and dramatically more HP, making them feel distinctly more powerful.
 
-| Rarity | Stat Multiplier | Signature Die | Extra Abilities | Resistances |
-|--------|-----------------|----------------|-----------------|-------------|
-| **Common** | 1.0× (base) | 1d6 | 0 | None |
-| **Uncommon** | 1.03× (+3%) | 1d8 | 1 | None |
-| **Elite** | 1.07× (+7%) | d10 | 2 | Type-based |
-| **Boss** | 1.12× (+12%) | d12 | 3 | Type-based |
+| Rarity | Stat Multiplier | HP Multiplier | Signature Die | Extra Abilities | Resistances |
+|--------|-----------------|---------------|----------------|-----------------|-------------|
+| **Common** | 1.0× (base) | 1.0× | 1d6 | 0 | None |
+| **Uncommon** | 1.08× (+8%) | 1.3× | 1d8 | 1 | None |
+| **Elite** | 1.15× (+15%) | 1.7× | d10 | 2 | Type-based |
+| **Boss** | 1.25× (+25%) | 2.2× | d12 | 3 | Type-based |
 
-**Why are stat multipliers so small?** Rarity is about complexity, not power. The 3-12% stat adjustment provides subtle flavor, while CR (via level) handles the bulk of power scaling. This allows creating weak-but-complex enemies (CR 0.25 + Boss = goblin chieftain) or strong-but-simple enemies (CR 20 + Common = ancient beast).
+**Stat vs HP multipliers:** `statMultiplier` scales base ability scores, while `hpMultiplier` provides a separate, more dramatic HP boost. A boss goblin (baseHP 15) at CR 30 would reach ~1056 HP thanks to the combined effect of power-curve level scaling and the 2.2× HP multiplier.
 
 ### Signature Ability Scaling
 
@@ -708,20 +708,21 @@ console.log(enemy.name.includes('the'));      // true (epic title added)
 
 ### Fractional CR Stat Reduction
 
-When generating enemies with fractional CR values (0.25, 0.5), the system applies automatic stat reduction to represent "sub-level" enemies:
+When generating enemies with fractional CR values (0.25, 0.5), the system applies automatic stat reduction to represent "sub-level" enemies. The reduction uses a continuous linear ramp from 0.5× at CR 0 to 1.0× at CR 1:
 
-| CR | Level | Stat Multiplier | Description |
-|----|-------|-----------------|-------------|
-| 0.25 | 0.25 | 75% | Sub-level enemy (e.g., goblin grunt) |
-| 0.5 | 0.5 | 85% | Sub-level enemy (e.g., giant rat) |
-| 1+ | CR | 100% | Full stats (standard enemy) |
+| CR | Stat Multiplier | Description |
+|----|-----------------|-------------|
+| 0.125 | ~56% | Sub-level enemy |
+| 0.25 | ~63% | Sub-level enemy (e.g., goblin grunt) |
+| 0.5 | ~75% | Sub-level enemy (e.g., giant rat) |
+| 1+ | 100% | Full stats (standard enemy) |
 
-**This multiplier is applied BEFORE the rarity stat multiplier** (e.g., CR 0.25 + Elite = 75% × 107% ≈ 80% base stats).
+**Formula:** `0.5 + 0.5 * CR` (for CR < 1)
 
 ```typescript
 const grunt = EnemyGenerator.generate({ seed: 'weak', templateId: 'goblin', cr: 0.25, rarity: 'common' });
 const warrior = EnemyGenerator.generate({ seed: 'strong', templateId: 'goblin', cr: 5, rarity: 'common' });
-// Same template, same rarity — grunt has 75% stats, warrior has 100%
+// Same template, same rarity — grunt has ~63% stats, warrior has 100%
 ```
 
 ---
@@ -736,8 +737,8 @@ The enemy generation system uses the following mapping:
 
 | CR | Level | Stat Multiplier | Notes |
 |----|-------|-----------------|-------|
-| 0.25 | 0.25 | 75% | Sub-level enemy |
-| 0.5 | 0.5 | 85% | Sub-level enemy |
+| 0.25 | 0.25 | ~63% | Sub-level enemy (0.5 + 0.5 × CR) |
+| 0.5 | 0.5 | ~75% | Sub-level enemy |
 | 1 | 1 | 100% | Standard enemy |
 | 5 | 5 | 100% | Standard enemy |
 | 10 | 10 | 100% | Standard enemy |

@@ -5230,12 +5230,12 @@ Bidirectional conversion between Challenge Rating (CR) and character level for e
 
 **Rarity Scaling:**
 
-| Rarity | Stat Multiplier | Signature Die | Extra Abilities | Resistances |
-|--------|-----------------|----------------|-----------------|-------------|
-| `common` | 1.0× | 1d6 | 0 | None |
-| `uncommon` | 1.1× | 1d8 | 1 | None |
-| `elite` | 1.25× | d10 | 2 | Type-based |
-| `boss` | 1.5× | d12 | 3 | Type-based |
+| Rarity | Stat Multiplier | HP Multiplier | Signature Die | Extra Abilities | Resistances |
+|--------|-----------------|---------------|----------------|-----------------|-------------|
+| `common` | 1.0× | 1.0× | 1d6 | 0 | None |
+| `uncommon` | 1.08× | 1.3× | 1d8 | 1 | None |
+| `elite` | 1.15× | 1.7× | d10 | 2 | Type-based |
+| `boss` | 1.25× | 2.2× | d12 | 3 | Type-based |
 
 **Leader Promotion (groups > 3):**
 

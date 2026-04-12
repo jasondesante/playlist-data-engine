@@ -21,35 +21,40 @@ import type { EnemyRarity, RarityConfig } from '../core/types/Enemy.js';
  * Rarity configuration for each enemy tier
  *
  * These values define how enemies scale across rarity tiers:
- * - statMultiplier: Minor complexity-based stat adjustment (CR handles power)
+ * - statMultiplier: Multiplier applied to base ability scores
+ * - hpMultiplier: Separate HP multiplier for dramatic health differences between rarities
  * - signatureDieSize: Number of sides on signature ability damage die (d6/d8/d10/d12)
  * - extraAbilityCount: Number of additional abilities from FeatureQuery pool
  * - hasResistances: Whether this rarity gains template resistances/immunities
  *
- * Note: statMultiplier is kept small (max 12%) since CR determines power level.
- * These multipliers provide subtle complexity-based flavor, not power scaling.
+ * Common is the baseline. Higher rarities have meaningfully more HP and
+ * stronger ability scores, making them feel distinctly more powerful.
  */
 export const RARITY_CONFIGS: Record<EnemyRarity, RarityConfig> = {
     common: {
         statMultiplier: 1.0,
+        hpMultiplier: 1.0,
         signatureDieSize: 6,
         extraAbilityCount: 0,
         hasResistances: false
     },
     uncommon: {
-        statMultiplier: 1.03,
+        statMultiplier: 1.08,
+        hpMultiplier: 1.3,
         signatureDieSize: 8,
         extraAbilityCount: 1,
         hasResistances: false
     },
     elite: {
-        statMultiplier: 1.07,
+        statMultiplier: 1.15,
+        hpMultiplier: 1.7,
         signatureDieSize: 10,
         extraAbilityCount: 2,
         hasResistances: true
     },
     boss: {
-        statMultiplier: 1.12,
+        statMultiplier: 1.25,
+        hpMultiplier: 2.2,
         signatureDieSize: 12,
         extraAbilityCount: 3,
         hasResistances: true

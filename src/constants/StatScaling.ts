@@ -20,20 +20,23 @@ import { getRarityConfig } from './EnemyRarity.js';
 // ============================================================================
 
 /**
- * HP scaling per level — how much HP increases per effective level.
+ * HP scaling power curve per rarity tier.
  *
- * In D&D 5e, monster HP scales roughly linearly with CR:
- * - CR 1: ~30 HP, CR 5: ~70 HP, CR 10: ~130 HP, CR 20: ~350 HP
+ * Uses level^power instead of linear scaling, so HP ramps up much faster
+ * at higher CRs — matching D&D 5e monster HP progressions.
  *
- * We model this as: HP = baseHP * (1 + HP_PER_LEVEL_FACTOR * (level - 1))
+ * Power curve produces exponential-feeling growth:
+ * - Common (0.72): CR 1→15→30 = 1x → 8.7x → 10.1x base HP
+ * - Boss   (1.02): CR 1→15→30 = 1x → 15.7x → 32.0x base HP
  *
- * This produces roughly 5-8% HP growth per level, which feels natural:
- * - Level 1: 1.0x (base)
- * - Level 5: ~1.3x
- * - Level 10: ~1.6x
- * - Level 20: ~2.2x
+ * Combined with hpMultiplier, a CR 30 boss (baseHP 15) reaches ~1056 HP.
  */
-const HP_PER_LEVEL_FACTOR = 0.06;
+const HP_SCALE_POWER: Record<EnemyRarity, number> = {
+    common: 0.90,
+    uncommon: 0.95,
+    elite: 1.00,
+    boss: 1.05,
+};
 
 /**
  * Attack bonus scaling per level.
@@ -66,9 +69,9 @@ const ATTACK_BONUS_PER_LEVEL = 0.2;
  * - Levels 30+: 3d8 (average 13.5, max 24)
  */
 const DAMAGE_DIE_BY_LEVEL: Array<{ minLevel: number; die: string }> = [
-    { minLevel: 1,  die: '1d6' },
-    { minLevel: 3,  die: '1d8' },
-    { minLevel: 6,  die: '1d10' },
+    { minLevel: 1, die: '1d6' },
+    { minLevel: 3, die: '1d8' },
+    { minLevel: 6, die: '1d10' },
     { minLevel: 10, die: '1d12' },
     { minLevel: 15, die: '2d6' },
     { minLevel: 20, die: '2d8' },
@@ -176,27 +179,31 @@ export function getHPAtLevel(
 ): number {
     const rarityConfig = getRarityConfig(rarity);
 
-    // Level-based HP growth
-    const levelFactor = 1 + HP_PER_LEVEL_FACTOR * (level - 1);
+    // Power-curve HP growth — higher rarities scale faster
+    const power = HP_SCALE_POWER[rarity];
+    const levelFactor = Math.pow(level, power);
 
     // Fractional CR reduction for sub-level enemies (CR < 1)
-    const crMultiplier = getFractionalCRHPMultiplier(level);
+    const crMultiplier = getFractionalCRStatMultiplier(level);
 
-    return Math.round(baseHP * levelFactor * rarityConfig.statMultiplier * crMultiplier);
+    return Math.round(baseHP * levelFactor * rarityConfig.hpMultiplier * crMultiplier);
 }
 
 /**
- * Get HP multiplier for fractional CR (sub-level enemies).
+ * Get stat multiplier for fractional CR (sub-level enemies).
  *
- * Matches EnemyGenerator.getStatMultiplierForFractionalCR:
- * - CR < 0.5: 0.75x
- * - CR < 1.0: 0.85x
- * - CR >= 1.0: 1.0x
+ * Uses a continuous linear ramp from 0.5x at CR 0 to 1.0x at CR 1:
+ * - CR 0.125: ~0.56x
+ * - CR 0.25:  ~0.63x
+ * - CR 0.5:   ~0.75x
+ * - CR 1.0:   1.0x
+ *
+ * Exported so EnemyGenerator can use the same formula.
  */
-function getFractionalCRHPMultiplier(level: number): number {
-    if (level < 0.5) return 0.75;
-    if (level < 1.0) return 0.85;
-    return 1.0;
+export function getFractionalCRStatMultiplier(level: number): number {
+    if (level >= 1.0) return 1.0;
+    if (level <= 0) return 0.5;
+    return 0.5 + 0.5 * level;
 }
 
 /**
@@ -280,19 +287,22 @@ export function getDefenseAtLevel(
 ): number {
     const dexMod = Math.floor((baseStats.DEX - 10) / 2);
 
-    // Equipment AC contribution
-    let equipmentAC = 0;
+    // Armor replaces baseAC (not stacked), matching original generator behavior
+    let baseDefense = baseAC;
     if (equipment.armor?.acBonus) {
-        equipmentAC += equipment.armor.acBonus;
+        baseDefense = equipment.armor.acBonus;
     }
+
+    // Shield bonus is always additive
+    let shieldAC = 0;
     if (equipment.shield?.acBonus) {
-        equipmentAC += equipment.shield.acBonus;
+        shieldAC = equipment.shield.acBonus;
     }
 
     // Level-based AC bonus
     const levelBonus = Math.floor(AC_PER_LEVEL * (level - 1));
 
-    return baseAC + dexMod + equipmentAC + levelBonus;
+    return baseDefense + dexMod + shieldAC + levelBonus;
 }
 
 /**

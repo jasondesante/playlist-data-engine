@@ -36,7 +36,7 @@ import { SpellcastingGenerator, type SpellcastingConfig } from './SpellcastingGe
 import { LegendaryGenerator, type LegendaryAction, type LegendaryConfig } from './LegendaryGenerator.js';
 import { DEFAULT_EQUIPMENT } from '../../constants/DefaultEquipment.js';
 import { crToLevel } from './CRLevelConverter.js';
-import { getDamageModifierForStats, getHPAtLevel, getAttackAtLevel, getDefenseAtLevel } from '../../constants/StatScaling.js';
+import { getDamageModifierForStats, getHPAtLevel, getAttackAtLevel, getDefenseAtLevel, getFractionalCRStatMultiplier } from '../../constants/StatScaling.js';
 import type { StatLevelOverrides } from '../types/Enemy.js';
 
 /**
@@ -990,19 +990,12 @@ export class EnemyGenerator {
         // Calculate HP and AC
         const rarityConfig = getRarityConfig(rarity);
 
-        // Calculate HP with rarity multiplier
-        // Apply fractional CR reduction only when CR is explicitly provided (not derived from rarity)
+        // Calculate HP — use level-based scaling by default
         let maxHp: number;
         if (statLevels?.hpLevel !== undefined) {
-            // Use StatScaling to compute HP at the overridden level
             maxHp = getHPAtLevel(template.baseHP, statLevels.hpLevel, rarity);
         } else {
-            let hpMultiplier = rarityConfig.statMultiplier;
-            if (explicitCR !== undefined) {
-                const crMultiplier = EnemyGenerator.getStatMultiplierForFractionalCR(cr);
-                hpMultiplier = crMultiplier * hpMultiplier;
-            }
-            maxHp = Math.round(template.baseHP * hpMultiplier);
+            maxHp = getHPAtLevel(template.baseHP, level, rarity);
         }
 
         // Apply difficulty multiplier to HP
@@ -1082,8 +1075,7 @@ export class EnemyGenerator {
         });
 
         // Build weapon array from equipment config
-        // Compute damage modifier from actual scaled ability scores
-        // If attackLevel is overridden, use StatScaling functions for attack stats
+        // Use level-based attack scaling by default
         let weaponDamageDie: string;
         let weaponDamageModifier: number;
         if (statLevels?.attackLevel !== undefined) {
@@ -1091,8 +1083,9 @@ export class EnemyGenerator {
             weaponDamageDie = attackStats.damageDie;
             weaponDamageModifier = attackStats.damageModifier;
         } else {
-            weaponDamageDie = EnemyGenerator.getDamageDieForRarity(rarity);
-            weaponDamageModifier = getDamageModifierForStats(scaledStats, level, template.archetype);
+            const attackStats = getAttackAtLevel(scaledStats, level, rarity, template.archetype);
+            weaponDamageDie = attackStats.damageDie;
+            weaponDamageModifier = attackStats.damageModifier;
         }
 
         const weapons: Array<{ name: string; damage: string; damage_dice: string; damage_type: string; type: string; range?: number; properties?: string[]; equipped: boolean }> = [];
@@ -1151,13 +1144,30 @@ export class EnemyGenerator {
             }
         }
 
-        // Recalculate AC with equipment modifiers
+        // Recalculate AC with level-based scaling by default
         let armorClass: number;
         if (statLevels?.defenseLevel !== undefined) {
-            // Use StatScaling to compute AC at the overridden level
             armorClass = getDefenseAtLevel(scaledStats, statLevels.defenseLevel, template.baseAC, equipmentConfig);
         } else {
-            armorClass = template.baseAC + abilityModifiers.DEX + acModifier;
+            armorClass = getDefenseAtLevel(scaledStats, level, template.baseAC, equipmentConfig);
+        }
+
+        // Enforce HP/DPR ratio floor — enemies must survive multiple rounds
+        // Higher CR requires more rounds (3x at CR 1, 4x at CR 10, 5x at CR 20, etc.)
+        if (explicitCR !== undefined) {
+            const primaryStat: keyof AbilityScores = template.archetype === 'brute' ? 'STR'
+                : template.archetype === 'archer' ? 'DEX' : 'CHA';
+            const estimatedDPR = EnemyGenerator.estimateWeaponDPR(
+                weaponDamageDie,
+                weaponDamageModifier,
+                proficiencyBonus,
+                abilityModifiers[primaryStat]
+            );
+            const minRatio = EnemyGenerator.getMinHPRatio(explicitCR);
+            const minHP = Math.ceil(estimatedDPR * minRatio);
+            if (maxHp < minHP) {
+                maxHp = minHP;
+            }
         }
 
         // Build the character sheet
@@ -1317,29 +1327,17 @@ export class EnemyGenerator {
      * Get stat multiplier for fractional CR enemies
      *
      * Sub-level enemies (CR < 1) have reduced base stats to represent
-     * their weaker nature. This multiplier is applied BEFORE the rarity
-     * stat multiplier.
-     *
-     * Multiplier values:
-     * - CR < 0.5 (e.g., CR 0.25): 75% base stats
-     * - CR 0.5-0.99: 85% base stats
-     * - CR 1+: 100% base stats (no reduction)
+     * their weaker nature. Uses the continuous formula from StatScaling:
+     * - CR 0.125: ~0.56x
+     * - CR 0.25:  ~0.63x
+     * - CR 0.5:   ~0.75x
+     * - CR 1.0:   1.0x
      *
      * @param cr - Challenge Rating (supports fractional values)
-     * @returns Stat multiplier (0.75, 0.85, or 1.0)
-     *
-     * @example
-     * ```typescript
-     * getStatMultiplierForFractionalCR(0.25); // 0.75
-     * getStatMultiplierForFractionalCR(0.5);  // 0.85
-     * getStatMultiplierForFractionalCR(1);    // 1.0
-     * getStatMultiplierForFractionalCR(5);    // 1.0
-     * ```
+     * @returns Stat multiplier
      */
     private static getStatMultiplierForFractionalCR(cr: number): number {
-        if (cr < 0.5) return 0.75;  // CR 0.25 = 75% stats
-        if (cr < 1.0) return 0.85;  // CR 0.5 = 85% stats
-        return 1.0;                  // CR 1+ = full stats
+        return getFractionalCRStatMultiplier(cr);
     }
 
     /**
@@ -1372,6 +1370,47 @@ export class EnemyGenerator {
             boss: 2.0
         };
         return crMap[rarity] || 0.25;
+    }
+
+    /**
+     * Estimate DPR from weapon damage stats.
+     *
+     * Simple estimate used for HP/DPR ratio enforcement.
+     * Computes average damage per round assuming one attack against AC 15.
+     */
+    private static estimateWeaponDPR(
+        weaponDamageDie: string,
+        weaponDamageModifier: number,
+        proficiencyBonus: number,
+        primaryStatModifier: number
+    ): number {
+        const dieMatch = weaponDamageDie.match(/(\d+)d(\d+)/);
+        if (!dieMatch) return 0;
+
+        const numDice = parseInt(dieMatch[1]);
+        const dieSize = parseInt(dieMatch[2]);
+        const avgDamage = numDice * (dieSize + 1) / 2 + weaponDamageModifier;
+
+        // Attack bonus = proficiency + primary stat modifier
+        const attackBonus = proficiencyBonus + primaryStatModifier;
+        // Hit chance against AC 15 (typical party average)
+        const hitChance = Math.max(0.05, (10 + attackBonus) / 20);
+
+        return avgDamage * hitChance;
+    }
+
+    /**
+     * Get the minimum HP/DPR ratio for a given CR.
+     *
+     * Smoothly increases so higher-CR enemies survive more rounds:
+     * - CR 1:  3.0x (3 rounds)
+     * - CR 10: ~3.9x
+     * - CR 15: ~4.5x
+     * - CR 20: ~5.0x
+     * - CR 30: 6.0x (6 rounds)
+     */
+    private static getMinHPRatio(cr: number): number {
+        return 3 + (cr - 1) * (3 / 29);
     }
 
     /**
