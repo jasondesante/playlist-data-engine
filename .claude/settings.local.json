@@ -22,7 +22,8 @@
       "mcp__RepoPrompt__get_file_tree",
       "mcp__RepoPrompt__apply_edits",
       "mcp__RepoPrompt__get_code_structure",
-      "Bash(npx jest:*)"
+      "Bash(npx jest:*)",
+      "mcp__RepoPrompt__agent_run"
     ],
     "deny": [],
     "ask": []
