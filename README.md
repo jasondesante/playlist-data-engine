@@ -6,7 +6,7 @@
 
 **[Live Engine Demo](https://playlist-data-showcase_contractwizard.ar.io/)** | **[ar://listen Gitbook](https://contract-wizard.gitbook.io/contract-wizard)**
 
-The engine takes **serverless playlists** — permanent, censorship-resistant playlists stored on Arweave that mix Ethereum NFTs with decentralized uploads — and turns them into music-powered experiences. It parses playlist data into clean formats, analyzes audio with TensorFlow-powered ML models, detects beats for rhythm games, generates RPG characters from sonic fingerprints, runs combat simulations with seeded dice, and feeds real-world sensor data back into the player to create a living, responsive experience. All with automatic Arweave gateway failover via the Ario Wayfinder so your data is always reachable.
+The engine takes **[serverless playlists](#what-are-serverless-playlists)** — permanent, censorship-resistant playlists stored on Arweave that mix Ethereum NFTs with decentralized uploads — and turns them into music-powered experiences. It parses playlist data into clean formats, analyzes audio with TensorFlow-powered ML models, detects beats for rhythm games, generates RPG characters from sonic fingerprints, runs combat simulations with seeded dice, and feeds real-world sensor data back into the player to create a living, responsive experience. All with automatic Arweave gateway failover via the Ario Wayfinder so your data is always reachable.
 
 **Think of it as a toybox for making music more fun.**
 
@@ -235,7 +235,7 @@ The engine takes these raw Arweave-stored playlist JSON objects and turns them i
 
 **Learn more:**
 - [Playlist Objects — full spec & format](https://github.com/jasondesante/Ape-Tapes-Docs/tree/main/curate/playlists/playlist-objects)
-- [Playlist Tags — on-chain queryable metadata](https://github.com/jasondesante/Ape-Tapes-Docs/tree/main/curate/playlists)
+- [Playlist Tags — on-chain queryable metadata](https://github.com/jasondesante/Ape-Tapes-Docs/tree/main/curate/playlists/playlist-tags.md)
 - [ar://listen](https://listen.arweave.net/) — the player that started it all
 
 ### Audio Analysis Pipeline
