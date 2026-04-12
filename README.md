@@ -4,6 +4,8 @@
 
 > The data engine behind **[ar://listen](https://listen.arweave.net/)** — an interactive music player where every song becomes an adventure. Five years in the making.
 
+**[Live Demo](https://playlist-data-showcase_contractwizard.ar.io/)** | **[Docs](https://github.com/jasondesante/Ape-Tapes-Docs)**
+
 The engine takes **serverless playlists** (stored on Arweave via the Ario network) and turns them into music-powered experiences. It parses playlist data into clean formats, analyzes audio with TensorFlow-powered ML models, detects beats for rhythm games, generates RPG characters from sonic fingerprints, runs combat simulations with seeded dice, and feeds real-world sensor data back into the player to create a living, responsive experience. All with automatic Arweave gateway failover via the Ario Wayfinder so your data is always reachable.
 
 **Think of it as a toybox for making music more fun.**
@@ -215,6 +217,19 @@ The engine's bread and butter — the foundation everything else builds on. Feed
 
 The parser handles Arweave-hosted content with built-in gateway failover via the Ario Wayfinder. If one gateway is down, it automatically tries the next — your player never notices.
 
+#### What Are Serverless Playlists?
+
+Serverless Playlists are permanent building blocks for decentralized music curation stored on [Arweave](https://www.arweave.org/). Instead of algorithms deciding what you hear, you create playlists that work across every platform forever. Mix Ethereum NFTs with Arweave uploads, add your own metadata, then share playlists that can't be censored, deleted, or controlled by anyone but you.
+
+They're created with **[The Contract Wizard](https://listen.arweave.net/)** and uploaded to Arweave with standardized tags (`App-Name: Contract-Wizard`, `Uploaded-Type: Playlist`, genre, audio tags, etc.) so they're queryable on-chain. Each track in a playlist can be an Ethereum NFT, a direct Arweave upload, or any mix — the playlist format handles them all.
+
+The engine takes these raw Arweave-stored playlist JSON objects and turns them into structured data you can build with.
+
+**Learn more:**
+- [Playlist Objects — full spec & format](https://github.com/jasondesante/Ape-Tapes-Docs/tree/main/curate/playlists/playlist-objects)
+- [Playlist Tags — on-chain queryable metadata](https://github.com/jasondesante/Ape-Tapes-Docs/tree/main/curate/playlists)
+- [ar://listen](https://listen.arweave.net/) — the player that started it all
+
 ### Audio Analysis Pipeline
 
 Four analysis modes, each serving different use cases:
@@ -344,7 +359,7 @@ The engine runs in both environments. Audio analysis uses the Web Audio API (bro
 
 ## Project Status
 
-- **Version**: 1.1.0
+- **Version**: 1.1.1
 - **TypeScript**: Strict mode
 - **Tests**: 7,205 tests across 183 test files
 - **Module**: Dual ESM/CJS with full type declarations
