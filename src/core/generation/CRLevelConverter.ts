@@ -43,7 +43,8 @@ export interface CRTuningConfig {
 
     /**
      * Maximum level cap
-     * Default: 20 (standard D&D 5e level cap)
+     * Default: Infinity (no cap — CR scales to any level)
+     * Set to a finite number to cap conversions (e.g., 20 for standard D&D 5e)
      */
     maxLevel: number;
 }
@@ -58,7 +59,7 @@ export const DEFAULT_CR_TUNING: CRTuningConfig = {
     levelOffset: 0,
     customCurve: new Map<number, number>(),
     minLevel: 0,
-    maxLevel: 20
+    maxLevel: Infinity
 };
 
 /**
@@ -75,6 +76,9 @@ export const DEFAULT_CR_TUNING: CRTuningConfig = {
  * - CR 2 = level 2
  * - CR 10 = level 10
  * - CR 20 = level 20
+ * - CR 30 = level 30
+ * - CR 50 = level 50
+ * - No upper limit by default
  *
  * The formula is: level = (CR * baseMultiplier) + levelOffset
  * Custom curve mappings take precedence over the calculated value.
@@ -176,19 +180,20 @@ export function levelToCR(level: number, tuning: CRTuningConfig = DEFAULT_CR_TUN
  *
  * @param level - Level value (may be fractional)
  * @param minLevel - Minimum valid level (default: 1)
- * @param maxLevel - Maximum valid level (default: 20)
+ * @param maxLevel - Maximum valid level (default: Infinity — no cap)
  * @returns Rounded integer level
  *
  * @example
  * ```typescript
- * roundLevel(0.5, 1, 20);   // 1
- * roundLevel(1.2, 1, 20);   // 1
- * roundLevel(2.7, 1, 20);   // 3
- * roundLevel(25, 1, 20);    // 20 (capped)
- * roundLevel(0.4, 0, 20);   // 0 (minLevel 0 allows 0)
+ * roundLevel(0.5, 1, Infinity);   // 1
+ * roundLevel(1.2, 1, Infinity);   // 1
+ * roundLevel(2.7, 1, Infinity);   // 3
+ * roundLevel(25, 1, Infinity);    // 25
+ * roundLevel(50, 1, Infinity);    // 50
+ * roundLevel(0.4, 0, Infinity);   // 0 (minLevel 0 allows 0)
  * ```
  */
-export function roundLevel(level: number, minLevel: number = 1, maxLevel: number = 20): number {
+export function roundLevel(level: number, minLevel: number = 1, maxLevel: number = Infinity): number {
     const rounded = Math.round(level);
     return Math.max(minLevel, Math.min(maxLevel, rounded));
 }
@@ -199,7 +204,9 @@ export function roundLevel(level: number, minLevel: number = 1, maxLevel: number
  * D&D 5e CRs typically use specific fractional values: 0, 1/8, 1/4, 1/2, 1, 2, 3, etc.
  * This utility rounds to the nearest valid CR step.
  *
- * Valid CR steps: 0, 0.125, 0.25, 0.5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
+ * Valid CR steps (1-30): 0, 0.125, 0.25, 0.5, 1, 2, 3, ..., 24, 26, 27, 28, 29, 30
+ * For CR > 30, falls back to the nearest integer (no step table).
+ * (CR 25 does not exist in standard D&D 5e)
  *
  * When equidistant between two steps, prefers the higher value (rounds up).
  *
@@ -212,16 +219,23 @@ export function roundLevel(level: number, minLevel: number = 1, maxLevel: number
  * roundCR(0.3);   // 0.25
  * roundCR(1.5);   // 2 (equidistant, rounds up)
  * roundCR(4.4);   // 4
+ * roundCR(50.3);  // 50 (above 30, uses integer rounding)
  * ```
  */
 export function roundCR(cr: number): number {
-    // Standard CR step values
+    // For CR > 30, no step table — just round to nearest integer
+    if (cr > 30) {
+        return Math.round(cr);
+    }
+
+    // Standard CR step values (CR 25 does not exist in D&D 5e)
     const CR_STEPS = [
         0,
         0.125,  // 1/8
         0.25,   // 1/4
         0.5,    // 1/2
-        ...Array.from({ length: 20 }, (_, i) => i + 1) // 1-20
+        ...Array.from({ length: 24 }, (_, i) => i + 1), // 1-24
+        26, 27, 28, 29, 30
     ];
 
     // Find the closest step

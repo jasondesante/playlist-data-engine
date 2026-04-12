@@ -96,7 +96,8 @@ function validateResultsConsistency(results: SimulationResults): void {
     expect(m.survivalRate).toBeGreaterThanOrEqual(0);
     expect(m.survivalRate).toBeLessThanOrEqual(1);
     expect(m.killRate).toBeGreaterThanOrEqual(0);
-    expect(m.killRate).toBeLessThanOrEqual(1);
+    // killRate is killCount/runCount — can exceed 1 when a combatant
+    // kills multiple enemies per run in multi-enemy encounters
     expect(m.criticalHitRate).toBeGreaterThanOrEqual(0);
     expect(m.criticalHitRate).toBeLessThanOrEqual(1);
     expect(m.averageSpellSlotsUsed).toBeGreaterThanOrEqual(0);
@@ -321,7 +322,7 @@ describe('CombatSimulator Integration - Cross-Metric Consistency', () => {
 // ─── AI Style Behavioral Differences ──────────────────────────────────────────
 
 describe('CombatSimulator Integration - AI Style Behavioral Differences', () => {
-  it('normal vs aggressive AI with different seeds produce measurably different results', () => {
+  it('normal vs aggressive AI with same seed produce different results', () => {
     const players = [
       createArmedPlayer(5, 'Fighter'),
       createArmedPlayer(5, 'Cleric'),
@@ -329,20 +330,20 @@ describe('CombatSimulator Integration - AI Style Behavioral Differences', () => 
     const enemies = [createEnemy(5, 'elite', 'ai-diff-1')];
     const simulator = new CombatSimulator();
 
-    // Use different seeds to guarantee different dice sequences
+    // Same seed — only difference is AI style
     const normalResults = simulator.run(players, enemies, makeConfig({
       runCount: 50,
-      baseSeed: 'ai-comparison-normal',
+      baseSeed: 'ai-comparison-same',
       aiConfig: normalAI,
     }));
 
     const aggressiveResults = simulator.run(players, enemies, makeConfig({
       runCount: 50,
-      baseSeed: 'ai-comparison-aggressive',
+      baseSeed: 'ai-comparison-same',
       aiConfig: aggressiveAI,
     }));
 
-    // Different AI styles should produce different outcomes
+    // Same seed + different AI decisions → different RNG consumption → different results
     const outcomesDiffer =
       normalResults.summary.playerWins !== aggressiveResults.summary.playerWins ||
       normalResults.summary.enemyWins !== aggressiveResults.summary.enemyWins ||

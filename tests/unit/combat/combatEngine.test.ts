@@ -240,7 +240,7 @@ describe('CombatEngine.executeWeaponAttack()', () => {
         rolls: [1], modifier: abilityMod, total: 1 + abilityMod, isCritical: false,
       }),
     });
-    const engine = new CombatEngine({}, mockRoller);
+    const engine = new CombatEngine({ hitMode: 'dnd' }, mockRoller);
 
     const attacker = createTestCombatant(
       { ability_scores: { STR: 16, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10 }, armor_class: 10 },
@@ -271,7 +271,7 @@ describe('CombatEngine.executeWeaponAttack()', () => {
     const mockRoller = createMockDiceRoller({
       rollD20: () => 2,
     });
-    const engine = new CombatEngine({}, mockRoller);
+    const engine = new CombatEngine({ hitMode: 'dnd' }, mockRoller);
 
     const attacker = createTestCombatant(
       { ability_scores: { STR: 12, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10 }, armor_class: 10 },
@@ -308,7 +308,7 @@ describe('CombatEngine.executeWeaponAttack()', () => {
         return { rolls: [1], modifier: abilityMod, total: 1 + abilityMod, isCritical: false };
       },
     });
-    const engine = new CombatEngine({}, mockRoller);
+    const engine = new CombatEngine({ hitMode: 'dnd' }, mockRoller);
 
     const attacker = createTestCombatant(
       { ability_scores: { STR: 16, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10 }, armor_class: 10 },
@@ -336,7 +336,7 @@ describe('CombatEngine.executeWeaponAttack()', () => {
     const mockRoller = createMockDiceRoller({
       rollD20: () => 1,
     });
-    const engine = new CombatEngine({}, mockRoller);
+    const engine = new CombatEngine({ hitMode: 'dnd' }, mockRoller);
 
     const attacker = createTestCombatant(
       { ability_scores: { STR: 20, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10 }, proficiency_bonus: 6, armor_class: 10 },
@@ -366,7 +366,7 @@ describe('CombatEngine.executeWeaponAttack()', () => {
         rolls: [100], modifier: 0, total: 100, isCritical: false,
       }),
     });
-    const engine = new CombatEngine({}, mockRoller);
+    const engine = new CombatEngine({ hitMode: 'dnd' }, mockRoller);
 
     const attacker = createTestCombatant(
       { ability_scores: { STR: 16, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10 }, armor_class: 10 },
@@ -396,7 +396,7 @@ describe('CombatEngine.executeWeaponAttack()', () => {
         rolls: [999], modifier: 0, total: 999, isCritical: false,
       }),
     });
-    const engine = new CombatEngine({}, mockRoller);
+    const engine = new CombatEngine({ hitMode: 'dnd' }, mockRoller);
 
     const attacker = createTestCombatant(
       { ability_scores: { STR: 16, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10 }, armor_class: 10 },
@@ -420,7 +420,7 @@ describe('CombatEngine.executeWeaponAttack()', () => {
 
   it('records attack action in combat history', () => {
     const mockRoller = createMockDiceRoller({ rollD20: () => 15 });
-    const engine = new CombatEngine({}, mockRoller);
+    const engine = new CombatEngine({ hitMode: 'dnd' }, mockRoller);
 
     const attacker = createTestCombatant(
       { armor_class: 10 },
@@ -475,7 +475,7 @@ describe('CombatEngine.executeWeaponAttack()', () => {
 
   it('falls back to unarmed strike when no weapons equipped', () => {
     const mockRoller = createMockDiceRoller({ rollD20: () => 15 });
-    const engine = new CombatEngine({}, mockRoller);
+    const engine = new CombatEngine({ hitMode: 'dnd' }, mockRoller);
 
     const attacker = createTestCombatant(
       { armor_class: 10, equipment: { weapons: [], armor: [], items: [], totalWeight: 0, equippedWeight: 0 } },
@@ -498,7 +498,7 @@ describe('CombatEngine.executeWeaponAttack()', () => {
 
   it('uses unarmed strike explicitly when weaponName is "unarmed"', () => {
     const mockRoller = createMockDiceRoller({ rollD20: () => 15 });
-    const engine = new CombatEngine({}, mockRoller);
+    const engine = new CombatEngine({ hitMode: 'dnd' }, mockRoller);
 
     const attacker = createTestCombatant(
       { armor_class: 10 },
@@ -530,7 +530,7 @@ describe('CombatEngine.executeAttack()', () => {
         rolls: [6], modifier: m, total: 6 + m, isCritical: false,
       }),
     });
-    const engine = new CombatEngine({}, mockRoller);
+    const engine = new CombatEngine({ hitMode: 'dnd' }, mockRoller);
 
     const attacker = createTestCombatant(
       { ability_scores: { STR: 14, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10 }, armor_class: 10 },
@@ -568,7 +568,7 @@ describe('CombatEngine.executeAttack()', () => {
         rolls: [8], modifier: m, total: 8 + m, isCritical: false,
       }),
     });
-    const engine = new CombatEngine({}, mockRoller);
+    const engine = new CombatEngine({ hitMode: 'dnd' }, mockRoller);
 
     const attacker = createTestCombatant(
       { ability_scores: { STR: 18, DEX: 8, CON: 10, INT: 10, WIS: 10, CHA: 10 }, armor_class: 10 },
@@ -605,7 +605,7 @@ describe('CombatEngine.executeAttack()', () => {
         rolls: [6], modifier: m, total: 6 + m, isCritical: false,
       }),
     });
-    const engine = new CombatEngine({}, mockRoller);
+    const engine = new CombatEngine({ hitMode: 'dnd' }, mockRoller);
 
     const attacker = createTestCombatant(
       { ability_scores: { STR: 8, DEX: 18, CON: 10, INT: 10, WIS: 10, CHA: 10 }, armor_class: 10 },
@@ -622,6 +622,7 @@ describe('CombatEngine.executeAttack()', () => {
       damage_type: 'piercing',
       type: 'ranged',
       attack_bonus: dexMod + 2,
+      properties: ['ranged'],
     };
 
     const combat: CombatInstance = {
@@ -645,7 +646,7 @@ describe('CombatEngine.executeAttack()', () => {
         rolls: [6], modifier: m, total: 6 + m, isCritical: false,
       }),
     });
-    const engine = new CombatEngine({}, mockRoller);
+    const engine = new CombatEngine({ hitMode: 'dnd' }, mockRoller);
 
     const attacker = createTestCombatant(
       { ability_scores: { STR: 10, DEX: 18, CON: 10, INT: 10, WIS: 10, CHA: 10 }, armor_class: 10 },

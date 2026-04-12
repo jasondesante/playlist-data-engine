@@ -384,28 +384,24 @@ describe('PartyAnalyzer', () => {
             expect(strongDamage).toBeGreaterThan(weakDamage);
         });
 
-        it('should scale with level (proficiency bonus)', () => {
-            const lowLevelParty = [
+        it('should scale with primary attack stat', () => {
+            const weakStatParty = [
                 createMockCharacter({
-                    level: 1,
-                    ability_scores: { STR: 14, DEX: 14, CON: 14, INT: 10, WIS: 10, CHA: 10 },
-                    ability_modifiers: { STR: 2, DEX: 2, CON: 2, INT: 0, WIS: 0, CHA: 0 },
-                    proficiency_bonus: 2
+                    ability_scores: { STR: 10, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10 },
+                    ability_modifiers: { STR: 0, DEX: 0, CON: 0, INT: 0, WIS: 0, CHA: 0 }
                 })
             ];
-            const highLevelParty = [
+            const strongStatParty = [
                 createMockCharacter({
-                    level: 10,
-                    ability_scores: { STR: 14, DEX: 14, CON: 14, INT: 10, WIS: 10, CHA: 10 },
-                    ability_modifiers: { STR: 2, DEX: 2, CON: 2, INT: 0, WIS: 0, CHA: 0 },
-                    proficiency_bonus: 4
+                    ability_scores: { STR: 20, DEX: 20, CON: 20, INT: 10, WIS: 10, CHA: 10 },
+                    ability_modifiers: { STR: 5, DEX: 5, CON: 5, INT: 0, WIS: 0, CHA: 0 }
                 })
             ];
 
-            const lowLevelDamage = PartyAnalyzer.getAverageDamage(lowLevelParty);
-            const highLevelDamage = PartyAnalyzer.getAverageDamage(highLevelParty);
+            const weakStatDamage = PartyAnalyzer.getAverageDamage(weakStatParty);
+            const strongStatDamage = PartyAnalyzer.getAverageDamage(strongStatParty);
 
-            expect(highLevelDamage).toBeGreaterThan(lowLevelDamage);
+            expect(strongStatDamage).toBeGreaterThan(weakStatDamage);
         });
     });
 

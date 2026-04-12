@@ -145,22 +145,22 @@ describe('Enemy Rarity Configuration', () => {
     describe('Signature Ability Die Scaling', () => {
         it('should have common with d6 die', () => {
             const die = getSignatureDie('common');
-            expect(die).toBe('d6');
+            expect(die).toBe('1d6');
         });
 
         it('should have uncommon with d8 die', () => {
             const die = getSignatureDie('uncommon');
-            expect(die).toBe('d8');
+            expect(die).toBe('1d8');
         });
 
         it('should have elite with d10 die', () => {
             const die = getSignatureDie('elite');
-            expect(die).toBe('d10');
+            expect(die).toBe('1d10');
         });
 
         it('should have boss with d12 die', () => {
             const die = getSignatureDie('boss');
-            expect(die).toBe('d12');
+            expect(die).toBe('1d12');
         });
 
         it('should scale signature ability damage die correctly', () => {
@@ -191,10 +191,10 @@ describe('Enemy Rarity Configuration', () => {
             const eliteWeapon = eliteEnemy.equipment.weapons[0];
             const bossWeapon = bossEnemy.equipment.weapons[0];
 
-            expect(commonWeapon?.damage_dice).toBe('d6');
-            expect(uncommonWeapon?.damage_dice).toBe('d8');
-            expect(eliteWeapon?.damage_dice).toBe('d10');
-            expect(bossWeapon?.damage_dice).toBe('d12');
+            expect(commonWeapon?.damage_dice).toBe('1d6');
+            expect(uncommonWeapon?.damage_dice).toBe('1d8');
+            expect(eliteWeapon?.damage_dice).toBe('1d10');
+            expect(bossWeapon?.damage_dice).toBe('1d12');
         });
     });
 
@@ -1468,7 +1468,7 @@ describe('CR + Rarity Independence Tests', () => {
             });
 
             const weapon = enemy.equipment.weapons[0];
-            expect(weapon?.damage_dice).toBe('d6');
+            expect(weapon?.damage_dice).toBe('1d6');
         });
     });
 
@@ -1503,7 +1503,7 @@ describe('CR + Rarity Independence Tests', () => {
             });
 
             const weapon = enemy.equipment.weapons[0];
-            expect(weapon?.damage_dice).toBe('d12');
+            expect(weapon?.damage_dice).toBe('1d12');
         });
 
         it('should have resistances for boss rarity', () => {
@@ -1549,7 +1549,7 @@ describe('CR + Rarity Independence Tests', () => {
             });
 
             const weapon = enemy.equipment.weapons[0];
-            expect(weapon?.damage_dice).toBe('d6');
+            expect(weapon?.damage_dice).toBe('1d6');
         });
     });
 
@@ -1580,7 +1580,7 @@ describe('CR + Rarity Independence Tests', () => {
             });
 
             const weapon = enemy.equipment.weapons[0];
-            expect(weapon?.damage_dice).toBe('d12');
+            expect(weapon?.damage_dice).toBe('1d12');
         });
     });
 

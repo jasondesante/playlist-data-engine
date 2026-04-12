@@ -226,10 +226,21 @@ describe('ParameterSweep', () => {
       const resultsA = sweeper.sweep(players, makeEnemyConfig(), { ...baseParams, baseSeed: 'seed-a' });
       const resultsB = sweeper.sweep(players, makeEnemyConfig(), { ...baseParams, baseSeed: 'seed-b' });
 
-      // At least one data point should differ between different seeds
+      // At least one data point should differ between different seeds.
+      // Check multiple metrics since binary outcomes (win rate) may be identical
+      // when combat is one-sided, but continuous stats (rounds, HP) will vary.
       let hasDifference = false;
       for (let i = 0; i < resultsA.dataPoints.length; i++) {
-        if (resultsA.dataPoints[i].playerWinRate !== resultsB.dataPoints[i].playerWinRate) {
+        const a = resultsA.dataPoints[i];
+        const b = resultsB.dataPoints[i];
+        if (
+          a.playerWinRate !== b.playerWinRate ||
+          a.averageRounds !== b.averageRounds ||
+          a.averageHPRemaining !== b.averageHPRemaining ||
+          a.totalPlayerDeaths !== b.totalPlayerDeaths ||
+          a.totalEnemyDeaths !== b.totalEnemyDeaths ||
+          a.medianRounds !== b.medianRounds
+        ) {
           hasDifference = true;
           break;
         }

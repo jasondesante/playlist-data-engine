@@ -238,6 +238,25 @@ export class AttackResolver {
   }
 
   /**
+   * Extracts the ability modifier to apply to damage rolls.
+   *
+   * - Ranged attacks use DEX modifier.
+   * - Finesse melee weapons use max(STR, DEX).
+   * - Other melee attacks use STR modifier.
+   * - Spells return 0 (ability mod not added to damage dice).
+   */
+  private getDamageModifier(attacker: Combatant, attack: Attack): number {
+    const mods = attacker.character.ability_modifiers;
+    const strMod = mods.STR ?? 0;
+    const dexMod = mods.DEX ?? 0;
+
+    if (attack.type === 'spell') return 0;
+    if (attack.type === 'ranged') return dexMod;
+    if (attack.properties?.includes('finesse')) return Math.max(strMod, dexMod);
+    return strMod;
+  }
+
+  /**
    * DND mode: traditional dice-based damage.
    * Rolls weapon dice + ability modifier (STR for melee, DEX for finesse/ranged).
    * Crits double the dice (not the modifier).
@@ -249,9 +268,13 @@ export class AttackResolver {
     // Determine ability modifier from weapon properties
     const isFinesse = attack.properties?.includes('finesse') ?? false;
     const isRanged = attack.properties?.includes('ranged') ?? false;
-    const abilityMod = (isFinesse || isRanged)
-      ? Math.floor((attackerDEX - 10) / 2)
-      : Math.floor((attackerSTR - 10) / 2);
+    const strMod = Math.floor((attackerSTR - 10) / 2);
+    const dexMod = Math.floor((attackerDEX - 10) / 2);
+    const abilityMod = isFinesse
+      ? Math.max(strMod, dexMod)
+      : isRanged
+        ? dexMod
+        : strMod;
 
     const damageDice = attack.damage_dice ?? '';
     const damageResult = this.diceRoller

@@ -160,8 +160,9 @@ describe('Rhythm XP Integration Tests', () => {
         });
 
         it('should complete the full flow for a great hit', () => {
-            // Hard difficulty: perfect=8ms, great=20ms
-            // Beat at 0.5, press at 0.515 = 15ms off (within great window 8-20ms)
+            // Hard difficulty: perfect=10ms, great=25ms
+            // Beat at 0.5, press at 0.515 = 15ms off (within great window 10-25ms)
+            beatStream.setDifficulty({ preset: 'hard' });
             const buttonResult = beatStream.checkButtonPress(0.515);
 
             expect(buttonResult.accuracy).toBe('great');

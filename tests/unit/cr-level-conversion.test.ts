@@ -188,20 +188,23 @@ describe('CRLevelConverter', () => {
         });
 
         it('should respect maximum level bound', () => {
-            expect(roundLevel(25, 1, 20)).toBe(20);
-            expect(roundLevel(21, 1, 20)).toBe(20);
+            expect(roundLevel(25, 1, 30)).toBe(25);
+            expect(roundLevel(35, 1, 30)).toBe(30);
         });
 
         it('should allow custom min/max bounds', () => {
             expect(roundLevel(0, 5, 15)).toBe(5);
             expect(roundLevel(20, 5, 15)).toBe(15);
+            expect(roundLevel(0, 1, 30)).toBe(1);
+            expect(roundLevel(30, 1, 30)).toBe(30);
         });
 
         it('should handle edge cases', () => {
-            expect(roundLevel(0.5, 0, 20)).toBe(1);
-            expect(roundLevel(0.49, 0, 20)).toBe(0);
-            expect(roundLevel(1, 1, 20)).toBe(1);
-            expect(roundLevel(20, 1, 20)).toBe(20);
+            expect(roundLevel(0.5, 0, 30)).toBe(1);
+            expect(roundLevel(0.49, 0, 30)).toBe(0);
+            expect(roundLevel(1, 1, 30)).toBe(1);
+            expect(roundLevel(20, 1, 30)).toBe(20);
+            expect(roundLevel(30, 1, 30)).toBe(30);
         });
     });
 
@@ -226,10 +229,11 @@ describe('CRLevelConverter', () => {
             expect(roundCR(0)).toBe(0);
         });
 
-        it('should cap at CR 20', () => {
+        it('should round CRs above 20 to valid steps', () => {
             expect(roundCR(19.6)).toBe(20);
-            expect(roundCR(20.5)).toBe(20);
-            expect(roundCR(25)).toBe(20);
+            expect(roundCR(20.5)).toBe(21);
+            expect(roundCR(25)).toBe(26); // CR 25 doesn't exist, rounds to nearest (26)
+            expect(roundCR(30)).toBe(30);
         });
 
         it('should handle all standard CR steps', () => {
@@ -339,8 +343,8 @@ describe('CRLevelConverter', () => {
 
     describe('edge cases and error handling', () => {
         it('should handle very large CR values', () => {
-            const tuning = createCRTuning({ maxLevel: 20 });
-            expect(crToLevel(100, tuning)).toBe(20);
+            const tuning = createCRTuning({ maxLevel: 30 });
+            expect(crToLevel(100, tuning)).toBe(30);
         });
 
         it('should handle very small CR values', () => {
@@ -357,8 +361,8 @@ describe('CRLevelConverter', () => {
         });
 
         it('should handle Infinity with bounds', () => {
-            const tuning = createCRTuning({ maxLevel: 20 });
-            expect(crToLevel(Infinity, tuning)).toBe(20);
+            const tuning = createCRTuning({ maxLevel: 30 });
+            expect(crToLevel(Infinity, tuning)).toBe(30);
         });
     });
 
@@ -394,6 +398,32 @@ describe('CRLevelConverter', () => {
             expect(crToLevel(5, tuning)).toBe(7);
             expect(crToLevel(10, tuning)).toBe(13);
             expect(crToLevel(20, tuning)).toBe(25);
+        });
+    });
+
+    describe('epic CR scaling (21-30)', () => {
+        it('should convert CR 21-30 to levels 21-30 with default tuning', () => {
+            expect(crToLevel(21)).toBe(21);
+            expect(crToLevel(25)).toBe(25);
+            expect(crToLevel(30)).toBe(30);
+        });
+
+        it('should maintain bidirectional consistency for CR 21-30', () => {
+            for (const cr of [21, 24, 26, 30]) {
+                const level = crToLevel(cr);
+                const backToCR = levelToCR(level);
+                expect(backToCR).toBeCloseTo(cr, 10);
+            }
+        });
+
+        it('should round levels 21-30 correctly', () => {
+            expect(roundLevel(25.4)).toBe(25);
+            expect(roundLevel(25.6)).toBe(26);
+            expect(roundLevel(30)).toBe(30);
+        });
+
+        it('default maxLevel should be uncapped (Infinity)', () => {
+            expect(DEFAULT_CR_TUNING.maxLevel).toBe(Infinity);
         });
     });
 });

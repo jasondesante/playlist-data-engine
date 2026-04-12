@@ -980,8 +980,8 @@ describe('Regression - Existing Functionality Preserved', () => {
 
     it('should preserve existing SUBDIVISION_LIMITS for preset difficulties', () => {
         // Verify the 'custom' addition didn't alter existing entries
-        expect(SUBDIVISION_LIMITS.easy.allowedGridTypes).toContain('straight_8th');
-        expect(SUBDIVISION_LIMITS.medium.allowedGridTypes).toContain('straight_16th');
+        expect(SUBDIVISION_LIMITS.easy.allowedGridTypes).toContain('straight_4th');
+        expect(SUBDIVISION_LIMITS.medium.allowedGridTypes).toContain('straight_8th');
         expect(SUBDIVISION_LIMITS.hard.allowedGridTypes).toContain('straight_16th');
         expect(SUBDIVISION_LIMITS.natural.allowedGridTypes.length).toBeGreaterThan(0);
     });

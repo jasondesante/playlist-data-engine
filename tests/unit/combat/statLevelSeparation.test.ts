@@ -235,8 +235,8 @@ describe('stat level separation — attack-only override', () => {
         const baseDie = extractDamageDie(baseline.equipment.weapons[0].damage);
         const overDie = extractDamageDie(overridden.equipment.weapons[0].damage);
 
-        // Level 1 gives d6, level 10 gets higher die from rarity scaling
-        expect(overDie).toBe('d6');
+        // Level 1 gives 1d6, level 10 gets higher die from rarity scaling
+        expect(overDie).toBe('1d6');
         expect(overDie).not.toBe(baseDie);
     });
 
@@ -268,7 +268,7 @@ describe('stat level separation — attack-only override', () => {
                 cr: 5,
                 statLevels: { attackLevel: 1 }
             });
-            expect(extractDamageDie(enemy.equipment.weapons[0].damage)).toBe('d6');
+            expect(extractDamageDie(enemy.equipment.weapons[0].damage)).toBe('1d6');
         }
     });
 
@@ -517,12 +517,12 @@ describe('stat level separation — damage modifier uses ability scores', () => 
             statLevels: { attackLevel: 10 }
         });
 
-        // Both use level 10 for attack die → d12 (level-based, not rarity-based)
+        // Both use level 10 for attack die → 1d12 (level-based, not rarity-based)
         const commonDie = extractDamageDie(common.equipment.weapons[0].damage);
         const bossDie = extractDamageDie(boss.equipment.weapons[0].damage);
 
-        expect(commonDie).toBe('d12');
-        expect(bossDie).toBe('d12');
+        expect(commonDie).toBe('1d12');
+        expect(bossDie).toBe('1d12');
     });
 
     it('no override also uses ability-score-based modifier (not hardcoded)', () => {
@@ -646,7 +646,7 @@ describe('stat level separation — edge cases', () => {
         });
 
         const weapon = enemy.equipment.weapons[0];
-        expect(extractDamageDie(weapon.damage)).toBe('d6');
+        expect(extractDamageDie(weapon.damage)).toBe('1d6');
     });
 
     it('defense level 20 produces higher AC than defense level 1', () => {
@@ -715,9 +715,9 @@ describe('stat level separation — edge cases', () => {
         const expectedHP = getHPAtLevel(template.baseHP, 1, 'boss');
         expect(enemy.hp.max).toBe(expectedHP);
 
-        // Attack at level 1: d6
+        // Attack at level 1: 1d6
         const weapon = enemy.equipment.weapons[0];
-        expect(extractDamageDie(weapon.damage)).toBe('d6');
+        expect(extractDamageDie(weapon.damage)).toBe('1d6');
 
         // Defense at level 1: lower than defense level 20
         const highDef = EnemyGenerator.generate({
@@ -767,9 +767,9 @@ describe('stat level separation — edge cases', () => {
             statLevels: overrides
         });
 
-        // Both should have d12 damage die at attack level 10
-        expect(extractDamageDie(orc.equipment.weapons[0].damage)).toBe('d12');
-        expect(extractDamageDie(archer.equipment.weapons[0].damage)).toBe('d12');
+        // Both should have 1d12 damage die at attack level 10
+        expect(extractDamageDie(orc.equipment.weapons[0].damage)).toBe('1d12');
+        expect(extractDamageDie(archer.equipment.weapons[0].damage)).toBe('1d12');
 
         // Both should use their respective primary stats for modifier
         const orcExpected = getDamageModifierForStats(orc.ability_scores, 10, 'brute');

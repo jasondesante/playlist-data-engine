@@ -3471,9 +3471,9 @@ The built-in `HighBpmGridRestrictionRule` applies two thresholds:
 BPM-aware rules and difficulty-based subdivision limits are separate pipeline stages:
 
 1. **BPM-aware quantization** (this step) — constrains the grid for fundamental playability at any difficulty. Happens during quantization. Thresholds: 16th restricted at 160 BPM, triplets at 200 BPM.
-2. **Tempo-aware subdivision limits** (DifficultyVariantGenerator) — further constrains grid types per difficulty based on BPM. Thresholds: medium restricts 16th at 70 BPM, hard restricts 16th at 120 BPM, easy restricts to quarters at 120 BPM.
+2. **Tempo-aware subdivision limits** (DifficultyVariantGenerator) — further constrains grid types per difficulty based on BPM. Easy always uses quarter notes, medium always uses 8th notes, hard restricts 16th/triplet at ≥70 BPM.
 
-At 180 BPM: the BPM rule converts 16th→8th for the base quantization. Then the difficulty variant generator additionally restricts medium (already on 8th) and hard (forced to 8th). At 120 BPM: the BPM rule does nothing, but medium restricts 16th and hard allows all types.
+At 180 BPM: the BPM rule converts 16th→8th for the base quantization. Then the difficulty variant generator additionally restricts medium (already on 8th) and hard (forced to 8th). At 120 BPM: the BPM rule does nothing, but medium restricts to 8th notes and hard restricts to 8th notes (both ≥70 BPM threshold).
 
 ---
 
@@ -3711,17 +3711,17 @@ Subdivision limits are **tempo-aware** — allowed grid types tighten at higher 
 
 | Difficulty | BPM < 70 | 70 ≤ BPM ≤ 120 | BPM > 120 |
 |------------|----------|----------------|-----------|
-| **Easy** | `straight_8th`, `quarter_triplet` | `straight_8th`, `quarter_triplet` | `straight_4th`, `quarter_triplet` |
-| **Medium** | All types | `straight_8th`, `quarter_triplet` | `straight_8th`, `quarter_triplet` |
-| **Hard** | All types | All types | `straight_8th`, `quarter_triplet` |
+| **Easy** | `straight_4th`, `quarter_triplet` | `straight_4th`, `quarter_triplet` | `straight_4th`, `quarter_triplet` |
+| **Medium** | `straight_8th`, `quarter_triplet` | `straight_8th`, `quarter_triplet` | `straight_8th`, `quarter_triplet` |
+| **Hard** | All types | `straight_8th`, `quarter_triplet` | `straight_8th`, `quarter_triplet` |
 | **Natural** | All types | All types | All types |
 
 **BPM thresholds:**
-- **70 BPM** (Medium): 16th notes and 8th triplets reserved for hard/natural
-- **120 BPM** (Easy): 8th notes → quarter notes
-- **120 BPM** (Hard): 16th notes → 8th notes, 8th triplets → quarter triplets
+- **Easy**: No tempo variation — always quarter notes and quarter triplets at all BPMs
+- **Medium**: No tempo variation — always 8th notes and quarter triplets at all BPMs
+- **70 BPM** (Hard): 16th notes and 8th triplets reserved for natural at ≥70 BPM
 
-At slow tempos (< 70 BPM), the static `SUBDIVISION_LIMITS` apply. Use `getTempoAwareAllowedGridTypes(difficulty, bpm)` for tempo-aware limits.
+Use `getTempoAwareAllowedGridTypes(difficulty, bpm)` for tempo-aware limits.
 
 ### Variant Generation Strategy
 

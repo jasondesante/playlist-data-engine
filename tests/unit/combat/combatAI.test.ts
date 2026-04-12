@@ -517,7 +517,7 @@ describe('CombatAI', () => {
           equipment: {
             weapons: [],
             armor: [],
-            items: [{ name: 'Health Potion', quantity: 2, equipped: false }],
+            items: [{ name: 'Health Potion', quantity: 2, equipped: false, tags: ['healing'] }],
             totalWeight: 0,
             equippedWeight: 0,
           },
@@ -920,7 +920,7 @@ describe('CombatAI', () => {
           equipment: {
             weapons: [],
             armor: [],
-            items: [{ name: 'Health Potion', quantity: 2, equipped: false }],
+            items: [{ name: 'Health Potion', quantity: 2, equipped: false, tags: ['healing'] }],
             totalWeight: 0,
             equippedWeight: 0,
           },

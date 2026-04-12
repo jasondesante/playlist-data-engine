@@ -3382,21 +3382,21 @@ When `rhythmicBalanceConfig` is provided, the generator uses it `strongBeatEmpha
 
 | Difficulty | BPM < 70 | 70 ≤ BPM ≤ 120 | BPM > 120 |
 |------------|----------|----------------|-----------|
-| Easy | `straight_8th`, `quarter_triplet` | `straight_8th`, `quarter_triplet` | `straight_4th`, `quarter_triplet` |
-| Medium | All types | `straight_8th`, `quarter_triplet` | `straight_8th`, `quarter_triplet` |
-| Hard | All types | All types | `straight_8th`, `quarter_triplet` |
+| Easy | `straight_4th`, `quarter_triplet` | `straight_4th`, `quarter_triplet` | `straight_4th`, `quarter_triplet` |
+| Medium | `straight_8th`, `quarter_triplet` | `straight_8th`, `quarter_triplet` | `straight_8th`, `quarter_triplet` |
+| Hard | All types | `straight_8th`, `quarter_triplet` | `straight_8th`, `quarter_triplet` |
 | Natural | All types | All types | All types |
 | Custom | *From `DensityGenerationConfig`* | *From `DensityGenerationConfig`* | *From `DensityGenerationConfig`* |
 
-**BPM thresholds:** Medium restricts 16th/triplet at ≥70 BPM; Easy/Hard restrict further at >120 BPM. Use `getTempoAwareAllowedGridTypes(difficulty, bpm)` for tempo-aware limits.
+**BPM thresholds:** Easy has no tempo variation (always quarter notes). Medium has no tempo variation (always 8th notes). Hard restricts 16th/triplet at ≥70 BPM. Use `getTempoAwareAllowedGridTypes(difficulty, bpm)` for tempo-aware limits.
 
 #### Variant Generation Strategy (Presets)
 
 | Natural Difficulty | Easy Variant | Medium Variant | Hard Variant | Natural Variant |
 |-------------------|--------------|----------------|--------------|----------------|
-| easy | Unedited (+ quarter at >120 BPM) | Global target-based enhancement | Global target-based enhancement | Unedited composite |
-| medium | Target-count reduction | Unedited (+ grid conversion at ≥70 BPM) | Global target-based enhancement | Unedited composite |
-| hard | Target-count reduction + grid conversion | Target-count reduction + grid conversion | Unedited (+ grid conversion at >120 BPM) | Unedited composite |
+| easy | Unedited | Global target-based enhancement | Global target-based enhancement | Unedited composite |
+| medium | Target-count reduction | Unedited | Global target-based enhancement | Unedited composite |
+| hard | Target-count reduction + grid conversion | Target-count reduction + grid conversion | Unedited (+ grid conversion at ≥70 BPM) | Unedited composite |
 
 ### Density-Based Generation
 
@@ -5186,7 +5186,7 @@ Bidirectional conversion between Challenge Rating (CR) and character level for e
 |--------|---------|-------------|
 | `crToLevel(cr: number, tuning?: CRTuningConfig)` | `number` | Convert CR to character level (CR 1 = level 1, supports fractional CR) |
 | `levelToCR(level: number, tuning?: CRTuningConfig)` | `number` | Convert character level to CR (inverse of crToLevel) |
-| `roundLevel(level: number, minLevel?: number, maxLevel?: number)` | `number` | Round level to nearest valid character level (default: 1-20) |
+| `roundLevel(level: number, minLevel?: number, maxLevel?: number)` | `number` | Round level to nearest valid character level (default: min 1, no cap) |
 | `roundCR(cr: number)` | `number` | Round CR to nearest valid step (0, 1/8, 1/4, 1/2, 1, 2, etc.) |
 | `formatLevel(level: number)` | `string` | Format level with fractional notation (e.g., "0 (1/4)") |
 | `formatCR(cr: number)` | `string` | Format CR with fractional notation (e.g., "1/4", "1/2") |

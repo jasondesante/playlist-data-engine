@@ -232,23 +232,23 @@ describe('getAttackAtLevel', () => {
     // Damage die tests
     describe('damage die scaling', () => {
         it('level 1-2 gets d6', () => {
-            expect(getAttackAtLevel(BASE_STATS, 1, 'common', 'brute').damageDie).toBe('d6');
-            expect(getAttackAtLevel(BASE_STATS, 2, 'common', 'brute').damageDie).toBe('d6');
+            expect(getAttackAtLevel(BASE_STATS, 1, 'common', 'brute').damageDie).toBe('1d6');
+            expect(getAttackAtLevel(BASE_STATS, 2, 'common', 'brute').damageDie).toBe('1d6');
         });
 
         it('level 3-5 gets d8', () => {
-            expect(getAttackAtLevel(BASE_STATS, 3, 'common', 'brute').damageDie).toBe('d8');
-            expect(getAttackAtLevel(BASE_STATS, 5, 'common', 'brute').damageDie).toBe('d8');
+            expect(getAttackAtLevel(BASE_STATS, 3, 'common', 'brute').damageDie).toBe('1d8');
+            expect(getAttackAtLevel(BASE_STATS, 5, 'common', 'brute').damageDie).toBe('1d8');
         });
 
         it('level 6-9 gets d10', () => {
-            expect(getAttackAtLevel(BASE_STATS, 6, 'common', 'brute').damageDie).toBe('d10');
-            expect(getAttackAtLevel(BASE_STATS, 9, 'common', 'brute').damageDie).toBe('d10');
+            expect(getAttackAtLevel(BASE_STATS, 6, 'common', 'brute').damageDie).toBe('1d10');
+            expect(getAttackAtLevel(BASE_STATS, 9, 'common', 'brute').damageDie).toBe('1d10');
         });
 
         it('level 10-14 gets d12', () => {
-            expect(getAttackAtLevel(BASE_STATS, 10, 'common', 'brute').damageDie).toBe('d12');
-            expect(getAttackAtLevel(BASE_STATS, 14, 'common', 'brute').damageDie).toBe('d12');
+            expect(getAttackAtLevel(BASE_STATS, 10, 'common', 'brute').damageDie).toBe('1d12');
+            expect(getAttackAtLevel(BASE_STATS, 14, 'common', 'brute').damageDie).toBe('1d12');
         });
 
         it('level 15-19 gets 2d6', () => {
@@ -512,7 +512,7 @@ describe('stat level separation scenarios', () => {
         // HP should be high (level 15 scaling)
         expect(tankHP).toBeGreaterThan(25);
         // Attack should be moderate (level 5)
-        expect(tankAttack.damageDie).toBe('d8');
+        expect(tankAttack.damageDie).toBe('1d8');
         // Defense should be high (level 15): 13 + 1 + floor(0.2 * 14) = 13 + 1 + 2 = 16
         expect(tankDefense).toBeGreaterThanOrEqual(16);
     });
@@ -555,7 +555,7 @@ describe('stat level separation scenarios', () => {
 
         // All stats should reflect level 10
         expect(hp).toBe(23);
-        expect(attack.damageDie).toBe('d12');
+        expect(attack.damageDie).toBe('1d12');
         expect(attack.attackBonus).toBe(8);
         expect(defense).toBe(15);
     });

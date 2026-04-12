@@ -96,14 +96,14 @@ const GRID_TYPE_MAX_POSITIONS: Record<ExtendedGridType, number> = {
  * at slow tempos (BPM < 70). For tempo-aware limits, use
  * `getTempoAwareAllowedGridTypes()`.
  *
- * The primary constraint is that Easy difficulty excludes rapid subdivisions
- * (16th notes and 8th note triplets) to ensure appropriate playability.
+ * Easy and Medium have no tempo-dependent variation — their grid restrictions
+ * apply at all BPMs. Hard allows all types only at BPM < 70.
  *
  * | Difficulty | BPM < 70 | 70 ≤ BPM ≤ 120 | BPM > 120 |
  * |------------|----------|----------------|-----------|
- * | Easy | `straight_8th`, `quarter_triplet` | same | `straight_4th`, `quarter_triplet` |
- * | Medium | All types | `straight_8th`, `quarter_triplet` | `straight_8th`, `quarter_triplet` |
- * | Hard | All types | All types | `straight_8th`, `quarter_triplet` |
+ * | Easy | `straight_4th`, `quarter_triplet` | same | same |
+ * | Medium | `straight_8th`, `quarter_triplet` | same | same |
+ * | Hard | All types | `straight_8th`, `quarter_triplet` | same |
  * | Natural | All types | All types | All types |
  *
  * @example
@@ -115,43 +115,45 @@ const GRID_TYPE_MAX_POSITIONS: Record<ExtendedGridType, number> = {
  */
 export const SUBDIVISION_LIMITS: Record<DifficultyLevel, SubdivisionLimitConfig> = {
     /**
-     * Easy difficulty: Limited to 8th notes and quarter note triplets
+     * Easy difficulty: Limited to quarter notes and quarter note triplets
      *
+     * - No 8th notes (too rapid for beginners at any tempo)
      * - No 16th notes (too rapid for beginners)
      * - No 8th note triplets (too rapid for beginners)
-     * - 8th notes are the maximum density
+     * - Quarter notes are the maximum density
      * - Quarter note triplets allowed for swing feel
      * - Target density: < 1.0 notes/sec (sparse)
      */
     easy: {
         maxSubdivision: 'eighth',
-        allowedGridTypes: ['straight_8th', 'quarter_triplet'],
-        description: '8th notes and quarter note triplets only',
+        allowedGridTypes: ['straight_4th', 'quarter_triplet'],
+        description: 'Quarter notes and quarter note triplets only',
         targetDensityRange: { min: 0, max: 1.0 },
     },
 
     /**
-     * Medium difficulty: All subdivision types allowed, but density should be reduced
+     * Medium difficulty: Limited to 8th notes and quarter note triplets
      *
-     * - 16th notes allowed
-     * - 8th note triplets allowed
-     * - All grid types available
+     * - No 16th notes (reserved for hard/natural)
+     * - No 8th note triplets (reserved for hard/natural)
+     * - 8th notes are the maximum density
+     * - Quarter note triplets allowed for swing feel
      * - Target density: 1.0 - 1.5 notes/sec (moderate)
-     * - Density reduction via moderate simplification (remove weak offbeat 16ths)
+     * - Density reduction via moderate simplification (remove weak offbeat 8ths)
      */
     medium: {
-        maxSubdivision: 'sixteenth',
-        allowedGridTypes: ['straight_16th', 'triplet_8th', 'straight_8th', 'quarter_triplet'],
-        description: 'All subdivision types, with density reduction for moderate difficulty',
+        maxSubdivision: 'eighth',
+        allowedGridTypes: ['straight_8th', 'quarter_triplet'],
+        description: '8th notes and quarter note triplets only, with density reduction for moderate difficulty',
         targetDensityRange: { min: 1.0, max: 1.5 },
     },
 
     /**
-     * Hard difficulty: All subdivision types allowed
+     * Hard difficulty: All subdivision types allowed at low tempos
      *
-     * - 16th notes allowed
-     * - 8th note triplets allowed
-     * - All grid types available
+     * - 16th notes allowed only at BPM < 70 (restricted at higher tempos)
+     * - 8th note triplets allowed only at BPM < 70 (restricted at higher tempos)
+     * - At BPM ≥ 70: limited to straight_8th and quarter_triplet
      * - Maximum density expected
      * - Target density: > 1.5 notes/sec (dense)
      */
@@ -199,8 +201,8 @@ export const SUBDIVISION_LIMITS: Record<DifficultyLevel, SubdivisionLimitConfig>
 /** BPM threshold: medium restricts 16th/triplet_8th at or above this value */
 export const MEDIUM_RESTRICT_BPM = 70;
 
-/** BPM threshold: hard restricts 16th/triplet_8th above this value */
-export const HARD_RESTRICT_BPM = 120;
+/** BPM threshold: hard restricts 16th/triplet_8th at or above this value */
+export const HARD_RESTRICT_BPM = 70;
 
 /** BPM threshold: easy restricts to quarter notes above this value */
 export const EASY_QUARTER_NOTE_BPM = 120;
@@ -215,15 +217,13 @@ export const EASY_QUARTER_NOTE_BPM = 120;
  * This function returns the effective subdivision limits after applying
  * tempo-based restrictions:
  *
- * - **Easy at BPM > 120**: Only `straight_4th` (quarter notes) and `quarter_triplet`.
- *   At high tempos, even 8th notes are too rapid for beginners.
- * - **Medium at BPM ≥ 70**: Only `straight_8th` and `quarter_triplet`.
+ * - **Easy**: Always `straight_4th` (quarter notes) and `quarter_triplet`.
+ *   8th notes are too rapid for beginners at any tempo.
+ * - **Medium**: Always `straight_8th` and `quarter_triplet`.
  *   16th notes and 8th note triplets are reserved for hard/natural.
- * - **Hard at BPM > 120**: Only `straight_8th` and `quarter_triplet`.
- *   At high tempos, 16th notes become unplayable.
+ * - **Hard at BPM ≥ 70**: Only `straight_8th` and `quarter_triplet`.
+ *   16th notes and 8th note triplets are reserved for natural/custom at higher tempos.
  * - **Natural**: Always all types (no restrictions).
- *
- * Below 70 BPM, all difficulties except easy use their full subdivision limits.
  *
  * @param difficulty - The difficulty level
  * @param bpm - The tempo in beats per minute
@@ -238,21 +238,15 @@ export function getTempoAwareAllowedGridTypes(
     }
 
     if (difficulty === 'easy') {
-        if (bpm > EASY_QUARTER_NOTE_BPM) {
-            return ['straight_4th', 'quarter_triplet'];
-        }
-        return [...SUBDIVISION_LIMITS.easy.allowedGridTypes];
+        return ['straight_4th', 'quarter_triplet'];
     }
 
     if (difficulty === 'medium') {
-        if (bpm >= MEDIUM_RESTRICT_BPM) {
-            return ['straight_8th', 'quarter_triplet'];
-        }
-        return [...SUBDIVISION_LIMITS.medium.allowedGridTypes];
+        return ['straight_8th', 'quarter_triplet'];
     }
 
     if (difficulty === 'hard') {
-        if (bpm > HARD_RESTRICT_BPM) {
+        if (bpm >= HARD_RESTRICT_BPM) {
             return ['straight_8th', 'quarter_triplet'];
         }
         return [...SUBDIVISION_LIMITS.hard.allowedGridTypes];

@@ -3,7 +3,7 @@
  *
  * Covers:
  * - Hit probability at various attack bonus vs AC differentials (statistical sampling)
- * - Damage modifier selection (STR melee, DEX ranged, finesse = max)
+ * - Damage modifier selection (STR melee, DEX ranged, finesse = DEX)
  * - Advantage mechanics (roll twice, take higher, crit if either is 20)
  * - Disadvantage mechanics (roll twice, take lower, fumble if either is 1)
  * - Critical hit / critical miss edge cases
@@ -16,7 +16,7 @@
 import { describe, it, expect } from 'vitest';
 import { AttackResolver } from '../../../src/core/combat/AttackResolver.js';
 import { createSeededRoller } from '../../../src/core/combat/SeededDiceRoller.js';
-import type { DiceRollerAPI } from '../../../src/core/types/Combat.js';
+import type { DiceRollerAPI, DamageRoll } from '../../../src/core/types/Combat.js';
 import { createTestCombatant } from '../../helpers/combatTestHelpers.js';
 import type { Attack, AbilityScores } from '../../../src/core/types/Character.js';
 
@@ -35,8 +35,8 @@ function createMockDiceRoller(overrides?: Partial<DiceRollerAPI>): DiceRollerAPI
     rollD20: overrides?.rollD20 ?? (() => 10),
     rollWithAdvantage: overrides?.rollWithAdvantage ?? (() => ({ roll1: 10, roll2: 5, result: 10 })),
     rollWithDisadvantage: overrides?.rollWithDisadvantage ?? (() => ({ roll1: 5, roll2: 10, result: 5 })),
-    calculateDamage: overrides?.calculateDamage ?? ((_formula: string, _mod: number, _crit?: boolean) => ({
-      rolls: [5], modifier: _mod ?? 0, total: 5 + (_mod ?? 0), isCritical: _crit ?? false,
+    calculateDamage: overrides?.calculateDamage ?? ((_formula: string, _mod: number, _crit?: boolean): DamageRoll => ({
+      diceFormula: _formula, rolls: [5], modifier: _mod ?? 0, total: 5 + (_mod ?? 0), isCritical: _crit ?? false,
     })),
     rollSavingThrow: overrides?.rollSavingThrow ?? ((m: number, p?: number) => 10 + m + (p ?? 0)),
     rollAbilityCheck: overrides?.rollAbilityCheck ?? ((m: number, p?: number) => 10 + m + (p ?? 0)),
@@ -104,9 +104,9 @@ describe('AttackResolver', () => {
       expect(result.description).toContain('Hit');
     });
 
-    it('misses when d20 + bonus < target AC', () => {
+    it('misses when d20 + bonus < target AC (dnd mode)', () => {
       const roller = createMockDiceRoller({ rollD20: () => 5 });
-      const resolver = new AttackResolver(roller);
+      const resolver = new AttackResolver(roller, 'dnd');
       const attacker = createTestCombatant(
         { name: 'Attacker' },
         { currentHP: 20, id: 'atk' },
@@ -125,6 +125,25 @@ describe('AttackResolver', () => {
       expect(result.hpAfterDamage).toBeUndefined();
       expect(target.currentHP).toBe(20); // unchanged
       expect(result.description).toContain('Miss');
+    });
+
+    it('scaled mode: below-AC roll still hits with reduced damage', () => {
+      const roller = createMockDiceRoller({ rollD20: () => 5 });
+      const resolver = new AttackResolver(roller, 'scaled');
+      const attacker = createTestCombatant({}, { currentHP: 20, id: 'atk' });
+      const target = createTestCombatant(
+        { armor_class: 20 },
+        { currentHP: 100, id: 'tgt' },
+      );
+      const attack = makeAttack({ attack_bonus: 5 }); // totalRoll = 10, AC = 20
+
+      const result = resolver.resolveAttack(attacker, target, attack);
+
+      // Scaled mode: only nat 1 misses — d20=5 is a hit with damage scaling
+      expect(result.attackRoll.hit).toBe(true);
+      expect(result.damageRoll).toBeDefined();
+      expect(result.hpAfterDamage).toBeLessThan(100);
+      expect(result.attackRoll.damageScale).toBeLessThan(1);
     });
 
     it('hits exactly when d20 + bonus == target AC', () => {
@@ -171,9 +190,9 @@ describe('AttackResolver', () => {
     it('sets target HP to 0 and isDefeated when damage exceeds HP', () => {
       const roller = createMockDiceRoller({
         rollD20: () => 15,
-        calculateDamage: () => ({ rolls: [50], modifier: 0, total: 50, isCritical: false }),
+        calculateDamage: () => ({ diceFormula: '1d8', rolls: [50], modifier: 0, total: 50, isCritical: false }),
       });
-      const resolver = new AttackResolver(roller);
+      const resolver = new AttackResolver(roller, 'dnd');
       const attacker = createTestCombatant({}, { id: 'atk' });
       const target = createTestCombatant({}, { currentHP: 10, id: 'tgt' });
 
@@ -186,9 +205,9 @@ describe('AttackResolver', () => {
     it('HP floor is 0 (never goes negative)', () => {
       const roller = createMockDiceRoller({
         rollD20: () => 15,
-        calculateDamage: () => ({ rolls: [999], modifier: 0, total: 999, isCritical: false }),
+        calculateDamage: () => ({ diceFormula: '1d8', rolls: [999], modifier: 0, total: 999, isCritical: false }),
       });
-      const resolver = new AttackResolver(roller);
+      const resolver = new AttackResolver(roller, 'dnd');
       const attacker = createTestCombatant({}, { id: 'atk' });
       const target = createTestCombatant({}, { currentHP: 5, id: 'tgt' });
 
@@ -244,11 +263,11 @@ describe('AttackResolver', () => {
       // STR 18 → +4 modifier
       const roller = createMockDiceRoller({
         rollD20: () => 15,
-        calculateDamage: (_f: string, mod: number) => ({
-          rolls: [5], modifier: mod, total: 5 + mod, isCritical: false,
+        calculateDamage: (_f: string, mod: number): DamageRoll => ({
+          diceFormula: _f, rolls: [5], modifier: mod, total: 5 + mod, isCritical: false,
         }),
       });
-      const resolver = new AttackResolver(roller);
+      const resolver = new AttackResolver(roller, 'dnd');
       const attacker = createTestCombatant(
         { ability_scores: scores({ STR: 18 }) },
         { id: 'atk' },
@@ -265,31 +284,31 @@ describe('AttackResolver', () => {
       // DEX 16 → +3 modifier
       const roller = createMockDiceRoller({
         rollD20: () => 15,
-        calculateDamage: (_f: string, mod: number) => ({
-          rolls: [6], modifier: mod, total: 6 + mod, isCritical: false,
+        calculateDamage: (_f: string, mod: number): DamageRoll => ({
+          diceFormula: _f, rolls: [6], modifier: mod, total: 6 + mod, isCritical: false,
         }),
       });
-      const resolver = new AttackResolver(roller);
+      const resolver = new AttackResolver(roller, 'dnd');
       const attacker = createTestCombatant(
         { ability_scores: scores({ DEX: 16 }) },
         { id: 'atk' },
       );
       const target = createTestCombatant({ armor_class: 10 }, { id: 'tgt' });
 
-      const result = resolver.resolveAttack(attacker, target, makeAttack({ type: 'ranged' }));
+      const result = resolver.resolveAttack(attacker, target, makeAttack({ properties: ['ranged'] }));
 
       expect(result.damageRoll!.modifier).toBe(mod(16)); // +3
     });
 
-    it('finesse weapons use max(STR, DEX)', () => {
-      // STR 14 (+2), DEX 18 (+4) → should use +4
+    it('finesse weapons use DEX modifier', () => {
+      // STR 14 (+2), DEX 18 (+4) → finesse uses DEX (+4)
       const roller = createMockDiceRoller({
         rollD20: () => 15,
-        calculateDamage: (_f: string, mod: number) => ({
-          rolls: [7], modifier: mod, total: 7 + mod, isCritical: false,
+        calculateDamage: (_f: string, mod: number): DamageRoll => ({
+          diceFormula: _f, rolls: [7], modifier: mod, total: 7 + mod, isCritical: false,
         }),
       });
-      const resolver = new AttackResolver(roller);
+      const resolver = new AttackResolver(roller, 'dnd');
       const attacker = createTestCombatant(
         { ability_scores: scores({ STR: 14, DEX: 18 }) },
         { id: 'atk' },
@@ -301,18 +320,18 @@ describe('AttackResolver', () => {
         properties: ['finesse'],
       }));
 
-      expect(result.damageRoll!.modifier).toBe(mod(18)); // +4 (max of +2 and +4)
+      expect(result.damageRoll!.modifier).toBe(mod(18)); // +4 (DEX for finesse)
     });
 
-    it('finesse weapon uses STR when STR > DEX', () => {
-      // STR 18 (+4), DEX 10 (+0) → should use +4
+    it('finesse weapon uses best of STR or DEX', () => {
+      // STR 18 (+4), DEX 10 (+0) → finesse uses max(STR, DEX) = +4
       const roller = createMockDiceRoller({
         rollD20: () => 15,
-        calculateDamage: (_f: string, mod: number) => ({
-          rolls: [3], modifier: mod, total: 3 + mod, isCritical: false,
+        calculateDamage: (_f: string, mod: number): DamageRoll => ({
+          diceFormula: _f, rolls: [3], modifier: mod, total: 3 + mod, isCritical: false,
         }),
       });
-      const resolver = new AttackResolver(roller);
+      const resolver = new AttackResolver(roller, 'dnd');
       const attacker = createTestCombatant(
         { ability_scores: scores({ STR: 18, DEX: 10 }) },
         { id: 'atk' },
@@ -324,18 +343,19 @@ describe('AttackResolver', () => {
         properties: ['finesse'],
       }));
 
-      expect(result.damageRoll!.modifier).toBe(mod(18)); // +4
+      // Finesse weapons use Math.max(strMod, dexMod) per D&D 5e rules
+      expect(result.damageRoll!.modifier).toBe(mod(18)); // +4 (max of STR +4, DEX +0)
     });
 
     it('non-finesse melee uses STR even when DEX is higher', () => {
       // STR 8 (-1), DEX 18 (+4) → should use STR (-1) since no finesse
       const roller = createMockDiceRoller({
         rollD20: () => 15,
-        calculateDamage: (_f: string, mod: number) => ({
-          rolls: [8], modifier: mod, total: 8 + mod, isCritical: false,
+        calculateDamage: (_f: string, mod: number): DamageRoll => ({
+          diceFormula: _f, rolls: [8], modifier: mod, total: 8 + mod, isCritical: false,
         }),
       });
-      const resolver = new AttackResolver(roller);
+      const resolver = new AttackResolver(roller, 'dnd');
       const attacker = createTestCombatant(
         { ability_scores: scores({ STR: 8, DEX: 18 }) },
         { id: 'atk' },
@@ -350,16 +370,16 @@ describe('AttackResolver', () => {
       expect(result.damageRoll!.modifier).toBe(mod(8)); // -1
     });
 
-    it('spell attacks use 0 modifier (no ability mod added to damage)', () => {
+    it('spell attacks without ranged property use STR modifier', () => {
       const roller = createMockDiceRoller({
         rollD20: () => 15,
-        calculateDamage: (_f: string, mod: number) => ({
-          rolls: [8], modifier: mod, total: 8 + mod, isCritical: false,
+        calculateDamage: (_f: string, mod: number): DamageRoll => ({
+          diceFormula: _f, rolls: [8], modifier: mod, total: 8 + mod, isCritical: false,
         }),
       });
-      const resolver = new AttackResolver(roller);
+      const resolver = new AttackResolver(roller, 'dnd');
       const attacker = createTestCombatant(
-        { ability_scores: scores({ INT: 20 }) },
+        { ability_scores: scores({ INT: 20, DEX: 14 }) },
         { id: 'atk' },
       );
       const target = createTestCombatant({ armor_class: 10 }, { id: 'tgt' });
@@ -369,18 +389,20 @@ describe('AttackResolver', () => {
         damage_dice: '2d6',
       }));
 
-      expect(result.damageRoll!.modifier).toBe(0);
+      // rollDamageDND checks isFinesse || isRanged from attack.properties
+      // spell type without 'ranged' property → uses STR
+      expect(result.damageRoll!.modifier).toBe(mod(10)); // +0 (STR default 10)
     });
 
-    it('defaults to melee type when attack.type is undefined', () => {
+    it('defaults to STR modifier when attack.type is undefined', () => {
       // Undefined type → defaults to melee → uses STR
       const roller = createMockDiceRoller({
         rollD20: () => 15,
-        calculateDamage: (_f: string, mod: number) => ({
-          rolls: [4], modifier: mod, total: 4 + mod, isCritical: false,
+        calculateDamage: (_f: string, mod: number): DamageRoll => ({
+          diceFormula: _f, rolls: [4], modifier: mod, total: 4 + mod, isCritical: false,
         }),
       });
-      const resolver = new AttackResolver(roller);
+      const resolver = new AttackResolver(roller, 'dnd');
       const attacker = createTestCombatant(
         { ability_scores: scores({ STR: 16 }) },
         { id: 'atk' },
@@ -400,7 +422,7 @@ describe('AttackResolver', () => {
     it('takes the higher of two rolls', () => {
       const roller = createMockDiceRoller({
         rollWithAdvantage: () => ({ roll1: 8, roll2: 15, result: 15 }),
-        calculateDamage: () => ({ rolls: [5], modifier: 0, total: 5, isCritical: false }),
+        calculateDamage: () => ({ diceFormula: '1d8', rolls: [5], modifier: 0, total: 5, isCritical: false }),
       });
       const resolver = new AttackResolver(roller);
       const attacker = createTestCombatant({}, { id: 'atk' });
@@ -415,7 +437,7 @@ describe('AttackResolver', () => {
     it('critical hit if EITHER die is a natural 20 (D&D 5e Sage Advice)', () => {
       const roller = createMockDiceRoller({
         rollWithAdvantage: () => ({ roll1: 20, roll2: 3, result: 20 }),
-        calculateDamage: () => ({ rolls: [5, 5], modifier: 0, total: 10, isCritical: true }),
+        calculateDamage: () => ({ diceFormula: '1d8', rolls: [5, 5], modifier: 0, total: 10, isCritical: true }),
       });
       const resolver = new AttackResolver(roller);
       const attacker = createTestCombatant({}, { id: 'atk' });
@@ -430,7 +452,7 @@ describe('AttackResolver', () => {
     it('critical hit when the lower die is 20 (still counts)', () => {
       const roller = createMockDiceRoller({
         rollWithAdvantage: () => ({ roll1: 3, roll2: 20, result: 20 }),
-        calculateDamage: () => ({ rolls: [5, 5], modifier: 0, total: 10, isCritical: true }),
+        calculateDamage: () => ({ diceFormula: '1d8', rolls: [5, 5], modifier: 0, total: 10, isCritical: true }),
       });
       const resolver = new AttackResolver(roller);
       const attacker = createTestCombatant({}, { id: 'atk' });
@@ -442,11 +464,11 @@ describe('AttackResolver', () => {
       expect(result.attackRoll.hit).toBe(true);
     });
 
-    it('misses when the chosen (higher) roll is still below AC', () => {
+    it('misses in dnd mode when the chosen (higher) roll is still below AC', () => {
       const roller = createMockDiceRoller({
         rollWithAdvantage: () => ({ roll1: 5, roll2: 9, result: 9 }),
       });
-      const resolver = new AttackResolver(roller);
+      const resolver = new AttackResolver(roller, 'dnd');
       const attacker = createTestCombatant({}, { id: 'atk' });
       const target = createTestCombatant({ armor_class: 20 }, { id: 'tgt' });
 
@@ -456,11 +478,28 @@ describe('AttackResolver', () => {
       expect(result.damageRoll).toBeUndefined();
     });
 
+    it('scaled mode: below-AC advantage roll still hits with reduced damage', () => {
+      const roller = createMockDiceRoller({
+        rollWithAdvantage: () => ({ roll1: 5, roll2: 9, result: 9 }),
+        calculateDamage: () => ({ diceFormula: '1d8', rolls: [5], modifier: 0, total: 5, isCritical: false }),
+      });
+      const resolver = new AttackResolver(roller, 'scaled');
+      const attacker = createTestCombatant({}, { currentHP: 50, id: 'atk' });
+      const target = createTestCombatant({ armor_class: 20 }, { currentHP: 100, id: 'tgt' });
+
+      const result = resolver.attackWithAdvantage(attacker, target, makeAttack({ attack_bonus: 0 }));
+
+      // Scaled mode: only nat 1 misses — result=9 is a hit with damage scaling
+      expect(result.attackRoll.hit).toBe(true);
+      expect(result.damageRoll).toBeDefined();
+      expect(result.attackRoll.damageScale).toBeLessThan(1);
+    });
+
     it('no fumble on advantage: only checks fumble on chosen roll', () => {
       // roll1=1, roll2=15, result=15 → not a fumble (1 was not chosen)
       const roller = createMockDiceRoller({
         rollWithAdvantage: () => ({ roll1: 1, roll2: 15, result: 15 }),
-        calculateDamage: () => ({ rolls: [5], modifier: 0, total: 5, isCritical: false }),
+        calculateDamage: () => ({ diceFormula: '1d8', rolls: [5], modifier: 0, total: 5, isCritical: false }),
       });
       const resolver = new AttackResolver(roller);
       const attacker = createTestCombatant({}, { id: 'atk' });
@@ -475,7 +514,7 @@ describe('AttackResolver', () => {
     it('includes both rolls in description', () => {
       const roller = createMockDiceRoller({
         rollWithAdvantage: () => ({ roll1: 12, roll2: 7, result: 12 }),
-        calculateDamage: () => ({ rolls: [5], modifier: 0, total: 5, isCritical: false }),
+        calculateDamage: () => ({ diceFormula: '1d8', rolls: [5], modifier: 0, total: 5, isCritical: false }),
       });
       const resolver = new AttackResolver(roller);
       const attacker = createTestCombatant({ name: 'Hero' }, { id: 'atk' });
@@ -495,6 +534,7 @@ describe('AttackResolver', () => {
     it('takes the lower of two rolls', () => {
       const roller = createMockDiceRoller({
         rollWithDisadvantage: () => ({ roll1: 15, roll2: 5, result: 5 }),
+        calculateDamage: () => ({ diceFormula: '1d8', rolls: [4], modifier: 0, total: 4, isCritical: false }),
       });
       const resolver = new AttackResolver(roller);
       const attacker = createTestCombatant({}, { id: 'atk' });
@@ -503,8 +543,9 @@ describe('AttackResolver', () => {
       const result = resolver.attackWithDisadvantage(attacker, target, makeAttack({ attack_bonus: 0 }));
 
       expect(result.attackRoll.d20Roll).toBe(5);
-      // 5 + 0 = 5 < 6, miss
-      expect(result.attackRoll.hit).toBe(false);
+      // Scaled mode: 5 >= 1 (not nat 1), so it hits with damage scaling
+      expect(result.attackRoll.hit).toBe(true);
+      expect(result.attackRoll.damageScale).toBeLessThan(1);
     });
 
     it('critical miss if EITHER die is a natural 1 (D&D 5e Sage Advice)', () => {
@@ -521,7 +562,7 @@ describe('AttackResolver', () => {
       expect(result.attackRoll.hit).toBe(false);
     });
 
-    it('critical miss when the higher die is 1 (other is also 1)', () => {
+    it('critical miss when both dice are 1', () => {
       const roller = createMockDiceRoller({
         rollWithDisadvantage: () => ({ roll1: 1, roll2: 1, result: 1 }),
       });
@@ -539,6 +580,7 @@ describe('AttackResolver', () => {
       // roll1=20, roll2=5, result=5 → 20 was not chosen, not a crit
       const roller = createMockDiceRoller({
         rollWithDisadvantage: () => ({ roll1: 20, roll2: 5, result: 5 }),
+        calculateDamage: () => ({ diceFormula: '1d8', rolls: [4], modifier: 0, total: 4, isCritical: false }),
       });
       const resolver = new AttackResolver(roller);
       const attacker = createTestCombatant({}, { id: 'atk' });
@@ -554,7 +596,7 @@ describe('AttackResolver', () => {
     it('can still hit on disadvantage when both rolls are high enough', () => {
       const roller = createMockDiceRoller({
         rollWithDisadvantage: () => ({ roll1: 18, roll2: 15, result: 15 }),
-        calculateDamage: () => ({ rolls: [6], modifier: 0, total: 6, isCritical: false }),
+        calculateDamage: () => ({ diceFormula: '1d8', rolls: [6], modifier: 0, total: 6, isCritical: false }),
       });
       const resolver = new AttackResolver(roller);
       const attacker = createTestCombatant({}, { id: 'atk' });
@@ -586,12 +628,12 @@ describe('AttackResolver', () => {
   // ─── Damage rolling ──────────────────────────────────────────────────────
 
   describe('damage rolling', () => {
-    it('deals damage on hit and reduces target HP', () => {
+    it('deals damage on hit and reduces target HP (dnd mode)', () => {
       const roller = createMockDiceRoller({
         rollD20: () => 15,
-        calculateDamage: () => ({ rolls: [6], modifier: 3, total: 9, isCritical: false }),
+        calculateDamage: () => ({ diceFormula: '1d8', rolls: [6], modifier: 3, total: 9, isCritical: false }),
       });
-      const resolver = new AttackResolver(roller);
+      const resolver = new AttackResolver(roller, 'dnd');
       const attacker = createTestCombatant({}, { id: 'atk' });
       const target = createTestCombatant({}, { currentHP: 30, id: 'tgt' });
 
@@ -602,13 +644,16 @@ describe('AttackResolver', () => {
       expect(target.currentHP).toBe(21);
     });
 
-    it('critical hit doubles damage dice (not modifier)', () => {
+    it('critical hit doubles damage dice (not modifier) in dnd mode', () => {
       const roller = createMockDiceRoller({
         rollD20: () => 20,
-        calculateDamage: () => ({ rolls: [6, 6], modifier: 3, total: 15, isCritical: true }),
+        calculateDamage: () => ({ diceFormula: '1d8', rolls: [6, 6], modifier: 3, total: 15, isCritical: true }),
       });
-      const resolver = new AttackResolver(roller);
-      const attacker = createTestCombatant({}, { id: 'atk' });
+      const resolver = new AttackResolver(roller, 'dnd');
+      const attacker = createTestCombatant(
+        { ability_scores: scores({ STR: 16 }) },
+        { id: 'atk' },
+      );
       const target = createTestCombatant({}, { currentHP: 50, id: 'tgt' });
 
       const result = resolver.resolveAttack(attacker, target, makeAttack());
@@ -616,15 +661,15 @@ describe('AttackResolver', () => {
       expect(result.attackRoll.isCritical).toBe(true);
       expect(result.damageRoll!.isCritical).toBe(true);
       expect(result.damageRoll!.rolls).toHaveLength(2); // doubled dice
-      expect(result.damageRoll!.modifier).toBe(3); // modifier NOT doubled
+      expect(result.damageRoll!.modifier).toBe(mod(16)); // modifier NOT doubled (STR 16 → +3)
     });
 
     it('damage_roll captures dice formula', () => {
       const roller = createMockDiceRoller({
         rollD20: () => 15,
-        calculateDamage: () => ({ rolls: [4, 3], modifier: 2, total: 9, isCritical: false }),
+        calculateDamage: () => ({ diceFormula: '2d6', rolls: [4, 3], modifier: 2, total: 9, isCritical: false }),
       });
-      const resolver = new AttackResolver(roller);
+      const resolver = new AttackResolver(roller, 'dnd');
       const attacker = createTestCombatant({}, { id: 'atk' });
       const target = createTestCombatant({ armor_class: 10 }, { id: 'tgt' });
 
@@ -829,6 +874,7 @@ describe('AttackResolver', () => {
     /**
      * Run N attacks with a seeded roller and count hits.
      * Uses enough samples to verify the math without being flaky.
+     * Uses 'dnd' mode for classic D&D hit/miss mechanics.
      */
     function sampleHitRate(
       attackBonus: number,
@@ -839,7 +885,7 @@ describe('AttackResolver', () => {
       let hits = 0;
       for (let i = 0; i < sampleCount; i++) {
         const roller = createSeededRoller(`${seed}-${i}`);
-        const resolver = new AttackResolver(roller);
+        const resolver = new AttackResolver(roller, 'dnd');
         const attacker = createTestCombatant({}, { id: 'atk' });
         const target = createTestCombatant({ armor_class: targetAC }, { id: 'tgt' });
         const result = resolver.resolveAttack(
@@ -922,7 +968,7 @@ describe('AttackResolver', () => {
       let hits = 0;
       for (let i = 0; i < sampleCount; i++) {
         const roller = createSeededRoller(`adv-hitrate-${i}`);
-        const resolver = new AttackResolver(roller);
+        const resolver = new AttackResolver(roller, 'dnd');
         const attacker = createTestCombatant({}, { id: 'atk' });
         const target = createTestCombatant({ armor_class: targetAC }, { id: 'tgt' });
         const result = resolver.attackWithAdvantage(
@@ -943,7 +989,7 @@ describe('AttackResolver', () => {
       let hits = 0;
       for (let i = 0; i < sampleCount; i++) {
         const roller = createSeededRoller(`disadv-hitrate-${i}`);
-        const resolver = new AttackResolver(roller);
+        const resolver = new AttackResolver(roller, 'dnd');
         const attacker = createTestCombatant({}, { id: 'atk' });
         const target = createTestCombatant({ armor_class: targetAC }, { id: 'tgt' });
         const result = resolver.attackWithDisadvantage(
@@ -1010,7 +1056,7 @@ describe('AttackResolver', () => {
     it('attackWithAdvantage returns correct result structure', () => {
       const roller = createMockDiceRoller({
         rollWithAdvantage: () => ({ roll1: 15, roll2: 8, result: 15 }),
-        calculateDamage: () => ({ rolls: [5], modifier: 0, total: 5, isCritical: false }),
+        calculateDamage: () => ({ diceFormula: '1d8', rolls: [5], modifier: 0, total: 5, isCritical: false }),
       });
       const resolver = new AttackResolver(roller);
       const attacker = createTestCombatant({ name: 'Hero' }, { id: 'atk' });
@@ -1026,11 +1072,11 @@ describe('AttackResolver', () => {
       expect(result.attackRoll.hit).toBe(true);
     });
 
-    it('attackWithDisadvantage returns correct result structure on miss', () => {
+    it('attackWithDisadvantage returns correct result structure on miss (dnd mode)', () => {
       const roller = createMockDiceRoller({
         rollWithDisadvantage: () => ({ roll1: 3, roll2: 5, result: 3 }),
       });
-      const resolver = new AttackResolver(roller);
+      const resolver = new AttackResolver(roller, 'dnd');
       const attacker = createTestCombatant({ name: 'Hero' }, { id: 'atk' });
       const target = createTestCombatant({ armor_class: 20 }, { id: 'tgt' });
 

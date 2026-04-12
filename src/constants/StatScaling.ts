@@ -61,7 +61,9 @@ const ATTACK_BONUS_PER_LEVEL = 0.2;
  * - Levels 6-9: d10
  * - Levels 10-14: d12
  * - Levels 15-19: 2d6 (average 7, max 12)
- * - Levels 20: 2d8 (average 9, max 16)
+ * - Levels 20-24: 2d8 (average 9, max 16)
+ * - Levels 25-29: 2d10 (average 11, max 20)
+ * - Levels 30+: 3d8 (average 13.5, max 24)
  */
 const DAMAGE_DIE_BY_LEVEL: Array<{ minLevel: number; die: string }> = [
     { minLevel: 1,  die: '1d6' },
@@ -70,6 +72,8 @@ const DAMAGE_DIE_BY_LEVEL: Array<{ minLevel: number; die: string }> = [
     { minLevel: 10, die: '1d12' },
     { minLevel: 15, die: '2d6' },
     { minLevel: 20, die: '2d8' },
+    { minLevel: 25, die: '2d10' },
+    { minLevel: 30, die: '3d8' },
 ];
 
 /**
@@ -133,8 +137,10 @@ function getPrimaryStat(archetype: EnemyArchetype): keyof AbilityScores {
  * - Level 10: 1.44x
  * - Level 15: 1.59x
  * - Level 20: 1.70x
+ * - Level 25: 1.84x
+ * - Level 30: 2.015x
  *
- * @param level - Effective level (1-20, supports fractional)
+ * @param level - Effective level (1-30+, supports fractional)
  * @returns Multiplier where level 1 = 1.0
  */
 export function getLevelScalingFactor(level: number): number {
@@ -159,7 +165,7 @@ export function getLevelScalingFactor(level: number): number {
  * the missing CR-based HP scaling that the current system lacks.
  *
  * @param baseHP - Base HP from enemy template (e.g., 15 for orc)
- * @param level - Effective HP level (1-20)
+ * @param level - Effective HP level (1-30+)
  * @param rarity - Enemy rarity tier (affects stat multiplier)
  * @returns Scaled HP value
  */
@@ -207,7 +213,7 @@ function getFractionalCRHPMultiplier(level: number): number {
  * - Attack bonus: proficiency + ability modifier + extra level bonus
  *
  * @param baseStats - The scaled ability scores for the enemy
- * @param level - Effective attack level (1-20)
+ * @param level - Effective attack level (1-30+)
  * @param rarity - Enemy rarity tier
  * @param archetype - Enemy combat archetype (determines primary stat)
  * @returns Object with damageDie, damageModifier, and attackBonus
@@ -261,7 +267,7 @@ function getDamageDieForLevel(level: number): string {
  * New system adds level-based AC scaling: AC = baseAC + DEX_modifier + equipment_modifier + levelBonus
  *
  * @param baseStats - The scaled ability scores for the enemy
- * @param level - Effective defense level (1-20)
+ * @param level - Effective defense level (1-30+)
  * @param baseAC - Base AC from enemy template (e.g., 13 for orc)
  * @param equipment - Equipment configuration (armor, shield)
  * @returns Computed AC value

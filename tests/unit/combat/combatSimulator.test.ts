@@ -958,7 +958,7 @@ describe('CombatSimulator - Statistical Properties', () => {
     const simulator = new CombatSimulator();
 
     const results = simulator.run(players, enemies, makeConfig({
-      runCount: 50,
+      runCount: 200,
       baseSeed: 'strong-enemy',
     }));
 

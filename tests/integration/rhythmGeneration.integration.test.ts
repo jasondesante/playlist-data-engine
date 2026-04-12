@@ -382,7 +382,7 @@ describe('Procedural Rhythm Generation API Integration Tests', () => {
             );
 
             const validBands = ['low', 'mid', 'high'];
-            const validGridTypes = ['straight_16th', 'triplet_8th', 'straight_8th', 'quarter_triplet'];
+            const validGridTypes = ['straight_16th', 'triplet_8th', 'straight_8th', 'straight_4th', 'quarter_triplet'];
 
             for (const [difficulty, variant] of Object.entries(result.difficultyVariants)) {
                 expect(variant.difficulty).toBe(difficulty);
@@ -448,9 +448,9 @@ describe('Procedural Rhythm Generation API Integration Tests', () => {
 
             const easyVariant = result.difficultyVariants.easy;
 
-            // Easy difficulty only allows: straight_8th, quarter_triplet
-            const allowedGridTypes = ['straight_8th', 'quarter_triplet'];
-            const disallowedGridTypes = ['straight_16th', 'triplet_8th'];
+            // Easy difficulty only allows: straight_4th, quarter_triplet
+            const allowedGridTypes = ['straight_4th', 'quarter_triplet'];
+            const disallowedGridTypes = ['straight_16th', 'triplet_8th', 'straight_8th'];
 
             for (const beat of easyVariant.beats) {
                 expect(allowedGridTypes).toContain(beat.gridType);

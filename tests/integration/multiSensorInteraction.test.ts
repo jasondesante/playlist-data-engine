@@ -619,7 +619,7 @@ describe('Multi-Sensor Interaction Tests (Task 11.4)', () => {
 
       // Verify diagnostics structure includes all sensors
       expect(diagnostics.sensors).toBeDefined();
-      expect(diagnostics.sensors.length).toBe(4);
+      expect(diagnostics.sensors.length).toBe(3);
 
       // Verify cache info for sensors with caching
       expect(diagnostics.cache.geolocation).toBeDefined();
@@ -627,7 +627,7 @@ describe('Multi-Sensor Interaction Tests (Task 11.4)', () => {
 
       // Verify permissions
       expect(diagnostics.permissions).toBeDefined();
-      expect(diagnostics.permissions.length).toBe(4);
+      expect(diagnostics.permissions.length).toBe(3);
 
       // Verify context data
       expect(diagnostics.context.hasGeolocation).toBe(true);

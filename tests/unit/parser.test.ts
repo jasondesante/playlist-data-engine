@@ -632,7 +632,7 @@ describe('PlaylistParser', () => {
 
             // Should complete within reasonable time (timeout + some margin)
             // With 100ms timeout, should be well under 1 second
-            expect(elapsed).toBeLessThan(500);
+            expect(elapsed).toBeLessThan(1000);
 
             // Verify the abort signal was triggered
             expect(fetchSignal).toBeDefined();

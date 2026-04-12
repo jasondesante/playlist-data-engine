@@ -324,7 +324,7 @@ describe('Integration: Enemy Encounter Generation', () => {
 
             const weapon = commonEnemy.equipment.weapons[0];
             expect(weapon).toBeDefined();
-            expect(weapon?.damage_dice).toBe('d6');
+            expect(weapon?.damage_dice).toBe('1d6');
         });
 
         it('should generate uncommon enemy with d8 signature damage', () => {
@@ -335,7 +335,7 @@ describe('Integration: Enemy Encounter Generation', () => {
             });
 
             const weapon = uncommonEnemy.equipment.weapons[0];
-            expect(weapon?.damage_dice).toBe('d8');
+            expect(weapon?.damage_dice).toBe('1d8');
         });
 
         it('should generate elite enemy with d10 signature damage', () => {
@@ -346,7 +346,7 @@ describe('Integration: Enemy Encounter Generation', () => {
             });
 
             const weapon = eliteEnemy.equipment.weapons[0];
-            expect(weapon?.damage_dice).toBe('d10');
+            expect(weapon?.damage_dice).toBe('1d10');
         });
 
         it('should generate boss enemy with d12 signature damage', () => {
@@ -357,7 +357,7 @@ describe('Integration: Enemy Encounter Generation', () => {
             });
 
             const weapon = bossEnemy.equipment.weapons[0];
-            expect(weapon?.damage_dice).toBe('d12');
+            expect(weapon?.damage_dice).toBe('1d12');
         });
     });
 

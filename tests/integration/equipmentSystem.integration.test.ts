@@ -1178,9 +1178,15 @@ describe('Integration: Equipment System', () => {
             const result1 = EquipmentEffectApplier.equipItem(character, magicItem, 'ring-001');
             const result2 = EquipmentEffectApplier.equipItem(character, magicItem, 'ring-001');
 
-            // Second equip should fail or be a no-op
-            expect(result2.applied).toBe(false);
-            expect(result2.errors.length).toBeGreaterThan(0);
+            // First equip should succeed
+            expect(result1.applied).toBe(true);
+            // Second equip is idempotent — same instance already equipped, returns success with no changes
+            expect(result2.applied).toBe(true);
+            expect(result2.count).toBe(0);
+            expect(result2.errors.length).toBe(0);
+            // No duplicate effect entry should have been added
+            const effectsAfter = character.equipment_effects?.filter(e => e.source === 'Test Ring') || [];
+            expect(effectsAfter.length).toBe(1);
         });
 
         it('should handle unequipping non-existent item gracefully', () => {
@@ -1218,11 +1224,12 @@ describe('Integration: Equipment System', () => {
             };
 
             const result = EquipmentEffectApplier.equipItem(character, basicItem, 'basic-001');
-            // Equipment with no properties returns applied=false since nothing was applied
-            // but it still tracks the item if we have grantsFeatures or grantsSkills
-            expect(result.applied).toBe(false);
+            // Equipment with no properties still succeeds (no errors) but applies nothing
+            expect(result.applied).toBe(true);
             expect(result.count).toBe(0); // No properties to apply
             expect(result.errors.length).toBe(0); // No errors either
+            // Item is still tracked in equipment_effects
+            expect(character.equipment_effects?.length).toBe(1);
         });
     });
 });

@@ -155,6 +155,9 @@ describe('Wayfinder Integration', () => {
         // Wait for Wayfinder to initialize (async in constructor)
         await vi.advanceTimersByTimeAsync(0);
 
+        // Directly set wayfinder since constructor's async init may not complete with fake timers
+        (manager as any).wayfinder = mockWayfinderInstance;
+
         // Mock Wayfinder to return a specific gateway
         mockWayfinderInstance.resolveUrl.mockResolvedValueOnce(new URL('https://wayfinder-gateway.io/' + VALID_TX_ID));
 
@@ -935,22 +938,12 @@ describe('prefetchUrls method', () => {
         const txId1 = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
         const txId2 = 'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB';
 
-        // All gateways fail for second URL (parallel check all return 500)
+        // First txId always succeeds, second txId always fails (all gateways 500)
         mockFetch.mockImplementation(async (url: string) => {
-            // First resolveUrl succeeds (first URL), second fails (all gateways 500)
-            return new Response(null, { status: 200 });
-        });
-
-        // For the second URL, make all gateways fail
-        let callCount = 0;
-        mockFetch.mockImplementation(async () => {
-            callCount++;
-            if (callCount <= 3) {
-                // First resolveUrl: all succeed
-                return new Response(null, { status: 200 });
+            if (url.includes(txId2)) {
+                return new Response(null, { status: 500 });
             }
-            // Second resolveUrl: all fail
-            return new Response(null, { status: 500 });
+            return new Response(null, { status: 200 });
         });
 
         const result = await manager.prefetchUrls([
@@ -1301,7 +1294,7 @@ describe('getAllGatewayHealth method', () => {
             timeout: 1000,
         });
 
-        // Primary fails, others succeed
+        // Primary fails, secondary succeeds
         mockFetch.mockImplementation(async (url: string) => {
             if (url.includes('primary.example.com')) {
                 return new Response(null, { status: 500 });
@@ -1313,11 +1306,11 @@ describe('getAllGatewayHealth method', () => {
 
         const allHealth = manager.getAllGatewayHealth();
 
-        // With parallel checking, all gateways get checked
+        // With sequential checking, only primary and secondary are checked
         expect(allHealth[0].failureCount).toBeGreaterThanOrEqual(1); // primary failed
         expect(allHealth[1].successCount).toBeGreaterThanOrEqual(1); // secondary succeeded
-        // Tertiary was also checked in parallel
-        expect(allHealth[2].totalChecks).toBeGreaterThanOrEqual(1);
+        // Tertiary is never reached since secondary succeeds
+        expect(allHealth[2].totalChecks).toBe(0);
     });
 });
 
@@ -1366,27 +1359,27 @@ describe('runHealthCheck method', () => {
     });
 
     it('should identify fastest gateway', async () => {
-        // Use real timers for response time measurement
+        // Use real timers for accurate Date.now() timing measurement
         vi.useRealTimers();
 
         const manager = new ArweaveGatewayManager({
             gateways: CUSTOM_GATEWAYS,
-            timeout: 1000,
+            timeout: 5000,
         });
 
-        // Secondary is fastest
+        // Use large delays to ensure deterministic ordering despite timer imprecision
         mockFetch.mockImplementation(async (url: string) => {
             if (url.includes('secondary.example.com')) {
-                await new Promise(resolve => setTimeout(resolve, 10)); // Fastest
+                await new Promise(resolve => setTimeout(resolve, 50)); // Fastest
             } else {
-                await new Promise(resolve => setTimeout(resolve, 50));
+                await new Promise(resolve => setTimeout(resolve, 300));
             }
             return new Response(null, { status: 200 });
         });
 
         const result = await manager.runHealthCheck();
 
-        // Secondary should be fastest (10ms)
+        // Secondary should be fastest (50ms vs 300ms)
         expect(result.fastestGateway).toBe('secondary.example.com');
     });
 
@@ -1834,34 +1827,46 @@ describe('Parallel gateway checking', () => {
         expect(result).toContain(VALID_TX_ID);
     });
 
-    it('should race all gateways concurrently', async () => {
+    it('should check gateways sequentially until one succeeds', async () => {
         const manager = new ArweaveGatewayManager({
             gateways: CUSTOM_GATEWAYS,
             timeout: 1000,
         });
 
         const fetchCalls: string[] = [];
-        let resolveFirst: (() => void) | null = null;
-        const firstCallPromise = new Promise<void>(resolve => { resolveFirst = resolve; });
-
         mockFetch.mockImplementation(async (url: string) => {
             fetchCalls.push(url);
-            // Wait until we've seen all gateways start before resolving
-            if (fetchCalls.length === 3 && resolveFirst) {
-                resolveFirst();
-            }
-            await firstCallPromise;
             return new Response(null, { status: 200 });
         });
 
         await manager.resolveUrl(ARWEAVE_URL);
 
-        // All 3 gateways should have been called
-        expect(fetchCalls).toHaveLength(3);
-        const hosts = fetchCalls.map(url => url.replace(/https?:\/\//, '').split('/')[0]);
-        expect(hosts).toContain('primary.example.com');
-        expect(hosts).toContain('secondary.example.com');
-        expect(hosts).toContain('tertiary.example.com');
+        // With sequential checking, only the first gateway is checked (it succeeds)
+        expect(fetchCalls.length).toBeGreaterThanOrEqual(1);
+        expect(fetchCalls[0]).toContain('primary.example.com');
+    });
+
+    it('should try next gateway when first fails sequentially', async () => {
+        const manager = new ArweaveGatewayManager({
+            gateways: CUSTOM_GATEWAYS,
+            timeout: 1000,
+        });
+
+        const fetchCalls: string[] = [];
+        mockFetch.mockImplementation(async (url: string) => {
+            fetchCalls.push(url);
+            if (url.includes('primary.example.com')) {
+                return new Response(null, { status: 500 });
+            }
+            return new Response(null, { status: 200 });
+        });
+
+        await manager.resolveUrl(ARWEAVE_URL);
+
+        // Primary failed, secondary succeeded — both should have been checked
+        expect(fetchCalls.length).toBeGreaterThanOrEqual(2);
+        expect(fetchCalls[0]).toContain('primary.example.com');
+        expect(fetchCalls[1]).toContain('secondary.example.com');
     });
 });
 

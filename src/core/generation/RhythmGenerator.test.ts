@@ -411,7 +411,7 @@ describe('RhythmGenerator', () => {
 
             // Verify each beat in each variant has required properties
             const validBands = ['low', 'mid', 'high'];
-            const validGridTypes = ['straight_16th', 'triplet_8th', 'straight_8th', 'quarter_triplet'];
+            const validGridTypes = ['straight_16th', 'triplet_8th', 'straight_8th', 'straight_4th', 'quarter_triplet'];
 
             for (const [difficulty, variant] of Object.entries(result.difficultyVariants)) {
                 for (const beat of variant.beats) {
@@ -517,10 +517,10 @@ describe('RhythmGenerator', () => {
             const result = await generator.generate(audioBuffer, unifiedBeatMap);
             const easyVariant = result.difficultyVariants.easy;
 
-            // Easy difficulty only allows: straight_8th, quarter_triplet
-            // It must NOT contain: straight_16th, triplet_8th
-            const allowedGridTypes = ['straight_8th', 'quarter_triplet'];
-            const disallowedGridTypes = ['straight_16th', 'triplet_8th'];
+            // Easy difficulty only allows: straight_4th, quarter_triplet
+            // It must NOT contain: straight_16th, triplet_8th, straight_8th
+            const allowedGridTypes = ['straight_4th', 'quarter_triplet'];
+            const disallowedGridTypes = ['straight_16th', 'triplet_8th', 'straight_8th'];
 
             // Verify all beats in easy variant have allowed grid types
             for (const beat of easyVariant.beats) {

@@ -391,7 +391,8 @@ describe('EquipmentEffectApplier', () => {
 
             const result = EquipmentEffectApplier.equipItem(testCharacter, equipment);
 
-            expect(result.applied).toBe(false);
+            // No effects to apply, but no errors either — treated as success
+            expect(result.applied).toBe(true);
             expect(result.count).toBe(0);
             expect(result.errors).toHaveLength(0);
         });
@@ -420,7 +421,7 @@ describe('EquipmentEffectApplier', () => {
             expect(testCharacter.equipment_effects?.[0].instanceId).toBe(instanceId);
         });
 
-        it('should reject equipping the same equipment twice', () => {
+        it('should handle equipping the same equipment twice idempotently', () => {
             const equipment: EnhancedEquipment = {
                 name: 'Duplicate Ring',
                 type: 'item',
@@ -441,8 +442,10 @@ describe('EquipmentEffectApplier', () => {
             const result2 = EquipmentEffectApplier.equipItem(testCharacter, equipment);
 
             expect(result1.applied).toBe(true);
-            expect(result2.applied).toBe(false);
-            expect(result2.errors).toContain('Equipment "Duplicate Ring" is already equipped');
+            // Re-equipping is idempotent: returns success without re-applying
+            expect(result2.applied).toBe(true);
+            expect(result2.count).toBe(0);
+            expect(result2.errors).toHaveLength(0);
             expect(testCharacter.ability_scores.CON).toBe(11); // Only applied once
         });
 

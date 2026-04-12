@@ -25,7 +25,7 @@ describe('EnvironmentalSensors', () => {
 
     it('should initialize with all permissions denied', () => {
         const permissions = sensors.getPermissions();
-        expect(permissions).toHaveLength(4);
+        expect(permissions).toHaveLength(3);
         permissions.forEach(p => {
             expect(p.granted).toBe(false);
         });
@@ -2847,7 +2847,7 @@ describe('WeatherAPIClient Severe Weather Detection', () => {
             it('should initialize all sensors with unknown status', () => {
                 const statuses = sensors.getAllSensorStatuses();
 
-                expect(statuses).toHaveLength(4);
+                expect(statuses).toHaveLength(3);
                 statuses.forEach(status => {
                     expect(status.health).toBe('unknown');
                     expect(status.lastSuccessTimestamp).toBeNull();

@@ -122,7 +122,7 @@ function createAttack(
 describe('AttackResolver', () => {
     describe('Ability Modifier for Damage - Melee Attacks', () => {
         it('should use STR modifier for basic melee attacks', () => {
-            const resolver = new AttackResolver();
+            const resolver = new AttackResolver(undefined, 'dnd');
 
             // STR 16 (+3 modifier), DEX 10 (+0)
             const attacker = createCombatant('StrHero', 16, 10);
@@ -149,12 +149,12 @@ describe('AttackResolver', () => {
         });
 
         it('should use DEX modifier for ranged attacks', () => {
-            const resolver = new AttackResolver();
+            const resolver = new AttackResolver(undefined, 'dnd');
 
             // STR 10 (+0), DEX 16 (+3)
             const attacker = createCombatant('DexHero', 10, 16);
             const target = createCombatant('Target', 10, 10, 20, 10);
-            const attack = createAttack('Longbow', '1d8', 'ranged');
+            const attack = createAttack('Longbow', '1d8', 'ranged', ['ranged']);
 
             const results: number[] = [];
             for (let i = 0; i < 50; i++) {
@@ -174,7 +174,7 @@ describe('AttackResolver', () => {
         });
 
         it('should use max(STR, DEX) for finesse weapons', () => {
-            const resolver = new AttackResolver();
+            const resolver = new AttackResolver(undefined, 'dnd');
 
             // Test with DEX > STR
             const attacker1 = createCombatant('DexFinesse', 10, 16); // STR +0, DEX +3
@@ -325,7 +325,7 @@ describe('AttackResolver', () => {
         });
 
         it('should handle invalid dice formula (empty string)', () => {
-            const resolver = new AttackResolver();
+            const resolver = new AttackResolver(undefined, 'dnd');
 
             const attacker = createCombatant('Puncher', 16, 10);
             // Use low AC so the attack will hit and trigger damage calculation
@@ -349,7 +349,7 @@ describe('AttackResolver', () => {
         });
 
         it('should handle missing attack type (defaults to melee)', () => {
-            const resolver = new AttackResolver();
+            const resolver = new AttackResolver(undefined, 'dnd');
 
             const attacker = createCombatant('StrHero', 16, 10);
             const target = createCombatant('Target', 10, 10, 20, 10);
@@ -407,7 +407,7 @@ describe('AttackResolver', () => {
         });
 
         it('should apply ability modifier to critical hits correctly', () => {
-            const resolver = new AttackResolver();
+            const resolver = new AttackResolver(undefined, 'dnd');
 
             const attacker = createCombatant('FinesseHero', 10, 18); // +4 DEX
             const target = createCombatant('Target', 10, 10, 20, 5);
@@ -637,7 +637,7 @@ describe('AttackResolver', () => {
         });
 
         it('should allow critical hit with advantage even if the lower die would miss AC', () => {
-            const resolver = new AttackResolver();
+            const resolver = new AttackResolver(undefined, 'dnd');
 
             const attacker = createCombatant('Hero', 10, 10); // No ability bonus
             const target = createCombatant('Target', 10, 10, 20, 15); // AC 15
@@ -687,7 +687,7 @@ describe('AttackResolver', () => {
 
     describe('High Ability Scores', () => {
         it('should correctly calculate very high STR modifier (20 = +5)', () => {
-            const resolver = new AttackResolver();
+            const resolver = new AttackResolver(undefined, 'dnd');
 
             const attacker = createCombatant('StrongHero', 20, 10); // +5 STR
             const target = createCombatant('Target', 10, 10, 20, 10);
@@ -710,11 +710,11 @@ describe('AttackResolver', () => {
         });
 
         it('should correctly calculate very high DEX modifier (20 = +5)', () => {
-            const resolver = new AttackResolver();
+            const resolver = new AttackResolver(undefined, 'dnd');
 
             const attacker = createCombatant('SwiftHero', 10, 20); // +5 DEX
             const target = createCombatant('Target', 10, 10, 20, 10);
-            const attack = createAttack('Heavy Crossbow', '1d10', 'ranged');
+            const attack = createAttack('Heavy Crossbow', '1d10', 'ranged', ['ranged']);
 
             const results: number[] = [];
             for (let i = 0; i < 50; i++) {
@@ -732,7 +732,7 @@ describe('AttackResolver', () => {
 
     describe('Damage Roll Structure', () => {
         it('should include modifier in damage roll', () => {
-            const resolver = new AttackResolver();
+            const resolver = new AttackResolver(undefined, 'dnd');
 
             const attacker = createCombatant('StrHero', 16, 10); // +3 STR
             const target = createCombatant('Target', 10, 10, 20, 5);
@@ -749,7 +749,7 @@ describe('AttackResolver', () => {
         });
 
         it('should record individual dice rolls', () => {
-            const resolver = new AttackResolver();
+            const resolver = new AttackResolver(undefined, 'dnd');
 
             const attacker = createCombatant('StrHero', 14, 10); // +2 STR
             const target = createCombatant('Target', 10, 10, 20, 5);

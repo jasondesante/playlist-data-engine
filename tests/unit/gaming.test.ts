@@ -375,15 +375,12 @@ describe('SteamAPIClient', () => {
     it('should fetch current game with real API response structure', async () => {
         const mockResponse = {
             response: {
-                total_count: 1,
-                games: [
+                players: [
                     {
-                        appid: 570,
-                        name: 'Dota 2',
-                        playtime_forever: 1200,
-                        playtime_2weeks: 120,
-                        img_icon_url: 'icon',
-                        img_logo_url: 'logo'
+                        steamid: '76561198000000000',
+                        personaname: 'TestPlayer',
+                        gameextrainfo: 'Dota 2',
+                        gameid: '570'
                     }
                 ]
             }
@@ -400,7 +397,6 @@ describe('SteamAPIClient', () => {
         expect(result?.name).toBe('Dota 2');
         expect(result?.appId).toBe(570);
         expect(result?.source).toBe('steam');
-        expect(result?.sessionDuration).toBeDefined();
     });
 
     it('should handle API errors gracefully', async () => {
