@@ -2,7 +2,7 @@
 name: "rp-oracle-export-cli"
 description: "Export a ChatGPT-ready Question / Plan / Review prompt using rp-cli"
 repoprompt_managed: true
-repoprompt_skills_version: 30
+repoprompt_skills_version: 33
 repoprompt_variant: cli
 ---
 
@@ -38,7 +38,7 @@ Use the extracted task (not the raw request) for all downstream steps — intent
 
 ### 0: Workspace Verification (REQUIRED)
 
-Before any building context, confirm the target codebase is loaded:
+Before any building context, bind to the target codebase using its working directory:
 
 ```bash
 # First, list available windows to find the right one
