@@ -456,6 +456,8 @@ A segment of a pitch contour with consistent direction.
 
 ### SamplingStrategy
 
+*Location:* *[src/core/analysis/AudioAnalyzer.ts](src/core/analysis/AudioAnalyzer.ts)*
+
 Used by `analyzeTimeline` to determine how often to sample the audio.
 
 | Option | Type | Description |
@@ -464,6 +466,8 @@ Used by `analyzeTimeline` to determine how often to sample the audio.
 | `type: 'count'` | object | Generate exactly `count` samples across the whole song |
 
 ### AudioTimelineEvent
+
+*Location:* *[src/core/types/AudioProfile.ts](src/core/types/AudioProfile.ts)*
 
 Data point for a specific segment of audio.
 
@@ -601,6 +605,8 @@ Standard D&D 5e skills:
 
 #### ProficiencyLevel
 
+*Location:* *[src/core/types/Character.ts](src/core/types/Character.ts)*
+
 Skill proficiency levels:
 
 | Level | Description |
@@ -610,6 +616,8 @@ Skill proficiency levels:
 | expertise | Expertise (add 2× proficiency bonus) |
 
 #### GameMode
+
+*Location:* *[src/core/types/Character.ts](src/core/types/Character.ts)*
 
 Character progression rules:
 
@@ -1444,11 +1452,6 @@ Converts raw JSON data (Arweave) into standardized `ServerlessPlaylist` objects.
 
 #### Class: `PlaylistParser`
 
-**Constructor:**
-```typescript
-new PlaylistParser(options?: PlaylistParserOptions)
-```
-
 **Methods:**
 
 | Method | Returns | Description |
@@ -1590,17 +1593,6 @@ Pre-configured Arweave-hosted models for zero-setup usage (see [source](src/core
 #### Model Presets
 
 Instead of providing raw model URLs, use preset names to select pre-configured models. Presets are resolved to full `ModelConfig` objects in the constructor. Explicit `models` entries override presets for the same category.
-
-```typescript
-// Use presets
-const classifier = new MusicClassifier({ preset: { genre: 'discogs400', mood: 'jamendo' } });
-
-// Mix presets with custom URLs
-const classifier = new MusicClassifier({
-    preset: { genre: 'jamendo' },
-    models: { mood: { modelUrl: 'https://...', modelType: 'musicnn' } }
-});
-```
 
 **Genre presets:**
 
@@ -2634,29 +2626,29 @@ constructor(
 
 **Methods:**
 
-| Method | Description |
-|--------|-------------|
-| `subscribe(callback: SubdivisionCallback): () => void` | Subscribe to beat events, returns unsubscribe function |
-| `setSubdivision(type: SubdivisionType): void` | Change subdivision type in real-time |
-| `setTransitionMode(mode: SubdivisionTransitionMode): void` | Change transition mode during playback |
-| `play(): void` | Start streaming beat events |
-| `stop(): void` | Stop streaming and reset state |
-| `pause(): void` | Pause event emission (preserves position) |
-| `resume(): void` | Resume paused playback |
-| `seek(time: number): void` | Seek to a specific time in seconds |
-| `getBeatsInRange(startTime: number, endTime: number): SubdividedBeat[]` | Get beats in a time range |
-| `getUpcomingBeats(count: number): SubdividedBeat[]` | Get upcoming beats for pre-rendering |
-| `getBeatAtTime(time: number): SubdividedBeat \| null` | Get beat at specific time |
-| `getCurrentBeat(): SubdividedBeat \| null` | Get the current (most recent) beat |
-| `getNextBeat(): SubdividedBeat \| null` | Get the next beat |
-| `getCurrentTime(): number` | Get current playback position in seconds |
-| `getDuration(): number` | Get beat map duration in seconds |
-| `getOptions(): Required<SubdivisionPlaybackOptions>` | Get current playback options |
-| `setBeatMap(unifiedMap: UnifiedBeatMap): void` | Update the unified beat map |
-| `checkButtonPress(timestamp: number, thresholds?: AccuracyThresholds): ButtonPressResult` | Check tap accuracy against current subdivision's beats (no key matching, optional custom thresholds) |
-| `isRunning(): boolean` | Check if controller is running |
-| `isPaused(): boolean` | Check if controller is paused |
-| `dispose(): void` | Clean up resources |
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `subscribe(callback)` | `() => void` | Subscribe to beat events, returns unsubscribe function |
+| `setSubdivision(type)` | `void` | Change subdivision type in real-time |
+| `setTransitionMode(mode)` | `void` | Change transition mode during playback |
+| `play()` | `void` | Start streaming beat events |
+| `stop()` | `void` | Stop streaming and reset state |
+| `pause()` | `void` | Pause event emission (preserves position) |
+| `resume()` | `void` | Resume paused playback |
+| `seek(time)` | `void` | Seek to a specific time in seconds |
+| `getBeatsInRange(startTime, endTime)` | `SubdividedBeat[]` | Get beats in a time range |
+| `getUpcomingBeats(count)` | `SubdividedBeat[]` | Get upcoming beats for pre-rendering |
+| `getBeatAtTime(time)` | `SubdividedBeat \| null` | Get beat at specific time |
+| `getCurrentBeat()` | `SubdividedBeat \| null` | Get the current (most recent) beat |
+| `getNextBeat()` | `SubdividedBeat \| null` | Get the next beat |
+| `getCurrentTime()` | `number` | Get current playback position in seconds |
+| `getDuration()` | `number` | Get beat map duration in seconds |
+| `getOptions()` | `Required<SubdivisionPlaybackOptions>` | Get current playback options |
+| `setBeatMap(unifiedMap)` | `void` | Update the unified beat map |
+| `checkButtonPress(timestamp, thresholds?)` | `ButtonPressResult` | Check tap accuracy against current subdivision's beats (no key matching, optional custom thresholds) |
+| `isRunning()` | `boolean` | Check if controller is running |
+| `isPaused()` | `boolean` | Check if controller is paused |
+| `dispose()` | `void` | Clean up resources |
 
 **Transition Modes:**
 
@@ -3021,17 +3013,7 @@ constructor(config?: QuantizationConfig)
 
 Extends the [RhythmQuantizer](#rhythmquantizer)'s decide-then-quantize architecture with BPM-aware rules that constrain grid decisions for fundamental playability. At high tempos, certain subdivisions become physically unplayable (e.g., 16th notes at 180 BPM = 83ms apart). This quantizer applies configurable rules before quantization occurs, ensuring the grid respects tempo constraints.
 
-**Architecture:**
-
-```
-decideGrids()           →  RhythmQuantizer base grid decisions
-       ↓
-TempoAwareQuantizer.applyRules()  →  BPM-constrained decisions
-       ↓
-quantizeToGrids()       →  Quantize from original timestamps to final grid
-```
-
-The `TempoAwareQuantizer` plugs into `RhythmGenerator.quantizeTransients()` via the `gridDecider` callback on `RhythmQuantizer.quantize()`. No double-quantization occurs — BPM rules modify grid decisions before any snapping happens.
+**Processing Flow:** `RhythmQuantizer.decideGrids()` → `TempoAwareQuantizer.applyRules()` → `quantizeToGrids()`. The `TempoAwareQuantizer` plugs into `RhythmGenerator.quantizeTransients()` via the `gridDecider` callback on `RhythmQuantizer.quantize()`. No double-quantization occurs — BPM rules modify grid decisions before any snapping happens.
 
 **Constructor:**
 
@@ -3053,23 +3035,23 @@ constructor(config?: TempoAwareQuantizerConfig)
 | `decideGrids(transients, unifiedBeatMap, band)` | `GridDecision[]` | Get base grid decisions from `RhythmQuantizer`, then apply all matching rules |
 | `applyRules(decisions, context)` | `GridDecision[]` | Apply each applicable rule to modify grid decisions |
 
-**Rule Interface:**
+**TempoQuantizationRule Properties:**
 
-```typescript
-interface TempoQuantizationRule {
-  id: string;
-  description: string;
-  applies(bpm: number, context: TempoRuleContext): boolean;
-  apply(decisions: GridDecision[], context: TempoRuleContext): GridDecision[];
-}
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | `string` | Unique rule identifier |
+| `description` | `string` | Human-readable rule description |
+| `applies(bpm, context)` | `boolean` | Whether this rule applies given the current BPM and context |
+| `apply(decisions, context)` | `GridDecision[]` | Apply the rule to modify grid decisions |
 
-interface TempoRuleContext {
-  bpm: number;
-  quarterNoteInterval: number;
-  band: 'low' | 'mid' | 'high';
-  transients: TransientResult[];
-}
-```
+**TempoRuleContext Properties:**
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `bpm` | `number` | Current tempo in BPM |
+| `quarterNoteInterval` | `number` | Duration of a quarter note in seconds |
+| `band` | `'low' \| 'mid' \| 'high'` | Frequency band being quantized |
+| `transients` | `TransientResult[]` | Detected transients for the band |
 
 **Built-in Rule: HighBpmGridRestrictionRule**
 
@@ -3422,30 +3404,13 @@ Generates a single difficulty variant at a time with granular, independent contr
 
 #### DensityGenerationConfig
 
-```typescript
-interface DensityGenerationConfig {
-    /** Target density in notes per second */
-    targetDensity: number;
-
-    /** Maximum quantization grid allowed (independent of density) */
-    maxGridType: ExtendedGridType;
-
-    /**
-     * When true, apply BPM-based restrictions on top of maxGridType.
-     * Uses medium's thresholds (default: 70 BPM):
-     *   - At BPM >= restrictBpm: straight_16th and triplet_8th restricted to straight_8th
-     * When false, only maxGridType is enforced regardless of BPM.
-     * Default: false
-     */
-    bpmBasedQuantization?: boolean;
-
-    /** BPM threshold for restricting 16th/triplet_8th to 8ths. Default: 70 */
-    restrictBpm?: number;
-
-    /** BPM threshold for restricting 8ths to quarter notes. Default: 120 */
-    quarterNoteBpm?: number;
-}
-```
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `targetDensity` | `number` | Yes | Target density in notes per second |
+| `maxGridType` | `ExtendedGridType` | Yes | Maximum quantization grid allowed (independent of density). See [maxGridType Hierarchy](#maxgridtype-hierarchy) for allowed types |
+| `bpmBasedQuantization` | `boolean` | No | When true, apply BPM-based restrictions on top of `maxGridType` (see [BPM-Based Quantization](#bpm-based-quantization-optional)). When false, only `maxGridType` is enforced regardless of BPM |
+| `restrictBpm` | `number` | No | BPM threshold for restricting `straight_16th` and `triplet_8th` to `straight_8th` (only used when `bpmBasedQuantization` is true) |
+| `quarterNoteBpm` | `number` | No | BPM threshold for restricting `straight_8th` to `straight_4th` (only used when `bpmBasedQuantization` is true) |
 
 #### maxGridType Hierarchy
 
@@ -3487,64 +3452,9 @@ Max achievable density is calculated as `maxPositionsPerBeat / quarterNoteInterv
 
 #### API Surface
 
-**DifficultyVariantGenerator:**
+Density-based methods are documented in the [Density-Based Variant Methods](#density-based-variant-methods) table above. The existing `map()` method delegates to `mapVariant()` internally — for `'custom'` difficulty variants, pattern selection defaults to `'medium'` pattern difficulty.
 
-```typescript
-// Single density variant
-generateAtDensity(
-    composite: CompositeStream,
-    config: DensityGenerationConfig,
-    unifiedBeatMap: UnifiedBeatMap,
-    phraseAnalysis?: PhraseAnalysisResult,
-    gridDecisions?: Map<number, GridDecision>
-): DifficultyVariant
-
-// Batch: multiple density variants (shared rhythm/pitch, independent variants)
-generateAtDensities(
-    composite: CompositeStream,
-    configs: { label: string; config: DensityGenerationConfig }[],
-    unifiedBeatMap: UnifiedBeatMap,
-    phraseAnalysis?: PhraseAnalysisResult,
-    gridDecisions?: Map<number, GridDecision>
-): Map<string, DifficultyVariant>
-```
-
-**ButtonMapper:**
-
-```typescript
-// Accept a variant directly (for custom variants not stored on GeneratedRhythm)
-mapVariant(
-    variant: DifficultyVariant,
-    rhythmMetadata: RhythmMetadata,
-    pitchAnalysis?: PitchAtBeat[]
-): MappedLevelResult
-```
-
-The existing `map()` method delegates to `mapVariant()` internally. For `'custom'` difficulty variants, pattern selection defaults to `'medium'` pattern difficulty.
-
-**LevelGenerator:**
-
-```typescript
-// Single density level
-async generateAtDensity(
-    audioBuffer: AudioBuffer,
-    unifiedBeatMap: UnifiedBeatMap,
-    config: DensityGenerationConfig,
-    progressCallback?: LevelProgressCallback,
-    signal?: AbortSignal
-): Promise<GeneratedLevel>
-
-// Batch: multiple density levels (shared rhythm/pitch)
-async generateAtDensities(
-    audioBuffer: AudioBuffer,
-    unifiedBeatMap: UnifiedBeatMap,
-    configs: { label: string; config: DensityGenerationConfig }[],
-    progressCallback?: LevelProgressCallback,
-    signal?: AbortSignal
-): Promise<Map<string, GeneratedLevel>>
-```
-
-Both methods reuse the existing rhythm and pitch analysis pipeline. Rhythm is generated once and shared across all configs in the batch method. The returned `GeneratedLevel` is fully compatible with all downstream consumers — no new types needed.
+Both `LevelGenerator.generateAtDensities()` and `DifficultyVariantGenerator.generateAtDensities()` reuse the existing rhythm and pitch analysis pipeline. Rhythm is generated once and shared across all configs in the batch method. The returned `GeneratedLevel` is fully compatible with all downstream consumers — no new types needed.
 
 #### Custom Variant Properties
 
@@ -3985,14 +3895,9 @@ Serializes and deserializes generated levels. Converts between engine internal f
 
 #### Track Validation
 
-The `validateTrackMatch()` function (exported from the library) checks whether the currently selected track matches the track referenced in an imported level file.
-
-```typescript
-validateTrackMatch(levelTrackRef: TrackReference, currentTrack: {
-  id: string; title: string; artist: string;
-  playlist_index: number; tx_id?: string;
-}): TrackMatchResult
-```
+| Function | Returns | Description |
+|----------|---------|-------------|
+| `validateTrackMatch(levelTrackRef, currentTrack)` | `TrackMatchResult` | Check whether the currently selected track matches the track referenced in an imported level file |
 
 Matching strategy:
 1. Compare by `trackId` (exact match)
@@ -4040,54 +3945,36 @@ Manages active listening sessions and records history.
 #### Class: `SessionTracker`
 
 **Constructor:**
-```typescript
-new SessionTracker(xpCalculator?: XPCalculator)
-```
 
-**Methods:**
+| Constructor | Description |
+|-------------|-------------|
+| `constructor(xpCalculator?: XPCalculator)` | Creates instance with optional XPCalculator |
 
-- `startSession(trackUuid: string, track?: PlaylistTrack, context?: { environmental_context?: EnvironmentalContext; gaming_context?: GamingContext }): string`
-    - Starts a session. Returns a `sessionId`.
-- `endSession(sessionId: string, durationOverride?: number, activityType?: string): ListeningSession | null`
-    - Ends the session, calculates XP, and returns the session record.
-- `getActiveSession(sessionId: string): ActiveSession | null`
-    - Gets an active session without ending it.
-- `getActiveSessionDuration(sessionId: string): number | null`
-    - Returns current duration of active session in seconds.
-- `updateSessionContext(sessionId: string, context: { environmental_context?: EnvironmentalContext; gaming_context?: GamingContext }): boolean`
-    - Updates environmental or gaming context for a live session.
-- `getSessionHistory(): ListeningSession[]`
-    - Returns all completed listening sessions.
-- `getSessionsForTrack(trackUuid: string): ListeningSession[]`
-    - Returns sessions for a specific track.
-- `getTotalListeningTime(): number`
-    - Returns total listening time across all sessions in seconds.
-- `getTotalXPEarned(): number`
-    - Returns total XP earned across all sessions.
-- `getTrackListeningTime(trackUuid: string): number`
-    - Returns total listening time for a specific track in seconds.
-- `getTrackListenCount(trackUuid: string): number`
-    - Returns number of times a track has been listened to.
-- `isTrackMastered(trackUuid: string, masteryThreshold?: number): boolean`
-    - Checks if track has been mastered (default threshold: 10).
-- `getSessionsInRange(startTime: number, endTime: number): ListeningSession[]`
-    - Returns sessions within a time range.
-- `getAverageSessionLength(): number`
-    - Returns average session duration in seconds.
-- `getLongestSession(): ListeningSession | null`
-    - Returns the session with longest duration.
-- `clearHistory(): void`
-    - Clears all session history.
-- `clearActiveSessions(): void`
-    - Clears all active sessions.
-- `getActiveSessionCount(): number`
-    - Returns number of currently active sessions.
-- `getActiveSessionIds(): string[]`
-    - Returns all active session IDs.
-- `getTrackXPTotal(trackUuid: string): number`
-    - Returns total XP earned for a specific track (used by prestige system).
-- `clearTrackSessions(trackUuid: string): number`
-    - Clears all sessions for a track, returns count removed (used by prestige system).
+#### Method Reference
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `startSession(trackUuid, track?, context?)` | `string` | Starts a session, returns session ID |
+| `endSession(sessionId, durationOverride?, activityType?)` | `ListeningSession \| null` | Ends the session, calculates XP, returns session record |
+| `getActiveSession(sessionId)` | `ActiveSession \| null` | Gets an active session without ending it |
+| `getActiveSessionDuration(sessionId)` | `number \| null` | Returns current duration of active session in seconds |
+| `updateSessionContext(sessionId, context)` | `boolean` | Updates environmental or gaming context for a live session |
+| `getSessionHistory()` | `ListeningSession[]` | Returns all completed listening sessions |
+| `getSessionsForTrack(trackUuid)` | `ListeningSession[]` | Returns sessions for a specific track |
+| `getTotalListeningTime()` | `number` | Returns total listening time across all sessions in seconds |
+| `getTotalXPEarned()` | `number` | Returns total XP earned across all sessions |
+| `getTrackListeningTime(trackUuid)` | `number` | Returns total listening time for a specific track in seconds |
+| `getTrackListenCount(trackUuid)` | `number` | Returns number of times a track has been listened to |
+| `isTrackMastered(trackUuid, masteryThreshold?)` | `boolean` | Checks if track has been mastered (default threshold: 10) |
+| `getSessionsInRange(startTime, endTime)` | `ListeningSession[]` | Returns sessions within a time range |
+| `getAverageSessionLength()` | `number` | Returns average session duration in seconds |
+| `getLongestSession()` | `ListeningSession \| null` | Returns the session with longest duration |
+| `clearHistory()` | `void` | Clears all session history |
+| `clearActiveSessions()` | `void` | Clears all active sessions |
+| `getActiveSessionCount()` | `number` | Returns number of currently active sessions |
+| `getActiveSessionIds()` | `string[]` | Returns all active session IDs |
+| `getTrackXPTotal(trackUuid)` | `number` | Returns total XP earned for a specific track (used by prestige system) |
+| `clearTrackSessions(trackUuid)` | `number` | Clears all sessions for a track, returns count removed (used by prestige system) |
 
 ### ISessionTracker
 
@@ -4133,9 +4020,10 @@ Calculates XP based on duration, activity, environment, and gaming context.
 #### Class: `XPCalculator`
 
 **Constructor:**
-```typescript
-new XPCalculator(options?: Partial<ExperienceSystem>)
-```
+
+| Constructor | Description |
+|-------------|-------------|
+| `constructor(options?: Partial<ExperienceSystem>)` | Creates instance with optional XP system configuration |
 
 ### ExperienceSystem
 
@@ -4170,22 +4058,16 @@ Configuration for XP calculation.
 
 **Methods:**
 
-- `calculateSessionXP(session: ListeningSession, track?: PlaylistTrack): number`
-    - Calculates total XP for a session with all multipliers applied.
-- `calculateTotalModifier(envContext?: EnvironmentalContext, gamingContext?: GamingContext): number`
-    - Calculates combined XP modifier (1.0 to 3.0) from environmental and gaming bonuses.
-- `getXPThresholdForLevel(level: number): number`
-    - Returns XP required for a specific level (1-20).
-- `getXPToNextLevel(currentLevel: number): number`
-    - Returns XP needed to advance from current level to next.
-- `getLevelFromXP(totalXP: number): number`
-    - Determines character level from total XP.
-- `isTrackMastered(listenCount: number): boolean`
-    - Checks if listen count meets mastery threshold.
-- `getMasteryBonusXP(): number`
-    - Returns bonus XP for mastering a track.
-- `getConfig(): ExperienceSystem`
-    - Returns current configuration.
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `calculateSessionXP(session, track?)` | `number` | Calculates total XP for a session with all multipliers applied |
+| `calculateTotalModifier(envContext?, gamingContext?)` | `number` | Calculates combined XP modifier (1.0 to 3.0) from environmental and gaming bonuses |
+| `getXPThresholdForLevel(level)` | `number` | Returns XP required for a specific level (1-20) |
+| `getXPToNextLevel(currentLevel)` | `number` | Returns XP needed to advance from current level to next |
+| `getLevelFromXP(totalXP)` | `number` | Determines character level from total XP |
+| `isTrackMastered(listenCount)` | `boolean` | Checks if listen count meets mastery threshold |
+| `getMasteryBonusXP()` | `number` | Returns bonus XP for mastering a track |
+| `getConfig()` | `ExperienceSystem` | Returns current configuration |
 
 ---
 
@@ -4231,85 +4113,6 @@ Orchestrates applying session results to a character, handling leveling up and m
 | `CharacterUpdateResult` | [src/core/progression/CharacterUpdater.ts](src/core/progression/CharacterUpdater.ts) (11-20) | Result of character update with XP, level-up, and mastery data |
 | `LevelUpDetail` | [src/core/types/Progression.ts](src/core/types/Progression.ts) | Detailed breakdown of individual level-up (HP, proficiency, stats, features, spell slots) |
 | `ApplyPendingStatIncreaseResult` | [src/core/types/Progression.ts](src/core/types/Progression.ts) | Result of applying pending stat increase with stat change details |
-
----
-
-### SessionTracker
-
-*Location:* *[src/core/progression/SessionTracker.ts](src/core/progression/SessionTracker.ts)*
-
-*Also known as: Session manager, listening tracker, session history*
-
-Manages active listening sessions and records history.
-
-#### Method Reference
-
-| Method | Description |
-|--------|-------------|
-| `constructor(xpCalculator?)` | Creates instance with optional XPCalculator |
-| `startSession(trackUuid, track?, context?)` | Starts session and returns session ID |
-| `endSession(sessionId, durationOverride?, activityType?)` | Ends session, calculates XP, returns ListeningSession record |
-| `getActiveSession(sessionId)` | Gets active session without ending it |
-| `getActiveSessionDuration(sessionId)` | Returns current duration in seconds |
-| `updateSessionContext(sessionId, context)` | Updates environmental/gaming context for live session |
-| `getSessionHistory()` | Returns all completed listening sessions |
-| `getSessionsForTrack(trackUuid)` | Returns sessions for specific track |
-| `getTotalListeningTime()` | Returns total listening time across all sessions (seconds) |
-| `getTotalXPEarned()` | Returns total XP earned across all sessions |
-| `getTrackListeningTime(trackUuid)` | Returns total listening time for specific track (seconds) |
-| `getTrackListenCount(trackUuid)` | Returns number of times track has been listened to |
-| `getTrackXPTotal(trackUuid)` | Returns total XP earned for specific track (used by prestige system) |
-| `isTrackMastered(trackUuid, masteryThreshold?)` | Checks if track has been mastered (default threshold: 10) |
-| `getSessionsInRange(startTime, endTime)` | Returns sessions within time range |
-| `getAverageSessionLength()` | Returns average session duration (seconds) |
-| `getLongestSession()` | Returns the session with longest duration |
-| `clearTrackSessions(trackUuid)` | Clears all sessions for a track (used by prestige system to reset progress) |
-| `clearHistory()` | Clears all session history |
-| `clearActiveSessions()` | Clears all active sessions |
-| `getActiveSessionCount()` | Returns number of currently active sessions |
-| `getActiveSessionIds()` | Returns all active session IDs |
-
-#### Types
-
-| Type | Location | Description |
-|------|----------|-------------|
-| `ListeningSession` | [src/core/types/Progression.ts](src/core/types/Progression.ts) (60-71) | Record of single listening session with duration, XP, and context |
-| `ActiveSession` | [src/core/progression/SessionTracker.ts](src/core/progression/SessionTracker.ts) | Active session with start time and context |
-
----
-
-### XPCalculator
-
-*Location:* *[src/core/progression/XPCalculator.ts](src/core/progression/XPCalculator.ts)*
-
-*Also known as: XP calculator, experience calculator, leveling calculator*
-
-Calculates XP based on duration, activity, environment, and gaming context.
-
-#### Constructor
-
-| Constructor | Description |
-|-------------|-------------|
-| `constructor(options?: Partial<ExperienceSystem>)` | Creates instance with optional XP system configuration |
-
-#### Method Reference
-
-| Method | Description |
-|--------|-------------|
-| `calculateSessionXP(session, track?)` | Calculates total XP for session with all multipliers applied |
-| `calculateTotalModifier(envContext?, gamingContext?)` | Calculates combined XP modifier (1.0 to 3.0) from environmental and gaming bonuses |
-| `getXPThresholdForLevel(level)` | Returns XP required for specific level (1-20) |
-| `getXPToNextLevel(currentLevel)` | Returns XP needed to advance from current level to next |
-| `getLevelFromXP(totalXP)` | Determines character level from total XP |
-| `isTrackMastered(listenCount)` | Checks if listen count meets mastery threshold |
-| `getMasteryBonusXP()` | Returns bonus XP for mastering a track |
-| `getConfig()` | Returns current configuration |
-
-#### Types
-
-| Type | Location | Description |
-|------|----------|-------------|
-| `ExperienceSystem` | [src/core/types/Progression.ts](src/core/types/Progression.ts) | Configuration for XP calculation (rates, thresholds, bonuses) |
 
 ---
 
@@ -4502,7 +4305,7 @@ The calculator supports two modes:
 | Function | Returns | Description |
 |----------|---------|-------------|
 | `mergeRhythmXPConfig(userConfig?)` | `RhythmXPConfig` | Merge user config with defaults |
-| `shouldAccuracyBreakCombo(accuracy, okBreaksCombo?)` | `boolean` | Check if accuracy should break combo streak. Returns `true` for 'miss' and 'wrongKey', always. For 'ok', returns thetrue` by default (configurable). Perfect/great/good never break combo. |
+| `shouldAccuracyBreakCombo(accuracy, okBreaksCombo?)` | `boolean` | Check if accuracy should break combo streak. Returns `true` for 'miss' and 'wrongKey', always. For 'ok', returns `true` by default (configurable). Perfect/great/good never break combo. |
 
 **For configuration details, session tracking, and stateless usage examples:** See [docs/XP_AND_STATS.md#rhythm-game-xp](docs/XP_AND_STATS.md#rhythm-game-xp)
 
@@ -4721,10 +4524,11 @@ Integrates real-world data (GPS, Weather, Motion, Light) to influence XP generat
 Handles GPS data and biome detection with caching support.
 
 **Constructor:**
-```typescript
-new GeolocationProvider(cacheTTLMinutes?: number, useLocalStorage?: boolean)
-new GeolocationProvider(config: GeolocationSensorConfig)
-```
+
+| Constructor | Description |
+|-------------|-------------|
+| `constructor(cacheTTLMinutes?, useLocalStorage?)` | Creates with optional cache TTL and localStorage flag |
+| `constructor(config: GeolocationSensorConfig)` | Creates with full sensor configuration |
 
 **Methods:**
 
@@ -4763,10 +4567,11 @@ Handles accelerometer and gyroscope data for activity detection.
 Fetches weather data and forecasts from OpenWeatherMap API.
 
 **Constructor:**
-```typescript
-new WeatherAPIClient(apiKey?: string, cacheTTLMinutes?: number, useLocalStorage?: boolean)
-new WeatherAPIClient(config: WeatherSensorConfig)
-```
+
+| Constructor | Description |
+|-------------|-------------|
+| `constructor(apiKey?, cacheTTLMinutes?, useLocalStorage?)` | Creates with optional API key, cache TTL, and localStorage flag |
+| `constructor(config: WeatherSensorConfig)` | Creates with full sensor configuration |
 
 **Methods:**
 
@@ -4797,7 +4602,7 @@ new WeatherAPIClient(config: WeatherSensorConfig)
 
 ##### Solar Information (`getSolarInfo`)
 
-*[src/core/api/WeatherAPIClient.ts](src/core/api/WeatherAPIClient.ts)*
+*[src/core/sensors/WeatherAPIClient.ts](src/core/sensors/WeatherAPIClient.ts)*
 
 Astronomical calculations for sunrise, sunset, and day stage. **Works without an API key** using pure astronomical math (NOAA algorithm).
 
@@ -5006,20 +4811,20 @@ Handles melee and ranged attack resolution (d20 + attack bonus vs target AC). Su
 
 The `damageScale` field on `AttackRoll` indicates the multiplier applied (1.0 = full damage, <1.0 = scaled down). Only present in `'scaled'` mode.
 
-| Method | Description |
-|--------|-------------|
-| `resolveAttack(attacker, target, attack)` | Resolves complete attack (roll vs AC, damage if hit) |
-| `isInRange(attacker, target, attack)` | Checks if attack is within range (melee: 5ft, ranged: attack.range) |
-| `calculateAttackBonus(character, attackName, abilityModifier, isProficient)` | Calculates attack bonus (ability + proficiency if proficient) |
-| `attackWithAdvantage(attacker, target, attack)` | Resolves attack with advantage (roll twice, take higher) |
-| `attackWithDisadvantage(attacker, target, attack)` | Resolves attack with disadvantage (roll twice, take lower) |
-| `simulateAttacks(attacker, target, attack, iterations?, diceRoller?, hitMode?)` | **Static.** Simulates N attack rolls using the full resolution pipeline; returns hit/crit/miss rates, average/max damage, and damage distribution |
-| `computeScaledDamage(level, str, targetAC, damageDice, isCritical)` | **Static.** Core scaled-mode damage formula: `max(1, floor(level * 2 + (STR - AC) * 0.3)) + weaponBonus`. Crits multiply level base by 1.5x. Always uses STR. |
-| `computeDamageScale(totalRoll, targetAC)` | **Static.** Returns damage multiplier for below-AC rolls in scaled mode: 1.0 if >= AC, else `max(0.10, 1 - deficit * 0.10)`. |
-| `computeAttackBonus(abilityScores, weaponProperties, proficiency)` | **Static.** DEX for ranged/finesse weapons, STR otherwise. Shared by `CombatEngine.buildWeaponAttack` and estimation methods. |
-| `formatWeaponDamage(dice, damageType, damageDisplay)` | **Static.** Formats weapon damage for display: scaled mode shows flat bonus (e.g. "+2 piercing"), dnd mode shows dice string (e.g. "1d8 piercing"). |
-| `estimateDamagePerHit(opts)` | **Static.** Estimates average damage per hit for a given hitMode. Mirrors actual combat formulas so pre-simulation estimates match simulator output. |
-| `estimateDPR(opts)` | **Static.** Estimates damage per round including hit rate. Iterates all 20 d20 outcomes to match actual combat mechanics exactly. Note: this estimates per-attack damage rate; CombatMetricsTracker uses the same per-turn denominator. |
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `resolveAttack(attacker, target, attack)` | `AttackResult` | Resolves complete attack (roll vs AC, damage if hit) |
+| `isInRange(attacker, target, attack)` | `boolean` | Checks if attack is within range (melee: 5ft, ranged: attack.range) |
+| `calculateAttackBonus(character, attackName, abilityModifier, isProficient)` | `number` | Calculates attack bonus (ability + proficiency if proficient) |
+| `attackWithAdvantage(attacker, target, attack)` | `AttackResult` | Resolves attack with advantage (roll twice, take higher) |
+| `attackWithDisadvantage(attacker, target, attack)` | `AttackResult` | Resolves attack with disadvantage (roll twice, take lower) |
+| `simulateAttacks(attacker, target, attack, iterations?, diceRoller?, hitMode?)` | `AttackSimulationResult` | **Static.** Simulates N attack rolls using the full resolution pipeline; returns hit/crit/miss rates, average/max damage, and damage distribution |
+| `computeScaledDamage(level, str, targetAC, damageDice, isCritical)` | `number` | **Static.** Core scaled-mode damage formula: `max(1, floor(level * 2 + (STR - AC) * 0.3)) + weaponBonus`. Crits multiply level base by 1.5x. Always uses STR. |
+| `computeDamageScale(totalRoll, targetAC)` | `number` | **Static.** Damage multiplier for below-AC rolls in scaled mode: 1.0 if >= AC, else `max(0.10, 1 - deficit * 0.10)`. |
+| `computeAttackBonus(abilityScores, weaponProperties, proficiency)` | `number` | **Static.** DEX for ranged/finesse weapons, STR otherwise. Shared by `CombatEngine.buildWeaponAttack` and estimation methods. |
+| `formatWeaponDamage(dice, damageType, damageDisplay)` | `string` | **Static.** Formats weapon damage for display: scaled mode shows flat bonus (e.g. "+2 piercing"), dnd mode shows dice string (e.g. "1d8 piercing"). |
+| `estimateDamagePerHit(opts)` | `number` | **Static.** Estimates average damage per hit for a given hitMode. Mirrors actual combat formulas so pre-simulation estimates match simulator output. |
+| `estimateDPR(opts)` | `number` | **Static.** Estimates damage per round including hit rate. Iterates all 20 d20 outcomes to match actual combat mechanics exactly. Note: this estimates per-attack damage rate; CombatMetricsTracker uses the same per-turn denominator. |
 
 ### SpellCaster
 
@@ -5031,17 +4836,17 @@ The `damageScale` field on `AttackRoll` indicates the multiplier applied (1.0 = 
 
 Handles spell casting mechanics (spell slots, saving throws, spell damage).
 
-| Method | Description |
-|--------|-------------|
-| `castSpell(caster, spell, targets)` | Casts spell with slot consumption, attack rolls, and saving throws |
-| `hasSpellSlot(caster, spellLevel)` | Checks if caster has slot of given level available |
-| `consumeSpellSlot(caster, spellLevel)` | Consumes a spell slot |
-| `restoreSpellSlots(caster)` | Restores all slots to maximum (after long rest) |
-| `calculateSaveDC(caster, ability)` | Calculates spell save DC (8 + ability + proficiency) |
-| `makeSavingThrow(target, saveAbility, saveDC)` | Makes saving throw against spell, returns true if succeeds |
-| `getSpellSlotInfo(caster)` | Returns formatted spell slot information |
-| `canUpcast(caster, spell, targetSlotLevel)` | Checks if spell can be upcast to higher level |
-| `upcastSpell(caster, spell, targets, slotLevelUsed)` | Upcasts spell using higher-level slot |
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `castSpell(caster, spell, targets)` | `SpellCastResult` | Casts spell with slot consumption, attack rolls, and saving throws |
+| `hasSpellSlot(caster, spellLevel)` | `boolean` | Checks if caster has slot of given level available |
+| `consumeSpellSlot(caster, spellLevel)` | `void` | Consumes a spell slot |
+| `restoreSpellSlots(caster)` | `void` | Restores all slots to maximum (after long rest) |
+| `calculateSaveDC(caster, ability)` | `number` | Calculates spell save DC (8 + ability + proficiency) |
+| `makeSavingThrow(target, saveAbility, saveDC)` | `boolean` | Makes saving throw against spell, true if succeeds |
+| `getSpellSlotInfo(caster)` | `string` | Formatted spell slot information |
+| `canUpcast(caster, spell, targetSlotLevel)` | `boolean` | Checks if spell can be upcast to higher level |
+| `upcastSpell(caster, spell, targets, slotLevelUsed)` | `SpellCastResult` | Upcasts spell using higher-level slot |
 
 ### SeededDiceRoller
 
@@ -5087,20 +4892,20 @@ Decision engine for AI-controlled combatants. Produces an `AIDecision` for each 
 
 **Public Methods:**
 
-| Method | Description |
-|--------|-------------|
-| `decide(combatant, combatInstance)` | Main entry point — evaluates battlefield and returns best `AIDecision` |
-| `assessThreat(combatant, combatInstance)` | Evaluates HP, AC, allies, enemies, resources — returns `AIThreatAssessment` |
-| `selectTarget(enemies, style)` | Normal: lowest AC; Aggressive: lowest HP |
-| `selectWeapon(combatant, style)` | Evaluates equipped weapons + unarmed; returns best by style |
-| `getAvailableSpells(combatant)` | Returns cantrips + slotted spells available to combatant |
-| `selectLegendaryAction(boss, combat)` | Boss-only: picks legendary action based on style and point budget |
-| `getStyleForCombatant(combatant)` | Returns effective play style (per-combatant overrides take priority) |
-| `getSide(combatant)` | Returns 'player' or 'enemy' |
-| `getEnemies(combatant, combat)` | Returns all living enemy combatants |
-| `getAllies(combatant, combat)` | Returns all living ally combatants (including self) |
-| `isSupportArchetype(combatant)` | Returns true if combatant has healing/buff spells |
-| `averageDamageFromFormula(formula)` | Calculates expected (average) damage from a dice formula string |
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `decide(combatant, combatInstance)` | `AIDecision` | Main entry point — evaluates battlefield and returns best decision |
+| `assessThreat(combatant, combatInstance)` | `AIThreatAssessment` | Evaluates HP, AC, allies, enemies, resources |
+| `selectTarget(enemies, style)` | `Combatant` | Normal: lowest AC; Aggressive: lowest HP |
+| `selectWeapon(combatant, style)` | `WeaponEvaluation` | Evaluates equipped weapons + unarmed; returns best by style |
+| `getAvailableSpells(combatant)` | `Spell[]` | Cantrips + slotted spells available to combatant |
+| `selectLegendaryAction(boss, combat)` | `AIDecision \| null` | Boss-only: picks legendary action based on style and point budget |
+| `getStyleForCombatant(combatant)` | `AIPlayStyle` | Effective play style (per-combatant overrides take priority) |
+| `getSide(combatant)` | `'player' \| 'enemy'` | Combatant's team side |
+| `getEnemies(combatant, combat)` | `Combatant[]` | All living enemy combatants |
+| `getAllies(combatant, combat)` | `Combatant[]` | All living ally combatants (including self) |
+| `isSupportArchetype(combatant)` | `boolean` | True if combatant has healing/buff spells |
+| `averageDamageFromFormula(formula)` | `number` | Calculates expected (average) damage from a dice formula string |
 
 #### Combat AI Types
 
@@ -5126,9 +4931,9 @@ Orchestrates full combat encounters with AI decision-making. Bridges `CombatAI` 
 
 **Methods:**
 
-| Method | Description |
-|--------|-------------|
-| `runFullCombat(players, enemies, aiConfig, combatConfig?, diceRoller?)` | Run a complete AI-controlled combat encounter. Returns `AICombatResult` with `combat`, `result`, and `metrics` |
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `runFullCombat(players, enemies, aiConfig, combatConfig?, diceRoller?)` | `AICombatResult` | Run a complete AI-controlled combat encounter with `combat`, `result`, and `metrics` |
 
 **Result Type:**
 
@@ -5152,9 +4957,9 @@ Post-hoc analysis that computes per-combatant statistics from a completed `Comba
 
 **Methods:**
 
-| Method | Description |
-|--------|-------------|
-| `computeMetrics(combat)` | Compute per-combatant metrics from completed combat. Returns `Map<string, CombatantMetrics>` |
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `computeMetrics(combat)` | `Map<string, CombatantMetrics>` | Compute per-combatant metrics from completed combat |
 
 ### CombatSimulator
 
@@ -5170,9 +4975,9 @@ Monte Carlo combat simulation engine. Runs N independent combat simulations with
 
 **Methods:**
 
-| Method | Description |
-|--------|-------------|
-| `run(players, enemies, config)` | Run N simulations. Returns `SimulationResults` with summary and per-combatant metrics |
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `run(players, enemies, config)` | `SimulationResults` | Run N simulations with summary and per-combatant metrics |
 
 **Configuration:**
 
@@ -5213,10 +5018,10 @@ Validates encounter balance using Monte Carlo simulation results. Compares actua
 
 **Methods:**
 
-| Method | Description |
-|--------|-------------|
-| `validate(players, enemies, intendedDifficulty, config)` | Run simulations and produce balance report (convenience method) |
-| `analyze(results, intendedDifficulty)` | Analyze existing simulation results against target difficulty |
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `validate(players, enemies, intendedDifficulty, config)` | `BalanceReport` | Run simulations and produce balance report (convenience method) |
+| `analyze(results, intendedDifficulty)` | `BalanceReport` | Analyze existing simulation results against target difficulty |
 
 **Constants:**
 
@@ -5246,9 +5051,9 @@ Varies a single encounter parameter across a range and runs simulations at each 
 
 **Methods:**
 
-| Method | Description |
-|--------|-------------|
-| `sweep(players, baseEncounter, params, onProgress?)` | Run parameter sweep. Returns `SweepResults` with data points |
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `sweep(players, baseEncounter, params, onProgress?)` | `SweepResults` | Run parameter sweep with data points |
 
 **Sweep Variables:** `'cr'`, `'enemyCount'`, `'partyLevel'`, `'difficultyMultiplier'`, `'rarity'`, `'hpLevel'`, `'attackLevel'`, `'defenseLevel'`
 
@@ -5285,9 +5090,9 @@ Compares two encounter configurations using identical-seed simulation. Both conf
 
 **Methods:**
 
-| Method | Description |
-|--------|-------------|
-| `compare(configA, configB, options)` | Compare two configs. Returns `ComparisonResult` with deltas and significance |
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `compare(configA, configB, options)` | `ComparisonResult` | Compare two configs with deltas and significance |
 
 **Options:**
 
@@ -5324,9 +5129,9 @@ Suggests enemy CR for a target difficulty using simulation-driven binary search.
 
 **Methods:**
 
-| Method | Description |
-|--------|-------------|
-| `suggest(players, enemyTemplate, targetDifficulty, options)` | Suggest enemy CR. Returns `DifficultySuggestion` with recommended CR and simulation data |
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `suggest(players, enemyTemplate, targetDifficulty, options)` | `DifficultySuggestion` | Suggest enemy CR with recommended CR and simulation data |
 
 **Options:**
 
@@ -5364,12 +5169,12 @@ Deterministic enemy generator that creates balanced encounters based on party st
 
 **Methods:**
 
-| Method | Description |
-|--------|-------------|
-| `static generate(options: EnemyGenerationOptions): CharacterSheet` | Generate a single enemy from template or by category/archetype |
-| `static generateEncounter(party: CharacterSheet[], options: EncounterGenerationOptions): CharacterSheet[]` | Generate encounter balanced for party (analyzes party strength) |
-| `static generateEncounterByCR(options: EncounterGenerationOptions): CharacterSheet[]` | Generate encounter by target CR (no party required) |
-| `static getTemplateById(id: string): EnemyTemplate \| undefined` | Get enemy template by ID (e.g., 'orc', 'goblin-archer') |
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `static generate(options: EnemyGenerationOptions)` | `CharacterSheet` | Generate a single enemy from template or by category/archetype |
+| `static generateEncounter(party: CharacterSheet[], options: EncounterGenerationOptions)` | `CharacterSheet[]` | Generate encounter balanced for party (analyzes party strength) |
+| `static generateEncounterByCR(options: EncounterGenerationOptions)` | `CharacterSheet[]` | Generate encounter by target CR (no party required) |
+| `static getTemplateById(id: string)` | `EnemyTemplate \| undefined` | Get enemy template by ID (e.g., 'orc', 'goblin-archer') |
 
 ### CR/Level Conversion
 
@@ -5377,15 +5182,15 @@ Deterministic enemy generator that creates balanced encounters based on party st
 
 Bidirectional conversion between Challenge Rating (CR) and character level for enemy generation and encounter balancing.
 
-| Method | Description |
-|--------|-------------|
-| `crToLevel(cr: number, tuning?: CRTuningConfig): number` | Convert CR to character level (CR 1 = level 1, supports fractional CR) |
-| `levelToCR(level: number, tuning?: CRTuningConfig): number` | Convert character level to CR (inverse of crToLevel) |
-| `roundLevel(level: number, minLevel?: number, maxLevel?: number): number` | Round level to nearest valid character level (default: 1-20) |
-| `roundCR(cr: number): number` | Round CR to nearest valid step (0, 1/8, 1/4, 1/2, 1, 2, etc.) |
-| `formatLevel(level: number): string` | Format level with fractional notation (e.g., "0 (1/4)") |
-| `formatCR(cr: number): string` | Format CR with fractional notation (e.g., "1/4", "1/2") |
-| `createCRTuning(options?: Partial<CRTuningConfig>): CRTuningConfig` | Create custom CR tuning configuration |
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `crToLevel(cr: number, tuning?: CRTuningConfig)` | `number` | Convert CR to character level (CR 1 = level 1, supports fractional CR) |
+| `levelToCR(level: number, tuning?: CRTuningConfig)` | `number` | Convert character level to CR (inverse of crToLevel) |
+| `roundLevel(level: number, minLevel?: number, maxLevel?: number)` | `number` | Round level to nearest valid character level (default: 1-20) |
+| `roundCR(cr: number)` | `number` | Round CR to nearest valid step (0, 1/8, 1/4, 1/2, 1, 2, etc.) |
+| `formatLevel(level: number)` | `string` | Format level with fractional notation (e.g., "0 (1/4)") |
+| `formatCR(cr: number)` | `string` | Format CR with fractional notation (e.g., "1/4", "1/2") |
+| `createCRTuning(options?: Partial<CRTuningConfig>)` | `CRTuningConfig` | Create custom CR tuning configuration |
 
 **For usage examples (single enemy generation, encounter generation, audio influence):** See [docs/ENEMY_GENERATION.md](docs/ENEMY_GENERATION.md#enemy-generation)
 
@@ -5501,16 +5306,16 @@ D&D 5e official encounter building tables for balanced encounters.
 
 **Utility Functions:**
 
-| Function | Description |
-|----------|-------------|
-| `getXPForCR(cr: number): number` | Convert CR to XP |
-| `getCRFromXP(xp: number): number` | Convert XP to CR |
-| `applyTuning(xpBudget: number, tuningFactor: number): number` | Apply difficulty tuning factor |
-| `getXPBudgetPerLevel(level: number, difficulty: EncounterDifficulty): number` | Get XP budget for single character |
-| `getXPBudgetForParty(levels: number[], difficulty: EncounterDifficulty): number` | Get total XP budget for party |
-| `getEncounterMultiplier(enemyCount: number): number` | Get encounter multiplier for group size |
-| `calculateAdjustedXP(enemyCRs: number[], multiplier: number): number` | Calculate adjusted XP with multiplier |
-| `getAveragePartyLevel(levels: number[]): number` | Calculate average party level |
+| Function | Returns | Description |
+|----------|---------|-------------|
+| `getXPForCR(cr: number)` | `number` | Convert CR to XP |
+| `getCRFromXP(xp: number)` | `number` | Convert XP to CR |
+| `applyTuning(xpBudget: number, tuningFactor: number)` | `number` | Apply difficulty tuning factor |
+| `getXPBudgetPerLevel(level: number, difficulty: EncounterDifficulty)` | `number` | Get XP budget for single character |
+| `getXPBudgetForParty(levels: number[], difficulty: EncounterDifficulty)` | `number` | Get total XP budget for party |
+| `getEncounterMultiplier(enemyCount: number)` | `number` | Get encounter multiplier for group size |
+| `calculateAdjustedXP(enemyCRs: number[], multiplier: number)` | `number` | Calculate adjusted XP with multiplier |
+| `getAveragePartyLevel(levels: number[])` | `number` | Calculate average party level |
 
 ### EnemyEquipmentGenerator
 *Also known as: Enemy equipment manager, gear generator*
@@ -5521,12 +5326,12 @@ Generates equipment for enemy characters based on archetype and rarity. Equipmen
 
 **Methods:**
 
-| Method | Description |
-|--------|-------------|
-| `static generate(options: EnemyEquipmentGenerationOptions): EquipmentConfig` | Generate equipment configuration with weapon, armor, and optional shield |
-| `static getEquipmentName(templateId: string): string` | Get actual equipment name from template ID |
-| `static getAllTemplates(): EquipmentTemplate[]` | Get all equipment templates |
-| `static getTemplateById(id: string): EquipmentTemplate \| undefined` | Get equipment template by ID |
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `static generate(options: EnemyEquipmentGenerationOptions)` | `EquipmentConfig` | Generate equipment configuration with weapon, armor, and optional shield |
+| `static getEquipmentName(templateId: string)` | `string` | Get actual equipment name from template ID |
+| `static getAllTemplates()` | `EquipmentTemplate[]` | Get all equipment templates |
+| `static getTemplateById(id: string)` | `EquipmentTemplate \| undefined` | Get equipment template by ID |
 
 **EquipmentTemplate Interface:**
 
@@ -5557,16 +5362,16 @@ Generates innate spellcasting abilities for enemy casters. Unlike player spellca
 
 **Methods:**
 
-| Method | Description |
-|--------|-------------|
-| `static generateSpellList(options: SpellcastingGenerationOptions): SpellcastingConfig` | Generate spell list with seed string |
-| `static generateSpellListWithRNG(options: SpellcastingGenerationOptionsWithRNG): SpellcastingConfig` | Same as above but accepts SeededRNG directly |
-| `static getSpellSlotsForCR(cr: number): Record<number, number>` | Get spell slot configuration for a given CR |
-| `static shouldHaveSpellcasting(archetype: EnemyArchetype, rarity: EnemyRarity): boolean` | Check if enemy archetype/rarity combo should have spellcasting |
-| `static archetypeCanCast(archetype: EnemyArchetype): boolean` | Check if archetype has spellcasting capability |
-| `static getSpellListForArchetype(archetype: EnemyArchetype): SpellList \| undefined` | Get complete spell list for an archetype |
-| `static spellToFeature(spell: InnateSpell): Record<string, unknown> & { isSpell: boolean }` | Convert spell to Feature object |
-| `static spellsToFeatures(config: SpellcastingConfig): Array<Record<string, unknown> & { isSpell: boolean }>` | Convert all spells in config to Feature array |
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `static generateSpellList(options: SpellcastingGenerationOptions)` | `SpellcastingConfig` | Generate spell list with seed string |
+| `static generateSpellListWithRNG(options: SpellcastingGenerationOptionsWithRNG)` | `SpellcastingConfig` | Same as above but accepts SeededRNG directly |
+| `static getSpellSlotsForCR(cr: number)` | `Record<number, number>` | Get spell slot configuration for a given CR |
+| `static shouldHaveSpellcasting(archetype: EnemyArchetype, rarity: EnemyRarity)` | `boolean` | Check if enemy archetype/rarity combo should have spellcasting |
+| `static archetypeCanCast(archetype: EnemyArchetype)` | `boolean` | Check if archetype has spellcasting capability |
+| `static getSpellListForArchetype(archetype: EnemyArchetype)` | `SpellList \| undefined` | Get complete spell list for an archetype |
+| `static spellToFeature(spell: InnateSpell)` | `Record<string, unknown> & { isSpell: boolean }` | Convert spell to Feature object |
+| `static spellsToFeatures(config: SpellcastingConfig)` | `Array<Record<string, unknown> & { isSpell: boolean }>` | Convert all spells in config to Feature array |
 
 **InnateSpell Interface:**
 
@@ -5603,14 +5408,14 @@ Generates legendary actions and resistances for boss-tier enemies. Bosses receiv
 
 **Methods:**
 
-| Method | Description |
-|--------|-------------|
-| `static generate(options: { archetype: EnemyArchetype, cr: number, seed: string }): LegendaryConfig` | Generate legendary configuration with seed string |
-| `static generateWithRNG(options: { archetype: EnemyArchetype, cr: number, rng: SeededRNG }): LegendaryConfig` | Same as above but accepts SeededRNG directly |
-| `static getResistancesForCR(cr: number): number` | Get legendary resistances per day for a given CR |
-| `static getActionById(id: string): LegendaryAction \| undefined` | Get legendary action by ID |
-| `static getActionsForArchetype(archetype: EnemyArchetype): LegendaryAction[]` | Get all legendary actions for an archetype |
-| `static shouldHaveLegendary(rarity: EnemyRarity): boolean` | Check if rarity tier should have legendary actions |
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `static generate(options: { archetype: EnemyArchetype, cr: number, seed: string })` | `LegendaryConfig` | Generate legendary configuration with seed string |
+| `static generateWithRNG(options: { archetype: EnemyArchetype, cr: number, rng: SeededRNG })` | `LegendaryConfig` | Same as above but accepts SeededRNG directly |
+| `static getResistancesForCR(cr: number)` | `number` | Get legendary resistances per day for a given CR |
+| `static getActionById(id: string)` | `LegendaryAction \| undefined` | Get legendary action by ID |
+| `static getActionsForArchetype(archetype: EnemyArchetype)` | `LegendaryAction[]` | Get all legendary actions for an archetype |
+| `static shouldHaveLegendary(rarity: EnemyRarity)` | `boolean` | Check if rarity tier should have legendary actions |
 
 **LegendaryAction Interface:**
 
@@ -5734,12 +5539,12 @@ Audio profile affects enemy stat distribution during generation. This is a subtl
 
 **Type Guards:**
 
-| Function | Description |
-|----------|-------------|
-| `isValidEnemyCategory(value: unknown): value is EnemyCategory` | Check if valid enemy category |
-| `isValidEnemyRarity(value: unknown): value is EnemyRarity` | Check if valid rarity tier |
-| `isValidEnemyArchetype(value: unknown): value is EnemyArchetype` | Check if valid archetype |
-| `isValidEncounterDifficulty(value: unknown): value is EncounterDifficulty` | Check if valid difficulty |
+| Function | Returns | Description |
+|----------|---------|-------------|
+| `isValidEnemyCategory(value: unknown)` | `boolean` (type predicate) | Check if valid enemy category |
+| `isValidEnemyRarity(value: unknown)` | `boolean` (type predicate) | Check if valid rarity tier |
+| `isValidEnemyArchetype(value: unknown)` | `boolean` (type predicate) | Check if valid archetype |
+| `isValidEncounterDifficulty(value: unknown)` | `boolean` (type predicate) | Check if valid difficulty |
 
 ### Enemy Template Files
 
@@ -5825,13 +5630,13 @@ Conditional property triggers:
 
 Static class for applying and removing equipment effects when equipping/unequipping items. All equipment effects stack by default.
 
-| Method | Description |
-|--------|-------------|
-| `equipItem(character, equipment, instanceId?)` | Apply all effects from equipping an item (properties, features, skills, spells). Returns `EffectApplicationResult` with `applied: boolean` — `false` if stat requirements are not met. Idempotent: re-equipping the same item returns `applied: true` without duplicating effects. |
-| `unequipItem(character, equipmentName, instanceId?)` | Remove all effects from unequipping an item |
-| `reapplyEquipmentEffects(character)` | Re-apply all equipment effects for updates/level-ups |
-| `getActiveEffects(character)` | Get array of all active equipment properties on character |
-| `evaluateACFormula(formula, dexMod)` | Evaluate an armor AC formula string. Supports flat values (`"16"`), light armor (`"11 + DEX"`), and medium armor (`"14 + min(DEX, 2)"`) |
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `equipItem(character, equipment, instanceId?)` | `EffectApplicationResult` | Apply all effects from equipping an item (properties, features, skills, spells). `applied: false` if stat requirements not met. Idempotent: re-equipping same item returns `applied: true` without duplicating effects. |
+| `unequipItem(character, equipmentName, instanceId?)` | `EffectApplicationResult` | Remove all effects from unequipping an item |
+| `reapplyEquipmentEffects(character)` | `EffectApplicationResult` | Re-apply all equipment effects for updates/level-ups |
+| `getActiveEffects(character)` | `EquipmentProperty[]` | Get array of all active equipment properties on character |
+| `evaluateACFormula(formula, dexMod)` | `number` | Evaluate an armor AC formula string. Supports flat values (`"16"`), light armor (`"11 + DEX"`), and medium armor (`"14 + min(DEX, 2)"`) |
 
 ### EquipmentValidator
 *Also known as: Equipment validation, equipment data checker, property validator*
@@ -5842,31 +5647,31 @@ Validates equipment data structures including complete equipment objects, indivi
 
 #### Core Validation
 
-| Method | Description |
-|--------|-------------|
-| `validateEquipment(equipment)` | Validate complete equipment object (name, type, rarity, weight, properties, features, skills, spells, damage, AC, weapon properties, spawn weight, template, tags) |
-| `validateProperty(property)` | Validate single equipment property (type, target, value, condition, stackable, description) |
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `validateEquipment(equipment)` | `EquipmentValidationResult` | Validate complete equipment object (name, type, rarity, weight, properties, features, skills, spells, damage, AC, weapon properties, spawn weight, template, tags) |
+| `validateProperty(property)` | `EquipmentValidationResult` | Validate single equipment property (type, target, value, condition, stackable, description) |
 
 #### Reference Validation
 
-| Method | Description |
-|--------|-------------|
-| `validateEquipmentFeatureReference(featureId)` | Check if feature ID exists in FeatureQuery (returns boolean) |
-| `validateEquipmentSkillReference(skillId)` | Check if skill ID exists in SkillQuery (returns boolean) |
-| `validateFeatureReference(featureRef, index)` | Validate feature reference (string ID or inline mini-feature object) |
-| `validateSkillReference(skillId, index?)` | Validate skill reference with optional array index for error messages |
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `validateEquipmentFeatureReference(featureId)` | `boolean` | Check if feature ID exists in FeatureQuery |
+| `validateEquipmentSkillReference(skillId)` | `boolean` | Check if skill ID exists in SkillQuery |
+| `validateFeatureReference(featureRef, index)` | `EquipmentValidationResult` | Validate feature reference (string ID or inline mini-feature object) |
+| `validateSkillReference(skillId, index?)` | `EquipmentValidationResult` | Validate skill reference with optional array index for error messages |
 
 #### Field Validation
 
-| Method | Description |
-|--------|-------------|
-| `validateDamageInfo(damage)` | Validate damage info (supports string format "1d8 slashing" or object format with dice, damageType, versatile) |
-| `validateSpawnWeight(weight)` | Validate spawn weight (non-negative number, 0 = never random but still usable) |
-| `validateModification(modification)` | Validate equipment modification (id, name, appliedAt, source, properties, addsFeatures, addsSkills, addsSpells) |
-| `validateCondition(condition)` | Validate equipment condition (type, value, description for custom) |
-| `validateMiniFeature(miniFeature)` | Validate inline equipment mini-feature (id, name, description, effects array, source) |
-| `validateACBonus(acBonus)` | Validate AC bonus value (non-negative finite number) |
-| `validateWeaponProperties(weaponProperties)` | Validate weapon properties array (supports range format "range_MIN_MAX") |
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `validateDamageInfo(damage)` | `EquipmentValidationResult` | Validate damage info (supports string format "1d8 slashing" or object format with dice, damageType, versatile) |
+| `validateSpawnWeight(weight)` | `EquipmentValidationResult` | Validate spawn weight (non-negative number, 0 = never random but still usable) |
+| `validateModification(modification)` | `EquipmentValidationResult` | Validate equipment modification (id, name, appliedAt, source, properties, addsFeatures, addsSkills, addsSpells) |
+| `validateCondition(condition)` | `EquipmentValidationResult` | Validate equipment condition (type, value, description for custom) |
+| `validateMiniFeature(miniFeature)` | `EquipmentValidationResult` | Validate inline equipment mini-feature (id, name, description, effects array, source) |
+| `validateACBonus(acBonus)` | `EquipmentValidationResult` | Validate AC bonus value (non-negative finite number) |
+| `validateWeaponProperties(weaponProperties)` | `EquipmentValidationResult` | Validate weapon properties array (supports range format "range_MIN_MAX") |
 
 ### EquipmentModifier
 *Also known as: Equipment enchantment system, item modification API, equipment curse/upgrade handler*
@@ -5876,35 +5681,35 @@ Validates equipment data structures including complete equipment objects, indivi
 Static class for equipment modification including enchanting (positive effects), cursing (negative effects), upgrading (improving properties), and template application.
 
 **Modification Operations:**
-| Method | Description |
-|--------|-------------|
-| `enchant(equipment, itemName, enchantment, character?)` | Apply positive modification (adds to `modifications` array) |
-| `applyTemplate(equipment, itemName, templateId, character?)` | Apply predefined template by ID |
-| `curse(equipment, itemName, curse, character?)` | Apply negative modification (adds to `modifications` array) |
-| `upgrade(equipment, itemName, upgrade, character?)` | Improve existing properties (same as enchant, semantic difference) |
-| `removeModification(equipment, itemName, modificationId, character?)` | Remove specific modification by ID |
-| `disenchant(equipment, itemName, character?)` | Remove all enchantments (keep curses) |
-| `liftCurse(equipment, itemName, character?)` | Remove all curses (keep enchantments) |
-| `removeAllModifications(equipment, itemName, character?)` | Remove all modifications (both enchantments and curses) |
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `enchant(equipment, itemName, enchantment, character?)` | `CharacterEquipment` | Apply positive modification (adds to `modifications` array) |
+| `applyTemplate(equipment, itemName, templateId, character?)` | `CharacterEquipment` | Apply predefined template by ID |
+| `curse(equipment, itemName, curse, character?)` | `CharacterEquipment` | Apply negative modification (adds to `modifications` array) |
+| `upgrade(equipment, itemName, upgrade, character?)` | `CharacterEquipment` | Improve existing properties (same as enchant, semantic difference) |
+| `removeModification(equipment, itemName, modificationId, character?)` | `CharacterEquipment` | Remove specific modification by ID |
+| `disenchant(equipment, itemName, character?)` | `CharacterEquipment` | Remove all enchantments (keep curses) |
+| `liftCurse(equipment, itemName, character?)` | `CharacterEquipment` | Remove all curses (keep enchantments) |
+| `removeAllModifications(equipment, itemName, character?)` | `CharacterEquipment` | Remove all modifications (both enchantments and curses) |
 
 **Query Methods:**
-| Method | Description |
-|--------|-------------|
-| `getCombinedEffects(equipment, itemName, instanceId?)` | Get all properties from base item + modifications |
-| `hasTemplate(equipment, itemName, templateId)` | Check if template is applied |
-| `isCursed(equipment, itemName)` | Check if item has any curse modifications |
-| `isEnchanted(equipment, itemName)` | Check if item has any enchantment modifications |
-| `getAppliedTemplates(equipment, itemName)` | Get list of applied template IDs |
-| `getModificationHistory(equipment, itemName)` | Get all modifications in application order |
-| `getModificationSources(equipment, itemName)` | Get list of unique modification sources |
-| `countModificationsBySource(equipment, itemName)` | Count modifications grouped by source |
-| `getItemSummary(equipment, itemName)` | Get item summary with modifications and flags |
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `getCombinedEffects(equipment, itemName, instanceId?)` | `EquipmentProperty[]` | Get all properties from base item + modifications |
+| `hasTemplate(equipment, itemName, templateId)` | `boolean` | Check if template is applied |
+| `isCursed(equipment, itemName)` | `boolean` | Check if item has any curse modifications |
+| `isEnchanted(equipment, itemName)` | `boolean` | Check if item has any enchantment modifications |
+| `getAppliedTemplates(equipment, itemName)` | `string[]` | Get list of applied template IDs |
+| `getModificationHistory(equipment, itemName)` | `EquipmentModification[]` | Get all modifications in application order |
+| `getModificationSources(equipment, itemName)` | `string[]` | Get list of unique modification sources |
+| `countModificationsBySource(equipment, itemName)` | `Record<string, number>` | Count modifications grouped by source |
+| `getItemSummary(equipment, itemName)` | `ItemSummary \| null` | Get item summary with modifications and flags |
 
 **Factory Methods:**
-| Method | Description |
-|--------|-------------|
-| `createModification(id, name, properties, source)` | Create EquipmentModification object |
-| `generateModificationId(prefix?)` | Generate unique modification ID (timestamp-based) |
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `createModification(id, name, properties, source)` | `EquipmentModification` | Create EquipmentModification object |
+| `generateModificationId(prefix?)` | `string` | Generate unique modification ID (timestamp-based) |
 
 For usage examples, see [EQUIPMENT_SYSTEM.md](../docs/EQUIPMENT_SYSTEM.md#equipment-modification).
 
@@ -5916,16 +5721,16 @@ For usage examples, see [EQUIPMENT_SYSTEM.md](../docs/EQUIPMENT_SYSTEM.md#equipm
 
 Batch spawning utilities for equipment. Spawns from lists, by rarity, by tags, randomly, from templates, and treasure hoards.
 
-| Method | Description |
-|--------|-------------|
-| `spawnFromList(itemNames: string[], rng?: SeededRNG)` | Spawn multiple items from array of names (undefined for missing) |
-| `spawnByRarity(rarity, count: number, rng?: SeededRNG)` | Spawn items of specific rarity (common/uncommon/rare/very_rare/legendary) |
-| `spawnByTags(tags: string[], count: number, rng?: SeededRNG, options?: SpawnRandomOptions)` | Spawn items with specific tags using weighted selection |
-| `spawnRandom(count: number, rng: SeededRNG, options?: SpawnRandomOptions)` | Spawn random equipment respecting spawn weights |
-| `spawnFromTemplate(templateId: string, baseItemName?: string)` | Spawn item from template ID (null if not found) |
-| `spawnTreasureHoard(cr: number, rng: SeededRNG)` | Spawn treasure hoard based on challenge rating |
-| `addToCharacter(character: CharacterSheet, items: EnhancedEquipment[], equip?: boolean)` | Add spawned equipment to character inventory |
-| `openBoxForCharacter(character: CharacterSheet, boxName: string, rng: SeededRNG)` | Open a named box in the character's inventory, remove it, add contents — see [BoxOpener](#boxopener) |
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `spawnFromList(itemNames: string[], rng?: SeededRNG)` | `(EnhancedEquipment \| undefined)[]` | Spawn multiple items from array of names (undefined for missing) |
+| `spawnByRarity(rarity, count: number, rng?: SeededRNG)` | `EnhancedEquipment[]` | Spawn items of specific rarity (common/uncommon/rare/very_rare/legendary) |
+| `spawnByTags(tags: string[], count: number, rng?: SeededRNG, options?: SpawnRandomOptions)` | `EnhancedEquipment[]` | Spawn items with specific tags using weighted selection |
+| `spawnRandom(count: number, rng: SeededRNG, options?: SpawnRandomOptions)` | `EnhancedEquipment[]` | Spawn random equipment respecting spawn weights |
+| `spawnFromTemplate(templateId: string, baseItemName?: string)` | `EnhancedEquipment \| null` | Spawn item from template ID (null if not found) |
+| `spawnTreasureHoard(cr: number, rng: SeededRNG)` | `TreasureHoardResult` | Spawn treasure hoard based on challenge rating |
+| `addToCharacter(character: CharacterSheet, items: EnhancedEquipment[], equip?: boolean)` | `CharacterSheet` | Add spawned equipment to character inventory |
+| `openBoxForCharacter(character: CharacterSheet, boxName: string, rng: SeededRNG)` | `{ character, result } \| null` | Open a named box in the character's inventory, remove it, add contents — see [BoxOpener](#boxopener) |
 
 For usage examples, see [EQUIPMENT_SYSTEM.md](../docs/EQUIPMENT_SYSTEM.md#batch-spawning).
 
@@ -5939,14 +5744,14 @@ Static utility class for opening `type: 'box'` equipment items and generating th
 
 #### Methods
 
-| Method | Description |
-|--------|-------------|
-| `openBox(box: Equipment, rng: SeededRNG, inventory?: EnhancedInventoryItem[]): BoxOpenResult` | Open a box and generate its contents. If `inventory` provided and box has `openRequirements`, validates requirements first and consumes required items. Returns `success: false` with error if requirements not met. |
-| `checkRequirements(box: Equipment, inventory: EnhancedInventoryItem[]): BoxOpenError \| null` | Check if box opening requirements are met. Returns `null` if all requirements satisfied, or `BoxOpenError` with details of first unmet requirement. |
-| `canOpen(box: Equipment, inventory: EnhancedInventoryItem[]): boolean` | Simple boolean check for UI use. Returns `true` if box can be opened with given inventory. |
-| `getRequirementsDescription(box: Equipment): string \| null` | Get human-readable description of requirements. Returns `null` if no requirements, or string like "Requires: Iron Key" or "Requires: 3 Lockpicks". |
-| `isBox(equipment: Equipment): boolean` | Return `true` if the equipment has `type: 'box'` and a `boxContents` property. |
-| `previewContents(box: Equipment)` | Preview all possible items, gold range, and requirements without opening. Returns `{ possibleItems: string[], possibleGold: { min, max }, totalDrops: number, openRequirements?: BoxOpenRequirement[] }`. Useful for UI tooltips. |
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `openBox(box: Equipment, rng: SeededRNG, inventory?: EnhancedInventoryItem[])` | `BoxOpenResult` | Open a box and generate its contents. If `inventory` provided and box has `openRequirements`, validates requirements first and consumes required items. `success: false` if requirements not met. |
+| `checkRequirements(box: Equipment, inventory: EnhancedInventoryItem[])` | `BoxOpenError \| null` | Check if box opening requirements are met. `null` if all satisfied, or `BoxOpenError` with details of first unmet requirement. |
+| `canOpen(box: Equipment, inventory: EnhancedInventoryItem[])` | `boolean` | Simple boolean check for UI use. `true` if box can be opened with given inventory. |
+| `getRequirementsDescription(box: Equipment)` | `string \| null` | Human-readable description of requirements. `null` if none, or string like "Requires: Iron Key" or "Requires: 3 Lockpicks". |
+| `isBox(equipment: Equipment)` | `boolean` | `true` if the equipment has `type: 'box'` and a `boxContents` property. |
+| `previewContents(box: Equipment)` | `BoxPreview` | Preview all possible items, gold range, and requirements without opening. Useful for UI tooltips. |
 
 #### BoxOpenResult
 
@@ -5992,41 +5797,43 @@ Manages equipment assignment, inventory, and equipped items for characters. Supp
 
 #### Equipment Initialization
 
-| Method | Description |
-|--------|-------------|
-| `getStartingEquipment(characterClass: Class)` | Get starting equipment for a class (weapons, armor, items arrays) |
-| `initializeEquipment(characterClass: Class)` | Initialize complete equipment with starting gear, auto-equips primary weapon and armor |
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `getStartingEquipment(characterClass: Class)` | `{ weapons, armor, items }` | Get starting equipment for a class (weapons, armor, items arrays) |
+| `initializeEquipment(characterClass: Class)` | `CharacterEquipment` | Initialize complete equipment with starting gear, auto-equips primary weapon and armor |
 
 #### Inventory Management
 
-| Method | Description |
-|--------|-------------|
-| `addItem(equipment: CharacterEquipment, itemName: string, quantity?: number)` | Add item to inventory, returns updated equipment state |
-| `removeItem(equipment: CharacterEquipment, itemName: string, quantity?: number)` | Remove item from inventory, returns updated equipment state |
-| `equipItem(equipment: CharacterEquipment, itemName: string, character?: CharacterSheet)` | Equip item and apply equipment effects to character if provided |
-| `unequipItem(equipment: CharacterEquipment, itemName: string, character?: CharacterSheet)` | Unequip item and remove equipment effects from character if provided |
-| `getInventoryList(equipment: CharacterEquipment)` | Get flattened array of all inventory items |
-| `getEquipmentByType(equipment: CharacterEquipment, type: 'weapons' \| 'armor' \| 'items')` | Get items from specific equipment category |
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `addItem(equipment, itemName, quantity?)` | `CharacterEquipment` | Add item to inventory |
+| `removeItem(equipment, itemName, quantity?)` | `CharacterEquipment` | Remove item from inventory |
+| `equipItem(equipment, itemName, character?)` | `CharacterEquipment` | Equip item and apply equipment effects to character if provided |
+| `unequipItem(equipment, itemName, character?)` | `CharacterEquipment` | Unequip item and remove equipment effects from character if provided |
+| `getInventoryList(equipment)` | `EnhancedInventoryItem[]` | Get flattened array of all inventory items |
+| `getEquipmentByType(equipment, type)` | `EnhancedInventoryItem[]` | Get items from specific equipment category |
 
 #### Equipment Modification
 
-| Method | Description |
-|--------|-------------|
-| `addModification(equipment: CharacterEquipment, itemName: string, modification: EquipmentModification, instanceId?: string, character?: CharacterSheet)` | Add enchantment/curse to item, reapply effects if equipped |
-| `removeModification(equipment: CharacterEquipment, itemName: string, modificationId: string, character?: CharacterSheet)` | Remove modification from item, reapply remaining effects if equipped |
-| `getActiveEffects(equipment: CharacterEquipment, itemName: string, instanceId?: string)` | Get all active properties from base equipment and modifications |
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `addModification(equipment, itemName, modification, instanceId?, character?)` | `CharacterEquipment` | Add enchantment/curse to item, reapply effects if equipped |
+| `removeModification(equipment, itemName, modificationId, character?)` | `CharacterEquipment` | Remove modification from item, reapply remaining effects if equipped |
+| `getActiveEffects(equipment, itemName, instanceId?)` | `EquipmentProperty[]` | Get all active properties from base equipment and modifications |
 
 #### Data Lookup
 
-| Method | Description |
-|--------|-------------|
-| `getEquipmentDataStatic(itemName: string)` | Get equipment data from extended database (defaults + custom) |
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `getEquipmentDataStatic(itemName)` | `EnhancedEquipment \| undefined` | Get equipment data from extended database (defaults + custom) |
 
 For equipment properties, enchanting, and custom equipment examples, see [EQUIPMENT_SYSTEM.md](../docs/EQUIPMENT_SYSTEM.md).
 
 ---
 
 ## Enchantment Library
+
+*Also known as: Enchantment registry, curse library, equipment buff system*
 
 *Location:* *[src/utils/enchantmentLibrary.ts](src/utils/enchantmentLibrary.ts)*
 
@@ -6140,6 +5947,8 @@ Functions that create stat-boosting enchantments with configurable bonus levels 
 ---
 
 ## Magic Items and Equipment Templates
+
+*Also known as: Magic item library, prebuilt equipment catalog, equipment template system*
 
 *Location:* *[src/utils/equipmentConstants.ts](src/utils/equipmentConstants.ts)*
 
@@ -6457,6 +6266,8 @@ Utility class for validating class features and racial traits against strict sch
 
 ### WeightedSelector
 
+*Also known as: Weighted random selector, spawn probability calculator*
+
 *Location:* *[src/core/extensions/WeightedSelector.ts](src/core/extensions/WeightedSelector.ts)*
 
 Utility class for weighted random selection supporting different spawn modes for probability calculation.
@@ -6513,21 +6324,21 @@ Query and validation layer for character skills stored in ExtensionManager.
 
 #### Method Reference
 
-| Method | Description |
-|--------|-------------|
-| `getInstance()` | Returns singleton instance |
-| `getSkill(id)` | Get skill by ID |
-| `getAllSkills()` | Get all registered skills (reads from ExtensionManager with caching) |
-| `getSkillsByAbility(ability)` | Get skills for specific ability (builds index from EM data with caching) |
-| `getSkillsByCategory(category)` | Get skills in a specific category (builds index from EM data with caching) |
-| `getCategories()` | Get all categories in use (derived from EM data) |
-| `getSkillsBySource(source)` | Get skills by source (default or custom) |
-| `getAvailableSkills(character)` | Get skills character can learn (prerequisites met) |
-| `validatePrerequisites(skill, character)` | Validate skill prerequisites (delegates to SkillValidator) |
-| `validateSkill(skill)` | Validate skill data structure (delegates to SkillValidator) |
-| `isValidSkill(id)` | Check if skill ID exists in registry |
-| `getSkillCount()` | Get total skill count |
-| `getQueryStats()` | Get statistics about registered skills |
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `getInstance()` | `SkillQuery` | Returns singleton instance |
+| `getSkill(id)` | `CustomSkill \| undefined` | Get skill by ID |
+| `getAllSkills()` | `CustomSkill[]` | Get all registered skills (reads from ExtensionManager with caching) |
+| `getSkillsByAbility(ability)` | `CustomSkill[]` | Get skills for specific ability (builds index from EM data with caching) |
+| `getSkillsByCategory(category)` | `CustomSkill[]` | Get skills in a specific category (builds index from EM data with caching) |
+| `getCategories()` | `string[]` | Get all categories in use (derived from EM data) |
+| `getSkillsBySource(source)` | `CustomSkill[]` | Get skills by source (default or custom) |
+| `getAvailableSkills(character)` | `CustomSkill[]` | Get skills character can learn (prerequisites met) |
+| `validatePrerequisites(skill, character)` | `SkillValidationResult` | Validate skill prerequisites (delegates to SkillValidator) |
+| `validateSkill(skill)` | `SkillValidationResult` | Validate skill data structure (delegates to SkillValidator) |
+| `isValidSkill(id)` | `boolean` | Check if skill ID exists in registry |
+| `getSkillCount()` | `number` | Get total skill count |
+| `getQueryStats()` | `SkillQueryStats` | Get statistics about registered skills |
 
 ---
 
@@ -6541,16 +6352,16 @@ Utility class for validating custom skills, skill proficiencies, and skill list 
 
 #### Method Reference
 
-| Method | Description |
-|--------|-------------|
-| `validateSkill(skill: unknown)` | Validate skill schema including required fields, ID format, ability, source |
-| `validateSkills(skills: unknown[])` | Validate multiple skills with index-based error reporting |
-| `validateSkillProficiency(proficiency: unknown)` | Validate skill proficiency (skillId, level, source) |
-| `validateSkillProficiencies(proficiencies: unknown[])` | Validate array of skill proficiencies |
-| `validateSkillListDefinition(skillList: unknown)` | Validate class skill list (class, skillCount, availableSkills, expertiseCount) |
-| `validateSkillPrerequisites(prerequisites, character)` | Validate prerequisites against character |
-| `isValidAbility(ability: string)` | Check if valid ability score (STR, DEX, CON, INT, WIS, CHA) |
-| `isValidSkillId(id: string)` | Check if skill ID follows lowercase_with_underscores format |
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `validateSkill(skill: unknown)` | `SkillValidationResult` | Validate skill schema including required fields, ID format, ability, source |
+| `validateSkills(skills: unknown[])` | `SkillValidationResult` | Validate multiple skills with index-based error reporting |
+| `validateSkillProficiency(proficiency: unknown)` | `SkillValidationResult` | Validate skill proficiency (skillId, level, source) |
+| `validateSkillProficiencies(proficiencies: unknown[])` | `SkillValidationResult` | Validate array of skill proficiencies |
+| `validateSkillListDefinition(skillList: unknown)` | `SkillValidationResult` | Validate class skill list (class, skillCount, availableSkills, expertiseCount) |
+| `validateSkillPrerequisites(prerequisites, character)` | `SkillValidationResult` | Validate prerequisites against character |
+| `isValidAbility(ability: string)` | `ability is Ability` | Check if valid ability score (STR, DEX, CON, INT, WIS, CHA) |
+| `isValidSkillId(id: string)` | `boolean` | Check if skill ID follows lowercase_with_underscores format |
 
 **Note:** For detailed prerequisite validation rules, see [docs/PREREQUISITES.md](docs/PREREQUISITES.md).
 
@@ -6590,23 +6401,23 @@ Query and validation layer for spells stored in ExtensionManager.
 
 #### Method Reference
 
-| Method | Description |
-|--------|-------------|
-| `getInstance()` | Returns singleton instance |
-| `getSpell(spellId)` | Get spell by ID |
-| `getSpells()` | Get all spells (reads from ExtensionManager with caching) |
-| `getSpellsByLevel(level)` | Get spells of specific level 0-9 (queries ExtensionManager, builds index with caching) |
-| `getSpellsBySchool(school)` | Get spells of specific school (queries ExtensionManager, builds index with caching) |
-| `getSpellsForClass(class)` | Get spells available to a class (filters by classes property) |
-| `getAvailableSpells(character)` | Get spells character can learn (prerequisites met) |
-| `getSpellsBySource(source)` | Get spells by source (default or custom) |
-| `getClassSpellList(class)` | Get spell list for a class (reads from ExtensionManager) |
-| `getSpellSlotsForClass(class, level)` | Get spell slots for class/level (delegates to constants helper) |
-| `validatePrerequisites(spell, character)` | Validate spell prerequisites (delegates to SpellValidator) |
-| `validateSpell(spell)` | Validate spell schema (delegates to SpellValidator) |
-| `hasSpell(spellId)` | Check if spell exists |
-| `getSpellCount()` | Get total spell count |
-| `getQueryStats()` | Get registry statistics (total, by source, by level, by school) |
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `getInstance()` | `SpellQuery` | Returns singleton instance |
+| `getSpell(spellId)` | `RegisteredSpell \| undefined` | Get spell by ID |
+| `getSpells()` | `RegisteredSpell[]` | Get all spells (reads from ExtensionManager with caching) |
+| `getSpellsByLevel(level)` | `RegisteredSpell[]` | Get spells of specific level 0-9 (queries ExtensionManager, builds index with caching) |
+| `getSpellsBySchool(school)` | `RegisteredSpell[]` | Get spells of specific school (queries ExtensionManager, builds index with caching) |
+| `getSpellsForClass(class)` | `RegisteredSpell[]` | Get spells available to a class (filters by classes property) |
+| `getAvailableSpells(character)` | `RegisteredSpell[]` | Get spells character can learn (prerequisites met) |
+| `getSpellsBySource(source)` | `RegisteredSpell[]` | Get spells by source (default or custom) |
+| `getClassSpellList(class)` | `{ cantrips: string[], spells_by_level: Record<number, string[]> } \| undefined` | Get spell list for a class (reads from ExtensionManager) |
+| `getSpellSlotsForClass(class, level)` | `Record<number, number> \| undefined` | Get spell slots for class/level (delegates to constants helper) |
+| `validatePrerequisites(spell, character)` | `SpellValidationResult` | Validate spell prerequisites (delegates to SpellValidator) |
+| `validateSpell(spell)` | `SpellValidationResult` | Validate spell schema (delegates to SpellValidator) |
+| `hasSpell(spellId)` | `boolean` | Check if spell exists |
+| `getSpellCount()` | `number` | Get total spell count |
+| `getQueryStats()` | `{ totalSpells, defaultSpells, customSpells, spellsByLevel, spellsBySchool, classesWithSpells }` | Get registry statistics (total, by source, by level, by school) |
 
 ---
 
@@ -6620,15 +6431,15 @@ Utility class for validating spells and their prerequisites. All methods are sta
 
 #### Method Reference
 
-| Method | Description |
-|--------|-------------|
-| `validateSpell(spell: unknown)` | Validate spell schema including prerequisites |
-| `validateSpells(spells: unknown[])` | Validate array of spells |
-| `validatePrerequisites(prerequisites: unknown)` | Validate prerequisite object structure |
-| `validateSpellPrerequisites(prerequisites, character)` | Validate prerequisites against character |
-| `isValidAbility(ability: string)` | Check if valid ability score |
-| `isValidSchool(school: string)` | Check if valid spell school |
-| `isValidSpellLevel(level: number)` | Check if valid spell level (0-9) |
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `validateSpell(spell: unknown)` | `SpellValidationResult` | Validate spell schema including prerequisites |
+| `validateSpells(spells: unknown[])` | `SpellValidationResult` | Validate array of spells |
+| `validatePrerequisites(prerequisites: unknown)` | `SpellValidationResult` | Validate prerequisite object structure |
+| `validateSpellPrerequisites(prerequisites, character)` | `SpellValidationResult` | Validate prerequisites against character |
+| `isValidAbility(ability: string)` | `ability is Ability` | Check if valid ability score |
+| `isValidSchool(school: string)` | `school is Spell['school']` | Check if valid spell school |
+| `isValidSpellLevel(level: number)` | `boolean` | Check if valid spell level (0-9) |
 
 **Note:** For detailed prerequisite validation rules, see [docs/PREREQUISITES.md](docs/PREREQUISITES.md).
 
@@ -6647,6 +6458,8 @@ Spells can have prerequisites that must be met before a spellcaster can learn th
 ---
 
 ### Custom Races
+
+*Also known as: Race customization system, custom race registration*
 
 **For comprehensive guide, examples, and best practices:** See [docs/CUSTOM_CONTENT.md](docs/CUSTOM_CONTENT.md)
 
@@ -6685,12 +6498,17 @@ Characters can have a subrace property (e.g., 'High Elf', 'Hill Dwarf'). Subrace
 | `RacialTrait` | [src/core/features/FeatureQuery.ts](src/core/features/FeatureQuery.ts) | Optional `subrace?: string` for subrace-specific traits |
 
 **FeatureQuery Methods:**
-- `getRacialTraitsForSubrace(race, subrace)` - Get traits for specific subrace
-- `validatePrerequisites(feature, character)` - Validates subrace requirements
+
+| Method | Parameters | Returns | Description |
+|--------|-----------|---------|-------------|
+| `getRacialTraitsForSubrace()` | `race`, `subrace` | `RacialTrait[]` | Get traits for specific subrace |
+| `validatePrerequisites()` | `feature`, `character` | `ValidationResult` | Validates subrace requirements |
 
 ---
 
 ### Custom Classes
+
+*Also known as: Class customization system, custom class registration, template-based classes*
 
 **For comprehensive guide, examples, and best practices:** See [docs/CUSTOM_CONTENT.md](docs/CUSTOM_CONTENT.md)
 
@@ -6717,9 +6535,12 @@ The engine supports template-based custom classes through the ExtensionManager. 
 | `audio_preferences?` | object | Audio trait preferences for class affinity |
 
 **Helper Functions:**
-- `getClassData(className: string)` - Get class data from default or custom classes
-- `getClassSpellList(className: string)` - Get spell list for class
-- `getSpellSlotsForClass(className: string, level: number)` - Get spell slots for class
+
+| Function | Parameters | Returns | Description |
+|----------|-----------|---------|-------------|
+| `getClassData()` | `className` | `ClassDataEntry \| undefined` | Get class data from default or custom classes |
+| `getClassSpellList()` | `className` | `{ cantrips: string[], spells_by_level: Record<number, string[]> } \| undefined` | Get spell list for class |
+| `getSpellSlotsForClass()` | `className`, `level` | `Record<number, number> \| undefined` | Get spell slots for class |
 
 ---
 ## Style Guide
