@@ -737,16 +737,26 @@ export type DifficultyPreset = 'easy' | 'medium' | 'hard' | 'natural' | 'custom'
  * Easy difficulty thresholds (forgiving)
  */
 export const EASY_ACCURACY_THRESHOLDS: AccuracyThresholds = {
-    perfect: 0.020,  // ±20ms
-    great: 0.035,    // ±35ms
-    good: 0.075,     // ±75ms
-    ok: 0.125,       // ±125ms
+    perfect: 0.030,  // ±30ms
+    great: 0.050,    // ±50ms
+    good: 0.100,     // ±100ms
+    ok: 0.200,       // ±200ms
 } as const;
 
 /**
  * Medium difficulty thresholds (balanced)
  */
 export const MEDIUM_ACCURACY_THRESHOLDS: AccuracyThresholds = {
+    perfect: 0.020,  // ±20ms
+    great: 0.035,    // ±35ms
+    good: 0.075,     // ±75ms
+    ok: 0.125,       // ±135ms
+} as const;
+
+/**
+ * Hard difficulty thresholds (strict - for veterans)
+ */
+export const HARD_ACCURACY_THRESHOLDS: AccuracyThresholds = {
     perfect: 0.010,  // ±10ms
     great: 0.025,    // ±25ms
     good: 0.050,     // ±50ms
@@ -754,23 +764,13 @@ export const MEDIUM_ACCURACY_THRESHOLDS: AccuracyThresholds = {
 } as const;
 
 /**
- * Hard difficulty thresholds (strict - for veterans)
- */
-export const HARD_ACCURACY_THRESHOLDS: AccuracyThresholds = {
-    perfect: 0.008,  // ±8ms
-    great: 0.020,    // ±20ms
-    good: 0.040,     // ±40ms
-    ok: 0.075,       // ±75ms
-} as const;
-
-/**
  * Natural difficulty thresholds (same as hard - unedited composite)
  */
 export const NATURAL_ACCURACY_THRESHOLDS: AccuracyThresholds = {
-    perfect: 0.008,  // ±8ms
-    great: 0.020,    // ±20ms
-    good: 0.040,     // ±40ms
-    ok: 0.075,       // ±75ms
+    perfect: 0.010,  // ±10ms
+    great: 0.025,    // ±25ms
+    good: 0.050,     // ±50ms
+    ok: 0.100,       // ±100ms
 } as const;
 
 /**
