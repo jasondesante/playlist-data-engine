@@ -88,14 +88,6 @@ Plus: groove analysis (pocket detection, hotness meter), combo/groove XP rewards
 
 ---
 
-## Quick Start
-
-```bash
-npm install
-npm test
-npm run build
-```
-
 ### Parse a Playlist & Extract Data
 
 ```typescript
