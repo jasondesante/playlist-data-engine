@@ -10,6 +10,10 @@ The engine takes **serverless playlists** — permanent, censorship-resistant pl
 
 **Think of it as a toybox for making music more fun.**
 
+```bash
+npm install playlist-data-engine
+```
+
 ### The Vision: An Intelligent Music Player
 
 The original idea — five years ago — was a music player that goes beyond playing static audio. Think of how the best Nintendo games use dynamic music — different arrangements and mixes depending on what the player does. That's a whole category of experiencing recorded music, but only a handful of games have ever explored it. This engine opens that door for any music. It listens to your tracks and reacts to you — the genre, the mood, the beats, the groove, where you are, what you're doing, the weather outside, the time of day. Every song comes with a character, a combat encounter, a rhythm game chart — all generated from the music itself.
