@@ -10,9 +10,21 @@ The engine takes **serverless playlists** — permanent, censorship-resistant pl
 
 **Think of it as a toybox for making music more fun.**
 
+**Install as a package:**
 ```bash
 npm install playlist-data-engine
 ```
+
+<details>
+<summary>Install from source (for contributors)</summary>
+
+```bash
+git clone https://github.com/jasondesante/playlist-data-engine.git
+cd playlist-data-engine
+npm install
+```
+
+</details>
 
 ### The Vision: An Intelligent Music Player
 
