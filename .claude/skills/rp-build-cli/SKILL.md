@@ -1,7 +1,8 @@
 ---
-description: Build with rp-cli context builder → chat → implement
+name: "rp-build-cli"
+description: "Build with rp-cli context builder plan → implement"
 repoprompt_managed: true
-repoprompt_skills_version: 6
+repoprompt_skills_version: 30
 repoprompt_variant: cli
 ---
 
@@ -9,7 +10,7 @@ repoprompt_variant: cli
 
 Task: $ARGUMENTS
 
-You are a **Builder** agent using rp-cli. Your workflow: understand the task, build deep context via `builder`, refine the plan with the chat, then implement directly.
+Build deep context via `builder` to get a plan, then implement directly. Use follow-up reasoning only when navigating the selected code proves difficult or the plan leaves a concrete gap.
 
 ## Using rp-cli
 
@@ -50,8 +51,8 @@ JSON args (`-j`) accept inline JSON, file paths (`.json` auto-detected), `@file`
 0. **Verify workspace** – Confirm the target codebase is loaded
 1. **Quick scan** – Understand how the task relates to the codebase
 2. **Context builder** – Call `builder` with a clear prompt to get deep context + an architectural plan
-3. **Refine with chat** – Use `chat` to clarify the plan if needed
-4. **Implement directly** – Use editing tools to make changes
+3. **Only if needed, ask `chat`** – Use it when navigating the selected code is difficult or the plan leaves a concrete unresolved gap
+4. **Implement directly** – Use editing tools to make changes once the plan is clear
 
 ---
 
@@ -125,43 +126,48 @@ rp-cli -w <window_id> -e 'builder "<reformulated prompt with codebase context>" 
 - `tab_id` for targeting the same tab in subsequent CLI invocations
 
 **Tab routing:** Each `rp-cli` invocation is a fresh connection. To continue working in the same tab across separate invocations, pass `-t <tab_id>` (the tab ID returned by builder).
-**Trust `builder`** – it explores deeply and selects intelligently. You shouldn't need to add many files afterward.
+**Trust `builder`** – it explores deeply, aggregates the relevant context, and selects intelligently. Default to trusting the plan it returns. The `chat` follow-up only reasons over that selected context; it cannot fill coverage gaps on its own.
 
 ---
 
-## Phase 3: Refine with Chat
+## Phase 3: Ask `chat` only if needed
 
-The chat is a **seer** – it sees selected files **completely** (full content, not summaries), but it **only sees what's in the selection**. Nothing else.
+`chat` deep-reasons over the files selected by `builder`. It sees those selected files **completely** (full content, not summaries), but it **only sees what's in the selection** — nothing else.
 
-Use the chat to:
-- Review the plan and clarify ambiguities
-- Ask about patterns across the selected files
-- Validate your understanding before implementing
+**This phase is optional.** If the builder's plan is already clear and navigation through the selected code is straightforward, proceed straight to Phase 4.
+
+Bring a follow-up to `chat` only when:
+- Navigating the selected code proves difficult even with the builder's plan
+- You need cross-file reasoning over the files already selected
+- The plan leaves a concrete unresolved gap you cannot close by reading the selected files directly
+
+If the answer depends on files outside the current selection, `chat` cannot answer it from thin air. Do **not** turn this workflow into manual selection management by default — if coverage is materially wrong, prefer rerunning `builder` with a better prompt.
 
 ```bash
-rp-cli -t '<tab_id>' -e 'chat "How does X connect to Y in these files? Any edge cases I should watch for?" --mode plan'
+rp-cli -t '<tab_id>' -e 'chat "The plan points me to X and Y, but I'''m still having trouble tracing how they connect across these selected files. What am I missing, and what edge cases should I watch for?" --mode plan'
 ```
 
 > **Note:** Pass `-t <tab_id>` to target the same tab across separate CLI invocations.
 
-**The chat excels at:**
-- Revealing architectural patterns across files
-- Spotting connections that piecemeal reading might miss
-- Answering "how does this all fit together" questions
+**`chat` excels at:**
+- Deep reasoning over the context_builder output and selected files
+- Spotting cross-file connections that piecemeal reading might miss
+- Answering targeted "what am I missing in this selected context" questions
 
 **Don't expect:**
 - Knowledge of files outside the selection
-- Implementation—that's your job
+- Repository exploration or missing-file discovery — that's `builder`'s job
+- Implementation — that's your job
 
 ---
 
 ## Phase 4: Direct Implementation
 
 **STOP** - Before implementing, verify you have:
-- [ ] An architectural plan from the builder
+- [ ] A builder result available (`tab_id` if follow-up is needed)
 - [ ] An architectural plan grounded in actual code
 
-If anything is unclear, use `chat` to clarify before proceeding.
+If a specific point is still unclear, use `chat` to clarify before proceeding.
 
 Implement the plan directly. **Do not use `chat` with `mode:"edit"`** – you implement directly.
 
@@ -180,9 +186,9 @@ rp-cli -w <window_id> -e 'file create Root/NewFile.swift "content..."'
 rp-cli -w <window_id> -e 'read Root/File.swift --start-line 50 --limit 30'
 ```
 
-**Ask the chat when stuck:**
+**Ask `chat` only when navigation or cross-file reasoning is the bottleneck:**
 ```bash
-rp-cli -w <window_id> -t '<tab_id>' -e 'chat "I'\''m implementing X but unsure about Y. What pattern should I follow?" --mode chat'
+rp-cli -w <window_id> -t '<tab_id>' -e 'chat "I'''m implementing X. The plan does not fully explain Y, and reading the selected files still leaves a gap. What pattern or connection am I missing here?" --mode chat'
 ```
 
 ---
@@ -191,33 +197,25 @@ rp-cli -w <window_id> -t '<tab_id>' -e 'chat "I'\''m implementing X but unsure a
 
 **Token limit:** Stay under ~160k tokens. Check with `select get` if unsure. Context builder manages this, but be aware if you add files.
 
-**Selection management:**
-- Add files as needed, but `builder` should have most of what you need
-- Use slices for large files when you only need specific sections
-- New files created are automatically selected
+**Selection coverage:**
+- `builder` should already have selected the files needed for the plan
+- `chat` can reason only over that selected context; it cannot discover missing files on its own
+- If a material coverage gap blocks you, prefer rerunning `builder` with a better prompt over hand-curating selection
+- Use `manage_selection` only as a last resort for a very small, targeted addition
 
-```bash
-# Check current selection and tokens
-rp-cli -w <window_id> -e 'select get'
-
-# Add a file if needed
-rp-cli -w <window_id> -e 'select add Root/path/to/file.swift'
-
-# Add a slice of a large file
-rp-cli -w <window_id> -e 'select add Root/large/file.swift:100-200'
-```
-
-**Chat sees only the selection:** If you need the chat's insight on a file, it must be selected first.
+**`chat` sees only the selection:** If the answer depends on files outside the selection, `chat` cannot provide it until coverage changes — and in this workflow, coverage changes should usually come from `builder`, not from manual curation.
 
 ---
 
 ## Anti-patterns to Avoid
 
 - 🚫 Using `chat` with `mode:"edit"` – implement directly with editing tools
-- 🚫 Asking the chat about files not in the selection – it can't see them
+- 🚫 Asking `chat` about files it cannot see in the current selection
+- 🚫 Treating Phase 3 as mandatory when the builder's plan is already clear
+- 🚫 Reopening or second-guessing the builder's plan by default instead of trusting it
+- 🚫 Leaning on manual `manage_selection` work to patch coverage gaps that should be handled by `builder`
 - 🚫 Skipping `builder` and going straight to implementation – you'll miss context
-- 🚫 Removing files from selection unnecessarily – prefer adding over removing
-- 🚫 Using `manage_selection` with `op:"clear"` – this undoes `builder`'s work; only remove specific files when over token budget
+- 🚫 Using `manage_selection` with `op:"clear"` – this undoes `builder`'s work; only use small targeted additions if absolutely necessary
 - 🚫 Exceeding ~160k tokens – use slices if needed
 - 🚫 **CRITICAL:** Doing extensive exploration (5+ tool calls) before calling `builder` – the quick scan should be 2-3 calls max
 - 🚫 Reading full file contents during Phase 1 – save that for after `builder` builds context
@@ -226,4 +224,4 @@ rp-cli -w <window_id> -e 'select add Root/large/file.swift:100-200'
 
 ---
 
-**Your job:** Build understanding through `builder`, refine the plan with the chat's holistic view, then execute the implementation directly and completely.
+**Your job:** Get a solid plan from `builder`, trust it by default, use `chat` only when navigating the selected code proves difficult or the plan leaves a concrete unresolved gap, then implement directly and completely.

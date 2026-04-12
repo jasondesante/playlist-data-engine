@@ -1,7 +1,8 @@
 ---
-description: Code review workflow using RepoPrompt MCP tools git tool and context_builder
+name: "rp-review"
+description: "Code review workflow using RepoPrompt MCP tools git tool and context_builder"
 repoprompt_managed: true
-repoprompt_skills_version: 6
+repoprompt_skills_version: 30
 repoprompt_variant: mcp
 ---
 
@@ -15,7 +16,7 @@ You are a **Code Reviewer** using RepoPrompt MCP tools. Your workflow: understan
 
 0. **Verify workspace** – Confirm the target codebase is loaded.
 1. **Survey changes** – Check git state and recent commits to understand what's changed.
-2. **Confirm scope (MANDATORY)** – You MUST confirm the comparison branch/scope with the user before proceeding.
+2. **Determine scope** – Infer the comparison scope from the user's request. Only ask for clarification if the scope is ambiguous or unspecified.
 3. **Deep review** – Run `context_builder` with `response_type: "review"`, explicitly specifying the confirmed comparison scope.
 4. **Fill gaps** – If the review missed areas, run focused follow-up reviews explicitly describing what was/wasn't covered.
 
@@ -52,11 +53,13 @@ Before any git operations, confirm the target codebase is loaded:
 {"tool":"git","args":{"op":"diff","detail":"files"}}
 ```
 
-## Step 2: Confirm Scope with User (MANDATORY - DO NOT SKIP)
+## Step 2: Determine Comparison Scope
 
-⚠️ **You MUST confirm the comparison scope with the user before calling `context_builder`.** Do not assume or proceed without explicit confirmation.
+Determine the comparison scope from the user's request and git state.
 
-Ask the user to confirm:
+**If the user already specified a clear comparison target** (e.g., "review against main", "compare with develop", "review last 3 commits"), **skip confirmation and proceed** using the scope they specified.
+
+**If the scope is ambiguous or not specified**, ask the user to clarify:
 - **Current branch**: What branch are you on? (from git status)
 - **Comparison target**: What should changes be compared against?
   - `uncommitted` – All uncommitted changes vs HEAD (default)
@@ -65,13 +68,13 @@ Ask the user to confirm:
   - `main` or `master` – Compare current branch against trunk
   - `<branch_name>` – Compare against specific branch
 
-**Example prompt to user:**
+**Example prompt to user (only if scope is unclear):**
 > "You're on branch `feature/xyz`. What should I compare against?
 > - `uncommitted` (default) - review all uncommitted changes
 > - `main` - review all changes on this branch vs main
 > - Other branch name?"
 
-**STOP and wait for user confirmation before proceeding to Step 3.**
+**If you need to ask, STOP and wait for user confirmation before proceeding.**
 
 ## Step 3: Deep Review (via `context_builder` - REQUIRED)
 
@@ -124,7 +127,7 @@ Not yet reviewed: <list files/areas to review now>.</context>
 
 ## Anti-patterns to Avoid
 
-- 🚫 **CRITICAL:** Skipping Step 2 (branch confirmation) – you MUST confirm the comparison scope with the user before calling `context_builder`
+- 🚫 Proceeding with an ambiguous scope – if the user didn't specify a comparison target and it's unclear from context, you must ask before calling `context_builder`
 - 🚫 **CRITICAL:** Skipping `context_builder` and attempting to review by reading files manually – you'll miss architectural context
 - 🚫 Calling `context_builder` without specifying the confirmed comparison scope in the instructions
 - 🚫 Doing extensive file reading before calling `context_builder` – git status/log/diff is sufficient for Step 1
