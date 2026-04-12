@@ -1,5 +1,7 @@
 # Playlist Data Engine
 
+[![npm version](https://img.shields.io/npm/v/playlist-data-engine.svg)](https://www.npmjs.com/package/playlist-data-engine)
+
 > The data engine behind **[ar://listen](https://listen.arweave.net/)** — an interactive music player where every song becomes an adventure. Five years in the making.
 
 The engine takes **serverless playlists** (stored on Arweave via the Ario network) and turns them into music-powered experiences. It parses playlist data into clean formats, analyzes audio with TensorFlow-powered ML models, detects beats for rhythm games, generates RPG characters from sonic fingerprints, runs combat simulations with seeded dice, and feeds real-world sensor data back into the player to create a living, responsive experience. All with automatic Arweave gateway failover via the Ario Wayfinder so your data is always reachable.
