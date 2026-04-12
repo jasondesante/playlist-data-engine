@@ -4,15 +4,15 @@
 
 > The data engine behind **[ar://listen](https://listen.arweave.net/)** — an interactive music player where every song becomes an adventure. Five years in the making.
 
-**[Live Demo](https://playlist-data-showcase_contractwizard.ar.io/)** | **[Docs](https://github.com/jasondesante/Ape-Tapes-Docs)**
+**[Live Engine Demo](https://playlist-data-showcase_contractwizard.ar.io/)** | **[ar://listen Gitbook](https://contract-wizard.gitbook.io/contract-wizard)**
 
-The engine takes **serverless playlists** (stored on Arweave via the Ario network) and turns them into music-powered experiences. It parses playlist data into clean formats, analyzes audio with TensorFlow-powered ML models, detects beats for rhythm games, generates RPG characters from sonic fingerprints, runs combat simulations with seeded dice, and feeds real-world sensor data back into the player to create a living, responsive experience. All with automatic Arweave gateway failover via the Ario Wayfinder so your data is always reachable.
+The engine takes **serverless playlists** — permanent, censorship-resistant playlists stored on Arweave that mix Ethereum NFTs with decentralized uploads — and turns them into music-powered experiences. It parses playlist data into clean formats, analyzes audio with TensorFlow-powered ML models, detects beats for rhythm games, generates RPG characters from sonic fingerprints, runs combat simulations with seeded dice, and feeds real-world sensor data back into the player to create a living, responsive experience. All with automatic Arweave gateway failover via the Ario Wayfinder so your data is always reachable.
 
 **Think of it as a toybox for making music more fun.**
 
 ### The Vision: An Intelligent Music Player
 
-The original design — five years ago — was simple: what if a music player *listened* to your music as carefully as you do? What if it knew the genre, the mood, the beats, the groove? What if it could react to where you are, what you're doing, the weather outside, the time of day? What if every song came with a character, a combat encounter, a rhythm game chart — all generated from the music itself?
+The original idea — five years ago — was a music player that goes beyond playing static audio. Think of how the best Nintendo games use dynamic music — different arrangements and mixes depending on what the player does. That's a whole category of experiencing recorded music, but only a handful of games have ever explored it. This engine opens that door for any music. It listens to your tracks and reacts to you — the genre, the mood, the beats, the groove, where you are, what you're doing, the weather outside, the time of day. Every song comes with a character, a combat encounter, a rhythm game chart — all generated from the music itself.
 
 That's what this engine does. Every system connects back to making the music player smarter and more interactive:
 
