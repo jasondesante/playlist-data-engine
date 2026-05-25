@@ -265,6 +265,8 @@ export class ArweaveGatewayManager {
     private originalPriorities: Map<string, number> = new Map();
     /** Maximum number of response time records to keep per gateway */
     private readonly MAX_HEALTH_RECORDS = 50;
+    /** In-flight resolveUrl requests keyed by txId, for request deduplication */
+    private inflightResolves: Map<string, Promise<string>> = new Map();
     /** AR.IO Wayfinder client for dynamic routing */
     private wayfinder: Wayfinder | null = null;
     /** The currently active dynamic gateway. Used globally to prevent constant switching. */
@@ -355,77 +357,6 @@ export class ArweaveGatewayManager {
     }
 
     /**
-     * Resolve an Arweave URL to a working gateway URL
-     *
-     * If the URL is not an Arweave URL, returns it unchanged.
-     * If cached, returns the cached working URL.
-     * Otherwise, tries each gateway in priority order until one works.
-     * If all gateways fail, returns the original URL.
-     *
-     * @param url - The URL to resolve
-     * @returns A working URL (or original URL if all gateways fail)
-     */
-    // async resolveUrl(url: string): Promise<string> {
-    async resolveUrlOld(url: string): Promise<string> {
-        // Not an Arweave URL, return as-is
-        if (!isArweaveUrl(url)) {
-            return url;
-        }
-
-        // Parse the URL to get txId and pathSuffix
-        const parsed = parseArweaveUrl(url);
-        if (!parsed) {
-            this.logger.warn('Failed to parse Arweave URL, returning original', { url });
-            return url;
-        }
-
-        const { txId, pathSuffix } = parsed;
-
-        // Check cache first
-        const cachedGateway = this.getCachedGateway(txId);
-        if (cachedGateway) {
-            this.hitCount++;
-            const workingUrl = constructGatewayUrl(txId, cachedGateway, pathSuffix);
-            this.logger.debug('Cache hit for txId', { txId, gateway: cachedGateway.host, pathSuffix });
-            return workingUrl;
-        }
-
-        this.missCount++;
-        this.logger.debug('Cache miss, checking gateways', { txId, pathSuffix });
-
-        // Try each gateway in priority order
-        for (const gateway of this.gateways) {
-            try {
-                const isWorking = await this.checkGateway(txId, gateway, pathSuffix);
-                if (isWorking) {
-                    // Cache the working gateway
-                    this.setCache(txId, gateway);
-                    const workingUrl = constructGatewayUrl(txId, gateway, pathSuffix);
-                    this.logger.info('Gateway check succeeded', {
-                        txId,
-                        gateway: gateway.host,
-                        pathSuffix,
-                        workingUrl,
-                    });
-                    return workingUrl;
-                }
-            } catch (error) {
-                // Log error but continue to next gateway
-                this.logger.debug('Gateway check failed', {
-                    txId,
-                    gateway: gateway.host,
-                    pathSuffix,
-                    error: error instanceof Error ? error.message : String(error),
-                });
-            }
-        }
-
-        // All gateways failed, return original URL
-        this.logger.warn('All gateways failed, returning original URL', { txId, pathSuffix, originalUrl: url });
-        return url;
-    }
-
-    /**
      * Wrap a promise with a timeout to prevent hanging indefinitely.
      * Useful for third-party calls (e.g., Wayfinder) that have no built-in timeout.
      */
@@ -479,6 +410,39 @@ export class ArweaveGatewayManager {
             return workingUrl;
         }
 
+        // Proactive rotation: if active gateway is degrading, force a new selection
+        if (this.consecutiveSlowResponses >= this.maxSlowResponses) {
+            this.logger.warn('Proactive gateway rotation triggered', {
+                slowCount: this.consecutiveSlowResponses,
+                threshold: this.maxSlowResponses,
+                previousGateway: this.activeGateway?.host ?? 'none',
+            });
+            this.activeGateway = null;
+            this.consecutiveSlowResponses = 0;
+            this.clearPersistedGateway();
+            this.cache.clear();
+        }
+
+        // Deduplicate: if a resolve is already in-flight for this txId, reuse it
+        const inflight = this.inflightResolves.get(txId);
+        if (inflight) {
+            this.logger.debug('Deduplicating resolveUrl for txId', { txId });
+            return inflight;
+        }
+
+        const resolvePromise = this.resolveGatewayChain(url, txId, pathSuffix, signal)
+            .finally(() => { this.inflightResolves.delete(txId); });
+
+        this.inflightResolves.set(txId, resolvePromise);
+        return resolvePromise;
+    }
+
+    /**
+     * The actual gateway fallback chain. Extracted from resolveUrl() for
+     * request deduplication — concurrent callers for the same txId share
+     * one instance of this chain.
+     */
+    private async resolveGatewayChain(url: string, txId: string, pathSuffix: string, signal?: AbortSignal): Promise<string> {
         // Step 1: Try arweave.net first (the official gateway — most reliable)
         const arweaveNet = this.gateways.find(g => g.host === 'arweave.net');
         if (arweaveNet) {
@@ -641,7 +605,7 @@ export class ArweaveGatewayManager {
     }
 
     /**
-     * Try remaining fallback gateways (everything except arweave.net).
+     * Try remaining fallback gateways (everything except arweave.net) in parallel.
      * Returns the URL of the first gateway that responds, or null if all fail.
      */
     private async tryFallbackGateways(url: string, txId: string, pathSuffix: string, signal?: AbortSignal): Promise<string | null> {
@@ -659,24 +623,45 @@ export class ArweaveGatewayManager {
 
         const gatewaysToTry = healthyGateways.length > 0 ? healthyGateways : fallbackGateways;
 
-        for (const gateway of gatewaysToTry) {
-            if (signal?.aborted) return null;
+        if (signal?.aborted) return null;
+        if (gatewaysToTry.length === 0) return null;
 
-            const isWorking = await this.checkGateway(txId, gateway, pathSuffix, signal);
-            if (isWorking) {
-                this.setActiveGateway(gateway, txId);
-                const workingUrl = constructGatewayUrl(txId, gateway, pathSuffix);
-                this.logger.info('Gateway resolved via fallback', {
-                    txId,
-                    gateway: gateway.host,
-                    pathSuffix,
-                    workingUrl,
-                });
-                return workingUrl;
-            }
+        // Check all fallback gateways in parallel, abort losers when one succeeds
+        const controller = new AbortController();
+        const onExternalAbort = () => controller.abort();
+        signal?.addEventListener('abort', onExternalAbort, { once: true });
+
+        let resolved = false;
+
+        try {
+            const result = await Promise.any(
+                gatewaysToTry.map(async (gateway): Promise<string> => {
+                    const isWorking = await this.checkGateway(txId, gateway, pathSuffix, controller.signal);
+                    if (isWorking) {
+                        const workingUrl = constructGatewayUrl(txId, gateway, pathSuffix);
+                        if (!resolved) {
+                            resolved = true;
+                            this.setActiveGateway(gateway, txId);
+                            this.logger.info('Gateway resolved via fallback', {
+                                txId,
+                                gateway: gateway.host,
+                                pathSuffix,
+                                workingUrl,
+                            });
+                        }
+                        return workingUrl;
+                    }
+                    throw new Error(`Gateway ${gateway.host} failed check`);
+                }),
+            );
+
+            return result;
+        } catch {
+            // Promise.any throws AggregateError when all reject
+            return null;
+        } finally {
+            signal?.removeEventListener('abort', onExternalAbort);
         }
-
-        return null;
     }
 
     /**

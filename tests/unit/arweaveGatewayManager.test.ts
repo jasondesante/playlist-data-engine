@@ -1306,11 +1306,9 @@ describe('getAllGatewayHealth method', () => {
 
         const allHealth = manager.getAllGatewayHealth();
 
-        // With sequential checking, only primary and secondary are checked
+        // With parallel checking, primary failed and at least one fallback succeeded
         expect(allHealth[0].failureCount).toBeGreaterThanOrEqual(1); // primary failed
-        expect(allHealth[1].successCount).toBeGreaterThanOrEqual(1); // secondary succeeded
-        // Tertiary is never reached since secondary succeeds
-        expect(allHealth[2].totalChecks).toBe(0);
+        expect(allHealth.some(h => h.successCount >= 1)).toBe(true); // at least one gateway succeeded
     });
 });
 
