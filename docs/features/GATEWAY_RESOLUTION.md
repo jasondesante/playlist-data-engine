@@ -278,7 +278,18 @@ const workingUrl = await arweaveGatewayManager.resolveUrl(
     'https://arweave.net/abc123.../model.json',
     abortController.signal
 );
-// → 'https://ar-io.net/abc123.../model.json' (or whatever gateway is working)
+// → 'https://ardrive.net/abc123.../model.json' (or whatever gateway is working)
+```
+
+#### `resolveUrlSimple(url)`
+
+Synchronous fast path — returns a gateway URL instantly by reusing the current active gateway (or arweave.net if none is set), with no network checks. Use this on the hot path where latency matters. When real fetches fail, call [`reportGatewayFailure()`](#reportgatewayfailureurl-options) to trigger gateway rotation.
+
+```typescript
+const url = arweaveGatewayManager.resolveUrlSimple(
+    'https://arweave.net/abc123.../model.json'
+);
+// → 'https://ardrive.net/abc123.../model.json' (immediate, no network)
 ```
 
 #### `reportGatewayFailure(url, options?)`
