@@ -36,9 +36,8 @@ export interface ArweaveUrlInfo {
  */
 export const DEFAULT_GATEWAYS: GatewayConfig[] = [
     { host: 'arweave.net', protocol: 'https', priority: 1 },
-    { host: 'ar.io', protocol: 'https', priority: 2 },
-    { host: 'ardrive.net', protocol: 'https', priority: 3 },
-    { host: 'turbo-gateway.com', protocol: 'https', priority: 4 },
+    { host: 'ardrive.net', protocol: 'https', priority: 2 },
+    { host: 'turbo-gateway.com', protocol: 'https', priority: 3 },
 ];
 
 /**
@@ -46,7 +45,6 @@ export const DEFAULT_GATEWAYS: GatewayConfig[] = [
  */
 export const KNOWN_GATEWAY_HOSTS = [
     'arweave.net',
-    'ar.io',
     'ardrive.net',
     'turbo-gateway.com',
 ] as const;

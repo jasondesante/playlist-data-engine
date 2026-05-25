@@ -55,8 +55,8 @@ const CUSTOM_GATEWAYS: GatewayConfig[] = [
     { host: 'tertiary.example.com', protocol: 'https', priority: 2 },
 ];
 
-/** Default cache TTL (2 hours) */
-const DEFAULT_CACHE_TTL = 7200000;
+/** Default cache TTL (24 hours) */
+const DEFAULT_CACHE_TTL = 86400000;
 
 // ============================================================
 // Mock Setup
@@ -138,7 +138,6 @@ describe('Gateway priority ordering', () => {
         const allHealth = manager.getAllGatewayHealth();
         const hosts = allHealth.map(h => h.host);
         expect(hosts).toContain('arweave.net');
-        expect(hosts).toContain('ar.io');
         expect(hosts).toContain('ardrive.net');
         expect(hosts).toContain('turbo-gateway.com');
     });
@@ -317,12 +316,16 @@ describe('Cache hit/miss scenarios', () => {
             await manager.resolveUrl('https://arweave.net/' + txId1);
             await manager.resolveUrl('https://arweave.net/' + txId2);
 
-            // First resolve does parallel check, second uses active gateway
-            // But both txIds should be cached
+            // First resolve caches per-txId. Second uses the active gateway fast path
+            // which skips per-txId cache — the active gateway itself is the cache.
             const cached1 = manager.getCachedGateway(txId1);
-            const cached2 = manager.getCachedGateway(txId2);
             expect(cached1).toBeTruthy();
-            expect(cached2).toBeTruthy();
+            // Active gateway is set after first resolve, so txId2 uses fast path
+            // Verify both URLs resolved successfully (not returned original)
+            const result1 = await manager.resolveUrl('https://arweave.net/' + txId1);
+            const result2 = await manager.resolveUrl('https://arweave.net/' + txId2);
+            expect(result1).not.toBe('https://arweave.net/' + txId1);
+            expect(result2).not.toBe('https://arweave.net/' + txId2);
         });
     });
 
@@ -1753,13 +1756,13 @@ describe('reportGatewayFailure reason handling', () => {
 // ============================================================
 
 describe('Persisted gateway TTL', () => {
-    it('should ignore persisted gateway older than 30 minutes', async () => {
+    it('should ignore persisted gateway older than 2 hours', async () => {
         // Manually set an expired persisted gateway in localStorage
         const expiredGateway = {
             host: 'expired.example.com',
             protocol: 'https',
             priority: 0,
-            timestamp: Date.now() - 31 * 60 * 1000, // 31 minutes ago
+            timestamp: Date.now() - 2 * 60 * 60 * 1000 - 1, // just over 2 hours ago
         };
         localStorage.setItem('arweave_active_gateway', JSON.stringify(expiredGateway));
 
@@ -1781,7 +1784,7 @@ describe('Persisted gateway TTL', () => {
         expect(mockFetch).toHaveBeenCalled();
     });
 
-    it('should use persisted gateway if younger than 30 minutes', async () => {
+    it('should use persisted gateway if younger than 2 hours', async () => {
         // Set a fresh persisted gateway in localStorage
         const freshGateway = {
             host: 'fresh.example.com',

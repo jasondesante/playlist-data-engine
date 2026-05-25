@@ -226,9 +226,9 @@ interface ResponseTimeRecord {
 const DEFAULT_TIMEOUT = 5000;
 
 /**
- * Default cache TTL (2 hours)
+ * Default cache TTL (24 hours)
  */
-const DEFAULT_CACHE_TTL = 7200000;
+const DEFAULT_CACHE_TTL = 86400000;
 
 /**
  * localStorage key for persisting the active gateway across sessions
@@ -371,6 +371,24 @@ export class ArweaveGatewayManager {
     }
 
     /**
+     * Resolve an Arweave URL to a gateway URL using the active gateway, with no network checks.
+     *
+     * This is the fast path — it returns instantly by reusing the current active gateway
+     * (or arweave.net if none is set). Use this for the hot path where latency matters.
+     * When real fetches fail, call {@link reportGatewayFailure} to trigger gateway rotation.
+     *
+     * @param url - The URL to resolve
+     * @returns A gateway URL constructed from the active gateway, or the original URL if not Arweave
+     */
+    resolveUrlSimple(url: string): string {
+        if (!isArweaveUrl(url)) return url;
+        const parsed = parseArweaveUrl(url);
+        if (!parsed) return url;
+        const gateway = this.activeGateway ?? this.gateways[0];
+        return constructGatewayUrl(parsed.txId, gateway, parsed.pathSuffix);
+    }
+
+    /**
      * Resolve an Arweave URL to a working gateway URL.
      *
      * Strategy: try static gateways first with real fetch checks (not HEAD),
@@ -410,12 +428,28 @@ export class ArweaveGatewayManager {
             return workingUrl;
         }
 
+        // Capture before any narrowing clears it
+        const activeGatewayHost = this.activeGateway?.host ?? 'none';
+
+        // Fast path: if we have an active gateway that was set recently (within persisted TTL),
+        // reuse it without HEAD-checking. Only run the full fallback chain when there's
+        // no active gateway or it's stale.
+        if (this.activeGateway) {
+            const persistedGateway = this.loadPersistedGateway();
+            if (persistedGateway) {
+                return constructGatewayUrl(txId, this.activeGateway, pathSuffix);
+            }
+            // Persisted gateway expired — clear it and fall through to full chain
+            this.activeGateway = null;
+            this.clearPersistedGateway();
+        }
+
         // Proactive rotation: if active gateway is degrading, force a new selection
         if (this.consecutiveSlowResponses >= this.maxSlowResponses) {
             this.logger.warn('Proactive gateway rotation triggered', {
                 slowCount: this.consecutiveSlowResponses,
                 threshold: this.maxSlowResponses,
-                previousGateway: this.activeGateway?.host ?? 'none',
+                previousGateway: activeGatewayHost,
             });
             this.activeGateway = null;
             this.consecutiveSlowResponses = 0;
@@ -732,9 +766,9 @@ export class ArweaveGatewayManager {
             if (!stored) return null;
             const parsed = JSON.parse(stored);
             if (parsed && typeof parsed.host === 'string' && typeof parsed.protocol === 'string') {
-                const PERSISTED_GATEWAY_TTL_MS = 30 * 60 * 1000; // 30 minutes
+                const PERSISTED_GATEWAY_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
                 if (typeof parsed.timestamp === 'number' && Date.now() - parsed.timestamp > PERSISTED_GATEWAY_TTL_MS) {
-                    this.logger.info('Ignoring persisted gateway — expired (older than 30 minutes)', { host: parsed.host });
+                    this.logger.info('Ignoring persisted gateway — expired (older than 2 hours)', { host: parsed.host });
                     this.clearPersistedGateway();
                     return null;
                 }
