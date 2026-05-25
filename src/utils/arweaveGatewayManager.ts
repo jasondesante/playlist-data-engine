@@ -403,7 +403,7 @@ export class ArweaveGatewayManager {
         const parsed = parseArweaveUrl(url);
         if (!parsed) return url;
         const gateway = this.activeGateway ?? this.gateways[0];
-        this.logger.info('[gateway] resolveUrlSimple', {
+        this.logger.debug('[gateway] resolveUrlSimple', {
             txId: parsed.txId,
             gateway: gateway.host,
             pathSuffix: parsed.pathSuffix || undefined,
