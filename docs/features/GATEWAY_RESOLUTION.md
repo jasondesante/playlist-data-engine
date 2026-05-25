@@ -15,19 +15,20 @@ resolveUrl(arweaveUrl)
 │
 ├─ 0. Cache hit? ─────────────────────────────────── return immediately
 │
-├─ 1. arweave.net (official gateway — highest priority)
+├─ 1. Persisted gateway (from localStorage — known-working gateway from previous session)
 │
-├─ 2. Persisted gateway (from localStorage, if different from arweave.net)
+├─ 2. arweave.net (official gateway — reliable fallback)
 │
-├─ 3. AR.IO Wayfinder (wider pool via composite routing)
-│      ├─ FastestPingRoutingStrategy (top 10 by operator stake, 3s timeout)
-│      └─ RandomRoutingStrategy (top 20 by operator stake, fallback)
+├─ 3. Static fallback gateways (ardrive.net, turbo-gateway.com)
+│   └─ Filtered by health data (>70% failure rate skipped after 3+ checks)
+│   └─ All tried in parallel via Promise.any()
 │
-└─ 4. Static fallback gateways (ar.io, ardrive.net, turbo-gateway.com)
-    └─ Filtered by health data (>70% failure rate skipped after 3+ checks)
+└─ 4. AR.IO Wayfinder (wider pool via composite routing, up to 3 retries)
+       ├─ FastestPingRoutingStrategy (top 10 by operator stake, 3s timeout)
+       └─ RandomRoutingStrategy (top 20 by operator stake, fallback)
 ```
 
-Resolution is **sequential between tiers** but **parallel within the fallback tier** — each tier is tried in order, and within the static fallback tier (step 4), all gateways are checked in parallel via `Promise.any()`. The first gateway that passes a real HEAD check wins; remaining in-flight checks are aborted. Non-Arweave URLs pass through unchanged.
+Resolution is **sequential between tiers** but **parallel within the fallback tier** — each tier is tried in order, and within the static fallback tier (step 3), all gateways are checked in parallel via `Promise.any()`. The first gateway that passes a real HEAD check wins; remaining in-flight checks are aborted. Non-Arweave URLs pass through unchanged.
 
 If the URL returned by `resolveUrl()` actually fails during data transfer, call [`reportGatewayFailure()`](#reportgatewayfailureurl-options) to trigger a fresh resolution that **excludes the failed gateway**:
 
@@ -45,11 +46,11 @@ reportGatewayFailure() retry order:
 When [`resolveUrl()`](#resolveurlurl-signal) is called with an Arweave URL, the manager follows this fallback chain:
 
 ```
-0. Cache lookup (per-txId, 2-hour TTL) — return immediately if hit
-1. arweave.net (official gateway — highest priority static)
-2. Persisted gateway from localStorage (if different from arweave.net)
-3. AR.IO Wayfinder (dynamic routing via NetworkGatewaysProvider)
-4. Remaining static fallback gateways (ar.io → ardrive.net → turbo-gateway.com)
+0. Cache lookup (per-txId, 24-hour TTL) — return immediately if hit
+1. Persisted gateway from localStorage (known-working gateway from previous session)
+2. arweave.net (official gateway — reliable fallback)
+3. Remaining static fallback gateways (ardrive.net → turbo-gateway.com, parallel)
+4. AR.IO Wayfinder (dynamic routing via NetworkGatewaysProvider, up to 3 retries)
 ```
 
 Each step runs a real `HEAD` request to verify the gateway can serve the specific transaction before returning it. If the signal is already aborted when called, the method returns immediately without doing any work.
@@ -135,24 +136,24 @@ If either `@ar.io/sdk` is unavailable or the custom strategy throws, it falls ba
 
 ### How Wayfinder Is Used
 
-Wayfinder is **not the primary resolution path**. It sits between the persisted gateway and static fallbacks as a middle ground in [arweaveGatewayManager.ts:498-503](../../src/utils/arweaveGatewayManager.ts#L498-L503):
+Wayfinder is **not the primary resolution path**. It sits after static fallbacks as a last resort in [arweaveGatewayManager.ts:599-610](../../src/utils/arweaveGatewayManager.ts#L599-L610):
 
 ```typescript
-// Step 3: Try Wayfinder as middle ground (wider pool, but slower)
+// Step 4: Try Wayfinder as last resort (wider pool, but slower)
 if (this.wayfinder) {
-    this.logger.debug('Primary gateways failed, trying Wayfinder', { txId });
+    this.logger.debug('Static gateways failed, trying Wayfinder', { txId });
     const wayfinderResult = await this.tryWayfinder(url, txId, pathSuffix, signal);
     if (wayfinderResult) return wayfinderResult;
 }
 ```
 
-The [`tryWayfinder()`](../../src/utils/arweaveGatewayManager.ts#L683-L728) method:
+The [`tryWayfinder()`](../../src/utils/arweaveGatewayManager.ts#L819-L862) method:
 
 1. Calls `this.wayfinder.resolveUrl({ originalUrl: url })` with a **7-second timeout** (`this.timeout + 2000`)
 2. Extracts the hostname and protocol from the resolved URL
 3. Wraps it into a `GatewayConfig` and **verifies it with a real HEAD check**
 4. If the HEAD check passes, sets it as the active gateway and caches it
-5. If the HEAD check fails or Wayfinder throws, returns `null` and falls through to static gateways
+5. If the HEAD check fails or Wayfinder throws, **retries up to 3 times** before returning `null`
 
 Key design choice: Wayfinder-selected gateways are **not trusted blindly**. Even though Wayfinder has its own health checks, the engine still verifies the gateway can actually serve the specific transaction. This prevents false positives where Wayfinder returns a gateway that works for the network but doesn't have the specific file.
 
@@ -162,7 +163,7 @@ Key design choice: Wayfinder-selected gateways are **not trusted blindly**. Even
 
 ### Persisted Gateway State
 
-The active gateway is persisted to `localStorage` under the key `arweave_active_gateway` with a **30-minute TTL**. On the next session or page load, the persisted gateway is restored and tried before Wayfinder and fallback gateways. If it's expired or fails, it's cleared immediately.
+The active gateway is persisted to `localStorage` under the key `arweave_active_gateway` with a **2-hour TTL**. On the next session or page load, the persisted gateway is restored and tried first (before arweave.net). If it's expired or fails, it's cleared immediately.
 
 This is a custom addition — Wayfinder itself has no persistence. It means the engine remembers which gateway was working across sessions, avoiding the latency of Wayfinder's ping-based routing on every startup.
 
@@ -177,7 +178,7 @@ When `consecutiveSlowResponses` reaches `maxSlowResponses` (default: 3), the **n
 
 ### Health-Aware Fallback Filtering
 
-When trying fallback gateways (step 4), the engine filters out gateways with a **>70% failure rate** (and at least 3 recorded checks). This prevents repeatedly trying known-dead gateways. If all gateways would be filtered, it uses the unfiltered list instead (graceful degradation).
+When trying fallback gateways (step 3), the engine filters out gateways with a **>70% failure rate** (and at least 3 recorded checks). This prevents repeatedly trying known-dead gateways. If all gateways would be filtered, it uses the unfiltered list instead (graceful degradation).
 
 This is a custom health tracking system built on top of `ResponseTimeRecord[]` — not a Wayfinder feature. It tracks per gateway:
 - Success/failure counts
@@ -252,7 +253,7 @@ const manager = new ArweaveGatewayManager({
         { host: 'ardrive.net', protocol: 'https', priority: 2 },
     ],
     timeout: 5000,
-    cacheTTL: 7200000,
+    cacheTTL: 86400000,
     slowResponseThreshold: 8000,
     maxSlowResponses: 3,
 });
@@ -260,9 +261,9 @@ const manager = new ArweaveGatewayManager({
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `gateways` | `GatewayConfig[]` | 4 defaults | Custom gateway list (deep-cloned, sorted by priority) |
+| `gateways` | `GatewayConfig[]` | 3 defaults | Custom gateway list (deep-cloned, sorted by priority) |
 | `timeout` | `number` | `5000` | Per-gateway HEAD check timeout (ms) |
-| `cacheTTL` | `number` | `7200000` | Per-txId cache TTL (2 hours) |
+| `cacheTTL` | `number` | `86400000` | Per-txId cache TTL (24 hours) |
 | `slowResponseThreshold` | `number` | `8000` | Threshold above which a fetch is "slow" (ms) |
 | `maxSlowResponses` | `number` | `3` | Consecutive slow fetches before proactive gateway rotation |
 
@@ -270,7 +271,7 @@ const manager = new ArweaveGatewayManager({
 
 #### `resolveUrl(url, signal?)`
 
-Main entry point. Resolves an Arweave URL to a working gateway URL using the 4-tier sequential fallback system. Non-Arweave URLs pass through unchanged.
+Main entry point. Resolves an Arweave URL to a working gateway URL using the sequential fallback system (persisted → arweave.net → static fallbacks → Wayfinder with retries). Non-Arweave URLs pass through unchanged.
 
 ```typescript
 const workingUrl = await arweaveGatewayManager.resolveUrl(
@@ -376,8 +377,8 @@ Each component also accepts an optional `resolveUrl` callback override if a cons
 
 The manager uses three separate caching mechanisms:
 
-1. **Per-txId in-memory cache** — Maps a 43-character transaction ID to a working `GatewayConfig`. TTL is configurable (default 2 hours). Checked first on every `resolveUrl()` call.
-2. **Active gateway persistence (localStorage)** — The single active gateway is persisted under key `arweave_active_gateway` with a 30-minute TTL. On page reload, the manager restores this gateway and tries it before falling back.
+1. **Per-txId in-memory cache** — Maps a 43-character transaction ID to a working `GatewayConfig`. TTL is configurable (default 24 hours). Checked first on every `resolveUrl()` call.
+2. **Active gateway persistence (localStorage)** — The single active gateway is persisted under key `arweave_active_gateway` with a 2-hour TTL. On page reload, the manager restores this gateway and tries it first (before arweave.net).
 3. **Wayfinder internal caching** — The `NetworkGatewaysProvider` caches the AR.IO gateway list internally. The `FastestPingRoutingStrategy` caches ping results. These are managed by the wayfinder library itself.
 
 ---
@@ -387,11 +388,10 @@ The manager uses three separate caching mechanisms:
 | Priority | Host | Protocol |
 |----------|------|----------|
 | 1 | `arweave.net` | https |
-| 2 | `ar.io` | https |
-| 3 | `ardrive.net` | https |
-| 4 | `turbo-gateway.com` | https |
+| 2 | `ardrive.net` | https |
+| 3 | `turbo-gateway.com` | https |
 
-These are tried in priority order. `arweave.net` is always tried first (the official gateway). Wayfinder sits between the persisted gateway and the remaining fallbacks.
+These are tried in priority order after the persisted gateway. The persisted gateway from localStorage is tried first (known-working from previous session), then arweave.net, then the remaining static gateways in parallel. Wayfinder is the last resort with up to 3 retries.
 
 ---
 
@@ -414,13 +414,13 @@ The engine degrades gracefully if these packages are not available — static ga
 
 ## Architecture Decisions
 
-**Why Wayfinder isn't the primary path** — Wayfinder requires pinging multiple gateways (up to 10), which takes 1-3 seconds. The engine tries `arweave.net` and any persisted gateway first because they're instant (single HEAD check, or cached hit). Wayfinder is only consulted when faster options fail.
+**Why Wayfinder isn't the primary path** — Wayfinder requires pinging multiple gateways (up to 10), which takes 1-3 seconds. The engine tries the persisted gateway and arweave.net first because they're instant (single HEAD check, or cached hit). Static fallbacks come next. Wayfinder is only consulted as a last resort when all faster options fail.
 
 **Why Wayfinder results are verified** — Wayfinder's `resolveUrl()` returns a gateway that should work, but it can't guarantee the specific transaction is available on that gateway. The engine runs its own HEAD check against the resolved gateway to confirm the file exists before returning it. This prevents false positives.
 
 **Why dynamic imports** — `@ar.io/wayfinder-core` depends on Node.js `crypto` APIs. In browser environments, bundling it directly would require polyfills. The dynamic `import()` means it's loaded separately at runtime — if it fails, the manager falls back to static gateways.
 
-**Why localStorage persistence** — Without persistence, every page load would start from scratch: try arweave.net, fail, try Wayfinder (slow), etc. By remembering the last working gateway, subsequent page loads skip directly to a known-good gateway.
+**Why localStorage persistence** — Without persistence, every page load would start from scratch: try arweave.net, fail, try static fallbacks, try Wayfinder (slow), etc. By remembering the last working gateway, subsequent page loads skip directly to a known-good gateway as the first step.
 
 **Why sequential fallback, not parallel** — Each step in the pipeline has different cost. A cache hit is free, arweave.net is usually fast, and Wayfinder is slow (1-3s of pinging). Running all in parallel would waste bandwidth and hit rate limits on gateways that will never be needed. Sequential fallback stops at the first success.
 
@@ -450,7 +450,7 @@ The companion [arweaveUtils.ts](../../src/utils/arweaveUtils.ts) provides lower-
 | `parseArweaveUrl(url)` | Extracts txId and path suffix from `ar://` and `https://` Arweave URLs |
 | `constructGatewayUrl(txId, gateway, pathSuffix?)` | Builds a gateway URL from components |
 | `getAllGatewayUrls(txId, gateways?, pathSuffix?)` | Returns all gateway URLs for a txId in priority order |
-| `DEFAULT_GATEWAYS` | The four default gateway configs |
+| `DEFAULT_GATEWAYS` | The three default gateway configs |
 | `KNOWN_GATEWAY_HOSTS` | Array of known gateway hostnames |
 
 ---

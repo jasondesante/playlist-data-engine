@@ -555,6 +555,7 @@ export {
     type GatewayHealthStats,
     type HealthCheckResult,
     type HealthCheckOptions,
+    type GatewayDiagnostics,
 } from './utils/arweaveGatewayManager.js';
 
 // Type helpers

@@ -209,6 +209,24 @@ export interface HealthCheckOptions {
 }
 
 /**
+ * Diagnostic snapshot of the gateway manager's current state
+ */
+export interface GatewayDiagnostics {
+    /** Currently active gateway host, or null */
+    activeGateway: string | null;
+    /** Milliseconds since the active gateway was set, or null */
+    activeGatewayAge: number | null;
+    /** Available gateway hosts in priority order */
+    availableGateways: string[];
+    /** Timing of the most recent real fetch (ms) */
+    lastFetchTiming: number;
+    /** Number of consecutive slow responses from the active gateway */
+    consecutiveSlowResponses: number;
+    /** Per-gateway health summary */
+    healthSummary: { host: string; avgMs: number; successRate: number; checks: number }[];
+}
+
+/**
  * Response time record for tracking gateway performance
  */
 interface ResponseTimeRecord {
@@ -385,7 +403,79 @@ export class ArweaveGatewayManager {
         const parsed = parseArweaveUrl(url);
         if (!parsed) return url;
         const gateway = this.activeGateway ?? this.gateways[0];
+        this.logger.info('[gateway] resolveUrlSimple', {
+            txId: parsed.txId,
+            gateway: gateway.host,
+            pathSuffix: parsed.pathSuffix || undefined,
+        });
         return constructGatewayUrl(parsed.txId, gateway, parsed.pathSuffix);
+    }
+
+    /**
+     * Set a preferred gateway by host name.
+     *
+     * If the host is in the known gateways list, it becomes the active gateway
+     * and is persisted to localStorage. Returns true on success.
+     *
+     * @param host - Gateway hostname (e.g. 'ardrive.net')
+     * @returns True if the gateway was found and set, false otherwise
+     */
+    setPreferredGateway(host: string): boolean {
+        const gateway = this.gateways.find(g => g.host === host);
+        if (!gateway) {
+            this.logger.warn('Cannot set preferred gateway — not in gateway list', {
+                host,
+                available: this.gateways.map(g => g.host),
+            });
+            return false;
+        }
+        this.activeGateway = gateway;
+        this.lastFetchTiming = 0;
+        this.consecutiveSlowResponses = 0;
+        this.persistGateway(gateway);
+        this.logger.info('Preferred gateway set', { host });
+        return true;
+    }
+
+    /**
+     * Clear the preferred/active gateway.
+     *
+     * Removes the active gateway, clears the persisted gateway from localStorage,
+     * and clears the cache. The next resolveUrl() call will re-discover the best gateway.
+     */
+    clearPreferredGateway(): void {
+        this.activeGateway = null;
+        this.lastFetchTiming = 0;
+        this.consecutiveSlowResponses = 0;
+        this.clearPersistedGateway();
+        this.cache.clear();
+        this.logger.info('Preferred gateway cleared, will re-discover on next resolve');
+    }
+
+    /**
+     * Get a diagnostic snapshot of the gateway manager's current state.
+     *
+     * Useful for debugging and console inspection.
+     *
+     * @returns Current gateway manager diagnostics
+     */
+    getDiagnostics(): GatewayDiagnostics {
+        const healthSummary = this.gateways.map(g => {
+            const records = this.healthData.get(g.host) ?? [];
+            const checks = records.length;
+            const avgMs = checks > 0 ? Math.round(records.reduce((s, r) => s + r.responseTime, 0) / checks) : 0;
+            const successRate = checks > 0 ? records.filter(r => r.success).length / checks : 1;
+            return { host: g.host, avgMs, successRate: Math.round(successRate * 100) / 100, checks };
+        });
+
+        return {
+            activeGateway: this.activeGateway?.host ?? null,
+            activeGatewayAge: null, // not tracked currently — could add timestamp later
+            availableGateways: this.gateways.map(g => g.host),
+            lastFetchTiming: this.lastFetchTiming,
+            consecutiveSlowResponses: this.consecutiveSlowResponses,
+            healthSummary,
+        };
     }
 
     /**
@@ -477,33 +567,57 @@ export class ArweaveGatewayManager {
      * one instance of this chain.
      */
     private async resolveGatewayChain(url: string, txId: string, pathSuffix: string, signal?: AbortSignal): Promise<string> {
-        // Step 1: Try arweave.net first (the official gateway — most reliable)
-        const arweaveNet = this.gateways.find(g => g.host === 'arweave.net');
-        if (arweaveNet) {
-            const result = await this.checkAndSetGateway(url, txId, pathSuffix, arweaveNet, signal);
-            if (result) return result;
-        }
+        const chainStart = Date.now();
 
-        // Step 2: Try persisted gateway (if different from arweave.net and not excluded)
-        if (this.activeGateway && this.activeGateway.host !== 'arweave.net') {
+        // Step 1: Try persisted gateway first (user's known-working gateway from previous session)
+        if (this.activeGateway) {
+            const stepStart = Date.now();
             const result = await this.checkAndSetGateway(url, txId, pathSuffix, this.activeGateway, signal);
-            if (result) return result;
-            // Persisted gateway is dead — clear it
+            const stepMs = Date.now() - stepStart;
+            if (result) {
+                this.logger.info('[gateway] Step 1 (persisted): success', { host: this.activeGateway.host, ms: stepMs, totalMs: Date.now() - chainStart });
+                return result;
+            }
+            this.logger.info('[gateway] Step 1 (persisted): failed, clearing', { ms: stepMs });
             this.activeGateway = null;
             this.clearPersistedGateway();
         }
 
-        // Step 3: Try Wayfinder as middle ground (wider pool, but slower)
-        if (this.wayfinder) {
-            this.logger.debug('Primary gateways failed, trying Wayfinder', { txId });
-            const wayfinderResult = await this.tryWayfinder(url, txId, pathSuffix, signal);
-            if (wayfinderResult) return wayfinderResult;
+        // Step 2: Try arweave.net (the official gateway — reliable fallback)
+        const arweaveNet = this.gateways.find(g => g.host === 'arweave.net');
+        if (arweaveNet) {
+            const stepStart = Date.now();
+            const result = await this.checkAndSetGateway(url, txId, pathSuffix, arweaveNet, signal);
+            const stepMs = Date.now() - stepStart;
+            if (result) {
+                this.logger.info('[gateway] Step 2 (arweave.net): success', { ms: stepMs, totalMs: Date.now() - chainStart });
+                return result;
+            }
+            this.logger.info('[gateway] Step 2 (arweave.net): failed', { ms: stepMs });
         }
 
-        // Step 4: Fallback — try remaining static gateways
-        const fallbackGateways = this.gateways.filter(g => g.host !== 'arweave.net');
+        // Step 3: Try remaining static fallback gateways in parallel
+        const stepStart = Date.now();
         const fallbackResult = await this.tryFallbackGateways(url, txId, pathSuffix, signal);
-        if (fallbackResult) return fallbackResult;
+        const stepMs = Date.now() - stepStart;
+        if (fallbackResult) {
+            this.logger.info('[gateway] Step 3 (fallbacks): success', { ms: stepMs, totalMs: Date.now() - chainStart });
+            return fallbackResult;
+        }
+        this.logger.info('[gateway] Step 3 (fallbacks): failed', { ms: stepMs });
+
+        // Step 4: Try Wayfinder as last resort (wider pool, but slower)
+        if (this.wayfinder) {
+            const stepStart = Date.now();
+            this.logger.info('[gateway] Step 4 (wayfinder): trying');
+            const wayfinderResult = await this.tryWayfinder(url, txId, pathSuffix, signal);
+            const stepMs = Date.now() - stepStart;
+            if (wayfinderResult) {
+                this.logger.info('[gateway] Step 4 (wayfinder): success', { ms: stepMs, totalMs: Date.now() - chainStart });
+                return wayfinderResult;
+            }
+            this.logger.info('[gateway] Step 4 (wayfinder): failed', { ms: stepMs });
+        }
 
         // Everything failed
         this.logger.warn('All gateways (arweave.net + Wayfinder + fallbacks) failed, returning original URL', { txId, pathSuffix, originalUrl: url });
@@ -705,41 +819,48 @@ export class ArweaveGatewayManager {
     private async tryWayfinder(url: string, txId: string, pathSuffix: string, signal?: AbortSignal): Promise<string | null> {
         if (!this.wayfinder) return null;
 
-        try {
-            this.logger.debug('Resolving via Wayfinder', { txId });
-            const wayfinderUrlObj = await this.withTimeout(
-                this.wayfinder.resolveUrl({ originalUrl: url }),
-                this.timeout + 2000,
-                'Wayfinder resolution timed out'
-            );
+        const MAX_WAYFINDER_ATTEMPTS = 3;
 
+        for (let attempt = 1; attempt <= MAX_WAYFINDER_ATTEMPTS; attempt++) {
             if (signal?.aborted) return null;
 
-            const wayfinderHost = wayfinderUrlObj.hostname;
-            const wayfinderProtocol = wayfinderUrlObj.protocol.replace(':', '') as 'http' | 'https';
-            const wayfinderGateway: GatewayConfig = {
-                host: wayfinderHost,
-                protocol: wayfinderProtocol,
-                priority: 0,
-            };
+            try {
+                this.logger.debug(`Resolving via Wayfinder (attempt ${attempt}/${MAX_WAYFINDER_ATTEMPTS})`, { txId });
+                const wayfinderUrlObj = await this.withTimeout(
+                    this.wayfinder.resolveUrl({ originalUrl: url }),
+                    this.timeout + 2000,
+                    'Wayfinder resolution timed out'
+                );
 
-            // Verify the Wayfinder-selected gateway actually has the file
-            const isWorking = await this.checkGateway(txId, wayfinderGateway, pathSuffix, signal);
-            if (isWorking) {
-                this.setActiveGateway(wayfinderGateway, txId);
-                const workingUrl = constructGatewayUrl(txId, wayfinderGateway, pathSuffix);
-                this.logger.info('Gateway resolved via Wayfinder (static fallback)', {
-                    txId,
-                    gateway: wayfinderHost,
-                    pathSuffix,
-                    workingUrl,
-                });
-                return workingUrl;
+                if (signal?.aborted) return null;
+
+                const wayfinderHost = wayfinderUrlObj.hostname;
+                const wayfinderProtocol = wayfinderUrlObj.protocol.replace(':', '') as 'http' | 'https';
+                const wayfinderGateway: GatewayConfig = {
+                    host: wayfinderHost,
+                    protocol: wayfinderProtocol,
+                    priority: 0,
+                };
+
+                // Verify the Wayfinder-selected gateway actually has the file
+                const isWorking = await this.checkGateway(txId, wayfinderGateway, pathSuffix, signal);
+                if (isWorking) {
+                    this.setActiveGateway(wayfinderGateway, txId);
+                    const workingUrl = constructGatewayUrl(txId, wayfinderGateway, pathSuffix);
+                    this.logger.info('Gateway resolved via Wayfinder', {
+                        txId,
+                        gateway: wayfinderHost,
+                        attempt,
+                        pathSuffix,
+                        workingUrl,
+                    });
+                    return workingUrl;
+                }
+
+                this.logger.debug(`Wayfinder attempt ${attempt} gateway did not pass check`, { host: wayfinderHost });
+            } catch (err) {
+                this.logger.debug(`Wayfinder attempt ${attempt} failed`, { error: err });
             }
-
-            this.logger.debug('Wayfinder gateway did not pass check', { host: wayfinderHost });
-        } catch (err) {
-            this.logger.debug('Wayfinder resolution failed', { error: err });
         }
 
         return null;
