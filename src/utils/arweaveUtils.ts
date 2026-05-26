@@ -35,9 +35,9 @@ export interface ArweaveUrlInfo {
  * Default gateway configurations in priority order
  */
 export const DEFAULT_GATEWAYS: GatewayConfig[] = [
-    { host: 'arweave.net', protocol: 'https', priority: 1 },
+    { host: 'arweave.net', protocol: 'https', priority: 3 },
     { host: 'ardrive.net', protocol: 'https', priority: 2 },
-    { host: 'turbo-gateway.com', protocol: 'https', priority: 3 },
+    { host: 'turbo-gateway.com', protocol: 'https', priority: 1 },
 ];
 
 /**
@@ -84,7 +84,8 @@ export function isArweaveUrl(url: string): boolean {
 
     // Check for known gateway hosts in the URL
     const urlLower = url.toLowerCase();
-    return KNOWN_GATEWAY_HOSTS.some(host => urlLower.includes(host));
+    return KNOWN_GATEWAY_HOSTS.some(host => urlLower.includes(host))
+        || urlLower.includes('.ar-io.net');
 }
 
 /**
@@ -147,8 +148,17 @@ export function parseArweaveUrl(url: string): ArweaveUrlInfo | null {
     // - https://arweave.net/{txId}
     // - https://arweave.net/{txId}/path/to/file
     // - https://ardrive.net/{txId}?query=...
+    // - https://<gateway>.ar-io.net/{txId} — must strip hostname first
+    let pathPortion = url;
+    try {
+        const parsed = new URL(url);
+        pathPortion = parsed.pathname + parsed.search;
+    } catch {
+        // Not a valid URL, use original
+    }
+
     const ARWEAVE_TXID_REGEX = /[A-Za-z0-9_-]{43}/g;
-    const matches = url.match(ARWEAVE_TXID_REGEX);
+    const matches = pathPortion.match(ARWEAVE_TXID_REGEX);
     if (matches && matches.length > 0) {
         // Get the first 43-character match that looks like a txId
         txId = matches[0];

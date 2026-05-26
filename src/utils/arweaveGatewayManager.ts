@@ -47,6 +47,22 @@ async function loadArioSdk(): Promise<typeof import('@ar.io/sdk') | null> {
 }
 
 /**
+ * Options for resolveUrl()
+ */
+export interface ResolveUrlOptions {
+    /** Optional AbortSignal to cancel in-flight gateway checks */
+    signal?: AbortSignal;
+    /** Skip arweave.net in the resolution chain — go persisted → fallbacks → Wayfinder */
+    bypassArweaveNet?: boolean;
+    /**
+     * Run arweave.net check in parallel without blocking resolution.
+     * Logs success/failure with txId for monitoring which files arweave.net can't serve.
+     * Only meaningful when bypassArweaveNet is true (otherwise arweave.net is already in the chain).
+     */
+    monitorArweaveNet?: boolean;
+}
+
+/**
  * Configuration for the gateway cache entry
  */
 export interface GatewayCache {
@@ -485,10 +501,12 @@ export class ArweaveGatewayManager {
      * fall back to Wayfinder only if all static gateways fail.
      *
      * @param url - The URL to resolve
-     * @param signal - Optional AbortSignal to cancel in-flight gateway checks
+     * @param options - Optional resolve options (signal, bypassArweaveNet, monitorArweaveNet)
      * @returns A working URL (or original URL if all gateways fail or signal is aborted)
      */
-    async resolveUrl(url: string, signal?: AbortSignal): Promise<string> {
+    async resolveUrl(url: string, options?: ResolveUrlOptions): Promise<string> {
+        const signal = options?.signal;
+
         // If already aborted, return original URL immediately
         if (signal?.aborted) {
             this.logger.debug('resolveUrl called with already-aborted signal, returning original URL');
@@ -554,7 +572,7 @@ export class ArweaveGatewayManager {
             return inflight;
         }
 
-        const resolvePromise = this.resolveGatewayChain(url, txId, pathSuffix, signal)
+        const resolvePromise = this.resolveGatewayChain(url, txId, pathSuffix, signal, options)
             .finally(() => { this.inflightResolves.delete(txId); });
 
         this.inflightResolves.set(txId, resolvePromise);
@@ -566,8 +584,10 @@ export class ArweaveGatewayManager {
      * request deduplication — concurrent callers for the same txId share
      * one instance of this chain.
      */
-    private async resolveGatewayChain(url: string, txId: string, pathSuffix: string, signal?: AbortSignal): Promise<string> {
+    private async resolveGatewayChain(url: string, txId: string, pathSuffix: string, signal?: AbortSignal, options?: ResolveUrlOptions): Promise<string> {
         const chainStart = Date.now();
+        const bypassArweaveNet = options?.bypassArweaveNet ?? false;
+        const monitorArweaveNet = options?.monitorArweaveNet ?? false;
 
         // Step 1: Try persisted gateway first (user's known-working gateway from previous session)
         if (this.activeGateway) {
@@ -584,16 +604,48 @@ export class ArweaveGatewayManager {
         }
 
         // Step 2: Try arweave.net (the official gateway — reliable fallback)
-        const arweaveNet = this.gateways.find(g => g.host === 'arweave.net');
-        if (arweaveNet) {
-            const stepStart = Date.now();
-            const result = await this.checkAndSetGateway(url, txId, pathSuffix, arweaveNet, signal);
-            const stepMs = Date.now() - stepStart;
-            if (result) {
-                this.logger.info('[gateway] Step 2 (arweave.net): success', { ms: stepMs, totalMs: Date.now() - chainStart });
-                return result;
+        // When bypassArweaveNet is true, skip arweave.net in the chain entirely.
+        // When monitorArweaveNet is true, run arweave.net check in parallel for logging only.
+        if (!bypassArweaveNet) {
+            const arweaveNet = this.gateways.find(g => g.host === 'arweave.net');
+            if (arweaveNet) {
+                const stepStart = Date.now();
+                const result = await this.checkAndSetGateway(url, txId, pathSuffix, arweaveNet, signal);
+                const stepMs = Date.now() - stepStart;
+                if (result) {
+                    this.logger.info('[gateway] Step 2 (arweave.net): success', { ms: stepMs, totalMs: Date.now() - chainStart });
+                    return result;
+                }
+                this.logger.info('[gateway] Step 2 (arweave.net): failed', { ms: stepMs });
             }
-            this.logger.info('[gateway] Step 2 (arweave.net): failed', { ms: stepMs });
+        } else if (monitorArweaveNet) {
+            // Fire-and-forget: check arweave.net in parallel for monitoring
+            const arweaveNet = this.gateways.find(g => g.host === 'arweave.net');
+            if (arweaveNet) {
+                const monitorUrl = constructGatewayUrl(txId, arweaveNet, pathSuffix);
+                this.checkGateway(txId, arweaveNet, pathSuffix, signal)
+                    .then((isWorking) => {
+                        if (isWorking) {
+                            this.logger.info('[gateway][monitor] arweave.net: file available', {
+                                txId,
+                                pathSuffix,
+                                url: monitorUrl,
+                            });
+                        } else {
+                            this.logger.warn('[gateway][monitor] arweave.net: file NOT available', {
+                                txId,
+                                pathSuffix,
+                                url: monitorUrl,
+                            });
+                        }
+                    })
+                    .catch((err) => {
+                        this.logger.warn('[gateway][monitor] arweave.net: check error', {
+                            txId,
+                            error: err,
+                        });
+                    });
+            }
         }
 
         // Step 3: Try remaining static fallback gateways in parallel

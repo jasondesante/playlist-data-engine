@@ -547,6 +547,7 @@ export {
     arweaveGatewayManager,
     type GatewayCache,
     type GatewayCheckResult,
+    type ResolveUrlOptions,
     type ArweaveGatewayManagerConfig,
     type PrefetchOptions,
     type PrefetchResultEntry,

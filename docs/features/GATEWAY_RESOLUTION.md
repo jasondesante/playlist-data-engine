@@ -11,13 +11,16 @@ Playlists, ML models, audio, and images are all stored on Arweave. Every Arweave
 ## Architecture
 
 ```
-resolveUrl(arweaveUrl)
+resolveUrl(arweaveUrl, { bypassArweaveNet?, monitorArweaveNet? })
 │
 ├─ 0. Cache hit? ─────────────────────────────────── return immediately
 │
 ├─ 1. Persisted gateway (from localStorage — known-working gateway from previous session)
 │
 ├─ 2. arweave.net (official gateway — reliable fallback)
+│      └─ Skipped when bypassArweaveNet: true
+│      └─ When bypassArweaveNet: true && monitorArweaveNet: true,
+│        runs in parallel (fire-and-forget) for logging
 │
 ├─ 3. Static fallback gateways (ardrive.net, turbo-gateway.com)
 │   └─ Filtered by health data (>70% failure rate skipped after 3+ checks)
@@ -207,6 +210,19 @@ If the signal is already aborted when called, the method returns the original UR
 
 The `excludeHost` option lets callers skip a specific gateway during retry without affecting the active gateway state.
 
+### Bypassing & Monitoring arweave.net
+
+arweave.net reliability can be spotty — the gateway may be up but unable to serve specific files. Two flags on `resolveUrl()` address this:
+
+**`bypassArweaveNet`** — Removes arweave.net from the resolution chain entirely. The chain becomes: persisted → fallback gateways → Wayfinder. Useful when arweave.net is unreliable but you don't want to remove it from the static gateway list permanently.
+
+**`monitorArweaveNet`** — Runs an arweave.net HEAD check **in parallel** (fire-and-forget) without blocking the resolution. Logs per-txId results with the `[gateway][monitor]` prefix:
+
+- `[gateway][monitor] arweave.net: file available` — arweave.net has this specific file
+- `[gateway][monitor] arweave.net: file NOT available` — arweave.net cannot serve this txId
+
+Only meaningful when combined with `bypassArweaveNet: true`. This lets you continue operating normally via fallback gateways while building a log of which txIds arweave.net is missing. The check is fire-and-forget — it does not block resolution and its failure does not affect the active gateway or health data.
+
 ### Gateway Prefetching
 
 [`prefetchUrls(urls, options?)`](#prefetchurlsurls-options) resolves multiple Arweave URLs in parallel with configurable concurrency (default: 5). Useful for warming the cache at startup with known model URLs or playlist images.
@@ -225,6 +241,7 @@ Everything is exported from `'playlist-data-engine'`:
 | `ArweaveGatewayManager` | Class | Create custom instances |
 | `GatewayConfig` | Interface | `{ host, protocol, priority }` |
 | `ArweaveGatewayManagerConfig` | Interface | Constructor options |
+| `ResolveUrlOptions` | Interface | Options for `resolveUrl()` (signal, bypassArweaveNet, monitorArweaveNet) |
 | `GatewayCache` | Interface | Cache entry shape |
 | `GatewayCheckResult` | Interface | Resolution result with gateway info |
 | `PrefetchOptions` | Interface | Prefetch concurrency/behavior |
@@ -269,16 +286,38 @@ const manager = new ArweaveGatewayManager({
 
 ### Methods
 
-#### `resolveUrl(url, signal?)`
+#### `resolveUrl(url, options?)`
 
 Main entry point. Resolves an Arweave URL to a working gateway URL using the sequential fallback system (persisted → arweave.net → static fallbacks → Wayfinder with retries). Non-Arweave URLs pass through unchanged.
 
+**Options (`ResolveUrlOptions`):**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `signal` | `AbortSignal` | — | Cancel in-flight gateway checks |
+| `bypassArweaveNet` | `boolean` | `false` | Skip arweave.net in the resolution chain — go persisted → fallbacks → Wayfinder |
+| `monitorArweaveNet` | `boolean` | `false` | When `bypassArweaveNet` is true, run arweave.net check in parallel (fire-and-forget) and log success/failure per txId |
+
 ```typescript
+// Default behavior — arweave.net is in the chain
 const workingUrl = await arweaveGatewayManager.resolveUrl(
     'https://arweave.net/abc123.../model.json',
-    abortController.signal
+    { signal: abortController.signal }
 );
-// → 'https://ardrive.net/abc123.../model.json' (or whatever gateway is working)
+
+// Bypass arweave.net — skip straight to fallbacks when arweave.net is unreliable
+const workingUrl = await arweaveGatewayManager.resolveUrl(
+    'https://arweave.net/abc123.../model.json',
+    { bypassArweaveNet: true }
+);
+
+// Bypass arweave.net but still monitor it in parallel for logging
+const workingUrl = await arweaveGatewayManager.resolveUrl(
+    'https://arweave.net/abc123.../model.json',
+    { bypassArweaveNet: true, monitorArweaveNet: true }
+);
+// Resolution skips arweave.net, but arweave.net is checked in parallel.
+// Logs include: [gateway][monitor] arweave.net: file NOT available { txId, url }
 ```
 
 #### `resolveUrlSimple(url)`
