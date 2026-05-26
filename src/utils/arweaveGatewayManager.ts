@@ -54,12 +54,6 @@ export interface ResolveUrlOptions {
     signal?: AbortSignal;
     /** Skip arweave.net in the resolution chain — go persisted → fallbacks → Wayfinder */
     bypassArweaveNet?: boolean;
-    /**
-     * Run arweave.net check in parallel without blocking resolution.
-     * Logs success/failure with txId for monitoring which files arweave.net can't serve.
-     * Only meaningful when bypassArweaveNet is true (otherwise arweave.net is already in the chain).
-     */
-    monitorArweaveNet?: boolean;
 }
 
 /**
@@ -587,7 +581,6 @@ export class ArweaveGatewayManager {
     private async resolveGatewayChain(url: string, txId: string, pathSuffix: string, signal?: AbortSignal, options?: ResolveUrlOptions): Promise<string> {
         const chainStart = Date.now();
         const bypassArweaveNet = options?.bypassArweaveNet ?? false;
-        const monitorArweaveNet = options?.monitorArweaveNet ?? false;
 
         // Step 1: Try persisted gateway first (user's known-working gateway from previous session)
         if (this.activeGateway) {
@@ -605,7 +598,6 @@ export class ArweaveGatewayManager {
 
         // Step 2: Try arweave.net (the official gateway — reliable fallback)
         // When bypassArweaveNet is true, skip arweave.net in the chain entirely.
-        // When monitorArweaveNet is true, run arweave.net check in parallel for logging only.
         if (!bypassArweaveNet) {
             const arweaveNet = this.gateways.find(g => g.host === 'arweave.net');
             if (arweaveNet) {
@@ -617,34 +609,6 @@ export class ArweaveGatewayManager {
                     return result;
                 }
                 this.logger.info('[gateway] Step 2 (arweave.net): failed', { ms: stepMs });
-            }
-        } else if (monitorArweaveNet) {
-            // Fire-and-forget: check arweave.net in parallel for monitoring
-            const arweaveNet = this.gateways.find(g => g.host === 'arweave.net');
-            if (arweaveNet) {
-                const monitorUrl = constructGatewayUrl(txId, arweaveNet, pathSuffix);
-                this.checkGateway(txId, arweaveNet, pathSuffix, signal)
-                    .then((isWorking) => {
-                        if (isWorking) {
-                            this.logger.info('[gateway][monitor] arweave.net: file available', {
-                                txId,
-                                pathSuffix,
-                                url: monitorUrl,
-                            });
-                        } else {
-                            this.logger.warn('[gateway][monitor] arweave.net: file NOT available', {
-                                txId,
-                                pathSuffix,
-                                url: monitorUrl,
-                            });
-                        }
-                    })
-                    .catch((err) => {
-                        this.logger.warn('[gateway][monitor] arweave.net: check error', {
-                            txId,
-                            error: err,
-                        });
-                    });
             }
         }
 
