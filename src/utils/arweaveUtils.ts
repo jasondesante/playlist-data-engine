@@ -47,6 +47,9 @@ export const KNOWN_GATEWAY_HOSTS = [
     'arweave.net',
     'ardrive.net',
     'turbo-gateway.com',
+    'irys.xyz',
+    'ar-io.dev',
+    'ar-io.net',
 ] as const;
 
 /**
@@ -82,10 +85,18 @@ export function isArweaveUrl(url: string): boolean {
         return true;
     }
 
-    // Check for known gateway hosts in the URL
+    // Check for known gateway hosts in the URL (includes subdomain hashes like
+    // abc123hash.arweave.net, abc123hash.ardrive.net, gateway.irys.xyz, etc.)
     const urlLower = url.toLowerCase();
-    return KNOWN_GATEWAY_HOSTS.some(host => urlLower.includes(host))
-        || urlLower.includes('.ar-io.net');
+    try {
+        const hostname = new URL(url).hostname;
+        return KNOWN_GATEWAY_HOSTS.some(host =>
+            hostname === host || hostname.endsWith('.' + host)
+        );
+    } catch {
+        // Not a valid URL, fall back to substring check
+        return KNOWN_GATEWAY_HOSTS.some(host => urlLower.includes(host));
+    }
 }
 
 /**
