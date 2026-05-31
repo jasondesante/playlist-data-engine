@@ -568,6 +568,21 @@ export {
     resolveIPFSLink,
 } from './utils/ipfsUtils.js';
 
+// Track extras extraction (stems, mixes, conditions)
+export {
+    type StemInfo,
+    type MixCondition,
+    type MixInfo,
+    type TrackExtrasInfo,
+    type ConditionEvaluationResult,
+    type MixEvaluationResult,
+    type AppState,
+    type EvaluationContext,
+    getTrackMetadata,
+    getTrackExtras,
+    evaluateMixConditions,
+} from './core/parser/TrackExtras.js';
+
 // Type helpers
 export { asClass, isValidClass } from './core/types/Character.js';
 

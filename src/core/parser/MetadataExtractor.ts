@@ -9,11 +9,13 @@ export class MetadataExtractor {
      * 1. mp3_url (Standard web audio - preferred)
      * 2. lossy_audio (Compressed)
      * 3. audio_url (Explicit audio field)
-     * 4. lossless_audio (High fidelity - larger files)
-     * 5. animation_url (OpenSea standard - often audio, but could be video)
+     * 4. audio (Bare audio field — some platforms use this instead of audio_url)
+     * 5. lossless_audio (High fidelity - larger files)
+     * 6. animation_url (OpenSea standard - often audio, but could be video)
+     * 7. multimedia_url (Alternative media field)
      */
     static extractAudioUrl(data: Record<string, unknown>): string | null {
-        const compressedPriorities = ['mp3_url', 'lossy_audio', 'audio_url', 'lossless_audio', 'animation_url'];
+        const compressedPriorities = ['mp3_url', 'lossy_audio', 'audio_url', 'lossless_audio', 'animation_url', 'audio', 'multimedia_url'];
 
         for (const key of compressedPriorities) {
             if (data[key] && typeof data[key] === 'string') {
@@ -42,19 +44,39 @@ export class MetadataExtractor {
     }
 
     /**
-     * Extract image URL with priority (see specs/001-core-engine/SPEC.md):
+     * Extract image URL with priority:
+     *
+     * Flat fields:
      * 1. image_small (Preferred for performance)
      * 2. image (Standard)
-     * 3. image_large (Fallback)
-     * 4. image_thumb (Last resort)
+     * 3. image_url (Explicit image URL variant)
+     * 4. image_large (Fallback)
+     * 5. image_uri (URI variant)
+     * 6. image_preview (Preview variant)
+     * 7. image_thumb (Last resort)
+     *
+     * Nested object fields (checked if no flat match found):
+     * 8. artwork.uri (Nina Protocol structured artwork)
+     * 9. project.artwork.uri (Project-level artwork)
+     * 10. primaryMedia.uri (Primary media field)
      */
     static extractImageUrl(data: Record<string, unknown>): string | null {
-        const priorities = ['image_small', 'image', 'image_large', 'image_thumb'];
+        const priorities = ['image_small', 'image', 'image_large', 'image_thumb', 'image_url', 'image_uri', 'image_preview'];
 
         for (const key of priorities) {
             if (data[key] && typeof data[key] === 'string') {
                 return data[key];
             }
+        }
+
+        // Nested object fields — checked after flat fields
+        const nestedUris = [
+            this.extractNestedUri(data, 'artwork', 'uri'),
+            this.extractNestedUri(data, 'project', 'artwork', 'uri'),
+            this.extractNestedUri(data, 'primaryMedia', 'uri'),
+        ];
+        for (const uri of nestedUris) {
+            if (uri) return uri;
         }
 
         return null;
@@ -197,5 +219,21 @@ export class MetadataExtractor {
         }
 
         return Object.keys(result).length > 0 ? result : null;
+    }
+
+    /**
+     * Safely extract a URI string from a nested object path.
+     * e.g. extractNestedUri(data, 'project', 'artwork', 'uri') => data.project.artwork.uri
+     */
+    private static extractNestedUri(data: Record<string, unknown>, ...path: string[]): string | null {
+        let current: unknown = data;
+        for (const key of path) {
+            if (current && typeof current === 'object' && !Array.isArray(current)) {
+                current = (current as Record<string, unknown>)[key];
+            } else {
+                return null;
+            }
+        }
+        return typeof current === 'string' ? current : null;
     }
 }

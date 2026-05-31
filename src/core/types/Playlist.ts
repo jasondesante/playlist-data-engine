@@ -82,7 +82,8 @@ export interface RawArweavePlaylist {
         id?: string;
         uuid?: string;
 
-        // The Stringified Payload
-        metadata: string; // "{ \"name\": \"Song\", \"audio_url\": ... }"
+        // The Payload — stringified JSON or a plain JSON object.
+        // parseMetadata() handles both formats transparently.
+        metadata: string | Record<string, unknown>;
     }>;
 }
