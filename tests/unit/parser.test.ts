@@ -702,4 +702,270 @@ describe('PlaylistParser', () => {
             vi.restoreAllMocks();
         });
     });
+
+    describe('Track Extras', () => {
+        it('should extract and attach extras (stems, mixes) to tracks during parsing', async () => {
+            const parser = new PlaylistParser();
+            const rawData = {
+                name: 'Test Playlist',
+                image: 'https://example.com/playlist.jpg',
+                creator: '0xCreator',
+                tracks: [{
+                    chain_name: 'ethereum',
+                    token_address: '0xabc',
+                    token_id: '1',
+                    platform: 'sound',
+                    metadata: JSON.stringify({
+                        name: 'Track 1',
+                        artist: 'Artist 1',
+                        mp3_url: 'https://example.com/track1.mp3',
+                        image_small: 'https://example.com/image1.jpg',
+                        duration: 180,
+                        genre: 'Electronic',
+                        tags: ['test'],
+                        stems: [
+                            { name: 'Drums', uri: 'https://example.com/drums.wav', mime_type: 'audio/wav' },
+                            { name: 'Bass', uri: 'https://example.com/bass.wav', mime_type: 'audio/wav' },
+                        ],
+                        mixes: [
+                            {
+                                name: 'Night Mix',
+                                uri: 'https://example.com/night-mix.mp3',
+                                mime_type: 'audio/mpeg',
+                                conditions: [
+                                    { type: 'start_time', value: '22:00' },
+                                ],
+                            },
+                        ],
+                    }),
+                }],
+            };
+
+            const result = await parser.parse(rawData);
+
+            expect(result.tracks[0].extras).toBeDefined();
+            expect(result.tracks[0].extras?.stems).toHaveLength(2);
+            expect(result.tracks[0].extras?.stems[0].name).toBe('Drums');
+            expect(result.tracks[0].extras?.stems[0].uri).toBe('https://example.com/drums.wav');
+            expect(result.tracks[0].extras?.mixes).toHaveLength(1);
+            expect(result.tracks[0].extras?.mixes[0].name).toBe('Night Mix');
+            expect(result.tracks[0].extras?.mixes[0].conditions).toHaveLength(1);
+            expect(result.tracks[0].extras?.hasExtras).toBe(true);
+        });
+
+        it('should return empty extras when metadata has no stems or mixes', async () => {
+            const parser = new PlaylistParser();
+            const rawData = {
+                name: 'Test Playlist',
+                image: 'https://example.com/playlist.jpg',
+                creator: '0xCreator',
+                tracks: [{
+                    chain_name: 'ethereum',
+                    token_address: '0xabc',
+                    token_id: '1',
+                    platform: 'sound',
+                    metadata: JSON.stringify({
+                        name: 'Track 1',
+                        artist: 'Artist 1',
+                        mp3_url: 'https://example.com/track1.mp3',
+                        image_small: 'https://example.com/image1.jpg',
+                        duration: 180,
+                        genre: 'Electronic',
+                        tags: ['test'],
+                    }),
+                }],
+            };
+
+            const result = await parser.parse(rawData);
+
+            expect(result.tracks[0].extras).toBeDefined();
+            expect(result.tracks[0].extras?.stems).toBeUndefined();
+            expect(result.tracks[0].extras?.mixes).toBeUndefined();
+            expect(result.tracks[0].extras?.hasExtras).toBe(false);
+        });
+
+        it('should attach extras when metadata has only stems (no mixes)', async () => {
+            const parser = new PlaylistParser();
+            const rawData = {
+                name: 'Test Playlist',
+                image: 'https://example.com/playlist.jpg',
+                creator: '0xCreator',
+                tracks: [{
+                    chain_name: 'AR',
+                    tx_id: 'abc123',
+                    platform: 'catalog',
+                    metadata: {
+                        name: 'Track 1',
+                        artist: 'Artist 1',
+                        audio_url: 'https://arweave.net/audio.mp3',
+                        image: 'https://arweave.net/image.jpg',
+                        duration: 200,
+                        genre: 'Lo-fi',
+                        tags: ['chill'],
+                        stems: [
+                            { name: 'Vocals', uri: 'https://arweave.net/vocals.wav' },
+                        ],
+                    },
+                }],
+            };
+
+            const result = await parser.parse(rawData);
+
+            expect(result.tracks[0].extras?.stems).toHaveLength(1);
+            expect(result.tracks[0].extras?.stems[0].name).toBe('Vocals');
+            expect(result.tracks[0].extras?.mixes).toBeUndefined();
+            expect(result.tracks[0].extras?.hasExtras).toBe(true);
+        });
+
+        it('should extract all extra content fields from metadata', async () => {
+            const parser = new PlaylistParser();
+            const rawData = {
+                name: 'Test Playlist',
+                image: 'https://example.com/playlist.jpg',
+                creator: '0xCreator',
+                tracks: [{
+                    chain_name: 'AR',
+                    tx_id: 'abc123',
+                    platform: 'catalog',
+                    metadata: {
+                        name: 'Track 1',
+                        artist: 'Artist 1',
+                        audio_url: 'https://arweave.net/audio.mp3',
+                        image: 'https://arweave.net/image.jpg',
+                        duration: 200,
+                        genre: 'Electronic',
+                        tags: ['test'],
+                        vrm: 'https://arweave.net/avatar.vrm',
+                        lyrics: { text: 'Hello world' },
+                        visualizer: { mime_type: 'video/mp4', uri: 'https://arweave.net/visualizer.mp4' },
+                        video: { mime_type: 'video/mp4', uri: 'https://arweave.net/video.mp4' },
+                        merch: { mime_type: 'model/gltf', type: '3d', uri: 'https://arweave.net/merch.gltf' },
+                        credits: [{ name: 'Producer', credit: 'Beat production' }, { name: 'Vocalist', credit: 'Lead vocals' }],
+                        midi: 'https://arweave.net/track.midi',
+                        step_mania: 'https://arweave.net/sm.ssc',
+                        clone_hero: 'https://arweave.net/ch.ph',
+                        external_url: 'https://artist.com',
+                    },
+                }],
+            };
+
+            const result = await parser.parse(rawData);
+            const extras = result.tracks[0].extras!;
+
+            expect(extras.vrm).toBe('https://arweave.net/avatar.vrm');
+            expect(extras.lyrics?.text).toBe('Hello world');
+            expect(extras.visualizer?.uri).toBe('https://arweave.net/visualizer.mp4');
+            expect(extras.visualizer?.mime_type).toBe('video/mp4');
+            expect(extras.video?.uri).toBe('https://arweave.net/video.mp4');
+            expect(extras.merch?.uri).toBe('https://arweave.net/merch.gltf');
+            expect(extras.merch?.type).toBe('3d');
+            expect(extras.credits).toHaveLength(2);
+            expect(extras.credits?.[0].name).toBe('Producer');
+            expect(extras.midi).toBe('https://arweave.net/track.midi');
+            expect(extras.step_mania).toBe('https://arweave.net/sm.ssc');
+            expect(extras.clone_hero).toBe('https://arweave.net/ch.ph');
+            expect(extras.external_url).toBe('https://artist.com');
+            expect(extras.hasExtras).toBe(true);
+        });
+
+        it('should wrap plain string lyrics in LyricsInfo', async () => {
+            const parser = new PlaylistParser();
+            const rawData = {
+                name: 'Test Playlist',
+                image: 'https://example.com/playlist.jpg',
+                creator: '0xCreator',
+                tracks: [{
+                    chain_name: 'AR',
+                    tx_id: 'abc123',
+                    platform: 'catalog',
+                    metadata: {
+                        name: 'Track 1',
+                        artist: 'Artist 1',
+                        audio_url: 'https://arweave.net/audio.mp3',
+                        image: 'https://arweave.net/image.jpg',
+                        duration: 200,
+                        genre: 'Electronic',
+                        tags: ['test'],
+                        lyrics: 'Plain string lyrics here',
+                    },
+                }],
+            };
+
+            const result = await parser.parse(rawData);
+
+            expect(result.tracks[0].extras?.lyrics?.text).toBe('Plain string lyrics here');
+            expect(result.tracks[0].extras?.hasExtras).toBe(true);
+        });
+
+        it('should set hasExtras true when only new fields present (no stems/mixes)', async () => {
+            const parser = new PlaylistParser();
+            const rawData = {
+                name: 'Test Playlist',
+                image: 'https://example.com/playlist.jpg',
+                creator: '0xCreator',
+                tracks: [{
+                    chain_name: 'AR',
+                    tx_id: 'abc123',
+                    platform: 'catalog',
+                    metadata: {
+                        name: 'Track 1',
+                        artist: 'Artist 1',
+                        audio_url: 'https://arweave.net/audio.mp3',
+                        image: 'https://arweave.net/image.jpg',
+                        duration: 200,
+                        genre: 'Electronic',
+                        tags: ['test'],
+                        vrm: 'https://arweave.net/avatar.vrm',
+                    },
+                }],
+            };
+
+            const result = await parser.parse(rawData);
+
+            expect(result.tracks[0].extras?.stems).toBeUndefined();
+            expect(result.tracks[0].extras?.mixes).toBeUndefined();
+            expect(result.tracks[0].extras?.vrm).toBe('https://arweave.net/avatar.vrm');
+            expect(result.tracks[0].extras?.hasExtras).toBe(true);
+        });
+
+        it('should handle invalid extra fields gracefully', async () => {
+            const parser = new PlaylistParser();
+            const rawData = {
+                name: 'Test Playlist',
+                image: 'https://example.com/playlist.jpg',
+                creator: '0xCreator',
+                tracks: [{
+                    chain_name: 'AR',
+                    tx_id: 'abc123',
+                    platform: 'catalog',
+                    metadata: {
+                        name: 'Track 1',
+                        artist: 'Artist 1',
+                        audio_url: 'https://arweave.net/audio.mp3',
+                        image: 'https://arweave.net/image.jpg',
+                        duration: 200,
+                        genre: 'Electronic',
+                        tags: ['test'],
+                        vrm: 12345,
+                        lyrics: [],
+                        visualizer: 'not-an-object',
+                        video: null,
+                        credits: [{ name: 'Only Name' }],
+                        midi: '',
+                    },
+                }],
+            };
+
+            const result = await parser.parse(rawData);
+            const extras = result.tracks[0].extras!;
+
+            expect(extras.vrm).toBeUndefined();
+            expect(extras.lyrics).toBeUndefined();
+            expect(extras.visualizer).toBeUndefined();
+            expect(extras.video).toBeUndefined();
+            expect(extras.credits).toBeUndefined();
+            expect(extras.midi).toBeUndefined();
+            expect(extras.hasExtras).toBe(false);
+        });
+    });
 });

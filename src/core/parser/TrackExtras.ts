@@ -38,12 +38,54 @@ export interface MixInfo {
 
 /** Summary of extras available on a track */
 export interface TrackExtrasInfo {
-    /** Available stems (individual instrument tracks) */
-    stems: StemInfo[];
-    /** Available alternate mixes with conditions */
-    mixes: MixInfo[];
     /** Whether the track has any extras at all */
     hasExtras: boolean;
+    /** Available stems (individual instrument tracks) */
+    stems?: StemInfo[];
+    /** Available alternate mixes with conditions */
+    mixes?: MixInfo[];
+    /** 3D avatar model URL */
+    vrm?: string;
+    /** Song lyrics */
+    lyrics?: LyricsInfo;
+    /** Visualizer asset (e.g., music video or reactive visual) */
+    visualizer?: MediaAssetInfo;
+    /** Video asset */
+    video?: MediaAssetInfo;
+    /** Merchandise asset */
+    merch?: MerchInfo;
+    /** Credits / acknowledgments */
+    credits?: CreditInfo[];
+    /** MIDI file URL */
+    midi?: string;
+    /** StepMania chart URL */
+    step_mania?: string;
+    /** Clone Hero chart URL */
+    clone_hero?: string;
+    /** External link (e.g., artist website, platform page) */
+    external_url?: string;
+}
+
+/** Song lyrics */
+export interface LyricsInfo {
+    text?: string;
+}
+
+/** A media asset with mime type and URI */
+export interface MediaAssetInfo {
+    mime_type?: string;
+    uri?: string;
+}
+
+/** A merchandise asset */
+export interface MerchInfo extends MediaAssetInfo {
+    type?: string;
+}
+
+/** A single credit entry */
+export interface CreditInfo {
+    name: string;
+    credit: string;
 }
 
 /** Result of evaluating a single condition */
@@ -137,41 +179,100 @@ export function getTrackMetadata(
 // ─── getTrackExtras ───────────────────────────────────────────────────
 
 /**
- * Extract a summary of extras available on a track (stems and mixes).
+ * Extract a summary of extras available on a track.
  *
  * Reads from the raw metadata object and returns structured info about
  * what additional content is available beyond the primary audio/image.
  *
  * @param metadata - Parsed metadata object (from getTrackMetadata or parseMetadata)
- * @returns Summary of available stems, mixes, and conditions
- *
- * @example
- * ```ts
- * const extras = getTrackExtras(metadata);
- * if (extras.hasExtras) {
- *   console.log(`${extras.stems.length} stems available`);
- *   console.log(`${extras.mixes.length} alternate mixes`);
- *   for (const mix of extras.mixes) {
- *     console.log(`  "${mix.name}" — ${mix.conditions.length} conditions`);
- *   }
- * }
- * ```
+ * @returns Summary of available stems, mixes, media assets, and other extras
  */
 export function getTrackExtras(metadata: Record<string, unknown> | null): TrackExtrasInfo {
     const empty: TrackExtrasInfo = { stems: [], mixes: [], hasExtras: false };
     if (!metadata) return empty;
 
-    // Extract stems
     const stems = extractStems(metadata);
-
-    // Extract mixes
     const mixes = extractMixes(metadata);
+    const vrm = typeof metadata.vrm === 'string' ? metadata.vrm : undefined;
+    const lyrics = extractLyrics(metadata.lyrics);
+    const visualizer = extractMediaAsset(metadata.visualizer);
+    const video = extractMediaAsset(metadata.video);
+    const merch = extractMerch(metadata.merch);
+    const credits = extractCredits(metadata.credits);
+    const midi = typeof metadata.midi === 'string' ? metadata.midi : undefined;
+    const step_mania = typeof metadata.step_mania === 'string' ? metadata.step_mania : undefined;
+    const clone_hero = typeof metadata.clone_hero === 'string' ? metadata.clone_hero : undefined;
+    const external_url = typeof metadata.external_url === 'string' ? metadata.external_url : undefined;
+
+    const hasExtras =
+        stems.length > 0 || mixes.length > 0 ||
+        !!vrm || !!lyrics || !!visualizer || !!video || !!merch || !!credits ||
+        !!midi || !!step_mania || !!clone_hero || !!external_url;
 
     return {
-        stems,
-        mixes,
-        hasExtras: stems.length > 0 || mixes.length > 0,
+        hasExtras,
+        ...(stems.length > 0 ? { stems } : {}),
+        ...(mixes.length > 0 ? { mixes } : {}),
+        ...(vrm ? { vrm } : {}),
+        ...(lyrics ? { lyrics } : {}),
+        ...(visualizer ? { visualizer } : {}),
+        ...(video ? { video } : {}),
+        ...(merch ? { merch } : {}),
+        ...(credits ? { credits } : {}),
+        ...(midi ? { midi } : {}),
+        ...(step_mania ? { step_mania } : {}),
+        ...(clone_hero ? { clone_hero } : {}),
+        ...(external_url ? { external_url } : {}),
     };
+}
+
+function extractLyrics(raw: unknown): LyricsInfo | undefined {
+    if (!raw) return undefined;
+    if (typeof raw === 'string') return { text: raw };
+    if (typeof raw === 'object' && !Array.isArray(raw)) {
+        const obj = raw as Record<string, unknown>;
+        return { text: typeof obj.text === 'string' ? obj.text : undefined };
+    }
+    return undefined;
+}
+
+function extractMediaAsset(raw: unknown): MediaAssetInfo | undefined {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
+    const obj = raw as Record<string, unknown>;
+    if (typeof obj.uri === 'string') {
+        return {
+            uri: obj.uri,
+            mime_type: typeof obj.mime_type === 'string' ? obj.mime_type : undefined,
+        };
+    }
+    return undefined;
+}
+
+function extractMerch(raw: unknown): MerchInfo | undefined {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
+    const obj = raw as Record<string, unknown>;
+    if (typeof obj.uri === 'string') {
+        return {
+            uri: obj.uri,
+            mime_type: typeof obj.mime_type === 'string' ? obj.mime_type : undefined,
+            type: typeof obj.type === 'string' ? obj.type : undefined,
+        };
+    }
+    return undefined;
+}
+
+function extractCredits(raw: unknown): CreditInfo[] | undefined {
+    if (!Array.isArray(raw)) return undefined;
+    const credits: CreditInfo[] = [];
+    for (const entry of raw) {
+        if (entry && typeof entry === 'object') {
+            const c = entry as Record<string, unknown>;
+            if (typeof c.name === 'string' && typeof c.credit === 'string') {
+                credits.push({ name: c.name, credit: c.credit });
+            }
+        }
+    }
+    return credits.length > 0 ? credits : undefined;
 }
 
 function extractStems(metadata: Record<string, unknown>): StemInfo[] {
@@ -274,7 +375,7 @@ export function evaluateMixConditions(
     const results: MixEvaluationResult[] = [];
     const now = new Date();
 
-    for (const mix of extras.mixes) {
+    for (const mix of extras.mixes || []) {
         if (mix.conditions.length === 0) {
             // No conditions — always available
             results.push({

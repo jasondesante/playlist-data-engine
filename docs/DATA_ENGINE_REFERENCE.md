@@ -94,6 +94,8 @@ A concise overview of all main exports from the library, organized by category.
 | `PlaylistParser` | Parse playlist JSON/Araweave data | [Core Modules](#core-modules) |
 | `MetadataExtractor` | Extract metadata from track objects | [Core Modules](#core-modules) |
 | `getAudioUrls`, `getImageUrls`, etc. | Simple playlist data extraction utilities | [Core Modules](#core-modules) |
+| `getTrackMetadata`, `getTrackExtras`, `evaluateMixConditions` | Track extras: stems, mixes, lyrics, visualizer, video, vrm, merch, credits, game charts | [Track Extras](#track-extras) |
+| `isIPFS`, `extractIPFSPath`, `resolveIPFSLink` | IPFS URL detection, extraction, and resolution | [IPFS URL Utilities](#ipfs-url-utilities) |
 | `AudioAnalyzer` | Analyze audio frequency characteristics | [Core Modules](#core-modules) |
 | `MusicClassifier` | Deep ML classification (genre, mood, vibe) | [Core Modules](#core-modules) |
 | `PitchAnalyzer` | Full-track pitch detection with contour analysis | [Core Modules](#core-modules) |
@@ -337,7 +339,7 @@ Type definitions for all core data structures.
 | Type | Description | Key Properties |
 |------|-------------|----------------|
 | `ServerlessPlaylist` | Main container object returned by `PlaylistParser` | `name`, `tracks`, `image`, `creator`, `genre?`, `tags?` |
-| `PlaylistTrack` | Flattened track object containing audio_url | `audio_url` (critical), `audio_url_lossless?`, `title`, `artist`, `image_url`, `image_thumb_url?`, chain data |
+| `PlaylistTrack` | Flattened track object containing audio_url | `audio_url` (critical), `audio_url_lossless?`, `title`, `artist`, `image_url`, `image_thumb_url?`, `extras?`, chain data |
 | `RawArweavePlaylist` | Raw input schema received from Arweave before parsing | `tracks[].metadata` (stringified JSON), blockchain shell data |
 
 ### AudioProfile
@@ -1465,6 +1467,7 @@ Converts raw JSON data (Arweave) into standardized `ServerlessPlaylist` objects.
 | `validateAudioUrls` | boolean | `false` | Perform HEAD request to verify audio URLs exist |
 | `strict` | boolean | `false` | Throw errors on invalid tracks instead of skipping |
 | `audioUrlValidationTimeout` | number | `5000` | Timeout in milliseconds for audio URL validation (prevents hanging) |
+| `resolveImageUrls` | boolean | `false` | Resolve Arweave image URLs to working gateways during parsing |
 
 #### Helper: `MetadataExtractor`
 
@@ -1476,12 +1479,13 @@ Extracts metadata fields from playlist track data. All methods are static.
 
 | Method | Returns | Description |
 |--------|---------|-------------|
-| `static extractAudioUrl(data)` | `string \| null` | Extracts audio URL with priority: mp3_url > lossy_audio > audio_url > lossless_audio > animation_url |
+| `static extractAudioUrl(data)` | `string \| null` | Extracts audio URL with priority: mp3_url > lossy_audio > audio_url > lossless_audio > animation_url > audio > multimedia_url |
 | `static extractAudioUrlLossless(data)` | `string \| null` | Extracts lossless audio URL with priority: lossless_audio > wav_url > flac_url |
-| `static extractImageUrl(data)` | `string \| null` | Extracts image URL with priority: image_small > image > image_large > image_thumb |
+| `static extractImageUrl(data)` | `string \| null` | Extracts image URL from flat fields (image_small > image > image_large > image_thumb > image_url > image_uri > image_preview), then nested paths (artwork.uri > project.artwork.uri > primaryMedia.uri) |
 | `static extractImageThumbUrl(data)` | `string \| null` | Extracts thumbnail URL with priority: image_thumb_url > image_thumb |
 | `static extractTitle(data)` | `string \| null` | Extracts name/title with priority: name > title |
 | `static extractArtist(data)` | `string \| null` | Extracts artist with priority: artist > created_by > minter |
+| `static extractGenre(data)` | `string` | Extracts genre from string, array (first element), or OpenSea attributes with "Genre" trait_type |
 | `static parseMetadata(metadata)` | `Record<string, unknown> \| null` | Parses metadata string to JSON object with error handling |
 | `static convertAttributes(attributes)` | `Record<string, string \| number> \| null` | Converts OpenSea-style attributes array to key-value object |
 
@@ -1530,7 +1534,65 @@ Simple functions that return arrays of basic data from playlists. Works with bot
 
 *For usage examples, see [USAGE_IN_OTHER_PROJECTS.md](USAGE_IN_OTHER_PROJECTS.md#playlist-utilities).*
 
----
+### Track Extras
+
+*Location:* *[src/core/parser/TrackExtras.ts](src/core/parser/TrackExtras.ts)*
+
+*Also known as: Stems and mixes, track extras, mix conditions*
+
+Extracts stem tracks and alternate mixes from parsed track metadata, and evaluates mix conditions against environmental sensor data and app state.
+
+For supported condition types, usage examples, and the full workflow, see [PLAYLIST_PARSING.md — Track Extras](features/PLAYLIST_PARSING.md#track-extras-stems-mixes-and-conditions).
+
+#### Types
+
+| Type | Description |
+|------|-------------|
+| `TrackExtrasInfo` | `{ hasExtras, stems?, mixes?, vrm?, lyrics?, visualizer?, video?, merch?, credits?, midi?, step_mania?, clone_hero?, external_url? }` |
+| `StemInfo` | `{ name, uri?, mime_type? }` |
+| `MixCondition` | `{ type, value }` |
+| `MixInfo` | `{ name, uri?, mime_type?, conditions[] }` |
+| `LyricsInfo` | `{ text? }` |
+| `MediaAssetInfo` | `{ mime_type?, uri? }` |
+| `MerchInfo` | `{ mime_type?, type?, uri? }` |
+| `CreditInfo` | `{ name, credit }` |
+| `ConditionEvaluationResult` | `{ type, value, met, reason }` |
+| `MixEvaluationResult` | `{ mix, conditions[], allMet, unmetConditions[] }` |
+| `AppState` | `{ playCount?, isFavorite?, userBirthday? }` |
+| `EvaluationContext` | `{ environment?, appState? }` |
+
+#### Functions
+
+| Function | Returns | Description |
+|----------|---------|-------------|
+| `getTrackMetadata(track)` | `Record<string, unknown> \| null` | Full raw parsed metadata (access any field beyond standard extractions) |
+| `getTrackExtras(metadata)` | `TrackExtrasInfo` | Summary of available extras: stems, mixes, media assets (lyrics, visualizer, video, vrm, merch), credits, game charts (midi, step_mania, clone_hero), external link |
+| `evaluateMixConditions(extras, context?)` | `MixEvaluationResult[]` | Evaluates all mixes' conditions against current environment and app state |
+
+### IPFS URL Utilities
+
+*Location:* *[src/utils/ipfsUtils.ts](src/utils/ipfsUtils.ts)*
+
+*Also known as: IPFS resolver, IPFS detection*
+
+Detects IPFS URLs across multiple formats (native scheme, gateway URLs, subdomain) and resolves them to a specific gateway host.
+
+For supported URL formats, known gateway hosts, and usage examples, see [PLAYLIST_PARSING.md — IPFS URL Utilities](features/PLAYLIST_PARSING.md#ipfs-url-utilities).
+
+#### Constants
+
+| Export | Type | Description |
+|--------|------|-------------|
+| `KNOWN_IPFS_GATEWAY_HOSTS` | `readonly string[]` | Recognized IPFS gateway hostnames (exact or subdomain match) |
+| `DEFAULT_IPFS_GATEWAY` | `string` | Gateway host used by `resolveIPFSLink` when none specified |
+
+#### Functions
+
+| Function | Returns | Description |
+|----------|---------|-------------|
+| `isIPFS(url)` | `boolean` | Whether a URL is an IPFS URL (native scheme, gateway, or subdomain) |
+| `extractIPFSPath(url)` | `string \| null` | Extracts CID + path from any recognized IPFS URL format |
+| `resolveIPFSLink(url, gatewayHost?)` | `string \| undefined` | Resolves IPFS URL to specified gateway; non-IPFS URLs pass through unchanged |
 
 ### AudioAnalyzer
 

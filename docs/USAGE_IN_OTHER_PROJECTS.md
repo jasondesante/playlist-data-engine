@@ -13,6 +13,7 @@ Transform music playlists into D&D 5e-inspired RPG characters through audio/visu
 - **[Enemy Generation](docs/ENEMY_GENERATION.md)** — CR-based enemies, encounters, rarity scaling
 - **[Extensibility Guide](docs/EXTENSIBILITY_GUIDE.md)** — Custom content, classes, races, skills
 - **[Equipment System](docs/EQUIPMENT_SYSTEM.md)** — Properties, enchanting, templates
+- **[Playlist Parsing](docs/features/PLAYLIST_PARSING.md)** — Parsed playlist structure, metadata extraction, track extras, IPFS, VRMs
 - **[Prerequisites](docs/PREREQUISITES.md)** — Level/ability/class/skill/feature requirements
 - **[Custom Classes & Races](docs/CUSTOM_CONTENT.md)** — Template-based class inheritance
 - **[Content Packs](docs/CONTENT_PACKS.md)** — Data packs for custom content
@@ -129,6 +130,8 @@ character.equipment   // { weapons, armor, items, totalWeight, equippedWeight }
 character.appearance  // { body_type, hair_color, eye_color, skin_tone, facial_features, aura_color }
 ```
 
+> For the full parsed playlist structure, field extraction priorities, and all parsing options, see [PLAYLIST_PARSING.md](features/PLAYLIST_PARSING.md).
+
 ### Quick Data Extraction
 
 For simple use cases where you just need arrays of URLs or basic data from a playlist:
@@ -146,8 +149,6 @@ import {
   getTrackCount,
   getTracks,
   getFullTracks,
-  getVRMs,
-  getVRMTracks
 } from 'playlist-data-engine';
 
 // Parse playlist first (existing flow)
@@ -172,14 +173,11 @@ const tracks = getTracks(playlist);
 const fullTracks = getFullTracks(playlist);
 // [{ id, title, artist, album, duration, genre, tags, audio_url, image_url, image_thumb_url, ... }, ...]
 
-// VRM extraction (for tracks with 3D avatar models)
-const vrms = getVRMs(playlist);            // ['https://...', ...]
-const vrmTracks = getVRMTracks(playlist);
-// [{ title: 'Song', artist: 'Artist', audio_url: '...', image_url: '...', image_thumb_url: '...', vrm: 'https://...' }, ...]
-
 // Use in your app - example: add all audio URLs to a player
 urls.forEach(url => audioPlayer.add(url));
 ```
+
+> For VRM extraction, track extras, stems, mixes, and IPFS URLs, see [PLAYLIST_PARSING.md](features/PLAYLIST_PARSING.md).
 
 ### Full Song Analysis
 

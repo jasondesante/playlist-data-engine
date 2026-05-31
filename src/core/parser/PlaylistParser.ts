@@ -5,6 +5,7 @@
 
 import type { ServerlessPlaylist, PlaylistTrack, RawArweavePlaylist } from '../types/Playlist.js';
 import { MetadataExtractor } from './MetadataExtractor.js';
+import { getTrackExtras } from './TrackExtras.js';
 import { arweaveGatewayManager } from '../../utils/arweaveGatewayManager.js';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -192,6 +193,9 @@ export class PlaylistParser {
         // Step 5: Merge Attributes - Convert OpenSea-style attributes array
         const attributes = MetadataExtractor.convertAttributes(parsedMetadata?.attributes);
 
+        // Extract track extras (stems, alternate mixes)
+        const extras = getTrackExtras(parsedMetadata || {});
+
         const track: PlaylistTrack = {
             id,
             uuid,
@@ -211,6 +215,7 @@ export class PlaylistParser {
             bpm,
             key,
             attributes: attributes || undefined,
+            extras,
         };
 
         // Add image_thumb_url if present (per design decision: only add if exists)

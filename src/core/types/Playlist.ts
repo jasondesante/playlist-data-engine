@@ -3,6 +3,8 @@
  * Based on specs/001-core-engine/SPEC.md
  */
 
+import type { TrackExtrasInfo } from '../parser/TrackExtras.js';
+
 /**
  * ServerlessPlaylist - The playlist container
  * This is the structure of the JSON file fetched directly from Arweave
@@ -59,6 +61,9 @@ export interface PlaylistTrack {
 
     // --- Raw Attributes (for edge cases) ---
     attributes?: Record<string, string | number>;
+
+    // --- Extras (stems, alternate mixes) ---
+    extras?: TrackExtrasInfo;
 }
 
 /**
