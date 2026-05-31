@@ -1639,6 +1639,8 @@ Deep semantic analysis of music including genre, mood, and vibe metrics using mu
 | `topN` | number | `5` | Return top N matches for genres and moods |
 | `threshold` | number | `0.05` | Minimum confidence score (5%) |
 | `cacheEmbeddings` | boolean | `true` | Cache embedding models for reuse across classifiers |
+| `analysisDurationSeconds` | number | — | Analyze only a segment of the song (e.g., 30 seconds). Full song when not set |
+| `analysisStartPosition` | number | `0.5` | Position within song to start analysis (0.0–1.0). Only applies when `analysisDurationSeconds` is set |
 
 For complete type definitions (`ModelConfig`, `SingleStepModelConfig`, `TwoStepModelConfig`, `ModelArchitecture`, `GenreListType`, `GenrePreset`, `MoodPreset`, `DanceabilityPreset`, `ClassifierPreset`), see [src/core/analysis/MusicClassifier.ts:15-122](src/core/analysis/MusicClassifier.ts#L15-L122).
 
@@ -1704,7 +1706,7 @@ Genre models auto-detect their taxonomy from URL keywords (see [`GenreListType`]
 
 | Method | Returns | Description |
 |--------|---------|-------------|
-| `analyze(audioUrl)` | `Promise<MusicClassificationProfile>` | Downloads and analyzes audio; returns genres, moods, vibe metrics, and metadata |
+| `analyze(audioUrl)` | `Promise<MusicClassificationProfile>` | Downloads and analyzes audio; returns genres, moods, vibe metrics, and metadata. Supports partial analysis via `analysisDurationSeconds` / `analysisStartPosition` options |
 | `clearEmbeddingCache()` | `void` | Clears cached embedding models |
 | `clearClassifierCache()` | `void` | Clears cached classifier models |
 | `clearAllCaches()` | `void` | Clears all model caches |

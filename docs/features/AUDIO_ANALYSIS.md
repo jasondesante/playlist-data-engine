@@ -186,8 +186,10 @@ analyze(audioUrl: string): Promise<MusicClassificationProfile>
 import { MusicClassifier } from 'playlist-data-engine';
 
 const classifier = new MusicClassifier({
-  topN: 3,         // Return top 3 genres/moods
-  threshold: 0.1   // 10% confidence threshold
+  topN: 3,                       // Return top 3 genres/moods
+  threshold: 0.1,                 // 10% confidence threshold
+  analysisDurationSeconds: 30,    // Analyze 30 seconds instead of full song
+  analysisStartPosition: 0.5      // Start from middle of song
 });
 
 const profile = await classifier.analyze('https://example.com/audio.mp3');
@@ -207,6 +209,31 @@ console.log(`Energy: ${profile.vibe_metrics.energy}`);
 | `primary_genre` | `string` | Highest confidence genre |
 | `mood_tags` | `string[]` | Most relevant mood keywords |
 | `vibe_metrics` | `VibeMetrics` | Danceability, energy, valence, etc. |
+
+### Partial Song Analysis
+
+By default, `analyze()` processes the entire audio signal. For faster classification (genre, mood, vibe), you can analyze only a segment of the song by setting `analysisDurationSeconds` and `analysisStartPosition` in the constructor options.
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `analysisDurationSeconds` | number | — | Seconds of audio to analyze. Full song when not set. Recommended: 30s |
+| `analysisStartPosition` | number | `0.5` | Position to start (0.0 = start, 0.5 = middle, 1.0 = end). Only applies when duration is set |
+
+```typescript
+// Analyze middle 30 seconds of each song (faster, good accuracy for genre/mood)
+const classifier = new MusicClassifier({
+  analysisDurationSeconds: 30,
+  analysisStartPosition: 0.5
+});
+
+// Analyze first 15 seconds (fastest, lower accuracy)
+const quickClassifier = new MusicClassifier({
+  analysisDurationSeconds: 15,
+  analysisStartPosition: 0
+});
+```
+
+> **Note**: The audio file is still fully downloaded and decoded (required by the Web Audio API). Only the ML feature extraction and model inference operate on the segment, which is where the speed improvement comes from. A 30-second segment processes ~8x faster than a 4-minute song.
 
 ---
 

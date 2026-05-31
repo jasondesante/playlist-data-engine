@@ -116,6 +116,8 @@ const profile = await analyzer.extractSonicFingerprint(track.audio_url);
 
 // TensorFlow-based genre, mood, and vibe classification
 const classifier = new MusicClassifier();
+// Or analyze only a segment for faster results:
+// const classifier = new MusicClassifier({ analysisDurationSeconds: 30, analysisStartPosition: 0.5 });
 const classification = await classifier.analyze(track.audio_url);
 // → { genres: ['techno', 'detroit-house'], moods: ['energetic', 'driving'], vibes: { danceability, energy, valence } }
 

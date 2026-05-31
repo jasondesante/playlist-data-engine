@@ -186,6 +186,21 @@ export interface MusicClassifierOptions {
      * @default true
      */
     enableModelCache?: boolean;
+
+    /**
+     * Duration of the audio segment to analyze, in seconds.
+     * When not set, the full song is analyzed.
+     * Recommended: 30 seconds for genre/mood classification with good accuracy.
+     */
+    analysisDurationSeconds?: number;
+
+    /**
+     * Position within the song to start analysis, as a fraction (0.0 to 1.0).
+     * 0.0 = start, 0.5 = middle, 1.0 = end.
+     * Only applies when `analysisDurationSeconds` is set.
+     * @default 0.5
+     */
+    analysisStartPosition?: number;
 }
 
 const JAMENDO_GENRES = [
@@ -1457,6 +1472,33 @@ export class MusicClassifier {
     }
 
     /**
+     * Slice audio signal to a segment for partial analysis.
+     * When no sampling options are set, returns the full signal unchanged.
+     */
+    private sliceAudioSignal(audioSignal: Float32Array, sampleRate: number): Float32Array {
+        if (!this.options.analysisDurationSeconds && this.options.analysisStartPosition === undefined) {
+            return audioSignal;
+        }
+
+        const totalSamples = audioSignal.length;
+        const totalDuration = totalSamples / sampleRate;
+        const duration = Math.min(this.options.analysisDurationSeconds ?? totalDuration, totalDuration);
+        const position = this.options.analysisStartPosition ?? 0.5;
+
+        const durationSamples = Math.floor(duration * sampleRate);
+        const maxStart = totalSamples - durationSamples;
+        const startPosition = Math.max(0, Math.floor(position * maxStart));
+        const endPosition = Math.min(startPosition + durationSamples, totalSamples);
+
+        console.info(
+            `[MusicClassifier] Analyzing segment: ${duration.toFixed(1)}s starting at ${position} ` +
+            `(samples ${startPosition}-${endPosition} of ${totalSamples}, ${(startPosition / sampleRate).toFixed(1)}s-${(endPosition / sampleRate).toFixed(1)}s of ${(totalDuration).toFixed(1)}s)`
+        );
+
+        return audioSignal.slice(startPosition, endPosition);
+    }
+
+    /**
      * Analyzes audio to extract genre, mood, and vibe data.
      */
     async analyze(audioUrl: string): Promise<MusicClassificationProfile> {
@@ -1475,8 +1517,11 @@ export class MusicClassifier {
                 audioCtx.sampleRate
             );
 
+            // Slice audio for partial analysis (defaults: full song)
+            const segmentSignal = this.sliceAudioSignal(audioSignal, audioCtx.sampleRate);
+
             // Compute mel-spectrogram features frame-wise
-            const features = this.extractor.computeFrameWise(audioSignal, 512);
+            const features = this.extractor.computeFrameWise(segmentSignal, 512);
 
             const modelsUsed: string[] = [];
             const results: Partial<MusicClassificationProfile> = {
@@ -1508,7 +1553,7 @@ export class MusicClassifier {
 
                 results.genres = await this.runModelPrediction(
                     genreConfig,
-                    audioSignal,
+                    segmentSignal,
                     genreLabels
                 );
                 results.primary_genre = results.genres.length > 0 ? results.genres[0].name : "Unknown";
@@ -1522,7 +1567,7 @@ export class MusicClassifier {
                 const moodLabels = isSingleStepModel(moodConfig) ? BINARY_MOOD_LABELS : JAMENDO_MOODS;
                 results.moods = await this.runModelPrediction(
                     moodConfig,
-                    audioSignal,
+                    segmentSignal,
                     moodLabels
                 );
                 results.mood_tags = results.moods.slice(0, 3).map(m => m.name);
@@ -1534,7 +1579,7 @@ export class MusicClassifier {
                 const danceConfig = this.options.models.danceability;
                 const danceTags = await this.runModelPrediction(
                     danceConfig,
-                    audioSignal,
+                    segmentSignal,
                     DANCEABILITY_LABELS
                 );
                 // Extract the danceability probability (confidence of "danceable" class)
@@ -1548,7 +1593,7 @@ export class MusicClassifier {
                 const voiceConfig = this.options.models.voice;
                 const voiceTags = await this.runModelPrediction(
                     voiceConfig,
-                    audioSignal,
+                    segmentSignal,
                     VOICE_LABELS
                 );
                 // Extract the instrumental probability (confidence of "instrumental" class)
@@ -1562,7 +1607,7 @@ export class MusicClassifier {
                 const acousticConfig = this.options.models.acoustic;
                 const acousticTags = await this.runModelPrediction(
                     acousticConfig,
-                    audioSignal,
+                    segmentSignal,
                     ACOUSTIC_LABELS
                 );
                 // Extract the electronic probability (confidence of "electronic" class)
