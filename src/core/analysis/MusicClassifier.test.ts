@@ -135,6 +135,33 @@ vi.mock('essentia.js/dist/essentia-wasm.web.js', () => {
 
 // Mock arweaveGatewayManager - used by default for URL resolution
 
+// Mock modelCache — bypass IndexedDB in tests, delegate to the TF.js mock
+vi.mock('../../utils/modelCache.js', () => ({
+    modelCache: {
+        getOrFetchGraphModel: (_tf: any, url: string, opts: any) => {
+            const resolveAndLoad = async () => {
+                const resolvedUrl = opts?.resolveUrl ? await opts.resolveUrl(url) : url;
+                return mockLoadGraphModel(resolvedUrl);
+            };
+            return resolveAndLoad();
+        },
+        getOrFetchBlobUrl: (_url: string, _opts: any) => {
+            return Promise.resolve('blob:http://localhost/fake-model-cache');
+        },
+        clear: () => Promise.resolve(),
+        has: () => Promise.resolve(false),
+        getCacheInfo: () => Promise.resolve(null),
+    },
+    ModelCache: class {
+        constructor() {}
+        getOrFetchGraphModel = vi.fn();
+        getOrFetchBlobUrl = vi.fn();
+        clear = vi.fn();
+        has = vi.fn();
+        getCacheInfo = vi.fn();
+    }
+}));
+
 // Mock Essentia model classes
 vi.mock('essentia.js/dist/essentia.js-model.es.js', () => ({
     EssentiaTFInputExtractor: class {

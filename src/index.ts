@@ -568,6 +568,14 @@ export {
     resolveIPFSLink,
 } from './utils/ipfsUtils.js';
 
+// ML Model Cache (localForage-backed IndexedDB persistence for TF.js models)
+export {
+    ModelCache,
+    modelCache,
+    type ModelCacheOptions,
+    type ModelCacheFetchOptions,
+} from './utils/modelCache.js';
+
 // Track extras extraction (stems, mixes, conditions)
 export {
     type StemInfo,

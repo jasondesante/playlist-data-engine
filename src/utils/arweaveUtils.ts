@@ -45,6 +45,7 @@ export const DEFAULT_GATEWAYS: GatewayConfig[] = [
  */
 export const KNOWN_GATEWAY_HOSTS = [
     'arweave.net',
+    'arweave.dev',
     'www.arweave.net',
     'ardrive.net',
     'turbo-gateway.com',

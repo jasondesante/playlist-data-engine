@@ -1072,6 +1072,20 @@ export class ArweaveGatewayManager {
     }
 
     /**
+     * Invalidate the cached gateway for a specific URL's transaction ID.
+     * Also clears the active gateway and persisted gateway so that resolveUrl()
+     * runs the full fallback chain instead of short-circuiting.
+     */
+    invalidateCacheForUrl(url: string): void {
+        if (!isArweaveUrl(url)) return;
+        const parsed = parseArweaveUrl(url);
+        if (!parsed) return;
+        this.cache.delete(parsed.txId);
+        this.activeGateway = null;
+        this.clearPersistedGateway();
+    }
+
+    /**
      * Prefetch and cache gateways for multiple URLs in parallel
      *
      * This is useful for warming up the cache at app startup with known model URLs.
