@@ -177,7 +177,7 @@ const fullTracks = getFullTracks(playlist);
 urls.forEach(url => audioPlayer.add(url));
 ```
 
-> For VRM extraction, track extras, stems, mixes, and IPFS URLs, see [PLAYLIST_PARSING.md](features/PLAYLIST_PARSING.md).
+> For VRM extraction, track extras, stems, mixes, and IPFS URLs, see [PLAYLIST_PARSING.md](features/PLAYLIST_PARSING.md) and [GATEWAY_RESOLUTION.md](features/GATEWAY_RESOLUTION.md).
 
 ### Full Song Analysis
 

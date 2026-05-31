@@ -466,6 +466,7 @@ The engine degrades gracefully if these packages are not available — static ga
 |------|---------|
 | [src/utils/arweaveGatewayManager.ts](../../src/utils/arweaveGatewayManager.ts) | Gateway manager class with Wayfinder integration |
 | [src/utils/arweaveUtils.ts](../../src/utils/arweaveUtils.ts) | `GatewayConfig` interface, URL parsing, `DEFAULT_GATEWAYS`, utility functions |
+| [src/utils/ipfsUtils.ts](../../src/utils/ipfsUtils.ts) | IPFS URL detection, extraction, and resolution |
 | [src/index.ts](../../src/index.ts) | Public API exports |
 | [vite.config.ts](../../vite.config.ts) | Externalizes `@ar.io/wayfinder-core` and `@ar.io/sdk` from bundle |
 | [tests/unit/arweaveGatewayManager.test.ts](../../tests/unit/arweaveGatewayManager.test.ts) | Unit tests with mocked Wayfinder |
@@ -484,6 +485,59 @@ The companion [arweaveUtils.ts](../../src/utils/arweaveUtils.ts) provides lower-
 | `getAllGatewayUrls(txId, gateways?, pathSuffix?)` | Returns all gateway URLs for a txId in priority order |
 | `DEFAULT_GATEWAYS` | The three default gateway configs |
 | `KNOWN_GATEWAY_HOSTS` | Array of known gateway hostnames |
+
+---
+
+## IPFS URL Utilities
+
+The engine can detect and resolve IPFS URLs across multiple formats. NFT platforms like Sound.xyz, Catalog, and Spinamp frequently reference content (audio, images, artwork) via IPFS.
+
+### Supported URL Formats
+
+| Format | Example |
+|--------|---------|
+| Native scheme (double ipfs) | `ipfs://ipfs/QmXxx/path` |
+| Native scheme | `ipfs://QmXxx/path` |
+| Gateway URL | `https://ipfs.io/ipfs/QmXxx/path` |
+| Subdomain | `https://QmXxx.ipfs.dweb.link/path` |
+
+### Functions
+
+```typescript
+import { isIPFS, extractIPFSPath, resolveIPFSLink } from 'playlist-data-engine';
+
+// Detection
+isIPFS('https://soundxyz.mypinata.cloud/ipfs/QmXxx/file.jpg'); // true
+isIPFS('https://example.com/image.png');                         // false
+
+// Extract CID + path
+extractIPFSPath('ipfs://QmXxx/file.jpg');                         // 'QmXxx/file.jpg'
+extractIPFSPath('https://QmXxx.ipfs.dweb.link/file.jpg');        // 'QmXxx/file.jpg'
+
+// Resolve to a specific gateway
+resolveIPFSLink('ipfs://QmXxx');                                              // 'https://ipfs.io/ipfs/QmXxx'
+resolveIPFSLink('https://soundxyz.mypinata.cloud/ipfs/QmXxx', 'dweb.link');  // 'https://dweb.link/ipfs/QmXxx'
+```
+
+Non-IPFS URLs pass through `resolveIPFSLink` unchanged.
+
+### Known Gateway Hosts
+
+The `isIPFS` and `extractIPFSPath` functions recognize these gateway hosts (exact match or subdomain):
+
+`ipfs.io`, `cloudflare-ipfs.com`, `dweb.link`, `gateway.pinata.cloud`, `ipfs.infura.io`, `nftstorage.link`, plus platform-specific hosts (Sound.xyz, Catalog, Spinamp, Bonfire, Web3 Music Pipeline).
+
+For the full list, see `KNOWN_IPFS_GATEWAY_HOSTS` in [src/utils/ipfsUtils.ts](../../src/utils/ipfsUtils.ts).
+
+### Exports
+
+| Export | Type | Description |
+|--------|------|-------------|
+| `isIPFS` | Function | Check if a URL is an IPFS URL (native scheme, gateway, or subdomain) |
+| `extractIPFSPath` | Function | Extract CID + path from any recognized IPFS URL format |
+| `resolveIPFSLink` | Function | Resolve IPFS URL to specified gateway; non-IPFS URLs pass through unchanged |
+| `KNOWN_IPFS_GATEWAY_HOSTS` | `readonly string[]` | Recognized IPFS gateway hostnames |
+| `DEFAULT_IPFS_GATEWAY` | `string` | Gateway host used by `resolveIPFSLink` when none specified |
 
 ---
 

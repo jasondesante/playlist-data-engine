@@ -95,7 +95,7 @@ A concise overview of all main exports from the library, organized by category.
 | `MetadataExtractor` | Extract metadata from track objects | [Core Modules](#core-modules) |
 | `getAudioUrls`, `getImageUrls`, etc. | Simple playlist data extraction utilities | [Core Modules](#core-modules) |
 | `getTrackMetadata`, `getTrackExtras`, `evaluateMixConditions` | Track extras: stems, mixes, lyrics, visualizer, video, vrm, merch, credits, game charts | [Track Extras](#track-extras) |
-| `isIPFS`, `extractIPFSPath`, `resolveIPFSLink` | IPFS URL detection, extraction, and resolution | [IPFS URL Utilities](#ipfs-url-utilities) |
+| `isIPFS`, `extractIPFSPath`, `resolveIPFSLink` | IPFS URL detection, extraction, and resolution | [GATEWAY_RESOLUTION.md — IPFS URL Utilities](features/GATEWAY_RESOLUTION.md#ipfs-url-utilities) |
 | `AudioAnalyzer` | Analyze audio frequency characteristics | [Core Modules](#core-modules) |
 | `MusicClassifier` | Deep ML classification (genre, mood, vibe) | [Core Modules](#core-modules) |
 | `PitchAnalyzer` | Full-track pitch detection with contour analysis | [Core Modules](#core-modules) |
@@ -1577,7 +1577,7 @@ For supported condition types, usage examples, and the full workflow, see [PLAYL
 
 Detects IPFS URLs across multiple formats (native scheme, gateway URLs, subdomain) and resolves them to a specific gateway host.
 
-For supported URL formats, known gateway hosts, and usage examples, see [PLAYLIST_PARSING.md — IPFS URL Utilities](features/PLAYLIST_PARSING.md#ipfs-url-utilities).
+For supported URL formats, known gateway hosts, and usage examples, see [GATEWAY_RESOLUTION.md — IPFS URL Utilities](features/GATEWAY_RESOLUTION.md#ipfs-url-utilities).
 
 #### Constants
 
