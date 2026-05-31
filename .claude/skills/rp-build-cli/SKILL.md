@@ -2,7 +2,7 @@
 name: "rp-build-cli"
 description: "Build with rp-cli context builder plan → implement"
 repoprompt_managed: true
-repoprompt_skills_version: 33
+repoprompt_skills_version: 63
 repoprompt_variant: cli
 ---
 
@@ -56,14 +56,14 @@ JSON args (`-j`) accept inline JSON, file paths (`.json` auto-detected), `@file`
 
 ---
 
-## CRITICAL REQUIREMENT
+## Before you implement
 
-⚠️ **DO NOT START IMPLEMENTATION** until you have:
+Work through the phases in order:
 1. Completed Phase 0 (Workspace Verification)
 2. Completed Phase 1 (Quick Scan)
-3. **Called `builder`** and received its plan
+3. Called `builder` and received its plan
 
-Skipping `builder` results in shallow implementations that miss architectural patterns, related code, and edge cases. The quick scan alone is NOT sufficient for implementation.
+The quick scan is orientation only — `builder` does the deep exploration and produces the plan. Skipping it tends to produce shallow implementations that miss architectural patterns and edge cases.
 
 ---
 
@@ -83,16 +83,16 @@ rp-cli -w <window_id> -e 'tree --type roots'
 - If your target root appears in a window → note the window ID and proceed to Phase 1
 - If not → the codebase isn't loaded in any window
 
-**CLI Window Routing (CRITICAL):**
+**CLI Window Routing:**
 - CLI invocations are stateless—you MUST pass `-w <window_id>` to target the correct window
 - Use `rp-cli -e 'windows'` to list all open windows and their workspaces
 - Always include `-w <window_id>` in ALL subsequent commands
 - Without `-w`, commands may target the wrong workspace
 
 ---
-## Phase 1: Quick Scan (LIMITED - 2-3 tool calls max)
+## Phase 1: Quick Scan
 
-⚠️ **This phase is intentionally brief.** Do NOT do extensive exploration here—that's what `builder` is for.
+Keep this phase brief — `builder` handles the deep exploration.
 
 Start by getting a lay of the land with the file tree:
 ```bash
@@ -107,7 +107,7 @@ rp-cli -w <window_id> -e 'structure RootName/likely/relevant/area/'
 
 Use what you learn to **reformulate the user's prompt** with added clarity—reference specific modules, patterns, or terminology from the codebase.
 
-**STOP exploring after 2-3 searches.** Your goal is orientation, not deep understanding. `builder` will do the heavy lifting.
+Your goal is orientation, not deep understanding — `builder` does the heavy lifting.
 
 ---
 
@@ -163,13 +163,13 @@ rp-cli -t '<tab_id>' -e 'chat "The plan points me to X and Y, but I'''m still ha
 
 ## Phase 4: Direct Implementation
 
-**STOP** - Before implementing, verify you have:
+Before implementing, verify you have:
 - [ ] A builder result available (`tab_id` if follow-up is needed)
 - [ ] An architectural plan grounded in actual code
 
 If a specific point is still unclear, use `chat` to clarify before proceeding.
 
-Implement the plan directly. **Do not use `chat` with `mode:"edit"`** – you implement directly.
+Implement the plan directly. Don't use `chat` with `mode:"edit"` — you implement directly.
 
 **Primary tools:**
 ```bash
@@ -217,7 +217,7 @@ rp-cli -w <window_id> -t '<tab_id>' -e 'chat "I'''m implementing X. The plan doe
 - 🚫 Skipping `builder` and going straight to implementation – you'll miss context
 - 🚫 Using `manage_selection` with `op:"clear"` – this undoes `builder`'s work; only use small targeted additions if absolutely necessary
 - 🚫 Exceeding ~160k tokens – use slices if needed
-- 🚫 **CRITICAL:** Doing extensive exploration (5+ tool calls) before calling `builder` – the quick scan should be 2-3 calls max
+- 🚫 Extended reading before calling `builder` – a quick skim is fine; let the builder do the heavy lifting
 - 🚫 Reading full file contents during Phase 1 – save that for after `builder` builds context
 - 🚫 Convincing yourself you understand enough to skip `builder` – you don't
 - 🚫 **CLI:** Forgetting to pass `-w <window_id>` – CLI invocations are stateless and require explicit window targeting

@@ -2,7 +2,7 @@
 name: "rp-build"
 description: "Build with RepoPrompt MCP tools context builder plan → implement"
 repoprompt_managed: true
-repoprompt_skills_version: 33
+repoprompt_skills_version: 63
 repoprompt_variant: mcp
 ---
 
@@ -22,14 +22,14 @@ Build deep context via `context_builder` to get a plan, then implement directly.
 
 ---
 
-## CRITICAL REQUIREMENT
+## Before you implement
 
-⚠️ **DO NOT START IMPLEMENTATION** until you have:
+Work through the phases in order:
 1. Completed Phase 0 (Workspace Verification)
 2. Completed Phase 1 (Quick Scan)
-3. **Called `context_builder`** and received its plan
+3. Called `context_builder` and received its plan
 
-Skipping `context_builder` results in shallow implementations that miss architectural patterns, related code, and edge cases. The quick scan alone is NOT sufficient for implementation.
+The quick scan is orientation only — `context_builder` does the deep exploration and produces the plan. Skipping it tends to produce shallow implementations that miss architectural patterns and edge cases.
 
 ---
 
@@ -51,9 +51,9 @@ This auto-resolves to the window containing your project. No need to list window
 Then retry the `working_dirs` bind.
 
 ---
-## Phase 1: Quick Scan (LIMITED - 2-3 tool calls max)
+## Phase 1: Quick Scan
 
-⚠️ **This phase is intentionally brief.** Do NOT do extensive exploration here—that's what `context_builder` is for.
+Keep this phase brief — `context_builder` handles the deep exploration.
 
 Start by getting a lay of the land with the file tree:
 ```json
@@ -68,7 +68,7 @@ Then use targeted searches to understand how the task maps to the codebase:
 
 Use what you learn to **reformulate the user's prompt** with added clarity—reference specific modules, patterns, or terminology from the codebase.
 
-**STOP exploring after 2-3 searches.** Your goal is orientation, not deep understanding. `context_builder` will do the heavy lifting.
+Your goal is orientation, not deep understanding — `context_builder` does the heavy lifting.
 
 ---
 
@@ -130,13 +130,13 @@ If the answer depends on files outside the current selection, `oracle_send` cann
 
 ## Phase 4: Direct Implementation
 
-**STOP** - Before implementing, verify you have:
+Before implementing, verify you have:
 - [ ] A builder result available (`chat_id` if follow-up is needed)
 - [ ] An architectural plan grounded in actual code
 
 If a specific point is still unclear, use `oracle_send` to clarify before proceeding.
 
-Implement the plan directly. **Do not use `oracle_send` with `mode:"edit"`** – you implement directly.
+Implement the plan directly. Don't use `oracle_send` with `mode:"edit"` — you implement directly.
 
 **Primary tools:**
 ```json
@@ -186,7 +186,7 @@ Implement the plan directly. **Do not use `oracle_send` with `mode:"edit"`** –
 - 🚫 Skipping `context_builder` and going straight to implementation – you'll miss context
 - 🚫 Using `manage_selection` with `op:"clear"` – this undoes `context_builder`'s work; only use small targeted additions if absolutely necessary
 - 🚫 Exceeding ~160k tokens – use slices if needed
-- 🚫 **CRITICAL:** Doing extensive exploration (5+ tool calls) before calling `context_builder` – the quick scan should be 2-3 calls max
+- 🚫 Extended reading before calling `context_builder` – a quick skim is fine; let the builder do the heavy lifting
 - 🚫 Reading full file contents during Phase 1 – save that for after `context_builder` builds context
 - 🚫 Convincing yourself you understand enough to skip `context_builder` – you don't
 

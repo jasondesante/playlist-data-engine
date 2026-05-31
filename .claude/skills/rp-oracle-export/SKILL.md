@@ -2,7 +2,7 @@
 name: "rp-oracle-export"
 description: "Export a ChatGPT-ready Question / Plan / Review prompt using RepoPrompt MCP tools"
 repoprompt_managed: true
-repoprompt_skills_version: 33
+repoprompt_skills_version: 63
 repoprompt_variant: mcp
 ---
 

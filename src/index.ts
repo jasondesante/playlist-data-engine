@@ -559,6 +559,15 @@ export {
     type GatewayDiagnostics,
 } from './utils/arweaveGatewayManager.js';
 
+// IPFS URL utilities
+export {
+    KNOWN_IPFS_GATEWAY_HOSTS,
+    DEFAULT_IPFS_GATEWAY,
+    extractIPFSPath,
+    isIPFS,
+    resolveIPFSLink,
+} from './utils/ipfsUtils.js';
+
 // Type helpers
 export { asClass, isValidClass } from './core/types/Character.js';
 

@@ -2,7 +2,7 @@
 name: "rp-review-cli"
 description: "Code review workflow using rp-cli git tool and context_builder"
 repoprompt_managed: true
-repoprompt_skills_version: 33
+repoprompt_skills_version: 63
 repoprompt_variant: cli
 ---
 
@@ -72,7 +72,7 @@ rp-cli -w <window_id> -e 'tree --type roots'
 - If your target root appears in a window → note the window ID and proceed to Step 1
 - If not → the codebase isn't loaded in any window
 
-**CLI Window Routing (CRITICAL):**
+**CLI Window Routing:**
 - CLI invocations are stateless—you MUST pass `-w <window_id>` to target the correct window
 - Use `rp-cli -e 'windows'` to list all open windows and their workspaces
 - Always include `-w <window_id>` in ALL subsequent commands
@@ -110,9 +110,9 @@ Determine the comparison scope from the user's request and git state.
 
 ## Step 3: Deep Review (via `builder` - REQUIRED)
 
-⚠️ **Do NOT skip this step.** You MUST call `builder` with `response_type: "review"` for proper code review context.
+⚠️ Don't skip this step. Call `builder` with `response_type: "review"` for proper code review context.
 
-**CRITICAL:** Include the confirmed comparison scope in your instructions so the context builder knows exactly what to review.
+Include the confirmed comparison scope in your instructions so the context builder knows exactly what to review.
 
 Use XML tags to structure the instructions:
 ```bash
@@ -125,6 +125,8 @@ Changed files: <list key files></context>
 <discovery_agent-guidelines>Focus on directories containing changes.</discovery_agent-guidelines>" --response-type review'
 ```
 
+**Tab routing:** The builder response returns a `tab_id` — pass `-t <tab_id>` in follow-up `chat` invocations to continue the same conversation.
+
 ## Optional: Clarify Findings
 
 After receiving review findings, you can ask clarifying questions in the same chat:
@@ -136,7 +138,7 @@ rp-cli -w <window_id> -t '<tab_id>' -e 'chat "Can you explain the security conce
 
 ## Step 4: Fill Gaps
 
-If the review omitted significant areas, run a focused follow-up. **You must explicitly describe what was already covered and what needs review now** (`builder` has no memory of previous runs):
+If the review omitted significant areas, run a focused follow-up. **Explicitly describe** what was already covered and what needs review now (`builder` has no memory of previous runs):
 ```bash
 rp-cli -w <window_id> -e 'builder "<task>Review <specific area> in depth.</task>
 
@@ -151,7 +153,7 @@ Not yet reviewed: <list files/areas to review now>.</context>
 ## Anti-patterns to Avoid
 
 - 🚫 Proceeding with an ambiguous scope – if the user didn't specify a comparison target and it's unclear from context, you must ask before calling `builder`
-- 🚫 **CRITICAL:** Skipping `builder` and attempting to review by reading files manually – you'll miss architectural context
+- 🚫 Skipping `builder` and attempting to review by reading files manually – you'll miss architectural context
 - 🚫 Calling `builder` without specifying the confirmed comparison scope in the instructions
 - 🚫 Doing extensive file reading before calling `builder` – git status/log/diff is sufficient for Step 1
 - 🚫 Providing review feedback without first calling `builder` with `response_type: "review"`

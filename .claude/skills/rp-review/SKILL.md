@@ -2,7 +2,7 @@
 name: "rp-review"
 description: "Code review workflow using RepoPrompt MCP tools git tool and context_builder"
 repoprompt_managed: true
-repoprompt_skills_version: 33
+repoprompt_skills_version: 63
 repoprompt_variant: mcp
 ---
 
@@ -72,9 +72,9 @@ Determine the comparison scope from the user's request and git state.
 
 ## Step 3: Deep Review (via `context_builder` - REQUIRED)
 
-⚠️ **Do NOT skip this step.** You MUST call `context_builder` with `response_type: "review"` for proper code review context.
+⚠️ Don't skip this step. Call `context_builder` with `response_type: "review"` for proper code review context.
 
-**CRITICAL:** Include the confirmed comparison scope in your instructions so the context builder knows exactly what to review.
+Include the confirmed comparison scope in your instructions so the context builder knows exactly what to review.
 
 Use XML tags to structure the instructions:
 ```json
@@ -104,7 +104,7 @@ After receiving review findings, you can ask clarifying questions in the same ch
 
 ## Step 4: Fill Gaps
 
-If the review omitted significant areas, run a focused follow-up. **You must explicitly describe what was already covered and what needs review now** (`context_builder` has no memory of previous runs):
+If the review omitted significant areas, run a focused follow-up. **Explicitly describe** what was already covered and what needs review now (`context_builder` has no memory of previous runs):
 ```json
 {"tool":"context_builder","args":{
   "instructions":"<task>Review <specific area> in depth.</task>
@@ -122,7 +122,7 @@ Not yet reviewed: <list files/areas to review now>.</context>
 ## Anti-patterns to Avoid
 
 - 🚫 Proceeding with an ambiguous scope – if the user didn't specify a comparison target and it's unclear from context, you must ask before calling `context_builder`
-- 🚫 **CRITICAL:** Skipping `context_builder` and attempting to review by reading files manually – you'll miss architectural context
+- 🚫 Skipping `context_builder` and attempting to review by reading files manually – you'll miss architectural context
 - 🚫 Calling `context_builder` without specifying the confirmed comparison scope in the instructions
 - 🚫 Doing extensive file reading before calling `context_builder` – git status/log/diff is sufficient for Step 1
 - 🚫 Providing review feedback without first calling `context_builder` with `response_type: "review"`
