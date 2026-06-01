@@ -533,19 +533,6 @@ export class ArweaveGatewayManager {
         // Capture before any narrowing clears it
         const activeGatewayHost = this.activeGateway?.host ?? 'none';
 
-        // Fast path: if we have an active gateway that was set recently (within persisted TTL),
-        // reuse it without HEAD-checking. Only run the full fallback chain when there's
-        // no active gateway or it's stale.
-        if (this.activeGateway) {
-            const persistedGateway = this.loadPersistedGateway();
-            if (persistedGateway) {
-                return constructGatewayUrl(txId, this.activeGateway, pathSuffix);
-            }
-            // Persisted gateway expired — clear it and fall through to full chain
-            this.activeGateway = null;
-            this.clearPersistedGateway();
-        }
-
         // Proactive rotation: if active gateway is degrading, force a new selection
         if (this.consecutiveSlowResponses >= this.maxSlowResponses) {
             this.logger.warn('Proactive gateway rotation triggered', {
@@ -581,6 +568,29 @@ export class ArweaveGatewayManager {
     private async resolveGatewayChain(url: string, txId: string, pathSuffix: string, signal?: AbortSignal, options?: ResolveUrlOptions): Promise<string> {
         const chainStart = Date.now();
         const bypassArweaveNet = options?.bypassArweaveNet ?? false;
+
+        // Step 0: Try the gateway already in the URL itself — if it's an HTTPS Arweave URL,
+        // the gateway in the URL might just work. No sense skipping it.
+        if (url.startsWith('https://') || url.startsWith('http://')) {
+            try {
+                const parsed = new URL(url);
+                const originalGateway: GatewayConfig = {
+                    host: parsed.host, // includes port if present
+                    protocol: parsed.protocol.replace(':', '') as 'http' | 'https',
+                    priority: 0,
+                };
+                const stepStart = Date.now();
+                const result = await this.checkAndSetGateway(url, txId, pathSuffix, originalGateway, signal);
+                const stepMs = Date.now() - stepStart;
+                if (result) {
+                    this.logger.info('[gateway] Step 0 (original): success', { host: originalGateway.host, ms: stepMs, totalMs: Date.now() - chainStart });
+                    return result;
+                }
+                this.logger.info('[gateway] Step 0 (original): failed', { host: originalGateway.host, ms: stepMs });
+            } catch {
+                // URL parsing failed — skip this step
+            }
+        }
 
         // Step 1: Try persisted gateway first (user's known-working gateway from previous session)
         if (this.activeGateway) {
@@ -1006,19 +1016,16 @@ export class ArweaveGatewayManager {
                 return false;
             }
 
-            // Handle CORS errors and network failures
-            // CORS errors typically manifest as TypeError with no response
-            if (error instanceof TypeError) {
-                this.logger.debug('Gateway check failed (likely CORS or network)', {
-                    txId,
-                    gateway: gateway.host,
-                    error: error.message,
-                });
-                return false;
-            }
+            // TypeError from fetch = network failure, CORS block, or DNS failure.
+            // We can't distinguish "CORS blocked a valid 200" from "CORS blocked a 502"
+            // so we treat it as a failure. The scanner's headUrl handles fallback separately.
+            this.logger.debug('Gateway HEAD failed', {
+                txId,
+                gateway: gateway.host,
+                error: error instanceof Error ? error.message : String(error),
+            });
 
-            // Re-throw unexpected errors
-            throw error;
+            return false;
         }
     }
 
