@@ -762,11 +762,22 @@ export class ArweaveGatewayManager {
     private async checkAndSetGateway(url: string, txId: string, pathSuffix: string, gateway: GatewayConfig, signal?: AbortSignal): Promise<string | null> {
         if (signal?.aborted) return null;
 
-        const isWorking = await this.checkGateway(txId, gateway, pathSuffix, signal);
-        if (isWorking) {
+        const result = await this.checkGateway(txId, gateway, pathSuffix, signal);
+        if (result === true) {
             this.setActiveGateway(gateway, txId);
             const workingUrl = constructGatewayUrl(txId, gateway, pathSuffix);
             this.logger.info('Gateway resolved', {
+                txId,
+                gateway: gateway.host,
+                pathSuffix,
+                workingUrl,
+            });
+            return workingUrl;
+        }
+        if (result === 'maybe') {
+            // no-cors says server responded but we can't confirm — return URL without caching
+            const workingUrl = constructGatewayUrl(txId, gateway, pathSuffix);
+            this.logger.info('Gateway maybe resolved (no-cors)', {
                 txId,
                 gateway: gateway.host,
                 pathSuffix,
@@ -810,18 +821,28 @@ export class ArweaveGatewayManager {
         try {
             const result = await Promise.any(
                 gatewaysToTry.map(async (gateway): Promise<string> => {
-                    const isWorking = await this.checkGateway(txId, gateway, pathSuffix, controller.signal);
-                    if (isWorking) {
+                    const checkResult = await this.checkGateway(txId, gateway, pathSuffix, controller.signal);
+                    if (checkResult) {
                         const workingUrl = constructGatewayUrl(txId, gateway, pathSuffix);
                         if (!resolved) {
                             resolved = true;
-                            this.setActiveGateway(gateway, txId);
-                            this.logger.info('Gateway resolved via fallback', {
-                                txId,
-                                gateway: gateway.host,
-                                pathSuffix,
-                                workingUrl,
-                            });
+                            // Only cache confirmed successes, not no-cors 'maybe' results
+                            if (checkResult === true) {
+                                this.setActiveGateway(gateway, txId);
+                                this.logger.info('Gateway resolved via fallback', {
+                                    txId,
+                                    gateway: gateway.host,
+                                    pathSuffix,
+                                    workingUrl,
+                                });
+                            } else {
+                                this.logger.info('Gateway maybe resolved via fallback (no-cors)', {
+                                    txId,
+                                    gateway: gateway.host,
+                                    pathSuffix,
+                                    workingUrl,
+                                });
+                            }
                         }
                         return workingUrl;
                     }
@@ -869,17 +890,28 @@ export class ArweaveGatewayManager {
                 };
 
                 // Verify the Wayfinder-selected gateway actually has the file
-                const isWorking = await this.checkGateway(txId, wayfinderGateway, pathSuffix, signal);
-                if (isWorking) {
-                    this.setActiveGateway(wayfinderGateway, txId);
+                const wayfinderResult = await this.checkGateway(txId, wayfinderGateway, pathSuffix, signal);
+                if (wayfinderResult) {
                     const workingUrl = constructGatewayUrl(txId, wayfinderGateway, pathSuffix);
-                    this.logger.info('Gateway resolved via Wayfinder', {
-                        txId,
-                        gateway: wayfinderHost,
-                        attempt,
-                        pathSuffix,
-                        workingUrl,
-                    });
+                    // Only cache confirmed successes, not no-cors 'maybe' results
+                    if (wayfinderResult === true) {
+                        this.setActiveGateway(wayfinderGateway, txId);
+                        this.logger.info('Gateway resolved via Wayfinder', {
+                            txId,
+                            gateway: wayfinderHost,
+                            attempt,
+                            pathSuffix,
+                            workingUrl,
+                        });
+                    } else {
+                        this.logger.info('Gateway maybe resolved via Wayfinder (no-cors)', {
+                            txId,
+                            gateway: wayfinderHost,
+                            attempt,
+                            pathSuffix,
+                            workingUrl,
+                        });
+                    }
                     return workingUrl;
                 }
 
@@ -966,7 +998,7 @@ export class ArweaveGatewayManager {
      * @param signal - Optional external AbortSignal to cancel the check
      * @returns true if the gateway can serve the transaction
      */
-    async checkGateway(txId: string, gateway: GatewayConfig, pathSuffix: string = '', signal?: AbortSignal): Promise<boolean> {
+    async checkGateway(txId: string, gateway: GatewayConfig, pathSuffix: string = '', signal?: AbortSignal): Promise<boolean | 'maybe'> {
         const url = constructGatewayUrl(txId, gateway, pathSuffix);
         const startTime = Date.now();
 
@@ -1017,8 +1049,34 @@ export class ArweaveGatewayManager {
             }
 
             // TypeError from fetch = network failure, CORS block, or DNS failure.
-            // We can't distinguish "CORS blocked a valid 200" from "CORS blocked a 502"
-            // so we treat it as a failure. The scanner's headUrl handles fallback separately.
+            // A CORS error on HEAD doesn't mean the file isn't there — the gateway
+            // may not support CORS on HEAD but still serves the file fine.
+            // Try a no-cors GET as a fallback: if it doesn't throw, the server responded.
+            // We can't read the status, so we return 'maybe' instead of true — the caller
+            // decides whether to cache (no) or return the URL for external verification (yes).
+            if (error instanceof TypeError) {
+                this.logger.debug('HEAD failed (likely CORS), retrying with no-cors', {
+                    txId,
+                    gateway: gateway.host,
+                    error: error.message,
+                });
+                try {
+                    await fetch(url, {
+                        method: 'GET',
+                        mode: 'no-cors',
+                        signal: controller.signal,
+                    });
+                    // Didn't throw — server responded (but we can't read status)
+                    const responseTime = Date.now() - startTime;
+                    this.recordGatewayResponse(gateway.host, responseTime, true);
+                    return 'maybe';
+                } catch {
+                    const responseTime = Date.now() - startTime;
+                    this.recordGatewayResponse(gateway.host, responseTime, false);
+                    return false;
+                }
+            }
+
             this.logger.debug('Gateway HEAD failed', {
                 txId,
                 gateway: gateway.host,
