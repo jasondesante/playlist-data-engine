@@ -514,9 +514,20 @@ isIPFS('https://example.com/image.png');                         // false
 extractIPFSPath('ipfs://QmXxx/file.jpg');                         // 'QmXxx/file.jpg'
 extractIPFSPath('https://QmXxx.ipfs.dweb.link/file.jpg');        // 'QmXxx/file.jpg'
 
-// Resolve to a specific gateway
+// Resolve to a specific gateway (string param, backward compatible)
 resolveIPFSLink('ipfs://QmXxx');                                              // 'https://ipfs.io/ipfs/QmXxx'
 resolveIPFSLink('https://soundxyz.mypinata.cloud/ipfs/QmXxx', 'dweb.link');  // 'https://dweb.link/ipfs/QmXxx'
+
+// Preserve the original gateway when it's a recognized IPFS host
+resolveIPFSLink('https://soundxyz.mypinata.cloud/ipfs/QmXxx', { preserveOriginalGateway: true });
+// => 'https://soundxyz.mypinata.cloud/ipfs/QmXxx'
+
+// Force swap even with preserveOriginalGateway: false (same as default)
+resolveIPFSLink('https://soundxyz.mypinata.cloud/ipfs/QmXxx', {
+    gatewayHost: 'dweb.link',
+    preserveOriginalGateway: false,
+});
+// => 'https://dweb.link/ipfs/QmXxx'
 ```
 
 Non-IPFS URLs pass through `resolveIPFSLink` unchanged.
@@ -535,7 +546,8 @@ For the full list, see `KNOWN_IPFS_GATEWAY_HOSTS` in [src/utils/ipfsUtils.ts](..
 |--------|------|-------------|
 | `isIPFS` | Function | Check if a URL is an IPFS URL (native scheme, gateway, or subdomain) |
 | `extractIPFSPath` | Function | Extract CID + path from any recognized IPFS URL format |
-| `resolveIPFSLink` | Function | Resolve IPFS URL to specified gateway; non-IPFS URLs pass through unchanged |
+| `resolveIPFSLink` | Function | Resolve IPFS URL to specified gateway; accepts string gateway host or `ResolveIPFSOptions` with `preserveOriginalGateway` |
+| `ResolveIPFSOptions` | Interface | Options for `resolveIPFSLink`: `gatewayHost?` and `preserveOriginalGateway?` |
 | `KNOWN_IPFS_GATEWAY_HOSTS` | `readonly string[]` | Recognized IPFS gateway hostnames |
 | `DEFAULT_IPFS_GATEWAY` | `string` | Gateway host used by `resolveIPFSLink` when none specified |
 

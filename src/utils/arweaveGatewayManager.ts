@@ -295,6 +295,8 @@ export class ArweaveGatewayManager {
     private readonly MAX_HEALTH_RECORDS = 50;
     /** In-flight resolveUrl requests keyed by txId, for request deduplication */
     private inflightResolves: Map<string, Promise<string>> = new Map();
+    /** AbortControllers for in-flight resolves, so stale chains can be cancelled */
+    private inflightControllers: Map<string, AbortController> = new Map();
     /** AR.IO Wayfinder client for dynamic routing */
     private wayfinder: Wayfinder | null = null;
     /** The currently active dynamic gateway. Used globally to prevent constant switching. */
@@ -547,16 +549,32 @@ export class ArweaveGatewayManager {
         }
 
         // Deduplicate: if a resolve is already in-flight for this txId, reuse it
+        // But cancel the old one first if a new external signal is provided
         const inflight = this.inflightResolves.get(txId);
         if (inflight) {
-            this.logger.debug('Deduplicating resolveUrl for txId', { txId });
+            // Reuse the in-flight resolve — don't cancel it.
+            // Cancelling a working resolve just because a second caller
+            // asked for the same txId causes false failures.
+            this.logger.debug('Reusing in-flight resolve for txId', { txId });
             return inflight;
         }
 
-        const resolvePromise = this.resolveGatewayChain(url, txId, pathSuffix, signal, options)
-            .finally(() => { this.inflightResolves.delete(txId); });
+        // Create a chain-level AbortController so the entire resolution chain
+        // can be cancelled if a newer resolve supersedes this one
+        const chainController = new AbortController();
+        if (signal) {
+            // If external signal aborts, also abort the chain
+            signal.addEventListener('abort', () => chainController.abort(), { once: true });
+        }
+
+        const resolvePromise = this.resolveGatewayChain(url, txId, pathSuffix, chainController.signal, options)
+            .finally(() => {
+                this.inflightResolves.delete(txId);
+                this.inflightControllers.delete(txId);
+            });
 
         this.inflightResolves.set(txId, resolvePromise);
+        this.inflightControllers.set(txId, chainController);
         return resolvePromise;
     }
 
@@ -568,6 +586,7 @@ export class ArweaveGatewayManager {
     private async resolveGatewayChain(url: string, txId: string, pathSuffix: string, signal?: AbortSignal, options?: ResolveUrlOptions): Promise<string> {
         const chainStart = Date.now();
         const bypassArweaveNet = options?.bypassArweaveNet ?? false;
+        let excludeHost: string | null = null;
 
         // Step 0: Try the gateway already in the URL itself — if it's an HTTPS Arweave URL,
         // the gateway in the URL might just work. No sense skipping it.
@@ -587,13 +606,14 @@ export class ArweaveGatewayManager {
                     return result;
                 }
                 this.logger.info('[gateway] Step 0 (original): failed', { host: originalGateway.host, ms: stepMs });
+                excludeHost = originalGateway.host;
             } catch {
                 // URL parsing failed — skip this step
             }
         }
 
         // Step 1: Try persisted gateway first (user's known-working gateway from previous session)
-        if (this.activeGateway) {
+        if (this.activeGateway && this.activeGateway.host !== excludeHost) {
             const stepStart = Date.now();
             const result = await this.checkAndSetGateway(url, txId, pathSuffix, this.activeGateway, signal);
             const stepMs = Date.now() - stepStart;
@@ -608,7 +628,8 @@ export class ArweaveGatewayManager {
 
         // Step 2: Try arweave.net (the official gateway — reliable fallback)
         // When bypassArweaveNet is true, skip arweave.net in the chain entirely.
-        if (!bypassArweaveNet) {
+        // Also skip if it was already tried and failed in Step 0.
+        if (!bypassArweaveNet && excludeHost !== 'arweave.net') {
             const arweaveNet = this.gateways.find(g => g.host === 'arweave.net');
             if (arweaveNet) {
                 const stepStart = Date.now();
@@ -622,9 +643,9 @@ export class ArweaveGatewayManager {
             }
         }
 
-        // Step 3: Try remaining static fallback gateways in parallel
+        // Step 3: Try remaining static fallback gateways in parallel (exclude any already-tried host)
         const stepStart = Date.now();
-        const fallbackResult = await this.tryFallbackGateways(url, txId, pathSuffix, signal);
+        const fallbackResult = await this.tryFallbackGateways(url, txId, pathSuffix, signal, excludeHost);
         const stepMs = Date.now() - stepStart;
         if (fallbackResult) {
             this.logger.info('[gateway] Step 3 (fallbacks): success', { ms: stepMs, totalMs: Date.now() - chainStart });
@@ -636,7 +657,7 @@ export class ArweaveGatewayManager {
         if (this.wayfinder) {
             const stepStart = Date.now();
             this.logger.info('[gateway] Step 4 (wayfinder): trying');
-            const wayfinderResult = await this.tryWayfinder(url, txId, pathSuffix, signal);
+            const wayfinderResult = await this.tryWayfinder(url, txId, pathSuffix, signal, excludeHost);
             const stepMs = Date.now() - stepStart;
             if (wayfinderResult) {
                 this.logger.info('[gateway] Step 4 (wayfinder): success', { ms: stepMs, totalMs: Date.now() - chainStart });
@@ -793,77 +814,98 @@ export class ArweaveGatewayManager {
      * Try remaining fallback gateways (everything except arweave.net) in parallel.
      * Returns the URL of the first gateway that responds, or null if all fail.
      */
-    private async tryFallbackGateways(url: string, txId: string, pathSuffix: string, signal?: AbortSignal): Promise<string | null> {
+    private async tryFallbackGateways(url: string, txId: string, pathSuffix: string, signal?: AbortSignal, excludeHost?: string | null): Promise<string | null> {
         this.missCount++;
 
         const HEALTHY_FAILURE_THRESHOLD = 0.70;
         const MIN_CHECKS_FOR_FILTER = 3;
 
-        const fallbackGateways = this.gateways.filter(g => g.host !== 'arweave.net');
+        const fallbackGateways = this.gateways.filter(g => g.host !== 'arweave.net' && g.host !== excludeHost);
         const healthyGateways = fallbackGateways.filter(gateway => {
             const { rate, totalChecks } = this.getFailureRate(gateway.host);
             if (totalChecks >= MIN_CHECKS_FOR_FILTER && rate > HEALTHY_FAILURE_THRESHOLD) return false;
             return true;
         });
 
+        // Try healthy gateways first; if they all fail but some were excluded by health
+        // filtering, retry with the full set — a previously "unhealthy" gateway may have recovered.
         const gatewaysToTry = healthyGateways.length > 0 ? healthyGateways : fallbackGateways;
 
         if (signal?.aborted) return null;
         if (gatewaysToTry.length === 0) return null;
 
-        // Check all fallback gateways in parallel, abort losers when one succeeds
-        const controller = new AbortController();
-        const onExternalAbort = () => controller.abort();
-        signal?.addEventListener('abort', onExternalAbort, { once: true });
+        const tryGateways = async (gateways: GatewayConfig[]): Promise<string | null> => {
+            if (signal?.aborted || gateways.length === 0) return null;
 
-        let resolved = false;
+            const controller = new AbortController();
+            const onExternalAbort = () => controller.abort();
+            signal?.addEventListener('abort', onExternalAbort, { once: true });
 
-        try {
-            const result = await Promise.any(
-                gatewaysToTry.map(async (gateway): Promise<string> => {
-                    const checkResult = await this.checkGateway(txId, gateway, pathSuffix, controller.signal);
-                    if (checkResult) {
-                        const workingUrl = constructGatewayUrl(txId, gateway, pathSuffix);
-                        if (!resolved) {
-                            resolved = true;
-                            // Only cache confirmed successes, not no-cors 'maybe' results
-                            if (checkResult === true) {
-                                this.setActiveGateway(gateway, txId);
-                                this.logger.info('Gateway resolved via fallback', {
-                                    txId,
-                                    gateway: gateway.host,
-                                    pathSuffix,
-                                    workingUrl,
-                                });
-                            } else {
-                                this.logger.info('Gateway maybe resolved via fallback (no-cors)', {
-                                    txId,
-                                    gateway: gateway.host,
-                                    pathSuffix,
-                                    workingUrl,
-                                });
+            let resolved = false;
+
+            try {
+                const result = await Promise.any(
+                    gateways.map(async (gateway): Promise<string> => {
+                        const checkResult = await this.checkGateway(txId, gateway, pathSuffix, controller.signal);
+                        if (checkResult) {
+                            const workingUrl = constructGatewayUrl(txId, gateway, pathSuffix);
+                            if (!resolved) {
+                                resolved = true;
+                                // Only cache confirmed successes, not no-cors 'maybe' results
+                                if (checkResult === true) {
+                                    this.setActiveGateway(gateway, txId);
+                                    this.logger.info('Gateway resolved via fallback', {
+                                        txId,
+                                        gateway: gateway.host,
+                                        pathSuffix,
+                                        workingUrl,
+                                    });
+                                } else {
+                                    this.logger.info('Gateway maybe resolved via fallback (no-cors)', {
+                                        txId,
+                                        gateway: gateway.host,
+                                        pathSuffix,
+                                        workingUrl,
+                                    });
+                                }
                             }
+                            return workingUrl;
                         }
-                        return workingUrl;
-                    }
-                    throw new Error(`Gateway ${gateway.host} failed check`);
-                }),
-            );
+                        throw new Error(`Gateway ${gateway.host} failed check`);
+                    }),
+                );
 
-            return result;
-        } catch {
-            // Promise.any throws AggregateError when all reject
-            return null;
-        } finally {
-            signal?.removeEventListener('abort', onExternalAbort);
+                return result;
+            } catch {
+                // Promise.any throws AggregateError when all reject
+                return null;
+            } finally {
+                signal?.removeEventListener('abort', onExternalAbort);
+            }
+        };
+
+        // Try healthy subset first
+        const result = await tryGateways(gatewaysToTry);
+        if (result) return result;
+
+        // If health filtering excluded some gateways, try the full set as a second pass
+        if (healthyGateways.length < fallbackGateways.length && !signal?.aborted) {
+            const excludedHosts = fallbackGateways
+                .filter(g => !healthyGateways.some(h => h.host === g.host))
+                .map(g => g.host);
+            this.logger.debug('Healthy gateways exhausted, retrying with previously unhealthy', { excludedHosts });
+            const fullResult = await tryGateways(fallbackGateways);
+            if (fullResult) return fullResult;
         }
+
+        return null;
     }
 
     /**
      * Try Wayfinder as a last resort when all static gateways fail.
      * Returns the URL of a working Wayfinder-selected gateway, or null if it fails.
      */
-    private async tryWayfinder(url: string, txId: string, pathSuffix: string, signal?: AbortSignal): Promise<string | null> {
+    private async tryWayfinder(url: string, txId: string, pathSuffix: string, signal?: AbortSignal, excludeHost?: string | null): Promise<string | null> {
         if (!this.wayfinder) return null;
 
         const MAX_WAYFINDER_ATTEMPTS = 3;
@@ -882,6 +924,13 @@ export class ArweaveGatewayManager {
                 if (signal?.aborted) return null;
 
                 const wayfinderHost = wayfinderUrlObj.hostname;
+
+                // Skip if Wayfinder resolved back to a host we already tried and failed
+                if (excludeHost && wayfinderHost === excludeHost) {
+                    this.logger.debug(`Wayfinder resolved to already-failed host ${wayfinderHost}, retrying`, { attempt });
+                    continue;
+                }
+
                 const wayfinderProtocol = wayfinderUrlObj.protocol.replace(':', '') as 'http' | 'https';
                 const wayfinderGateway: GatewayConfig = {
                     host: wayfinderHost,

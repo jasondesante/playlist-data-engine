@@ -566,6 +566,7 @@ export {
     extractIPFSPath,
     isIPFS,
     resolveIPFSLink,
+    type ResolveIPFSOptions,
 } from './utils/ipfsUtils.js';
 
 // ML Model Cache (localForage-backed IndexedDB persistence for TF.js models)

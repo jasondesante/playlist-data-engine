@@ -22,6 +22,7 @@ export const KNOWN_IPFS_GATEWAY_HOSTS = [
     'bonfire.mypinata.cloud',
     'spinamp.mypinata.cloud',
     'catalogworks.b-cdn.net',
+    'www.heds.cloud',
 ] as const;
 
 /** Default gateway used by resolveIPFSLink */
@@ -130,6 +131,50 @@ export function isIPFS(url: string | undefined): boolean {
     return false;
 }
 
+/** Options for resolveIPFSLink */
+export interface ResolveIPFSOptions {
+    /** Gateway host to resolve to (default: ipfs.io) */
+    gatewayHost?: string;
+    /**
+     * When true, keep the original URL's gateway if it's a recognized IPFS host.
+     * When false (default), always resolve to the target gateway.
+     *
+     * @example
+     * ```ts
+     * // preserveOriginalGateway: true — keeps the original gateway
+     * resolveIPFSLink('https://soundxyz.mypinata.cloud/ipfs/QmXxx', { preserveOriginalGateway: true });
+     * // => 'https://soundxyz.mypinata.cloud/ipfs/QmXxx'
+     *
+     * // preserveOriginalGateway: false — forces swap to target gateway
+     * resolveIPFSLink('https://soundxyz.mypinata.cloud/ipfs/QmXxx', { preserveOriginalGateway: false });
+     * // => 'https://ipfs.io/ipfs/QmXxx'
+     *
+     * // No option set — defaults to forcing swap (backward compatible)
+     * resolveIPFSLink('https://soundxyz.mypinata.cloud/ipfs/QmXxx');
+     * // => 'https://ipfs.io/ipfs/QmXxx'
+     * ```
+     */
+    preserveOriginalGateway?: boolean;
+}
+
+/**
+ * Extract the gateway host from an IPFS URL if it uses a recognized gateway.
+ * Returns undefined for native scheme (ipfs://) or unrecognized hosts.
+ */
+function extractGatewayHost(url: string): string | undefined {
+    if (!url || url.startsWith('ipfs://')) return undefined;
+
+    try {
+        const { hostname } = new URL(url);
+        const isKnownHost = KNOWN_IPFS_GATEWAY_HOSTS.some(
+            host => hostname === host || hostname.endsWith('.' + host)
+        );
+        return isKnownHost ? hostname : undefined;
+    } catch {
+        return undefined;
+    }
+}
+
 /**
  * Resolve an IPFS URL to a specific gateway.
  *
@@ -137,27 +182,60 @@ export function isIPFS(url: string | undefined): boolean {
  * reconstructs it with the specified gateway host.
  *
  * @param url - The IPFS URL to resolve
- * @param gatewayHost - Gateway host to resolve to (default: ipfs.io)
+ * @param optionsOrGateway - Either a string gateway host (backward compatible) or a {@link ResolveIPFSOptions} object
  * @returns The resolved URL, or the original URL if not IPFS
  *
  * @example
  * ```ts
+ * // String gateway (backward compatible)
  * resolveIPFSLink('ipfs://QmXxx'); // 'https://ipfs.io/ipfs/QmXxx'
  * resolveIPFSLink('ipfs://QmXxx', 'cloudflare-ipfs.com'); // 'https://cloudflare-ipfs.com/ipfs/QmXxx'
- * resolveIPFSLink('https://soundxyz.mypinata.cloud/ipfs/QmXxx'); // 'https://ipfs.io/ipfs/QmXxx'
+ *
+ * // Options object
+ * resolveIPFSLink('https://soundxyz.mypinata.cloud/ipfs/QmXxx', { preserveOriginalGateway: true });
+ * // => 'https://soundxyz.mypinata.cloud/ipfs/QmXxx' (kept original)
+ *
+ * resolveIPFSLink('https://soundxyz.mypinata.cloud/ipfs/QmXxx', {
+ *     gatewayHost: 'dweb.link',
+ *     preserveOriginalGateway: true,
+ * });
+ * // => 'https://soundxyz.mypinata.cloud/ipfs/QmXxx' (original takes precedence)
+ *
+ * resolveIPFSLink('https://soundxyz.mypinata.cloud/ipfs/QmXxx', {
+ *     gatewayHost: 'dweb.link',
+ *     preserveOriginalGateway: false,
+ * });
+ * // => 'https://dweb.link/ipfs/QmXxx' (forced swap)
+ *
+ * // Subdomain format always gets resolved (no original gateway to preserve)
  * resolveIPFSLink('https://QmXxx.ipfs.dweb.link'); // 'https://ipfs.io/ipfs/QmXxx'
+ *
+ * // Non-IPFS URLs pass through unchanged
  * resolveIPFSLink('https://example.com/file.png'); // 'https://example.com/file.png'
  * resolveIPFSLink(undefined); // undefined
  * ```
  */
 export function resolveIPFSLink(
     url: string | undefined,
-    gatewayHost: string = DEFAULT_IPFS_GATEWAY
+    optionsOrGateway: string | ResolveIPFSOptions = {}
 ): string | undefined {
     if (!url) return url;
 
+    const options: ResolveIPFSOptions =
+        typeof optionsOrGateway === 'string'
+            ? { gatewayHost: optionsOrGateway }
+            : optionsOrGateway;
+
+    const { gatewayHost = DEFAULT_IPFS_GATEWAY, preserveOriginalGateway = false } = options;
+
     const ipfsPath = extractIPFSPath(url);
     if (ipfsPath) {
+        if (preserveOriginalGateway) {
+            const originalHost = extractGatewayHost(url);
+            if (originalHost) {
+                return `https://${originalHost}/ipfs/${ipfsPath}`;
+            }
+        }
         return `https://${gatewayHost}/ipfs/${ipfsPath}`;
     }
 

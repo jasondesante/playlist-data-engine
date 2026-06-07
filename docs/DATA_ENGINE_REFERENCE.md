@@ -1592,7 +1592,7 @@ For supported URL formats, known gateway hosts, and usage examples, see [GATEWAY
 |----------|---------|-------------|
 | `isIPFS(url)` | `boolean` | Whether a URL is an IPFS URL (native scheme, gateway, or subdomain) |
 | `extractIPFSPath(url)` | `string \| null` | Extracts CID + path from any recognized IPFS URL format |
-| `resolveIPFSLink(url, gatewayHost?)` | `string \| undefined` | Resolves IPFS URL to specified gateway; non-IPFS URLs pass through unchanged |
+| `resolveIPFSLink(url, optionsOrGateway?)` | `string \| undefined` | Resolves IPFS URL to specified gateway; accepts string gateway host or `ResolveIPFSOptions` with `preserveOriginalGateway` |
 
 ### AudioAnalyzer
 
