@@ -21,6 +21,8 @@ export interface SimpleTrack {
     audio_url_lossless?: string;
     image_url: string;
     image_thumb_url?: string;
+    audioIpfsHash?: string;
+    artworkIpfsHash?: string;
 }
 
 /** Track object with VRM data for getVRMTracks() */
@@ -430,6 +432,14 @@ export function getTracks(playlist: PlaylistInput): SimpleTrack[] {
                 simpleTrack.image_thumb_url = image_thumb_url;
             }
 
+            // v0.4 IPFS hash fields
+            if ('audioIpfsHash' in track && typeof track.audioIpfsHash === 'string') {
+                simpleTrack.audioIpfsHash = track.audioIpfsHash;
+            }
+            if ('artworkIpfsHash' in track && typeof track.artworkIpfsHash === 'string') {
+                simpleTrack.artworkIpfsHash = track.artworkIpfsHash;
+            }
+
             tracks.push(simpleTrack);
         }
     }
@@ -486,6 +496,15 @@ export function getFullTracks(playlist: PlaylistInput): Array<Record<string, unk
                     description: parsed.description,
                     attributes: MetadataExtractor.convertAttributes(parsed.attributes),
                     ...(audioUrlLossless && audioUrlLossless !== primaryAudioUrl ? { audio_url_lossless: audioUrlLossless } : {}),
+                    // v0.4 fields from raw track
+                    ...(track.audioUrl ? { audioUrl: track.audioUrl } : {}),
+                    ...(track.artworkUrl ? { artworkUrl: track.artworkUrl } : {}),
+                    ...(track.audioIpfsHash ? { audioIpfsHash: track.audioIpfsHash } : {}),
+                    ...(track.artworkIpfsHash ? { artworkIpfsHash: track.artworkIpfsHash } : {}),
+                    ...(track["Mint-Function"] ? { "Mint-Function": track["Mint-Function"] } : {}),
+                    ...(track["Mint-Price"] ? { "Mint-Price": track["Mint-Price"] } : {}),
+                    ...(track["Mint-Snapshot-Time"] != null ? { "Mint-Snapshot-Time": track["Mint-Snapshot-Time"] } : {}),
+                    ...(track["Mint-Token"] ? { "Mint-Token": track["Mint-Token"] } : {}),
                 });
             }
         }

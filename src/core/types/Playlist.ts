@@ -17,6 +17,12 @@ export interface ServerlessPlaylist {
     creator: string;        // Wallet address of the curator
     genre?: string;         // General genre of the playlist
     tags?: string[];        // Search tags
+    version?: string;       // Metadata format version (e.g., "0.4")
+
+    // --- v0.4 Playlist Type Fields ---
+    playlist_type?: 'new' | 'remix' | 'ep' | 'lp' | 'single';
+    original_playlist_tx_id?: string;  // For remixes — tx_id of original
+    playlist_artist?: string;          // For ep/lp/single — artist name
 
     // --- The Content ---
     tracks: PlaylistTrack[]; // Array of flattened track objects
@@ -62,6 +68,18 @@ export interface PlaylistTrack {
     // --- Raw Attributes (for edge cases) ---
     attributes?: Record<string, string | number>;
 
+    // --- v0.4 Resolved Media Fields ---
+    audioUrl?: string;              // Gateway-resolved best audio URL
+    artworkUrl?: string;            // Gateway-resolved best image URL
+    audioIpfsHash?: string;         // IPFS CID of the audio file
+    artworkIpfsHash?: string;       // IPFS CID of the artwork file
+
+    // --- v0.4 Mint Fields ---
+    "Mint-Function"?: string;       // Preferred mint function name
+    "Mint-Price"?: string;          // Mint price in wei
+    "Mint-Snapshot-Time"?: number;  // Unix timestamp of mint info capture
+    "Mint-Token"?: string;          // ERC20 token address for alt payment
+
     // --- Extras (stems, alternate mixes) ---
     extras?: TrackExtrasInfo;
 }
@@ -77,6 +95,10 @@ export interface RawArweavePlaylist {
     description?: string;
     genre?: string;
     tags?: string[];
+    version?: string;
+    playlist_type?: 'new' | 'remix' | 'ep' | 'lp' | 'single';
+    original_playlist_tx_id?: string;
+    playlist_artist?: string;
     tracks: Array<{
         // Outer Blockchain Data
         chain_name: string;
@@ -86,6 +108,16 @@ export interface RawArweavePlaylist {
         platform: string;
         id?: string;
         uuid?: string;
+
+        // v0.4 resolved fields (may be present on raw tracks from Arweave)
+        audioUrl?: string;
+        artworkUrl?: string;
+        audioIpfsHash?: string;
+        artworkIpfsHash?: string;
+        "Mint-Function"?: string;
+        "Mint-Price"?: string;
+        "Mint-Snapshot-Time"?: number;
+        "Mint-Token"?: string;
 
         // The Payload — stringified JSON or a plain JSON object.
         // parseMetadata() handles both formats transparently.

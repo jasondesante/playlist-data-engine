@@ -86,6 +86,10 @@ export class PlaylistParser {
             creator: playlistCreator,
             genre: playlistGenre,
             tags: playlistTags,
+            version: data.version,
+            playlist_type: data.playlist_type,
+            original_playlist_tx_id: data.original_playlist_tx_id,
+            playlist_artist: data.playlist_artist,
             tracks,
         };
     }
@@ -222,6 +226,16 @@ export class PlaylistParser {
         if (imageThumbUrl) {
             track.image_thumb_url = imageThumbUrl;
         }
+
+        // v0.4 fields — prefer top-level track field, fall back to parsed metadata
+        track.audioUrl = rawTrack.audioUrl || audioUrl;
+        track.artworkUrl = rawTrack.artworkUrl || imageUrl;
+        track.audioIpfsHash = rawTrack.audioIpfsHash || (typeof parsedMetadata?.audioIpfsHash === 'string' ? parsedMetadata.audioIpfsHash : undefined);
+        track.artworkIpfsHash = rawTrack.artworkIpfsHash || (typeof parsedMetadata?.artworkIpfsHash === 'string' ? parsedMetadata.artworkIpfsHash : undefined);
+        track["Mint-Function"] = rawTrack["Mint-Function"] || (typeof parsedMetadata?.["Mint-Function"] === 'string' ? parsedMetadata["Mint-Function"] as string : undefined);
+        track["Mint-Price"] = rawTrack["Mint-Price"] || (typeof parsedMetadata?.["Mint-Price"] === 'string' ? parsedMetadata["Mint-Price"] as string : undefined);
+        track["Mint-Snapshot-Time"] = rawTrack["Mint-Snapshot-Time"] ?? (typeof parsedMetadata?.["Mint-Snapshot-Time"] === 'number' ? parsedMetadata["Mint-Snapshot-Time"] as number : undefined);
+        track["Mint-Token"] = rawTrack["Mint-Token"] || (typeof parsedMetadata?.["Mint-Token"] === 'string' ? parsedMetadata["Mint-Token"] as string : undefined);
 
         // Add token_address and token_id for non-Arweave chains
         if (chainName !== 'AR') {
