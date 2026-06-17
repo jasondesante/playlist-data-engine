@@ -11,7 +11,7 @@ Playlists, ML models, audio, and images are all stored on Arweave. Every Arweave
 ## Architecture
 
 ```
-resolveUrl(arweaveUrl, { bypassArweaveNet? })
+resolveUrl(arweaveUrl, { bypassArweaveNet?, bypassWayfinder? })
 │
 ├─ 0. Cache hit? ─────────────────────────────────── return immediately
 │
@@ -25,6 +25,7 @@ resolveUrl(arweaveUrl, { bypassArweaveNet? })
 │   └─ All tried in parallel via Promise.any()
 │
 └─ 4. AR.IO Wayfinder (wider pool via composite routing, up to 3 retries)
+       └─ Skipped when bypassWayfinder: true
        ├─ FastestPingRoutingStrategy (top 10 by operator stake, 3s timeout)
        └─ RandomRoutingStrategy (top 20 by operator stake, fallback)
 ```
@@ -214,6 +215,10 @@ arweave.net reliability can be spotty — the gateway may be up but unable to se
 
 To monitor arweave.net availability independently, use `checkGateway()` directly.
 
+### Bypassing Wayfinder
+
+The `bypassWayfinder` flag skips AR.IO Wayfinder resolution entirely. The chain becomes: persisted → arweave.net → static fallback gateways. Useful when you want to stick to known static gateways and avoid the latency of Wayfinder's composite routing (ping checks, network provider calls).
+
 ### Gateway Prefetching
 
 [`prefetchUrls(urls, options?)`](#prefetchurlsurls-options) resolves multiple Arweave URLs in parallel with configurable concurrency (default: 5). Useful for warming the cache at startup with known model URLs or playlist images.
@@ -232,7 +237,7 @@ Everything is exported from `'playlist-data-engine'`:
 | `ArweaveGatewayManager` | Class | Create custom instances |
 | `GatewayConfig` | Interface | `{ host, protocol, priority }` |
 | `ArweaveGatewayManagerConfig` | Interface | Constructor options |
-| `ResolveUrlOptions` | Interface | Options for `resolveUrl()` (signal, bypassArweaveNet) |
+| `ResolveUrlOptions` | Interface | Options for `resolveUrl()` (signal, bypassArweaveNet, bypassWayfinder) |
 | `GatewayCache` | Interface | Cache entry shape |
 | `GatewayCheckResult` | Interface | Resolution result with gateway info |
 | `PrefetchOptions` | Interface | Prefetch concurrency/behavior |
@@ -287,6 +292,7 @@ Main entry point. Resolves an Arweave URL to a working gateway URL using the seq
 |--------|------|---------|-------------|
 | `signal` | `AbortSignal` | — | Cancel in-flight gateway checks |
 | `bypassArweaveNet` | `boolean` | `false` | Skip arweave.net in the resolution chain — go persisted → fallbacks → Wayfinder |
+| `bypassWayfinder` | `boolean` | `false` | Skip Wayfinder in the resolution chain — only use static gateways |
 
 ```typescript
 // Default behavior — arweave.net is in the chain
@@ -299,6 +305,12 @@ const workingUrl = await arweaveGatewayManager.resolveUrl(
 const workingUrl = await arweaveGatewayManager.resolveUrl(
     'https://arweave.net/abc123.../model.json',
     { bypassArweaveNet: true }
+);
+
+// Bypass Wayfinder — stick to static gateways only
+const workingUrl = await arweaveGatewayManager.resolveUrl(
+    'https://arweave.net/abc123.../model.json',
+    { bypassWayfinder: true }
 );
 ```
 

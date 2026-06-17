@@ -54,6 +54,8 @@ export interface ResolveUrlOptions {
     signal?: AbortSignal;
     /** Skip arweave.net in the resolution chain — go persisted → fallbacks → Wayfinder */
     bypassArweaveNet?: boolean;
+    /** Skip Wayfinder in the resolution chain — only use static gateways */
+    bypassWayfinder?: boolean;
 }
 
 /**
@@ -497,7 +499,7 @@ export class ArweaveGatewayManager {
      * fall back to Wayfinder only if all static gateways fail.
      *
      * @param url - The URL to resolve
-     * @param options - Optional resolve options (signal, bypassArweaveNet, monitorArweaveNet)
+     * @param options - Optional resolve options (signal, bypassArweaveNet, bypassWayfinder)
      * @returns A working URL (or original URL if all gateways fail or signal is aborted)
      */
     async resolveUrl(url: string, options?: ResolveUrlOptions): Promise<string> {
@@ -654,7 +656,8 @@ export class ArweaveGatewayManager {
         this.logger.info('[gateway] Step 3 (fallbacks): failed', { ms: stepMs });
 
         // Step 4: Try Wayfinder as last resort (wider pool, but slower)
-        if (this.wayfinder) {
+        // When bypassWayfinder is true, skip Wayfinder entirely.
+        if (this.wayfinder && !options?.bypassWayfinder) {
             const stepStart = Date.now();
             this.logger.info('[gateway] Step 4 (wayfinder): trying');
             const wayfinderResult = await this.tryWayfinder(url, txId, pathSuffix, signal, excludeHost);
