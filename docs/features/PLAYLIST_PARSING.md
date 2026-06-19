@@ -34,9 +34,8 @@ const track = playlist.tracks[0];
 
 track.audio_url            // Best audio URL
 track.audio_url_lossless   // Lossless audio if available
-track.image_url            // Best image URL
+track.image_url            // Best image/artwork URL (parser accepts artwork_url OR image_url on input, normalizes to image_url)
 track.image_thumb_url      // Thumbnail
-track.title                // "Song Name"
 track.artist               // "Artist Name"
 track.genre                // "Electronic"
 track.tags                 // ["chill", "upbeat"]
@@ -231,8 +230,23 @@ ServerlessPlaylist
 ├── creator: string           // Curator wallet address
 ├── genre?: string
 ├── tags?: string[]
+├── playlist_type?: 'new' | 'remix' | 'ep' | 'lp' | 'single'   // v0.4
+├── original_playlist_tx_id?: string                            // v0.4 (remixes)
+├── playlist_artist?: string                                    // v0.4 (ep/lp/single)
 └── tracks: PlaylistTrack[]   // The content
 ```
+
+> **v0.4 naming convention:** Fields that travel on the wire (playlist body, track wrapper,
+> metadata interior, Arweave tags) use snake_case for JSON body fields and Pascal-Kebab for
+> Arweave tags. Mint metadata (`mint_function`, `mint_price`, `mint_snapshot_time`, `mint_token`)
+> lives **only inside the stringified `metadata` interior** — it is never promoted onto the track
+> wrapper and never emitted as an Arweave tag. Use `getTrackMetadata()` to read those values.
+>
+> **Image field aliasing:** The ApeTapes app writes `artwork_url` onto track wrappers when uploading
+> playlists. The engine's parser accepts **either** `artwork_url` **or** `image_url` on input and
+> normalizes the value to the engine's canonical output field `image_url` (which pairs with
+> `image_thumb_url`). So input may carry `artwork_url`, but the parsed `PlaylistTrack` always
+> exposes the resolved image as `image_url`.
 
 ### PlaylistTrack
 
@@ -259,7 +273,9 @@ PlaylistTrack
 │   ├── audio_url: string               // Best audio URL (compressed)
 │   ├── audio_url_lossless?: string     // Lossless audio (WAV/FLAC) if available
 │   ├── image_url: string               // Best image URL
-│   └── image_thumb_url?: string        // Thumbnail if available
+│   ├── image_thumb_url?: string        // Thumbnail if available
+│   ├── audio_ipfs_hash?: string        // IPFS CID of the audio file (v0.4)
+│   └── artwork_ipfs_hash?: string      // IPFS CID of the artwork/image file (v0.4)
 │
 ├── Metadata
 │   ├── duration: number        // Seconds

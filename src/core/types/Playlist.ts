@@ -68,17 +68,9 @@ export interface PlaylistTrack {
     // --- Raw Attributes (for edge cases) ---
     attributes?: Record<string, string | number>;
 
-    // --- v0.4 Resolved Media Fields ---
-    audioUrl?: string;              // Gateway-resolved best audio URL
-    artworkUrl?: string;            // Gateway-resolved best image URL
-    audioIpfsHash?: string;         // IPFS CID of the audio file
-    artworkIpfsHash?: string;       // IPFS CID of the artwork file
-
-    // --- v0.4 Mint Fields ---
-    "Mint-Function"?: string;       // Preferred mint function name
-    "Mint-Price"?: string;          // Mint price in wei
-    "Mint-Snapshot-Time"?: number;  // Unix timestamp of mint info capture
-    "Mint-Token"?: string;          // ERC20 token address for alt payment
+    // --- v0.4 IPFS Hash Fields (promoted from metadata interior) ---
+    audio_ipfs_hash?: string;       // IPFS CID of the audio file
+    artwork_ipfs_hash?: string;     // IPFS CID of the artwork/image file
 
     // --- Extras (stems, alternate mixes) ---
     extras?: TrackExtrasInfo;
@@ -109,15 +101,16 @@ export interface RawArweavePlaylist {
         id?: string;
         uuid?: string;
 
-        // v0.4 resolved fields (may be present on raw tracks from Arweave)
-        audioUrl?: string;
-        artworkUrl?: string;
-        audioIpfsHash?: string;
-        artworkIpfsHash?: string;
-        "Mint-Function"?: string;
-        "Mint-Price"?: string;
-        "Mint-Snapshot-Time"?: number;
-        "Mint-Token"?: string;
+        // v0.4 resolved wrapper fields (may be present on raw tracks from Arweave).
+        // The parser prefers these over re-extracting from the metadata interior.
+        // `artwork_url` is accepted as an alias for `image_url` (ApeTapes emits this name).
+        audio_url?: string;       // Resolved best audio URL
+        artwork_url?: string;     // Alias for image_url (read on input)
+        image_url?: string;       // Resolved best image URL
+
+        // v0.4 IPFS hash fields (may be promoted on raw tracks from Arweave)
+        audio_ipfs_hash?: string;
+        artwork_ipfs_hash?: string;
 
         // The Payload — stringified JSON or a plain JSON object.
         // parseMetadata() handles both formats transparently.

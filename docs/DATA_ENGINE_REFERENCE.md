@@ -338,8 +338,8 @@ Type definitions for all core data structures.
 
 | Type | Description | Key Properties |
 |------|-------------|----------------|
-| `ServerlessPlaylist` | Main container object returned by `PlaylistParser` | `name`, `tracks`, `image`, `creator`, `genre?`, `tags?` |
-| `PlaylistTrack` | Flattened track object containing audio_url | `audio_url` (critical), `audio_url_lossless?`, `title`, `artist`, `image_url`, `image_thumb_url?`, `extras?`, chain data |
+| `ServerlessPlaylist` | Main container object returned by `PlaylistParser` | `name`, `tracks`, `image`, `creator`, `genre?`, `tags?`, `playlist_type?`, `original_playlist_tx_id?`, `playlist_artist?` |
+| `PlaylistTrack` | Flattened track object containing audio_url | `audio_url` (critical), `audio_url_lossless?`, `title`, `artist`, `image_url`, `image_thumb_url?`, `audio_ipfs_hash?`, `artwork_ipfs_hash?`, `extras?`, chain data |
 | `RawArweavePlaylist` | Raw input schema received from Arweave before parsing | `tracks[].metadata` (stringified JSON), blockchain shell data |
 
 ### AudioProfile
@@ -1512,7 +1512,7 @@ Simple functions that return arrays of basic data from playlists. Works with bot
 
 | Function | Returns | Description |
 |----------|---------|-------------|
-| `getTracks(playlist)` | `SimpleTrack[]` | Simplified objects: `{ title, artist, audio_url, audio_url_lossless?, image_url, image_thumb_url? }` |
+| `getTracks(playlist)` | `SimpleTrack[]` | Simplified objects: `{ title, artist, audio_url, audio_url_lossless?, image_url, image_thumb_url?, audio_ipfs_hash?, artwork_ipfs_hash? }` |
 | `getFullTracks(playlist)` | `object[]` | All available track data as plain objects |
 
 #### VRM Extraction Functions
@@ -1529,7 +1529,7 @@ Simple functions that return arrays of basic data from playlists. Works with bot
 | Type | Description |
 |------|-------------|
 | `PlaylistInput` | Union of `ServerlessPlaylist` or `RawArweavePlaylist` |
-| `SimpleTrack` | Simplified track: `{ title, artist, audio_url, audio_url_lossless?, image_url, image_thumb_url? }` |
+| `SimpleTrack` | Simplified track: `{ title, artist, audio_url, audio_url_lossless?, image_url, image_thumb_url?, audio_ipfs_hash?, artwork_ipfs_hash? }` |
 | `VRMTrack` | Track with VRM: `{ title, artist, audio_url, audio_url_lossless?, image_url, image_thumb_url?, vrm }` |
 
 *For usage examples, see [USAGE_IN_OTHER_PROJECTS.md](USAGE_IN_OTHER_PROJECTS.md#playlist-utilities).*

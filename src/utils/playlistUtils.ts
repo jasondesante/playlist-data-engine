@@ -21,8 +21,8 @@ export interface SimpleTrack {
     audio_url_lossless?: string;
     image_url: string;
     image_thumb_url?: string;
-    audioIpfsHash?: string;
-    artworkIpfsHash?: string;
+    audio_ipfs_hash?: string;
+    artwork_ipfs_hash?: string;
 }
 
 /** Track object with VRM data for getVRMTracks() */
@@ -89,8 +89,12 @@ function extractImageUrlFromTrack(track: PlaylistTrack | RawArweavePlaylist['tra
         return track.image_url;
     }
 
-    // Raw track - needs metadata parsing
+    // Raw track - check wrapper image fields, then parse metadata
     if ('metadata' in track) {
+        // artwork_url wrapper field (ApeTapes emits this name; alias for image_url)
+        if ('artwork_url' in track && typeof track.artwork_url === 'string') {
+            return track.artwork_url;
+        }
         const parsed = MetadataExtractor.parseMetadata(track.metadata);
         if (parsed) {
             return MetadataExtractor.extractImageUrl(parsed);
@@ -433,11 +437,11 @@ export function getTracks(playlist: PlaylistInput): SimpleTrack[] {
             }
 
             // v0.4 IPFS hash fields
-            if ('audioIpfsHash' in track && typeof track.audioIpfsHash === 'string') {
-                simpleTrack.audioIpfsHash = track.audioIpfsHash;
+            if ('audio_ipfs_hash' in track && typeof track.audio_ipfs_hash === 'string') {
+                simpleTrack.audio_ipfs_hash = track.audio_ipfs_hash;
             }
-            if ('artworkIpfsHash' in track && typeof track.artworkIpfsHash === 'string') {
-                simpleTrack.artworkIpfsHash = track.artworkIpfsHash;
+            if ('artwork_ipfs_hash' in track && typeof track.artwork_ipfs_hash === 'string') {
+                simpleTrack.artwork_ipfs_hash = track.artwork_ipfs_hash;
             }
 
             tracks.push(simpleTrack);
@@ -496,15 +500,9 @@ export function getFullTracks(playlist: PlaylistInput): Array<Record<string, unk
                     description: parsed.description,
                     attributes: MetadataExtractor.convertAttributes(parsed.attributes),
                     ...(audioUrlLossless && audioUrlLossless !== primaryAudioUrl ? { audio_url_lossless: audioUrlLossless } : {}),
-                    // v0.4 fields from raw track
-                    ...(track.audioUrl ? { audioUrl: track.audioUrl } : {}),
-                    ...(track.artworkUrl ? { artworkUrl: track.artworkUrl } : {}),
-                    ...(track.audioIpfsHash ? { audioIpfsHash: track.audioIpfsHash } : {}),
-                    ...(track.artworkIpfsHash ? { artworkIpfsHash: track.artworkIpfsHash } : {}),
-                    ...(track["Mint-Function"] ? { "Mint-Function": track["Mint-Function"] } : {}),
-                    ...(track["Mint-Price"] ? { "Mint-Price": track["Mint-Price"] } : {}),
-                    ...(track["Mint-Snapshot-Time"] != null ? { "Mint-Snapshot-Time": track["Mint-Snapshot-Time"] } : {}),
-                    ...(track["Mint-Token"] ? { "Mint-Token": track["Mint-Token"] } : {}),
+                    // v0.4 IPFS hash fields from raw track (mint fields live only in metadata interior)
+                    ...(track.audio_ipfs_hash ? { audio_ipfs_hash: track.audio_ipfs_hash } : {}),
+                    ...(track.artwork_ipfs_hash ? { artwork_ipfs_hash: track.artwork_ipfs_hash } : {}),
                 });
             }
         }

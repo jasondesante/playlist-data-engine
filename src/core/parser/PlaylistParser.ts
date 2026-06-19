@@ -151,9 +151,15 @@ export class PlaylistParser {
         // Step 4: Run Extraction Logic
         const title = MetadataExtractor.extractTitle(parsedMetadata || {});
         const artist = MetadataExtractor.extractArtist(parsedMetadata || {});
-        const imageUrl = MetadataExtractor.extractImageUrl(parsedMetadata || {});
+        // Prefer a top-level wrapper image field (artwork_url or legacy image_url) if the
+        // uploader already resolved one; otherwise extract from the metadata interior.
+        const wrapperImageUrl = (typeof rawTrack.artwork_url === 'string' && rawTrack.artwork_url)
+            || (typeof rawTrack.image_url === 'string' && rawTrack.image_url)
+            || null;
+        const imageUrl = wrapperImageUrl || MetadataExtractor.extractImageUrl(parsedMetadata || {});
         const imageThumbUrl = MetadataExtractor.extractImageThumbUrl(parsedMetadata || {});
-        const audioUrl = MetadataExtractor.extractAudioUrl(parsedMetadata || {});
+        const wrapperAudioUrl = (typeof rawTrack.audio_url === 'string' && rawTrack.audio_url) || null;
+        const audioUrl = wrapperAudioUrl || MetadataExtractor.extractAudioUrl(parsedMetadata || {});
         const audioUrlLossless = MetadataExtractor.extractAudioUrlLossless(parsedMetadata || {});
 
         // Step 6: Validate - If audio_url is empty, mark as "Unsummonable"
@@ -227,15 +233,18 @@ export class PlaylistParser {
             track.image_thumb_url = imageThumbUrl;
         }
 
-        // v0.4 fields — prefer top-level track field, fall back to parsed metadata
-        track.audioUrl = rawTrack.audioUrl || audioUrl;
-        track.artworkUrl = rawTrack.artworkUrl || imageUrl;
-        track.audioIpfsHash = rawTrack.audioIpfsHash || (typeof parsedMetadata?.audioIpfsHash === 'string' ? parsedMetadata.audioIpfsHash : undefined);
-        track.artworkIpfsHash = rawTrack.artworkIpfsHash || (typeof parsedMetadata?.artworkIpfsHash === 'string' ? parsedMetadata.artworkIpfsHash : undefined);
-        track["Mint-Function"] = rawTrack["Mint-Function"] || (typeof parsedMetadata?.["Mint-Function"] === 'string' ? parsedMetadata["Mint-Function"] as string : undefined);
-        track["Mint-Price"] = rawTrack["Mint-Price"] || (typeof parsedMetadata?.["Mint-Price"] === 'string' ? parsedMetadata["Mint-Price"] as string : undefined);
-        track["Mint-Snapshot-Time"] = rawTrack["Mint-Snapshot-Time"] ?? (typeof parsedMetadata?.["Mint-Snapshot-Time"] === 'number' ? parsedMetadata["Mint-Snapshot-Time"] as number : undefined);
-        track["Mint-Token"] = rawTrack["Mint-Token"] || (typeof parsedMetadata?.["Mint-Token"] === 'string' ? parsedMetadata["Mint-Token"] as string : undefined);
+        // v0.4 IPFS hash fields — prefer top-level track field, fall back to parsed metadata interior.
+        // Mint-* fields live ONLY inside the metadata interior and are never promoted onto the wrapper.
+        if (typeof parsedMetadata?.audio_ipfs_hash === 'string') {
+            track.audio_ipfs_hash = rawTrack.audio_ipfs_hash || parsedMetadata.audio_ipfs_hash;
+        } else if (rawTrack.audio_ipfs_hash) {
+            track.audio_ipfs_hash = rawTrack.audio_ipfs_hash;
+        }
+        if (typeof parsedMetadata?.artwork_ipfs_hash === 'string') {
+            track.artwork_ipfs_hash = rawTrack.artwork_ipfs_hash || parsedMetadata.artwork_ipfs_hash;
+        } else if (rawTrack.artwork_ipfs_hash) {
+            track.artwork_ipfs_hash = rawTrack.artwork_ipfs_hash;
+        }
 
         // Add token_address and token_id for non-Arweave chains
         if (chainName !== 'AR') {
