@@ -6,7 +6,7 @@
     "type": "git",
     "url": "git+https://github.com/jasondesante/playlist-data-engine.git"
   },
-  "version": "1.4.2",
+  "version": "1.4.3",
   "type": "module",
   "main": "./dist/playlist-data-engine.js",
   "module": "./dist/playlist-data-engine.mjs",
