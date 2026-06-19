@@ -338,7 +338,7 @@ Type definitions for all core data structures.
 
 | Type | Description | Key Properties |
 |------|-------------|----------------|
-| `ServerlessPlaylist` | Main container object returned by `PlaylistParser` | `name`, `tracks`, `image`, `creator`, `genre?`, `tags?`, `playlist_type?`, `original_playlist_tx_id?`, `playlist_artist?` |
+| `ServerlessPlaylist` | Main container object returned by `PlaylistParser` | `name`, `tracks`, `image`, `creator`, `genre?`, `tags?`, `playlist_type?`, `original_playlist_tx_id?`, `playlist_artist?`, `platform?` |
 | `PlaylistTrack` | Flattened track object containing audio_url | `audio_url` (critical), `audio_url_lossless?`, `title`, `artist`, `image_url`, `image_thumb_url?`, `audio_ipfs_hash?`, `artwork_ipfs_hash?`, `extras?`, chain data |
 | `RawArweavePlaylist` | Raw input schema received from Arweave before parsing | `tracks[].metadata` (stringified JSON), blockchain shell data |
 

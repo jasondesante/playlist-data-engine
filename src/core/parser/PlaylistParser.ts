@@ -90,6 +90,7 @@ export class PlaylistParser {
             playlist_type: data.playlist_type,
             original_playlist_tx_id: data.original_playlist_tx_id,
             playlist_artist: data.playlist_artist,
+            platform: data.platform,
             tracks,
         };
     }

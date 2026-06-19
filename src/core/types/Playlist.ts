@@ -24,6 +24,13 @@ export interface ServerlessPlaylist {
     original_playlist_tx_id?: string;  // For remixes — tx_id of original
     playlist_artist?: string;          // For ep/lp/single — artist name
 
+    /**
+     * Origin platform for directory-imported playlists. Currently `"contract-wizard"`
+     * (CW v0.3 → v0.4 migration) or `"nina"` (Nina multi-format split). Lets the directory tooling tell CW and Nina playlists
+     * apart at the playlist level without inspecting per-track provenance.
+     */
+    platform?: string;
+
     // --- The Content ---
     tracks: PlaylistTrack[]; // Array of flattened track objects
 }
@@ -91,6 +98,7 @@ export interface RawArweavePlaylist {
     playlist_type?: 'new' | 'remix' | 'ep' | 'lp' | 'single';
     original_playlist_tx_id?: string;
     playlist_artist?: string;
+    platform?: string;  // Origin platform for directory-imported playlists (e.g. "contract-wizard", "nina")
     tracks: Array<{
         // Outer Blockchain Data
         chain_name: string;

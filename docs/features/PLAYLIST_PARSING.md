@@ -233,6 +233,7 @@ ServerlessPlaylist
 ├── playlist_type?: 'new' | 'remix' | 'ep' | 'lp' | 'single'   // v0.4
 ├── original_playlist_tx_id?: string                            // v0.4 (remixes)
 ├── playlist_artist?: string                                    // v0.4 (ep/lp/single)
+├── platform?: string                                           // v0.4 (directory-imported origin: "contract-wizard" | "nina")
 └── tracks: PlaylistTrack[]   // The content
 ```
 
