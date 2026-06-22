@@ -121,13 +121,24 @@ export class MetadataExtractor {
      * 1. artist
      * 2. created_by
      * 3. minter
+     * 4. OpenSea-style attributes array with trait_type "Artist"
      */
     static extractArtist(data: Record<string, unknown>): string | null {
         const priorities = ['artist', 'created_by', 'minter'];
 
         for (const key of priorities) {
             if (data[key] && typeof data[key] === 'string') {
-                return data[key];
+                return data[key] as string;
+            }
+        }
+
+        if (Array.isArray(data.attributes)) {
+            const artistAttr = data.attributes.find(
+                (attr: { trait_type?: string; value?: unknown }) =>
+                    attr.trait_type?.toLowerCase() === 'artist' && attr.value !== undefined
+            );
+            if (artistAttr && typeof artistAttr.value === 'string') {
+                return artistAttr.value;
             }
         }
 
