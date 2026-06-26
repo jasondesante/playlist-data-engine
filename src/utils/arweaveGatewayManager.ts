@@ -335,20 +335,22 @@ export class ArweaveGatewayManager {
         // Uses NetworkGatewaysProvider (top 10 gateways by operator stake) for
         // a much larger candidate pool than the 4 hardcoded static gateways.
         // Falls back to RandomRoutingStrategy from a wider pool if all pings fail.
-        Promise.all([loadWayfinder(), loadArioSdk()]).then(([wfMod, sdkMod]) => {
+        Promise.all([loadWayfinder(), loadArioSdk(), import('@solana/kit')]).then(([wfMod, sdkMod, solanaKit]) => {
             if (wfMod && sdkMod) {
                 try {
                     const { FastestPingRoutingStrategy, RandomRoutingStrategy, CompositeRoutingStrategy, NetworkGatewaysProvider } = wfMod;
                     const ARIO = sdkMod.ARIO;
+                    const rpc = solanaKit.createSolanaRpc(sdkMod.MAINNET_RPC_URL ?? 'https://api.mainnet-beta.solana.com');
+                    const arioClient = ARIO.init({ rpc });
 
                     const primaryProvider = new NetworkGatewaysProvider({
-                        ario: ARIO.mainnet(),
+                        ario: arioClient,
                         sortBy: 'operatorStake',
                         limit: 10,
                     });
 
                     const fallbackProvider = new NetworkGatewaysProvider({
-                        ario: ARIO.mainnet(),
+                        ario: arioClient,
                         sortBy: 'operatorStake',
                         limit: 20,
                     });
