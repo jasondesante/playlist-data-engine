@@ -98,7 +98,24 @@ export interface ArweaveGatewayManagerConfig {
     slowResponseThreshold?: number;
     /** Number of consecutive slow responses before proactive gateway rotation (default: 3) */
     maxSlowResponses?: number;
+    /**
+     * Solana RPC URL used by the ar.io SDK to fetch the gateway registry for Wayfinder.
+     * Defaults to `https://solana-rpc.publicnode.com` — a public CORS-enabled endpoint
+     * that works without signup. For production / heavy use, pass a dedicated RPC
+     * (Helius, QuickNode, Triton, Alchemy, etc.) to avoid rate limits.
+     *
+     * Note: `https://api.mainnet-beta.solana.com` does NOT work in browsers — it returns
+     * 403 on browser-origin requests.
+     */
+    solanaRpcUrl?: string;
 }
+
+/**
+ * Default Solana RPC URL used by the ar.io SDK to read the gateway registry.
+ * Public, CORS-enabled, no signup required. Rate-limited — override via
+ * `solanaRpcUrl` config option for production.
+ */
+const DEFAULT_SOLANA_RPC_URL = 'https://solana-rpc.publicnode.com';
 
 /**
  * Options for prefetching URLs
@@ -311,6 +328,8 @@ export class ArweaveGatewayManager {
     private readonly slowResponseThreshold: number;
     /** Number of consecutive slow responses before proactive gateway rotation (default: 3) */
     private readonly maxSlowResponses: number;
+    /** Solana RPC URL used by ar.io SDK for the gateway registry */
+    private readonly solanaRpcUrl: string;
 
     constructor(config?: ArweaveGatewayManagerConfig) {
         // Deep-clone gateways to avoid mutating the original config objects
@@ -319,6 +338,7 @@ export class ArweaveGatewayManager {
         this.cacheTTL = config?.cacheTTL ?? DEFAULT_CACHE_TTL;
         this.slowResponseThreshold = config?.slowResponseThreshold ?? 8000;
         this.maxSlowResponses = config?.maxSlowResponses ?? 3;
+        this.solanaRpcUrl = config?.solanaRpcUrl ?? DEFAULT_SOLANA_RPC_URL;
 
         // Sort gateways by priority
         this.gateways.sort((a, b) => a.priority - b.priority);
@@ -340,7 +360,7 @@ export class ArweaveGatewayManager {
                 try {
                     const { FastestPingRoutingStrategy, RandomRoutingStrategy, CompositeRoutingStrategy, NetworkGatewaysProvider } = wfMod;
                     const ARIO = sdkMod.ARIO;
-                    const rpc = solanaKit.createSolanaRpc(sdkMod.MAINNET_RPC_URL ?? 'https://api.mainnet-beta.solana.com');
+                    const rpc = solanaKit.createSolanaRpc(this.solanaRpcUrl);
                     const arioClient = ARIO.init({ rpc });
 
                     const primaryProvider = new NetworkGatewaysProvider({

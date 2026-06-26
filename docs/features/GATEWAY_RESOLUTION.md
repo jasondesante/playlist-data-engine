@@ -104,17 +104,20 @@ Both packages must load successfully for the full composite routing strategy. Th
 
 ### Composite Routing Strategy
 
-When both packages load, the Wayfinder client is initialized with a two-layer routing strategy in [arweaveGatewayManager.ts:304-348](../../src/utils/arweaveGatewayManager.ts#L304-L348):
+When both packages load, the Wayfinder client is initialized with a two-layer routing strategy in [arweaveGatewayManager.ts:338-383](../../src/utils/arweaveGatewayManager.ts#L338-L383):
 
 ```typescript
+const rpc = solanaKit.createSolanaRpc(this.solanaRpcUrl);
+const arioClient = ARIO.init({ rpc });
+
 const primaryProvider = new NetworkGatewaysProvider({
-    ario: ARIO.mainnet(),
+    ario: arioClient,
     sortBy: 'operatorStake',
     limit: 10,
 });
 
 const fallbackProvider = new NetworkGatewaysProvider({
-    ario: ARIO.mainnet(),
+    ario: arioClient,
     sortBy: 'operatorStake',
     limit: 20,
 });
@@ -135,6 +138,24 @@ this.wayfinder = wfMod.createWayfinderClient({
 | `RandomRoutingStrategy` | Top 20 by operator stake | — | Fallback: if all pings fail, pick randomly from wider pool |
 
 If either `@ar.io/sdk` is unavailable or the custom strategy throws, it falls back to `createWayfinderClient()` with no arguments (default routing).
+
+### Solana RPC Dependency
+
+As of `@ar.io/sdk` v4, the AR.IO gateway registry lives on Solana — `ARIO.init({ rpc })` requires a Solana RPC client to read the gateway list that powers `NetworkGatewaysProvider`. Without a working Solana RPC, `NetworkGatewaysProvider` returns no gateways and `CompositeRoutingStrategy` fails with `all strategies failed`, killing the Wayfinder fallback entirely (static gateways still work).
+
+The RPC URL is configurable via `ArweaveGatewayManagerConfig.solanaRpcUrl`:
+
+```typescript
+new ArweaveGatewayManager({
+    solanaRpcUrl: 'https://mainnet.helius-rpc.com/?api-key=YOUR_KEY',
+});
+```
+
+**Default:** `https://solana-rpc.publicnode.com` — public, CORS-enabled, no signup required. Works out of the box but is rate-limited; override for production.
+
+**Do not use `https://api.mainnet-beta.solana.com`** — Solana Labs blocks browser-origin requests with HTTP 403, which guarantees Wayfinder will fail in any browser context.
+
+**Recommended providers for production:** Helius, QuickNode, Triton, Alchemy — all have free tiers with CORS enabled and much higher rate limits than the public RPC.
 
 ### How Wayfinder Is Used
 
@@ -269,6 +290,7 @@ const manager = new ArweaveGatewayManager({
     cacheTTL: 86400000,
     slowResponseThreshold: 8000,
     maxSlowResponses: 3,
+    solanaRpcUrl: 'https://solana-rpc.publicnode.com',
 });
 ```
 
@@ -279,6 +301,7 @@ const manager = new ArweaveGatewayManager({
 | `cacheTTL` | `number` | `86400000` | Per-txId cache TTL (24 hours) |
 | `slowResponseThreshold` | `number` | `8000` | Threshold above which a fetch is "slow" (ms) |
 | `maxSlowResponses` | `number` | `3` | Consecutive slow fetches before proactive gateway rotation |
+| `solanaRpcUrl` | `string` | `https://solana-rpc.publicnode.com` | Solana RPC URL for `@ar.io/sdk` gateway registry reads. Required for `NetworkGatewaysProvider` (Wayfinder). See [Solana RPC Dependency](#solana-rpc-dependency). |
 
 ### Methods
 

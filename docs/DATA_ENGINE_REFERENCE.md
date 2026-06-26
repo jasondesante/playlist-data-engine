@@ -1746,6 +1746,8 @@ The engine includes a built-in Arweave gateway manager (`arweaveGatewayManager`)
 
 **Wayfinder configuration:** Uses `NetworkGatewaysProvider` (top 10 gateways by operator stake) as the primary candidate pool with `FastestPingRoutingStrategy` (3s timeout). Falls back to a wider pool of 20 gateways via `RandomRoutingStrategy`. Requires both `@ar.io/wayfinder-core` and `@ar.io/sdk`.
 
+**Solana RPC dependency:** The ar.io SDK reads the gateway registry from Solana, so Wayfinder needs a Solana RPC URL. The default is `https://solana-rpc.publicnode.com` — public, CORS-enabled, no signup required, but rate-limited. For production use, override via the `solanaRpcUrl` config option with a dedicated RPC (Helius, QuickNode, Triton, Alchemy, etc.). **Do not use `https://api.mainnet-beta.solana.com`** — Solana Labs blocks browser-origin requests with HTTP 403, which breaks Wayfinder entirely.
+
 **Default gateways:** arweave.net → ar.io → ardrive.net → turbo-gateway.com
 
 #### Key Public Methods
@@ -1766,6 +1768,7 @@ The engine includes a built-in Arweave gateway manager (`arweaveGatewayManager`)
 | `cacheTTL` | `number` | `7200000` | Per-txId cache TTL (ms, default 2 hours) |
 | `slowResponseThreshold` | `number` | `8000` | Threshold above which a fetch is "slow" (ms) |
 | `maxSlowResponses` | `number` | `3` | Consecutive slow responses before proactive gateway rotation |
+| `solanaRpcUrl` | `string` | `https://solana-rpc.publicnode.com` | Solana RPC URL for the ar.io SDK gateway registry. Override with a dedicated RPC (Helius, QuickNode, etc.) for production. |
 
 **Persisted gateway:** The active gateway is saved to `localStorage` with a 30-minute TTL. Expired persisted gateways are ignored on the next session, forcing fresh discovery.
 
