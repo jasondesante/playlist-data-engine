@@ -112,14 +112,14 @@ const arioClient = ARIO.init({ rpc });
 
 const primaryProvider = new NetworkGatewaysProvider({
     ario: arioClient,
-    sortBy: 'operatorStake',
-    limit: 10,
+    sortBy: 'weights.compositeWeight',
+    limit: 50,
 });
 
 const fallbackProvider = new NetworkGatewaysProvider({
     ario: arioClient,
-    sortBy: 'operatorStake',
-    limit: 20,
+    sortBy: 'weights.compositeWeight',
+    limit: 100,
 });
 
 this.wayfinder = wfMod.createWayfinderClient({
@@ -134,10 +134,78 @@ this.wayfinder = wfMod.createWayfinderClient({
 
 | Strategy | Gateway Pool | Timeout | Purpose |
 |----------|-------------|---------|---------|
-| `FastestPingRoutingStrategy` | Top 10 by operator stake | 3000ms | Primary: ping all 10, pick the fastest |
-| `RandomRoutingStrategy` | Top 20 by operator stake | — | Fallback: if all pings fail, pick randomly from wider pool |
+| `FastestPingRoutingStrategy` | Top 50 by composite weight | 3000ms | Primary: ping all 50, pick the fastest |
+| `RandomRoutingStrategy` | Top 100 by composite weight | — | Fallback: if all pings fail, pick randomly from wider pool |
 
 If either `@ar.io/sdk` is unavailable or the custom strategy throws, it falls back to `createWayfinderClient()` with no arguments (default routing).
+
+### Tuning the Gateway Pool
+
+The `NetworkGatewaysProvider` is what decides *which* gateways Wayfinder considers. Two knobs matter: **`sortBy`** (how to rank the network's hundreds of gateways) and **`limit`** (how many to keep). Both are exposed as config on `ArweaveGatewayManager` — see [Configuration Options](#configuration-options) below.
+
+**`wayfinderSortBy` options** (defined in `@ar.io/wayfinder-core`'s `SortBy` type):
+
+| Value | Ranks by | Use when |
+|---|---|---|
+| `weights.compositeWeight` *(default)* | AR.IO's combined performance + tenure + stake + observer score | You want the protocol's own "best overall" ranking. Recommended general default. |
+| `weights.normalizedCompositeWeight` | Composite weight normalized across the network | Similar to compositeWeight but scale-adjusted. |
+| `weights.gatewayPerformanceRatio` | Recent uptime / response performance | You care most about speed and reliability, not network reputation. |
+| `weights.tenureWeight` | Time in good standing | Older = battle-tested, but stale gateways may have decayed. |
+| `weights.stakeWeight` | Normalized operator stake | Same problem as raw stake — surfaces whales. |
+| `stats.passedConsecutiveEpochs` | Consecutive epochs the gateway passed observation | Reliability proxy — gateways that consistently meet network checks. |
+| `totalDelegatedStake` | Stake delegated *by other users* | Weak community-trust signal. |
+| `startTimestamp` | When the gateway joined the network | Roughly correlates with tenure. |
+| `operatorStake` | Raw tokens locked by the operator | **Not recommended** — a single operator can spam subdomains (e.g. `*.noddex.com`) and dominate the top N. |
+
+**`limit`** controls how many gateways the provider returns. The two providers use different limits on purpose:
+- **`wayfinderPrimaryLimit`** (default 50): pool used by `FastestPingRoutingStrategy`. Keep small enough that pinging all of them stays under the 3s timeout.
+- **`wayfinderFallbackLimit`** (default 100): pool used by `RandomRoutingStrategy`. Wider pools cost nothing because `Random` just picks one without pinging — they just give more variety across sessions.
+
+**Why one operator can dominate**: AR.IO ranks per *gateway record*, not per operator. A single operator running `sol01.example.com` through `sol10.example.com` will fill 10 slots if they rank high on the chosen `sortBy`. `compositeWeight` mitigates this somewhat (subdomains generally have similar weights so they cluster together), but the only real fix is custom base-domain deduplication wrapping the provider — not currently implemented.
+
+### Wayfinder Strategy Presets
+
+The `wayfinderStrategy` config option picks the routing approach. Presets map to combinations of `@ar.io/wayfinder-core` strategy classes so consumers don't have to import the SDK themselves.
+
+| Preset | Behavior | Use when |
+|---|---|---|
+| `'composite-ping-random'` *(default)* | `FastestPing` over primary pool → falls back to `Random` over fallback pool | Balanced speed + resilience. Recommended default. |
+| `'random-only'` | Pick uniformly at random from fallback pool, no pinging | You want max variety across sessions and don't care about ping-optimal selection. Spreads load across the network. |
+| `'ping-only'` | Ping primary pool, pick fastest, no random fallback | You want strict "fastest available" behavior. If all pings fail, Wayfinder returns nothing and static fallbacks take over. |
+| `'round-robin'` | Cycle through primary pool in order | Predictable distribution. No health awareness — a dead gateway in the rotation will be picked. |
+
+Strategy classes Wayfinder also exposes but aren't covered by presets (would require forking): `StaticRoutingStrategy` (always one hardcoded gateway), `PreferredWithFallbackRoutingStrategy` (try a pinned gateway first), and raw `CompositeRoutingStrategy` with custom chain order. Add a new preset value to [arweaveGatewayManager.ts](../../src/utils/arweaveGatewayManager.ts) if you need one of these.
+
+### Configuration Options
+
+All Wayfinder knobs are passable to the `ArweaveGatewayManager` constructor:
+
+```typescript
+import { ArweaveGatewayManager } from 'playlist-data-engine';
+
+const manager = new ArweaveGatewayManager({
+    // Solana RPC for ar.io SDK registry reads
+    solanaRpcUrl: 'https://mainnet.helius-rpc.com/?api-key=YOUR_KEY',
+
+    // How AR.IO ranks gateways before building the candidate pool
+    wayfinderSortBy: 'weights.gatewayPerformanceRatio',
+
+    // Pool sizes
+    wayfinderPrimaryLimit: 30,    // FastestPing pool (default 50)
+    wayfinderFallbackLimit: 200,  // Random pool (default 100)
+
+    // Routing strategy preset
+    wayfinderStrategy: 'random-only',
+});
+```
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `solanaRpcUrl` | `string` | `https://solana-rpc.publicnode.com` | Solana RPC for `@ar.io/sdk` registry reads. |
+| `wayfinderSortBy` | `WayfinderSortBy` | `'weights.compositeWeight'` | Gateway ranking field — see table above. |
+| `wayfinderPrimaryLimit` | `number` | `50` | Primary (FastestPing) pool size. |
+| `wayfinderFallbackLimit` | `number` | `100` | Fallback (Random) pool size. |
+| `wayfinderStrategy` | `WayfinderStrategy` | `'composite-ping-random'` | Routing strategy preset — see table above. |
 
 ### Solana RPC Dependency
 
@@ -291,6 +359,10 @@ const manager = new ArweaveGatewayManager({
     slowResponseThreshold: 8000,
     maxSlowResponses: 3,
     solanaRpcUrl: 'https://solana-rpc.publicnode.com',
+    wayfinderSortBy: 'weights.compositeWeight',
+    wayfinderPrimaryLimit: 50,
+    wayfinderFallbackLimit: 100,
+    wayfinderStrategy: 'composite-ping-random',
 });
 ```
 
@@ -301,7 +373,11 @@ const manager = new ArweaveGatewayManager({
 | `cacheTTL` | `number` | `86400000` | Per-txId cache TTL (24 hours) |
 | `slowResponseThreshold` | `number` | `8000` | Threshold above which a fetch is "slow" (ms) |
 | `maxSlowResponses` | `number` | `3` | Consecutive slow fetches before proactive gateway rotation |
-| `solanaRpcUrl` | `string` | `https://solana-rpc.publicnode.com` | Solana RPC URL for `@ar.io/sdk` gateway registry reads. Required for `NetworkGatewaysProvider` (Wayfinder). See [Solana RPC Dependency](#solana-rpc-dependency). |
+| `solanaRpcUrl` | `string` | `https://solana-rpc.publicnode.com` | Solana RPC URL for `@ar.io/sdk` gateway registry reads. See [Solana RPC Dependency](#solana-rpc-dependency). |
+| `wayfinderSortBy` | `WayfinderSortBy` | `weights.compositeWeight` | How AR.IO ranks gateways before building the pool. See [Tuning the Gateway Pool](#tuning-the-gateway-pool). |
+| `wayfinderPrimaryLimit` | `number` | `50` | Primary (FastestPing) pool size. |
+| `wayfinderFallbackLimit` | `number` | `100` | Fallback (Random) pool size. |
+| `wayfinderStrategy` | `WayfinderStrategy` | `composite-ping-random` | Routing strategy preset. See [Wayfinder Strategy Presets](#wayfinder-strategy-presets). |
 
 ### Methods
 

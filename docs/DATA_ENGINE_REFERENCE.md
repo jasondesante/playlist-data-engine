@@ -1744,7 +1744,7 @@ The engine includes a built-in Arweave gateway manager (`arweaveGatewayManager`)
 
 **Gateway resolution strategy:** Sequential fallback — arweave.net first (most reliable), then the persisted gateway from localStorage, then AR.IO Wayfinder (wider pool via `FastestPingRoutingStrategy` + `RandomRoutingStrategy` fallback), then remaining static gateways. Each gateway is verified with a real fetch before being used. Dead persisted gateways are cleared automatically.
 
-**Wayfinder configuration:** Uses `NetworkGatewaysProvider` (top 10 gateways by operator stake) as the primary candidate pool with `FastestPingRoutingStrategy` (3s timeout). Falls back to a wider pool of 20 gateways via `RandomRoutingStrategy`. Requires both `@ar.io/wayfinder-core` and `@ar.io/sdk`.
+**Wayfinder configuration:** Uses `NetworkGatewaysProvider` (top 50 gateways by `weights.compositeWeight` — AR.IO's protocol-level composite of performance, tenure, stake, and observer behavior) as the primary candidate pool with `FastestPingRoutingStrategy` (3s timeout). Falls back to a wider pool of 100 gateways via `RandomRoutingStrategy`. Requires both `@ar.io/wayfinder-core` and `@ar.io/sdk`. See [GATEWAY_RESOLUTION.md](./features/GATEWAY_RESOLUTION.md#tuning-the-gateway-pool) for the full list of `sortBy` options and routing strategy alternatives.
 
 **Solana RPC dependency:** The ar.io SDK reads the gateway registry from Solana, so Wayfinder needs a Solana RPC URL. The default is `https://solana-rpc.publicnode.com` — public, CORS-enabled, no signup required, but rate-limited. For production use, override via the `solanaRpcUrl` config option with a dedicated RPC (Helius, QuickNode, Triton, Alchemy, etc.). **Do not use `https://api.mainnet-beta.solana.com`** — Solana Labs blocks browser-origin requests with HTTP 403, which breaks Wayfinder entirely.
 
@@ -1769,6 +1769,10 @@ The engine includes a built-in Arweave gateway manager (`arweaveGatewayManager`)
 | `slowResponseThreshold` | `number` | `8000` | Threshold above which a fetch is "slow" (ms) |
 | `maxSlowResponses` | `number` | `3` | Consecutive slow responses before proactive gateway rotation |
 | `solanaRpcUrl` | `string` | `https://solana-rpc.publicnode.com` | Solana RPC URL for the ar.io SDK gateway registry. Override with a dedicated RPC (Helius, QuickNode, etc.) for production. |
+| `wayfinderSortBy` | `WayfinderSortBy` | `weights.compositeWeight` | How AR.IO ranks gateways before building the Wayfinder pool. See [Tuning the Gateway Pool](./features/GATEWAY_RESOLUTION.md#tuning-the-gateway-pool). |
+| `wayfinderPrimaryLimit` | `number` | `50` | Primary (FastestPing) Wayfinder pool size. |
+| `wayfinderFallbackLimit` | `number` | `100` | Fallback (Random) Wayfinder pool size. |
+| `wayfinderStrategy` | `WayfinderStrategy` | `composite-ping-random` | Wayfinder routing strategy preset. See [Wayfinder Strategy Presets](./features/GATEWAY_RESOLUTION.md#wayfinder-strategy-presets). |
 
 **Persisted gateway:** The active gateway is saved to `localStorage` with a 30-minute TTL. Expired persisted gateways are ignored on the next session, forcing fresh discovery.
 

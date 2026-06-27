@@ -108,7 +108,65 @@ export interface ArweaveGatewayManagerConfig {
      * 403 on browser-origin requests.
      */
     solanaRpcUrl?: string;
+    /**
+     * How AR.IO ranks gateways before building the Wayfinder candidate pool.
+     * Defaults to `'weights.compositeWeight'` — AR.IO's protocol-level composite of
+     * performance, tenure, stake, and observer behavior. See the `sortBy` table in
+     * docs/features/GATEWAY_RESOLUTION.md for the full list of options.
+     */
+    wayfinderSortBy?: WayfinderSortBy;
+    /**
+     * Number of top-ranked gateways in the primary pool (used by `FastestPingRoutingStrategy`).
+     * All N are pinged in parallel within the 3s timeout; the fastest wins. Default: 50.
+     * Keep small enough that ping rounds stay responsive.
+     */
+    wayfinderPrimaryLimit?: number;
+    /**
+     * Number of top-ranked gateways in the fallback pool (used by `RandomRoutingStrategy`).
+     * One is picked uniformly at random without pinging, so wider pools cost nothing and
+     * add variety across sessions. Default: 100.
+     */
+    wayfinderFallbackLimit?: number;
+    /**
+     * Wayfinder routing strategy preset.
+     *
+     * - `'composite-ping-random'` (default): try `FastestPing` over the primary pool,
+     *   fall back to `Random` over the fallback pool. Best balance of speed + resilience.
+     * - `'random-only'`: pick uniformly at random from the fallback pool. Spreads load,
+     *   maximizes variety across sessions, no ping overhead.
+     * - `'ping-only'`: ping all of the primary pool, pick fastest. No random fallback —
+     *   if all pings fail, Wayfinder returns nothing and the static fallback chain takes over.
+     * - `'round-robin'`: cycle through the primary pool in order. Predictable distribution,
+     *   no health awareness.
+     */
+    wayfinderStrategy?: WayfinderStrategy;
 }
+
+/**
+ * Valid `sortBy` values accepted by `NetworkGatewaysProvider` for ranking gateways.
+ * See docs/features/GATEWAY_RESOLUTION.md for guidance on which to pick.
+ */
+export type WayfinderSortBy =
+    | 'weights.compositeWeight'
+    | 'weights.normalizedCompositeWeight'
+    | 'weights.gatewayPerformanceRatio'
+    | 'weights.tenureWeight'
+    | 'weights.stakeWeight'
+    | 'stats.passedConsecutiveEpochs'
+    | 'totalDelegatedStake'
+    | 'startTimestamp'
+    | 'operatorStake';
+
+/**
+ * Routing strategy presets for Wayfinder. Maps to combinations of `@ar.io/wayfinder-core`
+ * strategy classes — exposed as presets (not raw strategy objects) so consumers don't
+ * have to import the SDK themselves.
+ */
+export type WayfinderStrategy =
+    | 'composite-ping-random'
+    | 'random-only'
+    | 'ping-only'
+    | 'round-robin';
 
 /**
  * Default Solana RPC URL used by the ar.io SDK to read the gateway registry.
@@ -318,6 +376,21 @@ export class ArweaveGatewayManager {
     private inflightControllers: Map<string, AbortController> = new Map();
     /** AR.IO Wayfinder client for dynamic routing */
     private wayfinder: Wayfinder | null = null;
+    /**
+     * Reference to the primary gateways provider so we can fetch the ranked list
+     * directly after Wayfinder's first pick fails — lets us walk the list instead
+     * of re-running the full ping race for each retry.
+     */
+    private wayfinderGatewaysProvider: { getGateways(): Promise<URL[]> } | null = null;
+    /**
+     * In-memory cache of the ranked gateway list from the provider. Avoids hitting
+     * the Solana RPC every time we need to walk gateways. Refreshed when stale.
+     */
+    private rankedGatewaysCache: URL[] | null = null;
+    /** Timestamp (ms since epoch) when the ranked gateway list was last refreshed. */
+    private rankedGatewaysCacheTimestamp: number = 0;
+    /** TTL for the ranked gateway list cache (30 minutes). */
+    private readonly RANKED_GATEWAYS_TTL_MS = 30 * 60 * 1000;
     /** The currently active dynamic gateway. Used globally to prevent constant switching. */
     private activeGateway: GatewayConfig | null = null;
     /** Time of the most recent successful resolve/fetch for the active gateway (ms) */
@@ -330,6 +403,14 @@ export class ArweaveGatewayManager {
     private readonly maxSlowResponses: number;
     /** Solana RPC URL used by ar.io SDK for the gateway registry */
     private readonly solanaRpcUrl: string;
+    /** Sort field used by NetworkGatewaysProvider when ranking gateways */
+    private readonly wayfinderSortBy: WayfinderSortBy;
+    /** Pool size for the primary (FastestPing) provider */
+    private readonly wayfinderPrimaryLimit: number;
+    /** Pool size for the fallback (Random) provider */
+    private readonly wayfinderFallbackLimit: number;
+    /** Routing strategy preset */
+    private readonly wayfinderStrategy: WayfinderStrategy;
 
     constructor(config?: ArweaveGatewayManagerConfig) {
         // Deep-clone gateways to avoid mutating the original config objects
@@ -339,6 +420,10 @@ export class ArweaveGatewayManager {
         this.slowResponseThreshold = config?.slowResponseThreshold ?? 8000;
         this.maxSlowResponses = config?.maxSlowResponses ?? 3;
         this.solanaRpcUrl = config?.solanaRpcUrl ?? DEFAULT_SOLANA_RPC_URL;
+        this.wayfinderSortBy = config?.wayfinderSortBy ?? 'weights.compositeWeight';
+        this.wayfinderPrimaryLimit = config?.wayfinderPrimaryLimit ?? 50;
+        this.wayfinderFallbackLimit = config?.wayfinderFallbackLimit ?? 100;
+        this.wayfinderStrategy = config?.wayfinderStrategy ?? 'composite-ping-random';
 
         // Sort gateways by priority
         this.gateways.sort((a, b) => a.priority - b.priority);
@@ -351,44 +436,66 @@ export class ArweaveGatewayManager {
         // Restore active gateway from localStorage (persists across sessions)
         this.activeGateway = this.loadPersistedGateway();
 
-        // Initialize Wayfinder lazily with FastestPing routing strategy.
-        // Uses NetworkGatewaysProvider (top 10 gateways by operator stake) for
-        // a much larger candidate pool than the 4 hardcoded static gateways.
-        // Falls back to RandomRoutingStrategy from a wider pool if all pings fail.
+        // Initialize Wayfinder lazily. The routing strategy and gateway pool are driven
+        // by config: `wayfinderSortBy` controls how AR.IO ranks gateways, `wayfinderPrimaryLimit`
+        // and `wayfinderFallbackLimit` size the candidate pools, and `wayfinderStrategy`
+        // picks the routing preset. Defaults are tuned for good variety + speed.
         Promise.all([loadWayfinder(), loadArioSdk(), import('@solana/kit')]).then(([wfMod, sdkMod, solanaKit]) => {
             if (wfMod && sdkMod) {
                 try {
-                    const { FastestPingRoutingStrategy, RandomRoutingStrategy, CompositeRoutingStrategy, NetworkGatewaysProvider } = wfMod;
+                    const {
+                        FastestPingRoutingStrategy,
+                        RandomRoutingStrategy,
+                        CompositeRoutingStrategy,
+                        RoundRobinRoutingStrategy,
+                        NetworkGatewaysProvider,
+                    } = wfMod;
                     const ARIO = sdkMod.ARIO;
                     const rpc = solanaKit.createSolanaRpc(this.solanaRpcUrl);
                     const arioClient = ARIO.init({ rpc });
 
                     const primaryProvider = new NetworkGatewaysProvider({
                         ario: arioClient,
-                        sortBy: 'operatorStake',
-                        limit: 10,
+                        sortBy: this.wayfinderSortBy,
+                        limit: this.wayfinderPrimaryLimit,
                     });
 
                     const fallbackProvider = new NetworkGatewaysProvider({
                         ario: arioClient,
-                        sortBy: 'operatorStake',
-                        limit: 20,
+                        sortBy: this.wayfinderSortBy,
+                        limit: this.wayfinderFallbackLimit,
                     });
 
-                    this.wayfinder = wfMod.createWayfinderClient({
-                        routingStrategy: new CompositeRoutingStrategy({
-                            strategies: [
-                                new FastestPingRoutingStrategy({
-                                    timeoutMs: 3000,
-                                    gatewaysProvider: primaryProvider,
-                                }),
-                                new RandomRoutingStrategy({
-                                    gatewaysProvider: fallbackProvider,
-                                }),
-                            ],
-                        }),
-                    }) as Wayfinder;
-                    this.logger.info('Wayfinder client initialized with FastestPing + Random fallback routing');
+                    // Hold a reference so tryWayfinder() can fetch the ranked list directly
+                    // and walk it on retries, instead of re-running Wayfinder's full ping race.
+                    this.wayfinderGatewaysProvider = primaryProvider;
+
+                    const routingStrategy = (() => {
+                        switch (this.wayfinderStrategy) {
+                            case 'random-only':
+                                return new RandomRoutingStrategy({ gatewaysProvider: fallbackProvider });
+                            case 'ping-only':
+                                return new FastestPingRoutingStrategy({ timeoutMs: 3000, gatewaysProvider: primaryProvider });
+                            case 'round-robin':
+                                return new RoundRobinRoutingStrategy({ gateways: [], gatewaysProvider: primaryProvider });
+                            case 'composite-ping-random':
+                            default:
+                                return new CompositeRoutingStrategy({
+                                    strategies: [
+                                        new FastestPingRoutingStrategy({ timeoutMs: 3000, gatewaysProvider: primaryProvider }),
+                                        new RandomRoutingStrategy({ gatewaysProvider: fallbackProvider }),
+                                    ],
+                                });
+                        }
+                    })();
+
+                    this.wayfinder = wfMod.createWayfinderClient({ routingStrategy }) as Wayfinder;
+                    this.logger.info('Wayfinder client initialized', {
+                        strategy: this.wayfinderStrategy,
+                        sortBy: this.wayfinderSortBy,
+                        primaryLimit: this.wayfinderPrimaryLimit,
+                        fallbackLimit: this.wayfinderFallbackLimit,
+                    });
                 } catch (err) {
                     this.logger.warn('Failed to configure Wayfinder routing strategy, using defaults', { error: err });
                     this.wayfinder = wfMod.createWayfinderClient() as Wayfinder;
@@ -930,32 +1037,76 @@ export class ArweaveGatewayManager {
      * Try Wayfinder as a last resort when all static gateways fail.
      * Returns the URL of a working Wayfinder-selected gateway, or null if it fails.
      */
+    /**
+     * Return the ranked gateway list from the primary `NetworkGatewaysProvider`,
+     * using an in-memory cache to avoid hitting Solana on every walk. Returns null
+     * if the provider is unavailable or the fetch fails.
+     */
+    private async getRankedGatewaysCached(signal?: AbortSignal): Promise<URL[] | null> {
+        if (!this.wayfinderGatewaysProvider) return null;
+
+        const now = Date.now();
+        const cacheAge = now - this.rankedGatewaysCacheTimestamp;
+        if (this.rankedGatewaysCache && cacheAge < this.RANKED_GATEWAYS_TTL_MS) {
+            this.logger.debug('Reusing cached ranked gateway list', {
+                size: this.rankedGatewaysCache.length,
+                ageMs: cacheAge,
+            });
+            return this.rankedGatewaysCache;
+        }
+
+        try {
+            const fresh = await this.withTimeout(
+                this.wayfinderGatewaysProvider.getGateways(),
+                this.timeout + 2000,
+                'Wayfinder provider getGateways timed out'
+            );
+            if (signal?.aborted) return null;
+            this.rankedGatewaysCache = fresh;
+            this.rankedGatewaysCacheTimestamp = now;
+            this.logger.info('Refreshed ranked gateway list cache', { size: fresh.length });
+            return fresh;
+        } catch (err) {
+            this.logger.debug('Failed to fetch ranked gateway list from provider', { error: err });
+            // If we have a stale cache, prefer that over returning nothing
+            if (this.rankedGatewaysCache) {
+                this.logger.debug('Falling back to stale ranked gateway cache', {
+                    size: this.rankedGatewaysCache.length,
+                    ageMs: cacheAge,
+                });
+                return this.rankedGatewaysCache;
+            }
+            return null;
+        }
+    }
+
     private async tryWayfinder(url: string, txId: string, pathSuffix: string, signal?: AbortSignal, excludeHost?: string | null): Promise<string | null> {
         if (!this.wayfinder) return null;
 
-        const MAX_WAYFINDER_ATTEMPTS = 3;
+        // Maximum number of gateways we'll HEAD-check from the walk list after Wayfinder's
+        // first pick. Caps worst-case latency — most files resolve in the first few tries.
+        const MAX_WALK_DEPTH = 10;
 
-        for (let attempt = 1; attempt <= MAX_WAYFINDER_ATTEMPTS; attempt++) {
+        // Track hosts we've already verified-and-failed so we don't re-check them when
+        // walking the list (Wayfinder's #1 pick is almost always in the ranked list too).
+        const failedHosts = new Set<string>();
+        if (excludeHost) failedHosts.add(excludeHost);
+
+        // Step A: Let Wayfinder's strategy make the smart first pick (e.g. FastestPing).
+        // This benefits from Wayfinder's ping race + caching across calls.
+        try {
+            this.logger.debug('Resolving via Wayfinder (first pick)', { txId });
+            const wayfinderUrlObj = await this.withTimeout(
+                this.wayfinder.resolveUrl({ originalUrl: url }),
+                this.timeout + 2000,
+                'Wayfinder resolution timed out'
+            );
+
             if (signal?.aborted) return null;
 
-            try {
-                this.logger.debug(`Resolving via Wayfinder (attempt ${attempt}/${MAX_WAYFINDER_ATTEMPTS})`, { txId });
-                const wayfinderUrlObj = await this.withTimeout(
-                    this.wayfinder.resolveUrl({ originalUrl: url }),
-                    this.timeout + 2000,
-                    'Wayfinder resolution timed out'
-                );
+            const wayfinderHost = wayfinderUrlObj.hostname;
 
-                if (signal?.aborted) return null;
-
-                const wayfinderHost = wayfinderUrlObj.hostname;
-
-                // Skip if Wayfinder resolved back to a host we already tried and failed
-                if (excludeHost && wayfinderHost === excludeHost) {
-                    this.logger.debug(`Wayfinder resolved to already-failed host ${wayfinderHost}, retrying`, { attempt });
-                    continue;
-                }
-
+            if (!failedHosts.has(wayfinderHost)) {
                 const wayfinderProtocol = wayfinderUrlObj.protocol.replace(':', '') as 'http' | 'https';
                 const wayfinderGateway: GatewayConfig = {
                     host: wayfinderHost,
@@ -963,38 +1114,82 @@ export class ArweaveGatewayManager {
                     priority: 0,
                 };
 
-                // Verify the Wayfinder-selected gateway actually has the file
-                const wayfinderResult = await this.checkGateway(txId, wayfinderGateway, pathSuffix, signal);
-                if (wayfinderResult) {
+                const checkResult = await this.checkGateway(txId, wayfinderGateway, pathSuffix, signal);
+                if (checkResult) {
                     const workingUrl = constructGatewayUrl(txId, wayfinderGateway, pathSuffix);
-                    // Only cache confirmed successes, not no-cors 'maybe' results
-                    if (wayfinderResult === true) {
+                    if (checkResult === true) {
                         this.setActiveGateway(wayfinderGateway, txId);
-                        this.logger.info('Gateway resolved via Wayfinder', {
-                            txId,
-                            gateway: wayfinderHost,
-                            attempt,
-                            pathSuffix,
-                            workingUrl,
+                        this.logger.info('Gateway resolved via Wayfinder (first pick)', {
+                            txId, gateway: wayfinderHost, pathSuffix, workingUrl,
                         });
                     } else {
-                        this.logger.info('Gateway maybe resolved via Wayfinder (no-cors)', {
-                            txId,
-                            gateway: wayfinderHost,
-                            attempt,
-                            pathSuffix,
-                            workingUrl,
+                        this.logger.info('Gateway maybe resolved via Wayfinder (first pick, no-cors)', {
+                            txId, gateway: wayfinderHost, pathSuffix, workingUrl,
                         });
                     }
                     return workingUrl;
                 }
-
-                this.logger.debug(`Wayfinder attempt ${attempt} gateway did not pass check`, { host: wayfinderHost });
-            } catch (err) {
-                this.logger.debug(`Wayfinder attempt ${attempt} failed`, { error: err });
+                this.logger.debug('Wayfinder first pick failed verify, will walk ranked list', { host: wayfinderHost });
+                failedHosts.add(wayfinderHost);
+            } else {
+                this.logger.debug('Wayfinder first pick was already excluded, skipping to walk', { host: wayfinderHost });
             }
+        } catch (err) {
+            this.logger.debug('Wayfinder first pick threw, will walk ranked list', { error: err });
         }
 
+        if (signal?.aborted) return null;
+
+        // Step B: Walk the ranked gateway list ourselves. No second ping race, no second
+        // Solana RPC call — we cache the ranked list in memory and reuse it across requests
+        // until the TTL expires.
+        const rankedGateways = await this.getRankedGatewaysCached(signal);
+        if (!rankedGateways || rankedGateways.length === 0) return null;
+
+        if (signal?.aborted) return null;
+
+        // Filter out hosts we've already tried/excluded, then walk in rank order
+        const toWalk = rankedGateways
+            .filter(g => !failedHosts.has(g.hostname))
+            .slice(0, MAX_WALK_DEPTH);
+
+        this.logger.debug('Walking Wayfinder ranked list', {
+            txId,
+            poolSize: rankedGateways.length,
+            walkSize: toWalk.length,
+        });
+
+        for (const gatewayUrl of toWalk) {
+            if (signal?.aborted) return null;
+
+            const candidate: GatewayConfig = {
+                host: gatewayUrl.hostname,
+                protocol: gatewayUrl.protocol.replace(':', '') as 'http' | 'https',
+                priority: 0,
+            };
+
+            const checkResult = await this.checkGateway(txId, candidate, pathSuffix, signal);
+            if (checkResult) {
+                const workingUrl = constructGatewayUrl(txId, candidate, pathSuffix);
+                if (checkResult === true) {
+                    this.setActiveGateway(candidate, txId);
+                    this.logger.info('Gateway resolved via Wayfinder ranked walk', {
+                        txId, gateway: candidate.host, pathSuffix, workingUrl,
+                    });
+                } else {
+                    this.logger.info('Gateway maybe resolved via Wayfinder ranked walk (no-cors)', {
+                        txId, gateway: candidate.host, pathSuffix, workingUrl,
+                    });
+                }
+                return workingUrl;
+            }
+            failedHosts.add(candidate.host);
+        }
+
+        this.logger.debug('Wayfinder ranked walk exhausted with no match', {
+            txId,
+            checkedHosts: Array.from(failedHosts),
+        });
         return null;
     }
 
