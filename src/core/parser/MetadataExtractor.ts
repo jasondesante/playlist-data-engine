@@ -15,7 +15,7 @@ export class MetadataExtractor {
      * 7. multimedia_url (Alternative media field)
      */
     static extractAudioUrl(data: Record<string, unknown>): string | null {
-        const compressedPriorities = ['mp3_url', 'lossy_audio', 'animation_url', 'audio_url', 'lossless_audio', 'audio', 'multimedia_url', "losslessAudio"];
+        const compressedPriorities = ['mp3_url', 'mp3Url', 'lossy_audio', 'lossyAudio', 'animation_url', 'animationUrl', 'audio_url', 'audioUrl', 'lossless_audio', 'losslessAudio', 'audio', 'multimedia_url', 'multimediaUrl'];
 
         for (const key of compressedPriorities) {
             if (data[key] && typeof data[key] === 'string') {
@@ -32,7 +32,7 @@ export class MetadataExtractor {
      * Priority: lossless_audio > animation_url (only if it looks like a lossless format)
      */
     static extractAudioUrlLossless(data: Record<string, unknown>): string | null {
-        const losslessPriorities = ['lossless_audio', 'wav_url', 'flac_url', 'losslessAudio', 'audio_url'];
+        const losslessPriorities = ['lossless_audio', 'losslessAudio', 'wav_url', 'wavUrl', 'flac_url', 'flacUrl', 'audio_url', 'audioUrl'];
 
         for (const key of losslessPriorities) {
             if (data[key] && typeof data[key] === 'string') {
@@ -61,7 +61,7 @@ export class MetadataExtractor {
      * 10. primaryMedia.uri (Primary media field)
      */
     static extractImageUrl(data: Record<string, unknown>): string | null {
-        const priorities = ['image_small', 'image', 'image_large', 'image_thumb', 'image_url', 'image_uri', 'image_preview'];
+        const priorities = ['image_small', 'imageSmall', 'image', 'image_large', 'imageLarge', 'image_thumb', 'imageThumb', 'image_url', 'imageUrl', 'image_uri', 'imageUri', 'image_preview', 'imagePreview'];
 
         for (const key of priorities) {
             if (data[key] && typeof data[key] === 'string') {
