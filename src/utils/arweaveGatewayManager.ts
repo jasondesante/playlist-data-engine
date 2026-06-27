@@ -819,7 +819,7 @@ export class ArweaveGatewayManager {
         if (this.wayfinder && !bypassWayfinder) {
             const stepStart = Date.now();
             this.logger.info('[gateway] Step 4 (wayfinder): trying');
-            const wayfinderResult = await this.tryWayfinder(url, txId, pathSuffix, signal, excludeHost);
+            const wayfinderResult = await this.tryWayfinder(txId, pathSuffix, signal, excludeHost);
             const stepMs = Date.now() - stepStart;
             if (wayfinderResult) {
                 this.logger.info('[gateway] Step 4 (wayfinder): success', { ms: stepMs, totalMs: Date.now() - chainStart });
@@ -890,7 +890,7 @@ export class ArweaveGatewayManager {
         }
 
         if (this.wayfinder) {
-            const wayfinderResult = await this.tryWayfinder(url, txId, pathSuffix, signal);
+            const wayfinderResult = await this.tryWayfinder(txId, pathSuffix, signal);
             if (wayfinderResult) return wayfinderResult;
         }
 
@@ -1111,7 +1111,7 @@ export class ArweaveGatewayManager {
         }
     }
 
-    private async tryWayfinder(url: string, txId: string, pathSuffix: string, signal?: AbortSignal, excludeHost?: string | null): Promise<string | null> {
+    private async tryWayfinder(txId: string, pathSuffix: string, signal?: AbortSignal, excludeHost?: string | null): Promise<string | null> {
         if (!this.wayfinder) return null;
 
         // Maximum number of gateways we'll HEAD-check from the walk list after Wayfinder's
@@ -1123,12 +1123,20 @@ export class ArweaveGatewayManager {
         const failedHosts = new Set<string>();
         if (excludeHost) failedHosts.add(excludeHost);
 
+        // Build a normalized path-style URL to feed Wayfinder. The source `url` may have
+        // a sandbox/ArNS subdomain hash (e.g. `https://<long-hash>.arweave.net/<txId>`),
+        // which Wayfinder will preserve when building per-gateway ping URLs — causing
+        // DNS failures against gateways that don't recognize that subdomain. Stripping
+        // to a plain path-style URL forces Wayfinder to ping `https://<gateway>/<txId>`
+        // instead, which is the canonical Arweave fetch convention.
+        const normalizedUrl = `https://arweave.net/${txId}${pathSuffix}`;
+
         // Step A: Let Wayfinder's strategy make the smart first pick (e.g. FastestPing).
         // This benefits from Wayfinder's ping race + caching across calls.
         try {
-            this.logger.debug('Resolving via Wayfinder (first pick)', { txId });
+            this.logger.debug('Resolving via Wayfinder (first pick)', { txId, normalizedUrl });
             const wayfinderUrlObj = await this.withTimeout(
-                this.wayfinder.resolveUrl({ originalUrl: url }),
+                this.wayfinder.resolveUrl({ originalUrl: normalizedUrl }),
                 this.timeout + 2000,
                 'Wayfinder resolution timed out'
             );
