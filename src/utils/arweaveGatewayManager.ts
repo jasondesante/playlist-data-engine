@@ -341,6 +341,14 @@ const DEFAULT_CACHE_TTL = 86400000;
 const ACTIVE_GATEWAY_STORAGE_KEY = 'arweave_active_gateway';
 
 /**
+ * localStorage key for persisting the ranked gateway list (from Wayfinder's
+ * `NetworkGatewaysProvider`) across sessions. Storing the list locally means
+ * subsequent page loads can walk gateways without making any Solana RPC calls
+ * — only the periodic refresh hits the network.
+ */
+const RANKED_GATEWAYS_STORAGE_KEY = 'arweave_ranked_gateways';
+
+/**
  * ArweaveGatewayManager class
  *
  * Manages gateway fallback for Arweave URLs with caching support.
@@ -389,8 +397,8 @@ export class ArweaveGatewayManager {
     private rankedGatewaysCache: URL[] | null = null;
     /** Timestamp (ms since epoch) when the ranked gateway list was last refreshed. */
     private rankedGatewaysCacheTimestamp: number = 0;
-    /** TTL for the ranked gateway list cache (30 minutes). */
-    private readonly RANKED_GATEWAYS_TTL_MS = 30 * 60 * 1000;
+    /** TTL for the ranked gateway list cache (2 hours). */
+    private readonly RANKED_GATEWAYS_TTL_MS = 2 * 60 * 60 * 1000;
     /** The currently active dynamic gateway. Used globally to prevent constant switching. */
     private activeGateway: GatewayConfig | null = null;
     /** Time of the most recent successful resolve/fetch for the active gateway (ms) */
@@ -403,6 +411,13 @@ export class ArweaveGatewayManager {
     private readonly maxSlowResponses: number;
     /** Solana RPC URL used by ar.io SDK for the gateway registry */
     private readonly solanaRpcUrl: string;
+    /**
+     * Whether the consumer passed their own Solana RPC URL. Used to flip the
+     * default of `bypassWayfinder` — when no custom RPC was provided, Wayfinder
+     * is opt-in (caller must pass `bypassWayfinder: false`) so the default RPC's
+     * rate limits don't silently degrade resolution.
+     */
+    private readonly hasCustomSolanaRpc: boolean;
     /** Sort field used by NetworkGatewaysProvider when ranking gateways */
     private readonly wayfinderSortBy: WayfinderSortBy;
     /** Pool size for the primary (FastestPing) provider */
@@ -420,6 +435,7 @@ export class ArweaveGatewayManager {
         this.slowResponseThreshold = config?.slowResponseThreshold ?? 8000;
         this.maxSlowResponses = config?.maxSlowResponses ?? 3;
         this.solanaRpcUrl = config?.solanaRpcUrl ?? DEFAULT_SOLANA_RPC_URL;
+        this.hasCustomSolanaRpc = typeof config?.solanaRpcUrl === 'string' && config.solanaRpcUrl.length > 0;
         this.wayfinderSortBy = config?.wayfinderSortBy ?? 'weights.compositeWeight';
         this.wayfinderPrimaryLimit = config?.wayfinderPrimaryLimit ?? 50;
         this.wayfinderFallbackLimit = config?.wayfinderFallbackLimit ?? 100;
@@ -435,6 +451,14 @@ export class ArweaveGatewayManager {
 
         // Restore active gateway from localStorage (persists across sessions)
         this.activeGateway = this.loadPersistedGateway();
+
+        // Restore the ranked gateway list from localStorage if it exists and is fresh.
+        // This means subsequent sessions can walk gateways with zero Solana RPC calls
+        // until the TTL expires.
+        const restoredRanked = this.loadPersistedRankedGateways();
+        if (restoredRanked) {
+            this.rankedGatewaysCache = restoredRanked;
+        }
 
         // Initialize Wayfinder lazily. The routing strategy and gateway pool are driven
         // by config: `wayfinderSortBy` controls how AR.IO ranks gateways, `wayfinderPrimaryLimit`
@@ -784,9 +808,15 @@ export class ArweaveGatewayManager {
         }
         this.logger.info('[gateway] Step 3 (fallbacks): failed', { ms: stepMs });
 
-        // Step 4: Try Wayfinder as last resort (wider pool, but slower)
-        // When bypassWayfinder is true, skip Wayfinder entirely.
-        if (this.wayfinder && !options?.bypassWayfinder) {
+        // Step 4: Try Wayfinder as last resort (wider pool, but slower).
+        // Default for `bypassWayfinder` depends on whether a custom Solana RPC was provided:
+        //   - Custom RPC provided → default is `false` (Wayfinder runs unless explicitly bypassed)
+        //   - No custom RPC (using the rate-limited public default) → default is `true`
+        //     (Wayfinder is skipped unless caller explicitly passes `bypassWayfinder: false`)
+        // This avoids silently degrading resolution when the default RPC hits rate limits.
+        const defaultBypassWayfinder = !this.hasCustomSolanaRpc;
+        const bypassWayfinder = options?.bypassWayfinder ?? defaultBypassWayfinder;
+        if (this.wayfinder && !bypassWayfinder) {
             const stepStart = Date.now();
             this.logger.info('[gateway] Step 4 (wayfinder): trying');
             const wayfinderResult = await this.tryWayfinder(url, txId, pathSuffix, signal, excludeHost);
@@ -1064,6 +1094,7 @@ export class ArweaveGatewayManager {
             if (signal?.aborted) return null;
             this.rankedGatewaysCache = fresh;
             this.rankedGatewaysCacheTimestamp = now;
+            this.persistRankedGateways(fresh, now);
             this.logger.info('Refreshed ranked gateway list cache', { size: fresh.length });
             return fresh;
         } catch (err) {
@@ -1228,6 +1259,65 @@ export class ArweaveGatewayManager {
             // localStorage unavailable or corrupted — ignore
         }
         return null;
+    }
+
+    /**
+     * Load the persisted ranked gateway list from localStorage. Returns null if
+     * unavailable, malformed, or expired.
+     */
+    private loadPersistedRankedGateways(): URL[] | null {
+        try {
+            if (typeof localStorage === 'undefined') return null;
+            const stored = localStorage.getItem(RANKED_GATEWAYS_STORAGE_KEY);
+            if (!stored) return null;
+            const parsed = JSON.parse(stored);
+            if (!parsed || !Array.isArray(parsed.gateways) || typeof parsed.timestamp !== 'number') return null;
+            const age = Date.now() - parsed.timestamp;
+            if (age > this.RANKED_GATEWAYS_TTL_MS) {
+                this.logger.info('Ignoring persisted ranked gateway list — expired', { ageMs: age });
+                this.clearPersistedRankedGateways();
+                return null;
+            }
+            const urls: URL[] = [];
+            for (const s of parsed.gateways) {
+                if (typeof s !== 'string') continue;
+                try { urls.push(new URL(s)); } catch { /* skip malformed */ }
+            }
+            if (urls.length === 0) return null;
+            this.rankedGatewaysCacheTimestamp = parsed.timestamp;
+            this.logger.info('Restored ranked gateway list from localStorage', { size: urls.length, ageMs: age });
+            return urls;
+        } catch {
+            return null;
+        }
+    }
+
+    /**
+     * Persist the ranked gateway list to localStorage so it survives reloads.
+     */
+    private persistRankedGateways(gateways: URL[], timestamp: number): void {
+        try {
+            if (typeof localStorage === 'undefined') return;
+            const data = {
+                gateways: gateways.map(g => g.toString()),
+                timestamp,
+            };
+            localStorage.setItem(RANKED_GATEWAYS_STORAGE_KEY, JSON.stringify(data));
+        } catch {
+            // localStorage full or unavailable — ignore
+        }
+    }
+
+    /**
+     * Clear the persisted ranked gateway list from localStorage.
+     */
+    private clearPersistedRankedGateways(): void {
+        try {
+            if (typeof localStorage === 'undefined') return;
+            localStorage.removeItem(RANKED_GATEWAYS_STORAGE_KEY);
+        } catch {
+            // ignore
+        }
     }
 
     /**

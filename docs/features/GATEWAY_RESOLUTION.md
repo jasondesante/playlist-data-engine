@@ -225,6 +225,8 @@ new ArweaveGatewayManager({
 
 **Recommended providers for production:** Helius, QuickNode, Triton, Alchemy — all have free tiers with CORS enabled and much higher rate limits than the public RPC.
 
+**Default behavior changes based on whether you provide a custom RPC:** When `solanaRpcUrl` is not set, the manager treats Wayfinder as opt-in — `resolveUrl(url)` defaults to `bypassWayfinder: true`. To use Wayfinder with the default RPC, you must explicitly pass `resolveUrl(url, { bypassWayfinder: false })`. When you do provide a custom `solanaRpcUrl`, Wayfinder is opt-out — it runs unless you pass `bypassWayfinder: true`. This avoids silently degrading resolution when the rate-limited public RPC fails.
+
 ### How Wayfinder Is Used
 
 Wayfinder is **not the primary resolution path**. It sits after static fallbacks as a last resort in [arweaveGatewayManager.ts:599-610](../../src/utils/arweaveGatewayManager.ts#L599-L610):
@@ -238,15 +240,17 @@ if (this.wayfinder) {
 }
 ```
 
-The [`tryWayfinder()`](../../src/utils/arweaveGatewayManager.ts#L819-L862) method:
+The `tryWayfinder()` method uses a **first-pick + walk-the-list** strategy:
 
-1. Calls `this.wayfinder.resolveUrl({ originalUrl: url })` with a **7-second timeout** (`this.timeout + 2000`)
-2. Extracts the hostname and protocol from the resolved URL
-3. Wraps it into a `GatewayConfig` and **verifies it with a real HEAD check**
-4. If the HEAD check passes, sets it as the active gateway and caches it
-5. If the HEAD check fails or Wayfinder throws, **retries up to 3 times** before returning `null`
+1. **First pick** — calls `this.wayfinder.resolveUrl({ originalUrl: url })` with a 7-second timeout. This lets Wayfinder's configured routing strategy (e.g. `FastestPingRoutingStrategy`) pick the best candidate, benefiting from its internal ping caching.
+2. Verifies the first pick with a real HEAD check against the txId. If it passes, sets it as the active gateway and returns.
+3. **Walk the ranked list** — if the first pick fails verification, instead of asking Wayfinder for a new pick (which re-runs the whole ping race), the engine fetches the ranked gateway list directly from `NetworkGatewaysProvider` and walks it in rank order. Up to `MAX_WALK_DEPTH = 10` candidates are HEAD-checked; the first that has the file wins.
+4. Already-failed hosts (from the first pick and any prior chain steps) are skipped during the walk.
 
-Key design choice: Wayfinder-selected gateways are **not trusted blindly**. Even though Wayfinder has its own health checks, the engine still verifies the gateway can actually serve the specific transaction. This prevents false positives where Wayfinder returns a gateway that works for the network but doesn't have the specific file.
+Key design choices:
+- **Wayfinder picks aren't trusted blindly** — even though Wayfinder has its own health checks, the engine verifies each candidate can serve the specific transaction. Prevents false positives where Wayfinder returns a gateway that works for the network but doesn't have the specific file.
+- **No redundant ping races** — the original retry loop re-ran Wayfinder's full ping selection on each attempt, which often returned the same fastest-but-broken gateway. Walking the ranked list is faster and explores actually different candidates.
+- **Ranked list is cached** — see [Ranked Gateway List Caching](#ranked-gateway-list-caching).
 
 ---
 
@@ -257,6 +261,23 @@ Key design choice: Wayfinder-selected gateways are **not trusted blindly**. Even
 The active gateway is persisted to `localStorage` under the key `arweave_active_gateway` with a **2-hour TTL**. On the next session or page load, the persisted gateway is restored and tried first (before arweave.net). If it's expired or fails, it's cleared immediately.
 
 This is a custom addition — Wayfinder itself has no persistence. It means the engine remembers which gateway was working across sessions, avoiding the latency of Wayfinder's ping-based routing on every startup.
+
+### Ranked Gateway List Caching
+
+The ranked gateway list returned by `NetworkGatewaysProvider.getGateways()` is cached in two layers to minimize Solana RPC traffic:
+
+1. **In-memory cache** — held on the manager instance after the first fetch. Used for the walk step of `tryWayfinder()` so retries within a single session never re-hit Solana.
+2. **localStorage persistence** — written under the key `arweave_ranked_gateways` whenever the in-memory cache refreshes. On the next page load, the persisted list hydrates the in-memory cache before any Wayfinder call.
+
+Both layers share the same **2-hour TTL** (`RANKED_GATEWAYS_TTL_MS`). The TTL is intentionally long: the AR.IO registry is slow-moving (gateways stake AR tokens to join, rankings shift on epoch-length performance metrics), so the top 50 by `compositeWeight` is essentially stable across hours. When the TTL expires, the next walk triggers a single refresh from the provider, which writes back to both layers. If the refresh fails (e.g. RPC outage), the stale cache is used as a fallback rather than returning nothing.
+
+**Net effect on Solana RPC usage:**
+- Cold start (no cache): 1 RPC call to fetch the list
+- Returning visit within 2 hours: 0 RPC calls (loaded from localStorage)
+- After 2 hours: 1 RPC call to refresh
+- Per file resolve within the cache window: 0 additional RPC calls
+
+This is especially important when using the default public RPC (`solana-rpc.publicnode.com`), since it's rate-limited. Persisting the list across sessions means even heavy users typically only make a handful of RPC calls per hour.
 
 ### Slow Gateway Detection & Tracking
 
