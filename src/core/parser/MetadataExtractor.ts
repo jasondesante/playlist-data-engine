@@ -124,7 +124,7 @@ export class MetadataExtractor {
      * 4. OpenSea-style attributes array with trait_type "Artist"
      */
     static extractArtist(data: Record<string, unknown>): string | null {
-        const priorities = ['artist', 'album_artist', 'albumArtist', 'created_by', 'createdBy', 'minter'];
+        const priorities = ['artist', 'artist_name', 'artistName', 'album_artist', 'albumArtist', 'created_by', 'createdBy', 'minter'];
 
         for (const key of priorities) {
             if (data[key] && typeof data[key] === 'string') {
