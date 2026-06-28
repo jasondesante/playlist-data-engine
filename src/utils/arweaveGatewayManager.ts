@@ -742,6 +742,14 @@ export class ArweaveGatewayManager {
         const chainStart = Date.now();
         const bypassArweaveNet = options?.bypassArweaveNet ?? false;
         let excludeHost: string | null = null;
+        // Track a 'maybe' result as a last-resort fallback. The chain
+        // prefers 'verified' results and continues walking past 'maybe's
+        // to find one — but if no gateway verifies, returning the best
+        // 'maybe' is better than returning the original URL unchanged.
+        // Without this, manifest-path URLs where Step 0's host responded
+        // via no-cors (status hidden) would short-circuit the chain and
+        // never try ardrive.net / g8way / Wayfinder.
+        let maybeFallback: string | null = null;
 
         // Step 0: Try the gateway already in the URL itself — if it's an HTTPS Arweave URL,
         // the gateway in the URL might just work. No sense skipping it.
@@ -757,10 +765,12 @@ export class ArweaveGatewayManager {
                 const result = await this.checkAndSetGateway(url, txId, pathSuffix, originalGateway, signal);
                 const stepMs = Date.now() - stepStart;
                 if (result) {
-                    this.logger.info('[gateway] Step 0 (original): success', { host: originalGateway.host, ms: stepMs, totalMs: Date.now() - chainStart });
-                    return result;
+                    this.logger.info(`[gateway] Step 0 (original): ${result.kind}`, { host: originalGateway.host, ms: stepMs, totalMs: Date.now() - chainStart });
+                    if (result.kind === 'verified') return result.url;
+                    maybeFallback ??= result.url;
+                } else {
+                    this.logger.info('[gateway] Step 0 (original): failed', { host: originalGateway.host, ms: stepMs });
                 }
-                this.logger.info('[gateway] Step 0 (original): failed', { host: originalGateway.host, ms: stepMs });
                 excludeHost = originalGateway.host;
             } catch {
                 // URL parsing failed — skip this step
@@ -773,12 +783,14 @@ export class ArweaveGatewayManager {
             const result = await this.checkAndSetGateway(url, txId, pathSuffix, this.activeGateway, signal);
             const stepMs = Date.now() - stepStart;
             if (result) {
-                this.logger.info('[gateway] Step 1 (persisted): success', { host: this.activeGateway.host, ms: stepMs, totalMs: Date.now() - chainStart });
-                return result;
+                this.logger.info(`[gateway] Step 1 (persisted): ${result.kind}`, { host: this.activeGateway.host, ms: stepMs, totalMs: Date.now() - chainStart });
+                if (result.kind === 'verified') return result.url;
+                maybeFallback ??= result.url;
+            } else {
+                this.logger.info('[gateway] Step 1 (persisted): failed, clearing', { ms: stepMs });
+                this.activeGateway = null;
+                this.clearPersistedGateway();
             }
-            this.logger.info('[gateway] Step 1 (persisted): failed, clearing', { ms: stepMs });
-            this.activeGateway = null;
-            this.clearPersistedGateway();
         }
 
         // Step 2: Try arweave.net (the official gateway — reliable fallback)
@@ -791,10 +803,12 @@ export class ArweaveGatewayManager {
                 const result = await this.checkAndSetGateway(url, txId, pathSuffix, arweaveNet, signal);
                 const stepMs = Date.now() - stepStart;
                 if (result) {
-                    this.logger.info('[gateway] Step 2 (arweave.net): success', { ms: stepMs, totalMs: Date.now() - chainStart });
-                    return result;
+                    this.logger.info(`[gateway] Step 2 (arweave.net): ${result.kind}`, { ms: stepMs, totalMs: Date.now() - chainStart });
+                    if (result.kind === 'verified') return result.url;
+                    maybeFallback ??= result.url;
+                } else {
+                    this.logger.info('[gateway] Step 2 (arweave.net): failed', { ms: stepMs });
                 }
-                this.logger.info('[gateway] Step 2 (arweave.net): failed', { ms: stepMs });
             }
         }
 
@@ -803,10 +817,12 @@ export class ArweaveGatewayManager {
         const fallbackResult = await this.tryFallbackGateways(url, txId, pathSuffix, signal, excludeHost);
         const stepMs = Date.now() - stepStart;
         if (fallbackResult) {
-            this.logger.info('[gateway] Step 3 (fallbacks): success', { ms: stepMs, totalMs: Date.now() - chainStart });
-            return fallbackResult;
+            this.logger.info(`[gateway] Step 3 (fallbacks): ${fallbackResult.kind}`, { ms: stepMs, totalMs: Date.now() - chainStart });
+            if (fallbackResult.kind === 'verified') return fallbackResult.url;
+            maybeFallback ??= fallbackResult.url;
+        } else {
+            this.logger.info('[gateway] Step 3 (fallbacks): failed', { ms: stepMs });
         }
-        this.logger.info('[gateway] Step 3 (fallbacks): failed', { ms: stepMs });
 
         // Step 4: Try Wayfinder as last resort (wider pool, but slower).
         // Default for `bypassWayfinder` depends on whether a custom Solana RPC was provided:
@@ -822,13 +838,22 @@ export class ArweaveGatewayManager {
             const wayfinderResult = await this.tryWayfinder(txId, pathSuffix, signal, excludeHost);
             const stepMs = Date.now() - stepStart;
             if (wayfinderResult) {
-                this.logger.info('[gateway] Step 4 (wayfinder): success', { ms: stepMs, totalMs: Date.now() - chainStart });
-                return wayfinderResult;
+                this.logger.info(`[gateway] Step 4 (wayfinder): ${wayfinderResult.kind}`, { ms: stepMs, totalMs: Date.now() - chainStart });
+                if (wayfinderResult.kind === 'verified') return wayfinderResult.url;
+                maybeFallback ??= wayfinderResult.url;
+            } else {
+                this.logger.info('[gateway] Step 4 (wayfinder): failed', { ms: stepMs });
             }
-            this.logger.info('[gateway] Step 4 (wayfinder): failed', { ms: stepMs });
         }
 
-        // Everything failed
+        // Everything failed — return the best 'maybe' we collected (if any)
+        // before falling back to the original URL. A 'maybe' is a gateway
+        // that responded via no-cors (status hidden) — better than nothing,
+        // and the consumer's actual content fetch will catch any 404s.
+        if (maybeFallback) {
+            this.logger.warn('No gateway verified, returning best maybe-result', { txId, pathSuffix, maybeUrl: maybeFallback });
+            return maybeFallback;
+        }
         this.logger.warn('All gateways (arweave.net + Wayfinder + fallbacks) failed, returning original URL', { txId, pathSuffix, originalUrl: url });
         return url;
     }
@@ -882,16 +907,17 @@ export class ArweaveGatewayManager {
         this.cache.delete(txId);
         this.clearPersistedGateway();
 
-        // Retry with same order: arweave.net → Wayfinder → fallbacks
+        // Retry with same order: arweave.net → Wayfinder → fallbacks.
+        // Each helper now returns {kind, url} | null — extract .url.
         const arweaveNet = this.gateways.find(g => g.host === 'arweave.net' && g.host !== failedHost);
         if (arweaveNet) {
             const result = await this.checkAndSetGateway(url, txId, pathSuffix, arweaveNet, signal);
-            if (result) return result;
+            if (result) return result.url;
         }
 
         if (this.wayfinder) {
             const wayfinderResult = await this.tryWayfinder(txId, pathSuffix, signal);
-            if (wayfinderResult) return wayfinderResult;
+            if (wayfinderResult) return wayfinderResult.url;
         }
 
         // Temporarily exclude the failed gateway from fallbacks
@@ -901,7 +927,7 @@ export class ArweaveGatewayManager {
         }
         const fallbackResult = await this.tryFallbackGateways(url, txId, pathSuffix, signal);
         this.gateways = origGateways;
-        if (fallbackResult) return fallbackResult;
+        if (fallbackResult) return fallbackResult.url;
 
         return url;
     }
@@ -940,9 +966,24 @@ export class ArweaveGatewayManager {
 
     /**
      * Check a single gateway and set it as active if it works.
-     * Returns the working URL, or null if the check failed.
+     *
+     * Returns one of:
+     *   - `{ kind: 'verified', url }`  — HEAD returned 2xx/3xx, gateway is confirmed working
+     *   - `{ kind: 'maybe', url }`     — HEAD failed (likely CORS), no-cors GET didn't throw.
+     *                                   Server responded but we can't verify status. Caller
+     *                                   should keep looking for a 'verified' result and use
+     *                                   'maybe' only as a last resort.
+     *   - `null`                       — gateway definitively failed
+     *
+     * Previously this returned `string | null` for both 'verified' and 'maybe', which forced
+     * `resolveGatewayChain` to bail on the first 'maybe' — even when other gateways might
+     * have a verified 2xx response. For manifest-path Arweave URLs (where the txid root
+     * serves a manifest and individual paths may 404), this meant the chain stopped at the
+     * first gateway that responded at all (even with 404s hidden behind no-cors opacity)
+     * and never tried alternates. Surfacing the distinction lets the chain prefer verified
+     * results and use 'maybe' only as a fallback.
      */
-    private async checkAndSetGateway(url: string, txId: string, pathSuffix: string, gateway: GatewayConfig, signal?: AbortSignal): Promise<string | null> {
+    private async checkAndSetGateway(url: string, txId: string, pathSuffix: string, gateway: GatewayConfig, signal?: AbortSignal): Promise<{ kind: 'verified' | 'maybe'; url: string } | null> {
         if (signal?.aborted) return null;
 
         const result = await this.checkGateway(txId, gateway, pathSuffix, signal);
@@ -955,7 +996,7 @@ export class ArweaveGatewayManager {
                 pathSuffix,
                 workingUrl,
             });
-            return workingUrl;
+            return { kind: 'verified', url: workingUrl };
         }
         if (result === 'maybe') {
             // no-cors says server responded but we can't confirm — return URL without caching
@@ -966,7 +1007,7 @@ export class ArweaveGatewayManager {
                 pathSuffix,
                 workingUrl,
             });
-            return workingUrl;
+            return { kind: 'maybe', url: workingUrl };
         }
 
         return null;
@@ -976,7 +1017,7 @@ export class ArweaveGatewayManager {
      * Try remaining fallback gateways (everything except arweave.net) in parallel.
      * Returns the URL of the first gateway that responds, or null if all fail.
      */
-    private async tryFallbackGateways(url: string, txId: string, pathSuffix: string, signal?: AbortSignal, excludeHost?: string | null): Promise<string | null> {
+    private async tryFallbackGateways(url: string, txId: string, pathSuffix: string, signal?: AbortSignal, excludeHost?: string | null): Promise<{ kind: 'verified' | 'maybe'; url: string } | null> {
         this.missCount++;
 
         const HEALTHY_FAILURE_THRESHOLD = 0.70;
@@ -996,51 +1037,71 @@ export class ArweaveGatewayManager {
         if (signal?.aborted) return null;
         if (gatewaysToTry.length === 0) return null;
 
-        const tryGateways = async (gateways: GatewayConfig[]): Promise<string | null> => {
+        // Promise.any returns the first fulfilled — but Promise.any's "fulfilled"
+        // includes both verified AND maybe results (both are truthy in the inner
+        // promise). Track the first verified AND the first maybe separately so
+        // the caller can prefer verified.
+        const tryGateways = async (gateways: GatewayConfig[]): Promise<{ kind: 'verified' | 'maybe'; url: string } | null> => {
             if (signal?.aborted || gateways.length === 0) return null;
 
             const controller = new AbortController();
             const onExternalAbort = () => controller.abort();
             signal?.addEventListener('abort', onExternalAbort, { once: true });
 
+            let firstVerified: { kind: 'verified'; url: string } | null = null;
+            let firstMaybe: { kind: 'maybe'; url: string } | null = null;
             let resolved = false;
 
             try {
-                const result = await Promise.any(
-                    gateways.map(async (gateway): Promise<string> => {
+                // Use Promise.allSettled so we collect BOTH verified and maybe
+                // results across all gateways, then prefer verified. Promise.any
+                // would return whatever resolved first regardless of kind.
+                const settled = await Promise.allSettled(
+                    gateways.map(async (gateway): Promise<{ kind: 'verified' | 'maybe'; url: string }> => {
                         const checkResult = await this.checkGateway(txId, gateway, pathSuffix, controller.signal);
-                        if (checkResult) {
-                            const workingUrl = constructGatewayUrl(txId, gateway, pathSuffix);
-                            if (!resolved) {
-                                resolved = true;
-                                // Only cache confirmed successes, not no-cors 'maybe' results
-                                if (checkResult === true) {
-                                    this.setActiveGateway(gateway, txId);
-                                    this.logger.info('Gateway resolved via fallback', {
-                                        txId,
-                                        gateway: gateway.host,
-                                        pathSuffix,
-                                        workingUrl,
-                                    });
-                                } else {
-                                    this.logger.info('Gateway maybe resolved via fallback (no-cors)', {
-                                        txId,
-                                        gateway: gateway.host,
-                                        pathSuffix,
-                                        workingUrl,
-                                    });
-                                }
+                        if (!checkResult) throw new Error(`Gateway ${gateway.host} failed check`);
+                        const workingUrl = constructGatewayUrl(txId, gateway, pathSuffix);
+                        const kind = checkResult === true ? 'verified' as const : 'maybe' as const;
+                        // Side effects: only the FIRST resolution sets active gateway,
+                        // and only for verified results.
+                        if (!resolved) {
+                            resolved = true;
+                            if (kind === 'verified') {
+                                this.setActiveGateway(gateway, txId);
+                                this.logger.info('Gateway resolved via fallback', {
+                                    txId,
+                                    gateway: gateway.host,
+                                    pathSuffix,
+                                    workingUrl,
+                                });
+                            } else {
+                                this.logger.info('Gateway maybe resolved via fallback (no-cors)', {
+                                    txId,
+                                    gateway: gateway.host,
+                                    pathSuffix,
+                                    workingUrl,
+                                });
                             }
-                            return workingUrl;
                         }
-                        throw new Error(`Gateway ${gateway.host} failed check`);
+                        return { kind, url: workingUrl };
                     }),
                 );
 
-                return result;
-            } catch {
-                // Promise.any throws AggregateError when all reject
-                return null;
+                // Cancel any in-flight checks once we've a verified result.
+                // (allSettled already waited for all — but cancel safety in case
+                // of partially-aborted inner controllers.)
+                for (const s of settled) {
+                    if (s.status !== 'fulfilled') continue;
+                    const value = s.value as { kind: 'verified' | 'maybe'; url: string };
+                    if (value.kind === 'verified' && !firstVerified) {
+                        firstVerified = { kind: 'verified', url: value.url };
+                    } else if (value.kind === 'maybe' && !firstMaybe) {
+                        firstMaybe = { kind: 'maybe', url: value.url };
+                    }
+                    if (firstVerified) break;
+                }
+
+                return firstVerified ?? firstMaybe;
             } finally {
                 signal?.removeEventListener('abort', onExternalAbort);
             }
@@ -1048,7 +1109,9 @@ export class ArweaveGatewayManager {
 
         // Try healthy subset first
         const result = await tryGateways(gatewaysToTry);
-        if (result) return result;
+        if (result && result.kind === 'verified') return result;
+        // Save maybe-result; fall through to retry with full set if we only got maybe.
+        let bestResult = result;
 
         // If health filtering excluded some gateways, try the full set as a second pass
         if (healthyGateways.length < fallbackGateways.length && !signal?.aborted) {
@@ -1057,10 +1120,13 @@ export class ArweaveGatewayManager {
                 .map(g => g.host);
             this.logger.debug('Healthy gateways exhausted, retrying with previously unhealthy', { excludedHosts });
             const fullResult = await tryGateways(fallbackGateways);
-            if (fullResult) return fullResult;
+            if (fullResult) {
+                // Prefer the full-set result if it's verified, or if we had no result before.
+                if (fullResult.kind === 'verified' || !bestResult) return fullResult;
+            }
         }
 
-        return null;
+        return bestResult;
     }
 
     /**
@@ -1111,8 +1177,13 @@ export class ArweaveGatewayManager {
         }
     }
 
-    private async tryWayfinder(txId: string, pathSuffix: string, signal?: AbortSignal, excludeHost?: string | null): Promise<string | null> {
+    private async tryWayfinder(txId: string, pathSuffix: string, signal?: AbortSignal, excludeHost?: string | null): Promise<{ kind: 'verified' | 'maybe'; url: string } | null> {
         if (!this.wayfinder) return null;
+
+        // Best 'maybe' result seen so far. Like in tryFallbackGateways, we
+        // prefer verified results and keep walking past 'maybe's — only
+        // fall back to the best 'maybe' if no gateway verifies.
+        let bestMaybe: { kind: 'maybe'; url: string } | null = null;
 
         // Maximum number of gateways we'll HEAD-check from the walk list after Wayfinder's
         // first pick. Caps worst-case latency — most files resolve in the first few tries.
@@ -1156,7 +1227,8 @@ export class ArweaveGatewayManager {
                 const checkResult = await this.checkGateway(txId, wayfinderGateway, pathSuffix, signal);
                 if (checkResult) {
                     const workingUrl = constructGatewayUrl(txId, wayfinderGateway, pathSuffix);
-                    if (checkResult === true) {
+                    const kind = checkResult === true ? 'verified' as const : 'maybe' as const;
+                    if (kind === 'verified') {
                         this.setActiveGateway(wayfinderGateway, txId);
                         this.logger.info('Gateway resolved via Wayfinder (first pick)', {
                             txId, gateway: wayfinderHost, pathSuffix, workingUrl,
@@ -1166,9 +1238,13 @@ export class ArweaveGatewayManager {
                             txId, gateway: wayfinderHost, pathSuffix, workingUrl,
                         });
                     }
-                    return workingUrl;
+                    // Don't return immediately on 'maybe' — keep walking the
+                    // ranked list to find a verified result.
+                    if (kind === 'verified') return { kind, url: workingUrl };
+                    bestMaybe ??= { kind, url: workingUrl };
+                } else {
+                    this.logger.debug('Wayfinder first pick failed verify, will walk ranked list', { host: wayfinderHost });
                 }
-                this.logger.debug('Wayfinder first pick failed verify, will walk ranked list', { host: wayfinderHost });
                 failedHosts.add(wayfinderHost);
             } else {
                 this.logger.debug('Wayfinder first pick was already excluded, skipping to walk', { host: wayfinderHost });
@@ -1177,15 +1253,15 @@ export class ArweaveGatewayManager {
             this.logger.debug('Wayfinder first pick threw, will walk ranked list', { error: err });
         }
 
-        if (signal?.aborted) return null;
+        if (signal?.aborted) return bestMaybe;
 
         // Step B: Walk the ranked gateway list ourselves. No second ping race, no second
         // Solana RPC call — we cache the ranked list in memory and reuse it across requests
         // until the TTL expires.
         const rankedGateways = await this.getRankedGatewaysCached(signal);
-        if (!rankedGateways || rankedGateways.length === 0) return null;
+        if (!rankedGateways || rankedGateways.length === 0) return bestMaybe;
 
-        if (signal?.aborted) return null;
+        if (signal?.aborted) return bestMaybe;
 
         // Filter out hosts we've already tried/excluded, then walk in rank order
         const toWalk = rankedGateways
@@ -1199,7 +1275,7 @@ export class ArweaveGatewayManager {
         });
 
         for (const gatewayUrl of toWalk) {
-            if (signal?.aborted) return null;
+            if (signal?.aborted) return bestMaybe;
 
             const candidate: GatewayConfig = {
                 host: gatewayUrl.hostname,
@@ -1210,26 +1286,37 @@ export class ArweaveGatewayManager {
             const checkResult = await this.checkGateway(txId, candidate, pathSuffix, signal);
             if (checkResult) {
                 const workingUrl = constructGatewayUrl(txId, candidate, pathSuffix);
-                if (checkResult === true) {
+                const kind = checkResult === true ? 'verified' as const : 'maybe' as const;
+                if (kind === 'verified') {
                     this.setActiveGateway(candidate, txId);
                     this.logger.info('Gateway resolved via Wayfinder ranked walk', {
                         txId, gateway: candidate.host, pathSuffix, workingUrl,
                     });
-                } else {
-                    this.logger.info('Gateway maybe resolved via Wayfinder ranked walk (no-cors)', {
-                        txId, gateway: candidate.host, pathSuffix, workingUrl,
-                    });
+                    // Verified — stop walking, return immediately.
+                    return { kind, url: workingUrl };
                 }
-                return workingUrl;
+                this.logger.info('Gateway maybe resolved via Wayfinder ranked walk (no-cors)', {
+                    txId, gateway: candidate.host, pathSuffix, workingUrl,
+                });
+                bestMaybe ??= { kind, url: workingUrl };
+                // Continue walking — maybe a verified result is just around the corner.
             }
             failedHosts.add(candidate.host);
         }
 
-        this.logger.debug('Wayfinder ranked walk exhausted with no match', {
-            txId,
-            checkedHosts: Array.from(failedHosts),
-        });
-        return null;
+        if (bestMaybe) {
+            this.logger.debug('Wayfinder returning best maybe-result (no verified match)', {
+                txId,
+                checkedHosts: Array.from(failedHosts),
+                maybeUrl: bestMaybe.url,
+            });
+        } else {
+            this.logger.debug('Wayfinder ranked walk exhausted with no match', {
+                txId,
+                checkedHosts: Array.from(failedHosts),
+            });
+        }
+        return bestMaybe;
     }
 
     /**
