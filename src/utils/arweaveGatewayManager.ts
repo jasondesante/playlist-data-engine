@@ -397,8 +397,12 @@ export class ArweaveGatewayManager {
     private rankedGatewaysCache: URL[] | null = null;
     /** Timestamp (ms since epoch) when the ranked gateway list was last refreshed. */
     private rankedGatewaysCacheTimestamp: number = 0;
-    /** TTL for the ranked gateway list cache (2 hours). */
-    private readonly RANKED_GATEWAYS_TTL_MS = 2 * 60 * 60 * 1000;
+    /**
+     * TTL for the ranked gateway list cache. The ar.io gateway registry changes
+     * slowly, so we keep the list for a full day between refreshes. This is the
+     * single lever that controls how often we hit Helius (the Solana RPC).
+     */
+    private readonly RANKED_GATEWAYS_TTL_MS = 24 * 60 * 60 * 1000;
     /** The currently active dynamic gateway. Used globally to prevent constant switching. */
     private activeGateway: GatewayConfig | null = null;
     /** Time of the most recent successful resolve/fetch for the active gateway (ms) */
@@ -478,20 +482,30 @@ export class ArweaveGatewayManager {
                     const rpc = solanaKit.createSolanaRpc(this.solanaRpcUrl);
                     const arioClient = ARIO.init({ rpc });
 
-                    const primaryProvider = new NetworkGatewaysProvider({
-                        ario: arioClient,
-                        sortBy: this.wayfinderSortBy,
-                        limit: this.wayfinderPrimaryLimit,
-                    });
+                    // Wrap BOTH providers in our 24h cache BEFORE handing them to the
+                    // routing strategies. Without this, every call to wayfinder.resolveUrl()
+                    // (tryWayfinder Step A) flows straight into the strategies, which call
+                    // getGateways() on the raw NetworkGatewaysProvider — hitting Helius
+                    // 2-6+ times per resolve. The cache makes the whole strategy chain share
+                    // one cached list, so Helius is only hit ~once per RANKED_GATEWAYS_TTL_MS.
+                    const primaryProvider = this.wrapProviderWithCache(
+                        new NetworkGatewaysProvider({
+                            ario: arioClient,
+                            sortBy: this.wayfinderSortBy,
+                            limit: this.wayfinderPrimaryLimit,
+                        }),
+                    );
 
-                    const fallbackProvider = new NetworkGatewaysProvider({
-                        ario: arioClient,
-                        sortBy: this.wayfinderSortBy,
-                        limit: this.wayfinderFallbackLimit,
-                    });
+                    const fallbackProvider = this.wrapProviderWithCache(
+                        new NetworkGatewaysProvider({
+                            ario: arioClient,
+                            sortBy: this.wayfinderSortBy,
+                            limit: this.wayfinderFallbackLimit,
+                        }),
+                    );
 
-                    // Hold a reference so tryWayfinder() can fetch the ranked list directly
-                    // and walk it on retries, instead of re-running Wayfinder's full ping race.
+                    // Step B (tryWayfinder's ranked walk) reads from the same cached instance,
+                    // so it no longer needs its own separate getRankedGatewaysCached() fetch.
                     this.wayfinderGatewaysProvider = primaryProvider;
 
                     const routingStrategy = (() => {
@@ -553,6 +567,76 @@ export class ArweaveGatewayManager {
                 (error) => { clearTimeout(timer); reject(error); },
             );
         });
+    }
+
+    /**
+     * Wrap a raw upstream gateways provider (NetworkGatewaysProvider) in a
+     * long-TTL cache. This is the single lever that keeps us off the Solana
+     * RPC (Helius): every Wayfinder routing strategy and the ranked walk in
+     * tryWayfinder() read through this wrapper, so the upstream is queried at
+     * most once per RANKED_GATEWAYS_TTL_MS regardless of how many resolves fail.
+     *
+     * Behaviour:
+     *   - Fresh cache → return immediately, no network.
+     *   - Cache miss → one upstream fetch; concurrent callers share the in-flight
+     *     promise (dedupe) so we never fire two fetches for the same refresh.
+     *   - Fetch fails → serve the stale in-memory list if present (better than
+     *     empty); otherwise let the upstream's [] fall through. This keeps a
+     *     Helius rate-limit blip from restarting the hammering.
+     *   - On success → write to both in-memory cache and localStorage so the
+     *     list survives reloads.
+     */
+    private wrapProviderWithCache(
+        upstream: { getGateways(): Promise<URL[]> },
+    ): { getGateways(): Promise<URL[]> } {
+        let cache: URL[] | null = null;
+        let expiresAt = 0;
+        let inflight: Promise<URL[]> | null = null;
+
+        const isFresh = () => cache !== null && cache.length > 0 && Date.now() < expiresAt;
+
+        const loadFromStorage = (): URL[] | null => this.loadPersistedRankedGateways();
+
+        // Seed from localStorage on first use so the very first resolves after a
+        // reload don't hit Helius either, as long as the persisted list is fresh.
+        const seeded = loadFromStorage();
+        if (seeded && seeded.length > 0) {
+            cache = seeded;
+            expiresAt = (this.rankedGatewaysCacheTimestamp || Date.now()) + this.RANKED_GATEWAYS_TTL_MS;
+        }
+
+        return {
+            getGateways: async (): Promise<URL[]> => {
+                if (isFresh()) return cache as URL[];
+                if (inflight) return inflight;
+
+                inflight = (async () => {
+                    try {
+                        const fresh = await upstream.getGateways();
+                        if (fresh && fresh.length > 0) {
+                            cache = fresh;
+                            expiresAt = Date.now() + this.RANKED_GATEWAYS_TTL_MS;
+                            this.rankedGatewaysCacheTimestamp = Date.now();
+                            // Mirror to the shared cache fields + localStorage so Step B
+                            // and any other readers stay in sync.
+                            this.rankedGatewaysCache = fresh;
+                            this.persistRankedGateways(fresh, this.rankedGatewaysCacheTimestamp);
+                        }
+                        return fresh;
+                    } catch (err) {
+                        // Helius failed (rate limit / outage). Serve stale if we have
+                        // it — do NOT return [] and let callers re-hammer on the next resolve.
+                        this.logger.warn('Ranked gateway fetch failed, serving stale list', { error: err });
+                        if (cache && cache.length > 0) return cache;
+                        throw err;
+                    } finally {
+                        inflight = null;
+                    }
+                })();
+
+                return inflight;
+            },
+        };
     }
 
     /**
@@ -1130,49 +1214,24 @@ export class ArweaveGatewayManager {
     }
 
     /**
-     * Try Wayfinder as a last resort when all static gateways fail.
-     * Returns the URL of a working Wayfinder-selected gateway, or null if it fails.
-     */
-    /**
-     * Return the ranked gateway list from the primary `NetworkGatewaysProvider`,
-     * using an in-memory cache to avoid hitting Solana on every walk. Returns null
-     * if the provider is unavailable or the fetch fails.
+     * Return the ranked gateway list. The provider itself is already wrapped in
+     * the 24h cache (see wrapProviderWithCache), so this is now a thin reader —
+     * no separate fetch, TTL, or stale logic here. Kept as an indirection point
+     * so tryWayfinder's Step B reads through a named method. Returns null if the
+     * provider is unavailable or both fetch and stale fallback fail.
      */
     private async getRankedGatewaysCached(signal?: AbortSignal): Promise<URL[] | null> {
         if (!this.wayfinderGatewaysProvider) return null;
-
-        const now = Date.now();
-        const cacheAge = now - this.rankedGatewaysCacheTimestamp;
-        if (this.rankedGatewaysCache && cacheAge < this.RANKED_GATEWAYS_TTL_MS) {
-            this.logger.debug('Reusing cached ranked gateway list', {
-                size: this.rankedGatewaysCache.length,
-                ageMs: cacheAge,
-            });
-            return this.rankedGatewaysCache;
-        }
-
         try {
-            const fresh = await this.withTimeout(
+            const gateways = await this.withTimeout(
                 this.wayfinderGatewaysProvider.getGateways(),
                 this.timeout + 2000,
                 'Wayfinder provider getGateways timed out'
             );
             if (signal?.aborted) return null;
-            this.rankedGatewaysCache = fresh;
-            this.rankedGatewaysCacheTimestamp = now;
-            this.persistRankedGateways(fresh, now);
-            this.logger.info('Refreshed ranked gateway list cache', { size: fresh.length });
-            return fresh;
+            return gateways && gateways.length > 0 ? gateways : null;
         } catch (err) {
-            this.logger.debug('Failed to fetch ranked gateway list from provider', { error: err });
-            // If we have a stale cache, prefer that over returning nothing
-            if (this.rankedGatewaysCache) {
-                this.logger.debug('Falling back to stale ranked gateway cache', {
-                    size: this.rankedGatewaysCache.length,
-                    ageMs: cacheAge,
-                });
-                return this.rankedGatewaysCache;
-            }
+            this.logger.debug('Ranked gateway list unavailable', { error: err });
             return null;
         }
     }
