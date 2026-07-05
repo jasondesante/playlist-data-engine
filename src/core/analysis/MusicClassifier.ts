@@ -11,7 +11,7 @@ import { modelCache } from '../../utils/modelCache.js';
  * Supported model architectures for audio feature extraction.
  * Each architecture requires different mel-band configurations:
  * - `musicnn`: 96 mel bands - MusiCNN / MSD style models
- * - `effnet`: 128 mel bands - Discogs-EffNet embedding models
+ * - `effnet`: 96 mel bands, consumed as 128-frame patches - Discogs-EffNet embedding models
  * - `vggish`: 64 mel bands - VGGish-based models (e.g., audioset classifiers)
  * - `tempocnn`: 40 mel bands - TempoCNN-based models (e.g., tempo estimation)
  */
@@ -680,7 +680,7 @@ export function isSingleStepModel(config: ModelConfig): config is SingleStepMode
  * Used to select the correct feature extractor (mel-band count) and model class.
  *
  * Architecture → Mel Bands mapping:
- * - effnet: 128 bands (Discogs-EffNet)
+ * - effnet: 96 bands in 128-frame patches (Discogs-EffNet)
  * - vggish: 64 bands
  * - tempocnn: 40 bands
  * - musicnn: 96 bands (default)
@@ -698,7 +698,7 @@ export function detectModelArchitecture(
 
     const url = modelUrl.toLowerCase();
 
-    // Discogs-EffNet models (128 mel bands) - check first since they're commonly used for embeddings
+    // Discogs-EffNet models - check first since they're commonly used for embeddings
     if (url.includes('effnet') || url.includes('discogs')) {
         return 'effnet';
     }
@@ -984,7 +984,7 @@ export class MusicClassifier {
      * Architecture-specific feature extractors.
      * Each architecture requires different mel-band configurations:
      * - musicnn: 96 bands (default extractor)
-     * - effnet: 128 bands (custom extractor)
+     * - effnet: 96 bands (same TensorflowInputMusiCNN features as musicnn)
      * - vggish: 64 bands
      * - tempocnn: 40 bands
      */
@@ -1332,142 +1332,55 @@ export class MusicClassifier {
     }
 
     /**
-     * Computes 128-band mel-spectrogram features for Discogs-EffNet models.
-     *
-     * Unlike the standard musicnn extractor (96 bands), EffNet requires 128 mel bands.
-     * This method uses Essentia WASM's core MelBands algorithm directly.
-     *
-     * @param audioSignal - Mono audio signal at 16kHz sample rate
-     * @returns 2D array of mel-spectrogram frames, shape [frames][128]
-     */
-    /**
-     * Creates a wrapper object that combines EssentiaJS algorithms with WASM utility methods.
-     * This is needed because EssentiaJS has algorithms (Windowing, Spectrum, etc.) but lacks
-     * utility methods like arrayToVector/vectorToArray which are on the WASM module directly.
-     */
-    private createEssentiaWrapper(): { Windowing: any; Spectrum: any; MelBands: any; UnaryOperator: any; arrayToVector: any; vectorToArray: any } {
-        const algorithms = new this.essentiaWASM.EssentiaJS(false);
-        return {
-            Windowing: algorithms.Windowing.bind(algorithms),
-            Spectrum: algorithms.Spectrum.bind(algorithms),
-            MelBands: algorithms.MelBands.bind(algorithms),
-            UnaryOperator: algorithms.UnaryOperator.bind(algorithms),
-            // Utility methods are on the WASM module directly, not on EssentiaJS
-            arrayToVector: this.essentiaWASM.arrayToVector,
-            vectorToArray: this.essentiaWASM.vectorToArray
-        };
-    }
-
-    private computeEffnetFeatures(audioSignal: Float32Array): number[][] {
-        if (!this.essentiaWASM) {
-            throw new Error('Essentia WASM not initialized. Call initializeEssentia() first.');
-        }
-
-        // Create Essentia wrapper that combines algorithms with utility methods
-        const essentia = this.createEssentiaWrapper();
-        const features: number[][] = [];
-
-        // Frame parameters matching discogs-effnet requirements
-        const frameSize = 512;
-        const hopSize = 256; // 50% overlap
-        const sampleRate = 16000;
-        const numBands = 128; // KEY: EffNet uses 128 mel bands, not 96!
-
-        // Process audio in overlapping frames
-        for (let i = 0; i <= audioSignal.length - frameSize; i += hopSize) {
-            const frame = audioSignal.slice(i, i + frameSize);
-
-            // Apply Hann window
-            // Essentia.js Windowing parameters (in order):
-            // frame, normalized, size, type, zeroPadding, zeroPhase
-            const windowed = essentia.Windowing(
-                essentia.arrayToVector(frame),
-                true,        // normalized
-                frameSize,   // size (must be explicit, not inferred from frame length)
-                'hann',      // type
-                0,           // zeroPadding
-                true         // zeroPhase
-            );
-
-            // Compute spectrum (FFT magnitude)
-            const spectrum = essentia.Spectrum(
-                windowed.frame,
-                frameSize
-            );
-
-            // Compute 128-band mel spectrum
-            const melBands = essentia.MelBands(
-                spectrum.spectrum,
-                8000,          // highFrequencyBound (16kHz / 2)
-                frameSize / 2, // inputSize (FFT output size)
-                false,         // log (apply log later)
-                0,             // lowFrequencyBound
-                'unit_sum',    // normalize
-                numBands,      // numberBands - THE MAGIC NUMBER!
-                sampleRate,    // sampleRate
-                'power',       // type
-                'slaneyMel',   // warpingFormula
-                'linear'       // weighting
-            );
-
-            // Apply log compression (dB scale with floor)
-            const logMel = essentia.UnaryOperator(
-                melBands.bands,
-                10000,    // scale pre-log to avoid log(0)
-                1,        // shift
-                'log10'   // operation
-            );
-
-            // Convert back to array and store
-            const frameFeatures = Array.from(essentia.vectorToArray(logMel.array) as number[]);
-            features.push(frameFeatures);
-        }
-
-        return features;
-    }
-
-    /**
      * Gets the appropriate mel-spectrogram features for a given model architecture.
      *
      * Different architectures require different mel-band configurations:
      * - musicnn: 96 bands (default)
-     * - effnet: 128 bands (custom)
+     * - effnet: 96 bands (same features as musicnn)
      * - vggish: 64 bands
      * - tempocnn: 40 bands
      *
      * @param audioSignal - Mono audio signal at 16kHz sample rate
      * @param architecture - The model architecture type
-     * @returns 2D array of mel-spectrogram frames
+     * @returns For 'effnet': number[][] of mel frames. For all other
+     *          architectures: the EssentiaTFInputExtractorOutput object that
+     *          essentia.js model predict() methods expect
      */
     private getFeaturesForArchitecture(
         audioSignal: Float32Array,
         architecture: ModelArchitecture
-    ): number[][] {
+    ): any {
         switch (architecture) {
             case 'effnet':
-                // EffNet requires custom 128-band extraction
-                return this.computeEffnetFeatures(audioSignal);
+                // Discogs-EffNet uses the same TensorflowInputMusiCNN features as
+                // musicnn: 96 mel bands, frameSize 512, hopSize 256 @ 16kHz.
+                // (The 128 in its input shape [64, 128, 96] is the patch length in
+                // time frames, not a mel-band count.) Return the raw frame array
+                // since runEffnetEmbedding builds its own patches.
+                return this.extractor.computeFrameWise(audioSignal, 256).melSpectrum;
 
             case 'vggish':
-                // VGGish uses 64 bands - use dedicated vggish extractor
+                // VGGish uses 64 bands with 400-sample frames and a 10ms hop
+                // (160 samples @ 16kHz) per the AudioSet VGGish spec
                 const vggishExtractor = this.extractors.get('vggish');
                 if (!vggishExtractor) {
                     console.warn('VGGish extractor not initialized, falling back to default 96-band extractor.');
-                    return this.extractor.computeFrameWise(audioSignal, 512);
+                    return this.extractor.computeFrameWise(audioSignal, 256);
                 }
-                return vggishExtractor.computeFrameWise(audioSignal, 512);
+                return vggishExtractor.computeFrameWise(audioSignal, 160);
 
             case 'tempocnn':
                 // TempoCNN uses 40 bands - for now use default extractor
                 // TODO: Implement dedicated tempocnn extractor if needed
                 console.warn('TempoCNN architecture requested but using default 96-band extractor. ' +
                     'Results may be suboptimal for TempoCNN models.');
-                return this.extractor.computeFrameWise(audioSignal, 512);
+                return this.extractor.computeFrameWise(audioSignal, 256);
 
             case 'musicnn':
             default:
-                // Default musicnn uses 96 bands (standard extractor)
-                return this.extractor.computeFrameWise(audioSignal, 512);
+                // Default musicnn: 96 bands, hopSize 256 (the hop the models were
+                // trained with — a larger hop time-compresses the spectrogram)
+                return this.extractor.computeFrameWise(audioSignal, 256);
         }
     }
 
@@ -1517,11 +1430,13 @@ export class MusicClassifier {
                 audioCtx.sampleRate
             );
 
-            // Slice audio for partial analysis (defaults: full song)
-            const segmentSignal = this.sliceAudioSignal(audioSignal, audioCtx.sampleRate);
+            // Slice audio for partial analysis (defaults: full song).
+            // audioSignal is already downsampled to 16kHz, so slice at that rate,
+            // not the AudioContext's native rate.
+            const segmentSignal = this.sliceAudioSignal(audioSignal, 16000);
 
-            // Compute mel-spectrogram features frame-wise
-            const features = this.extractor.computeFrameWise(segmentSignal, 512);
+            // Frame count at the extractor settings (frameSize 512, hopSize 256)
+            const framesAnalyzed = Math.max(0, Math.floor((segmentSignal.length - 512) / 256) + 1);
 
             const modelsUsed: string[] = [];
             const results: Partial<MusicClassificationProfile> = {
@@ -1635,8 +1550,8 @@ export class MusicClassifier {
                 analysis_metadata: {
                     models_used: modelsUsed,
                     model_used: modelsUsed.length > 0 ? modelsUsed[0] : undefined,
-                    frames_analyzed: features.length,
-                    duration_analyzed: audioBuffer.duration,
+                    frames_analyzed: framesAnalyzed,
+                    duration_analyzed: segmentSignal.length / 16000,
                     analyzed_at: new Date().toISOString()
                 }
             };
@@ -1655,17 +1570,14 @@ export class MusicClassifier {
      * 2. Classifier model produces class predictions from embeddings
      *
      * @param classifierUrl - URL to the classifier model (GraphModel format)
-     * @param embeddings - 2D array of embeddings, shape [frames][embedding_dim]
-     * @returns Promise resolving to 1D array of averaged class predictions
+     * @param embeddings - 2D array of embeddings, shape [patches][embedding_dim]
+     * @returns Promise resolving to 1D array of class predictions averaged across patches
      */
     private async runClassifierOnEmbeddings(
         classifierUrl: string,
         embeddings: number[][]
     ): Promise<number[]> {
-        // Average embeddings across all frames
-        const avgEmbedding = averageEmbeddings(embeddings);
-
-        if (avgEmbedding.length === 0) {
+        if (embeddings.length === 0 || embeddings[0].length === 0) {
             console.warn('Empty embeddings provided to classifier');
             return [];
         }
@@ -1674,19 +1586,30 @@ export class MusicClassifier {
         // Use retry logic for network resilience (especially for Arweave URLs)
         const classifier = await this.loadModelWithRetry(classifierUrl);
 
-        // Create input tensor with shape [1, embedding_dim]
-        // The model expects batch dimension, even for single sample
-        const inputTensor = tf.tensor2d([avgEmbedding], [1, avgEmbedding.length]);
+        // Classify every patch embedding in one batch: [numPatches, embedding_dim]
+        const inputTensor = tf.tensor2d(embeddings);
 
         let predictions: number[] = [];
 
         try {
             // Execute model inference
             const output = classifier.predict(inputTensor) as tf.Tensor;
+            const data = await output.data();
+            const outputShape = output.shape;
+            const numClasses = outputShape[outputShape.length - 1];
+            const numRows = Math.max(1, Math.floor(data.length / numClasses));
 
-            // Convert output tensor to array
-            predictions = await output.data().then(data => Array.from(data));
-            // Dispose output tensor
+            // Average class activations across patches. This matches essentia's
+            // reference pipeline (predict per patch, then average predictions)
+            // rather than averaging embeddings before classification.
+            const avg = new Array(numClasses).fill(0);
+            for (let r = 0; r < numRows; r++) {
+                for (let c = 0; c < numClasses; c++) {
+                    avg[c] += data[r * numClasses + c];
+                }
+            }
+            predictions = avg.map(v => v / numRows);
+
             output.dispose();
         } finally {
             // Always dispose input tensor and model
@@ -1720,7 +1643,6 @@ export class MusicClassifier {
         const architecture = detectModelArchitecture(config.embedding, config.embeddingType);
 
         // Step 2: Get architecture-specific features
-        // CRITICAL: effnet uses 128 mel bands, musicnn uses 96!
         const features = this.getFeaturesForArchitecture(audioSignal, architecture);
 
         if (features.length === 0) {
@@ -1829,68 +1751,58 @@ export class MusicClassifier {
      *
      * EffNet models are TensorFlow.js GraphModels that expect:
      * - Named inputs discovered dynamically from model signature
-     * - Mel-spectrogram shape: [batch=64, mel_bands=128, time_frames=96]
+     * - Mel-spectrogram shape: [batch=64, time_frames=128, mel_bands=96]
      *
-     * The 'bs64' in model name means fixed batch size of 64.
+     * The input axis order is time-major: each of the 64 patches is 128
+     * consecutive TensorflowInputMusiCNN frames of 96 mel bands. The 'bs64'
+     * in the model name means a fixed batch size of 64.
      *
      * @param model - TensorFlow.js GraphModel instance
-     * @param features - 2D array of mel-spectrogram frames, shape [frames][128]
-     * @returns 2D array of embeddings, shape [segments][embedding_dim]
+     * @param features - 2D array of mel-spectrogram frames, shape [frames][96]
+     * @returns 2D array of embeddings, one per patch, shape [patches][embedding_dim]
      */
     private async runEffnetEmbedding(model: tf.GraphModel, features: number[][]): Promise<number[][]> {
-        const numBands = features[0]?.length || 128;
         const numFrames = features.length;
 
-        // Discogs-EffNet-bs64 expects exactly [64, 128, 96]
-        const batchSize = 64;      // Fixed batch size (bs64)
-        const melBands = 128;       // Mel bands
-        const timeFrames = 96;      // Time frames per sample
+        // Discogs-EffNet-bs64 expects exactly [64, 128, 96] = [batch, time, mel]
+        const batchSize = 64;       // Fixed batch size (bs64)
+        const patchFrames = 128;    // Time frames per patch
+        const melBands = 96;        // Mel bands
 
-        let embeddings: number[][] = [];
-
-        // We need to create 64 segments of 96 frames each
-        // Each segment will be transposed to [128, 96] (mel_bands, time_frames)
-
-        // First, ensure we have at least 96 frames by padding if needed
-        let paddedFeatures = features;
-        if (numFrames < timeFrames) {
-            const zeroFrame = Array(numBands).fill(0);
-            while (paddedFeatures.length < timeFrames) {
-                paddedFeatures = [...paddedFeatures, zeroFrame];
-            }
+        if (numFrames === 0) {
+            return [];
+        }
+        if ((features[0]?.length ?? 0) !== melBands) {
+            console.warn(
+                `[MusicClassifier] EffNet expects ${melBands}-band mel features but got ` +
+                `${features[0]?.length}-band frames. Results will be unreliable.`
+            );
         }
 
-        // Create 64 segments by sliding window or repeating
-        // For short audio, we repeat the available segments
-        const segments: number[][][] = [];
+        const embeddings: number[][] = [];
 
-        for (let i = 0; i < batchSize; i++) {
-            // Use modulo to cycle through available frames if we don't have enough
-            const startFrame = (i * timeFrames) % paddedFeatures.length;
-            const segment: number[][] = [];
+        // Fill the fixed batch with 64 patches of 128 consecutive frames,
+        // evenly spaced across the track so the whole song is represented.
+        // Short tracks produce overlapping patches; frames past the end are
+        // zero-padded.
+        const maxStart = Math.max(0, numFrames - patchFrames);
+        const zeroFrame = new Array(melBands).fill(0);
 
-            for (let t = 0; t < timeFrames; t++) {
-                const frameIdx = (startFrame + t) % paddedFeatures.length;
-                segment.push(paddedFeatures[frameIdx] || Array(numBands).fill(0));
-            }
-            segments.push(segment);
-        }
-
-        // Now build the batch tensor: [64, 128, 96]
-        // Transpose each segment from [96, 128] to [128, 96]
-        const batchData: number[] = [];
-
+        const batchData = new Float32Array(batchSize * patchFrames * melBands);
         for (let b = 0; b < batchSize; b++) {
-            // Transpose segment: [time_frames][mel_bands] -> [mel_bands][time_frames]
-            for (let band = 0; band < melBands; band++) {
-                for (let t = 0; t < timeFrames; t++) {
-                    batchData.push(segments[b][t]?.[band] ?? 0);
+            const startFrame = Math.round((b * maxStart) / (batchSize - 1));
+            for (let t = 0; t < patchFrames; t++) {
+                const frame = features[startFrame + t] ?? zeroFrame;
+                const offset = (b * patchFrames + t) * melBands;
+                for (let m = 0; m < melBands; m++) {
+                    batchData[offset + m] = frame[m] ?? 0;
                 }
             }
         }
 
-        // Create input tensors
-        const melTensor = tf.tensor3d(batchData, [batchSize, melBands, timeFrames]);
+        // Create input tensor: [batch, time_frames, mel_bands] — patches are
+        // written time-major, matching the model's expected axis order
+        const melTensor = tf.tensor3d(batchData, [batchSize, patchFrames, melBands]);
 
         try {
             // Dynamically discover input names from the model signature
@@ -1939,39 +1851,15 @@ export class MusicClassifier {
             const outputData = await output.data();
             const outputShape = output.shape;
 
-            // Output shape is typically [64, embedding_dim]
-            // We average across the batch to get a single embedding
-            if (outputShape.length === 2) {
-                const embeddingDim = outputShape[1];
-                // Average all 64 embeddings
-                const avgEmbedding: number[] = [];
-                for (let d = 0; d < embeddingDim; d++) {
-                    let sum = 0;
-                    for (let b = 0; b < batchSize; b++) {
-                        sum += outputData[b * embeddingDim + d];
-                    }
-                    avgEmbedding.push(sum / batchSize);
-                }
-
-                // L2 normalize the embedding - this is critical for classifier compatibility
-                // The discogs-effnet model outputs unnormalized values that need normalization
-                const norm = Math.sqrt(avgEmbedding.reduce((sum, val) => sum + val * val, 0));
-                const normalizedEmbedding = norm > 0
-                    ? avgEmbedding.map(val => val / norm)
-                    : avgEmbedding;
-
-                embeddings.push(normalizedEmbedding);
-            } else {
-                // Fallback: just use the first embedding
-                const rawEmbedding = Array.from(outputData.slice(0, outputShape[outputShape.length - 1]));
-
-                // L2 normalize
-                const norm = Math.sqrt(rawEmbedding.reduce((sum, val) => sum + val * val, 0));
-                const normalizedEmbedding = norm > 0
-                    ? rawEmbedding.map(val => val / norm)
-                    : rawEmbedding;
-
-                embeddings.push(normalizedEmbedding);
+            // Output shape is [64, embedding_dim] — one embedding per patch.
+            // Keep them separate so the classifier can average class activations
+            // across patches (matching essentia's reference pipeline). The
+            // classifier heads were trained on raw effnet embeddings, so no
+            // normalization is applied.
+            const embeddingDim = outputShape[outputShape.length - 1];
+            const numEmbeddings = Math.max(1, Math.floor(outputData.length / embeddingDim));
+            for (let b = 0; b < numEmbeddings; b++) {
+                embeddings.push(Array.from(outputData.slice(b * embeddingDim, (b + 1) * embeddingDim)));
             }
 
             output.dispose();
@@ -2114,6 +2002,12 @@ export class MusicClassifier {
     }
 
     private mapPredictions(predictions: number[], labels: string[]): ClassificationTag[] {
+        if (predictions.length > 0 && predictions.length !== labels.length) {
+            console.warn(
+                `[MusicClassifier] Model returned ${predictions.length} outputs but ${labels.length} labels ` +
+                `are configured — tags may be mislabeled. Check that the label list matches the model.`
+            );
+        }
         return predictions.map((prob: number, index: number) => ({
             name: labels[index] || `unknown_${index}`,
             confidence: prob
