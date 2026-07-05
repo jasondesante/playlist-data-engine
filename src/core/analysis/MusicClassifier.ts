@@ -1414,21 +1414,41 @@ export class MusicClassifier {
     /**
      * Analyzes audio to extract genre, mood, and vibe data.
      */
-    async analyze(audioUrl: string): Promise<MusicClassificationProfile> {
+    /**
+     * Analyze a track. Accepts either:
+     *   - a `string` URL: the engine fetches + decodes + downsamples via Web
+     *     Audio (main-thread path). Backward-compatible with all existing callers.
+     *   - an `{ audioSignal, sampleRate? }` object: caller has already fetched,
+     *     decoded, AND downsampled to mono PCM. Used when running inside a Web
+     *     Worker (no Web Audio available there). `sampleRate` defaults to 16000
+     *     (essentia.js's required rate); the engine skips fetch + decode +
+     *     downsample and runs only the slice + ML inference on the provided signal.
+     */
+    async analyze(input: string | { audioSignal: Float32Array; sampleRate?: number }): Promise<MusicClassificationProfile> {
         try {
             await this.initializeEssentia();
 
-            // Fetch and decode audio
-            const response = await fetch(audioUrl);
-            const arrayBuffer = await response.arrayBuffer();
-            const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-            const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+            let audioSignal: Float32Array;
 
-            // Downsample to 16kHz mono for essentia.js
-            const audioSignal = await this.extractor.downsampleAudioBuffer(
-                audioBuffer,
-                audioCtx.sampleRate
-            );
+            if (typeof input === 'string') {
+                // Fetch + decode + downsample path (main thread).
+                const audioUrl = input;
+                const response = await fetch(audioUrl);
+                const arrayBuffer = await response.arrayBuffer();
+                const g: any = typeof self !== 'undefined' ? self : (typeof globalThis !== 'undefined' ? globalThis : {});
+                const Ctx: typeof AudioContext | undefined = g.AudioContext || g.webkitAudioContext;
+                const OfflineCtx: typeof OfflineAudioContext | undefined = g.OfflineAudioContext || g.webkitOfflineAudioContext;
+                const audioCtx: BaseAudioContext = Ctx
+                    ? new Ctx()
+                    : OfflineCtx
+                        ? new OfflineCtx(1, 44100, 44100)
+                        : (() => { throw new Error('No Web Audio API available in this context'); })();
+                const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+                audioSignal = await this.extractor.downsampleAudioBuffer(audioBuffer, audioCtx.sampleRate);
+            } else {
+                // Caller-provided mono PCM signal — already downsampled.
+                audioSignal = input.audioSignal;
+            }
 
             // Slice audio for partial analysis (defaults: full song).
             // audioSignal is already downsampled to 16kHz, so slice at that rate,
