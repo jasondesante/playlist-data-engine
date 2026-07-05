@@ -215,6 +215,79 @@ describe('MetadataExtractor', () => {
             };
             expect(MetadataExtractor.extractGenre(data)).toBe('Trance');
         });
+
+        it('should extract genre from object-keyed attributes (capitalized)', () => {
+            const data = { attributes: { Genre: 'House', BPM: 124 } };
+            expect(MetadataExtractor.extractGenre(data)).toBe('House');
+        });
+
+        it('should extract genre from object-keyed attributes (lowercase)', () => {
+            const data = { attributes: { genre: 'Techno' } };
+            expect(MetadataExtractor.extractGenre(data)).toBe('Techno');
+        });
+
+        it('should extract genre from malformed "attribute " key (trailing space)', () => {
+            const data = { 'attribute ': { genre: 'Ambient' } };
+            expect(MetadataExtractor.extractGenre(data)).toBe('Ambient');
+        });
+
+        it('should prioritize direct genre field over object-keyed attributes', () => {
+            const data = { genre: 'Direct', attributes: { Genre: 'Attribute' } };
+            expect(MetadataExtractor.extractGenre(data)).toBe('Direct');
+        });
+    });
+
+    describe('extractTags', () => {
+        it('should extract tags from array', () => {
+            const data = { tags: ['Chill', 'Electronic'] };
+            expect(MetadataExtractor.extractTags(data)).toEqual(['chill', 'electronic']);
+        });
+
+        it('should split a comma-separated string into tags', () => {
+            const data = { tags: 'chill, electronic, upbeat' };
+            expect(MetadataExtractor.extractTags(data)).toEqual(['chill', 'electronic', 'upbeat']);
+        });
+
+        it('should extract tags from properties.tags', () => {
+            const data = { properties: { tags: ['Lo-Fi', 'Jazz'] } };
+            expect(MetadataExtractor.extractTags(data)).toEqual(['lo-fi', 'jazz']);
+        });
+
+        it('should extract tags from attributes array with trait_type "Tags"', () => {
+            const data = {
+                attributes: [
+                    { trait_type: 'Tags', value: 'House, Deep House' },
+                    { trait_type: 'BPM', value: 124 },
+                ],
+            };
+            expect(MetadataExtractor.extractTags(data)).toEqual(['house', 'deep house']);
+        });
+
+        it('should extract tags from attributes array value as array', () => {
+            const data = {
+                attributes: [{ trait_type: 'tags', value: ['Techno', 'Minimal'] }],
+            };
+            expect(MetadataExtractor.extractTags(data)).toEqual(['techno', 'minimal']);
+        });
+
+        it('should extract tags from object-keyed attributes', () => {
+            const data = { attributes: { Tags: ['Ambient'], BPM: 90 } };
+            expect(MetadataExtractor.extractTags(data)).toEqual(['ambient']);
+        });
+
+        it('should merge, dedupe, lowercase, trim, and drop empties', () => {
+            const data = {
+                tags: [' Chill ', '', 'house'],
+                properties: { tags: ['House', 'Techno'] },
+                attributes: [{ trait_type: 'tags', value: 'techno, ' }],
+            };
+            expect(MetadataExtractor.extractTags(data)).toEqual(['chill', 'house', 'techno']);
+        });
+
+        it('should return empty array when no tags present', () => {
+            const data = { genre: 'House', title: 'Track' };
+            expect(MetadataExtractor.extractTags(data)).toEqual([]);
+        });
     });
 });
 

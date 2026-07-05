@@ -176,10 +176,15 @@ export class MetadataExtractor {
     }
 
     /**
-     * Extract genre with support for string or array formats
-     * - If genre is a string, returns it directly
-     * - If genre is an array, returns the first element
-     * - Also checks OpenSea attributes array for "Genre" trait_type
+     * Extract genre with support for string or array formats.
+     * Sources are checked in priority order; first non-empty wins:
+     * - `genre` field as a string
+     * - `genre` field as an array (first element)
+     * - OpenSea `attributes` array with `trait_type` of "genre" (case-insensitive)
+     * - `attributes` as an object keyed by trait name (e.g. `attributes.Genre`)
+     * - malformed `attribute ` key (literal trailing space) with `.genre`
+     * Stays strict: only fields literally named "genre" are considered
+     * (no fallback to `category` or similar).
      */
     static extractGenre(data: Record<string, unknown>): string {
         // Check direct genre field first
@@ -210,13 +215,103 @@ export class MetadataExtractor {
             }
         }
 
+        // Check object-keyed attributes (e.g. { attributes: { Genre: "House" } })
+        if (data.attributes && typeof data.attributes === 'object' && !Array.isArray(data.attributes)) {
+            const attrs = data.attributes as Record<string, unknown>;
+            for (const key of Object.keys(attrs)) {
+                if (key.toLowerCase() === 'genre' && typeof attrs[key] === 'string') {
+                    return attrs[key] as string;
+                }
+            }
+        }
+
+        // Check malformed "attribute " key (literal trailing space) present in production data
+        const malformed = data['attribute '];
+        if (malformed && typeof malformed === 'object' && !Array.isArray(malformed)) {
+            const genreField = (malformed as Record<string, unknown>).genre;
+            if (typeof genreField === 'string') {
+                return genreField;
+            }
+        }
+
         return '';
     }
 
     /**
-     * Convert OpenSea-style attributes array to key-value object
-     * Example: [{ trait_type: "BPM", value: 120 }] => { BPM: 120 }
+     * Extract tags from track metadata, normalized to a deduped,
+     * lowercased, trimmed string[] with empties removed.
+     * Sources (concatenated, then deduped):
+     * - `tags` field as an array, or a single comma-separated string
+     * - `properties.tags` array (when `properties` is an object)
+     * - OpenSea `attributes` array with `trait_type` of "tag"/"tags" (case-insensitive)
+     * - `attributes` as an object keyed by trait name (e.g. `attributes.Tags`)
      */
+    static extractTags(data: Record<string, unknown>): string[] {
+        const collected: unknown[] = [];
+
+        // 1. Direct tags field (array or comma-separated string)
+        if (Array.isArray(data.tags)) {
+            collected.push(...data.tags);
+        } else if (typeof data.tags === 'string') {
+            collected.push(...data.tags.split(','));
+        }
+
+        // 2. properties.tags
+        if (data.properties && typeof data.properties === 'object' && !Array.isArray(data.properties)) {
+            const propsTags = (data.properties as Record<string, unknown>).tags;
+            if (Array.isArray(propsTags)) {
+                collected.push(...propsTags);
+            } else if (typeof propsTags === 'string') {
+                collected.push(...propsTags.split(','));
+            }
+        }
+
+        // 3. attributes (array and object forms)
+        if (Array.isArray(data.attributes)) {
+            for (const attr of data.attributes) {
+                if (!attr || typeof attr !== 'object') continue;
+                const traitType = (attr as { trait_type?: unknown }).trait_type;
+                if (typeof traitType === 'string' && traitType.toLowerCase().match(/^tags?$/)) {
+                    const value = (attr as { value?: unknown }).value;
+                    if (Array.isArray(value)) {
+                        collected.push(...value);
+                    } else if (typeof value === 'string') {
+                        collected.push(...value.split(','));
+                    }
+                }
+            }
+        } else if (data.attributes && typeof data.attributes === 'object') {
+            const attrs = data.attributes as Record<string, unknown>;
+            for (const key of Object.keys(attrs)) {
+                if (key.toLowerCase().match(/^tags?$/)) {
+                    const value = attrs[key];
+                    if (Array.isArray(value)) {
+                        collected.push(...value);
+                    } else if (typeof value === 'string') {
+                        collected.push(...value.split(','));
+                    }
+                }
+            }
+        }
+
+        return MetadataExtractor.normalizeTags(collected);
+    }
+
+    /**
+     * Normalize a list of raw tag values into a deduped, lowercased,
+     * trimmed string[] with empties removed.
+     */
+    private static normalizeTags(values: unknown[]): string[] {
+        const set = new Set<string>();
+        for (const v of values) {
+            if (v === null || v === undefined) continue;
+            const s = String(v).trim().toLowerCase();
+            if (s) set.add(s);
+        }
+        return Array.from(set);
+    }
+
+
     static convertAttributes(attributes: unknown): Record<string, string | number> | null {
         if (!Array.isArray(attributes)) {
             return null;

@@ -197,7 +197,7 @@ export class PlaylistParser {
         const album = typeof parsedMetadata?.album === 'string' ? parsedMetadata.album : undefined;
         const duration = parsedMetadata?.duration ? Number(parsedMetadata.duration) : 0;
         const genre = MetadataExtractor.extractGenre(parsedMetadata || {});
-        const tags = parsedMetadata?.tags || [];
+        const tags = MetadataExtractor.extractTags(parsedMetadata || {});
         const bpm = parsedMetadata?.bpm ? Number(parsedMetadata.bpm) : undefined;
         const key = typeof parsedMetadata?.key === 'string' ? parsedMetadata.key : undefined;
 
@@ -222,7 +222,7 @@ export class PlaylistParser {
             audio_url_lossless: audioUrlLossless && audioUrlLossless !== audioUrl ? audioUrlLossless : undefined,
             duration,
             genre,
-            tags: Array.isArray(tags) ? tags.map(t => String(t).toLowerCase()) : [],
+            tags,
             bpm,
             key,
             attributes: attributes || undefined,
