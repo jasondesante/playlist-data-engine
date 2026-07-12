@@ -78,9 +78,9 @@ Complete guide to the combat system in the Playlist Data Engine.
 import {
   CombatEngine,
   CharacterGenerator,
-  AudioAnalyzer,
   EnemyGenerator
 } from 'playlist-data-engine';
+import { AudioAnalyzer } from 'playlist-data-engine/analysis';
 
 // Initialize combat engine (optional configuration)
 const combat = new CombatEngine({

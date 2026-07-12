@@ -75,7 +75,8 @@ const shuffled = rng.shuffle([...cards]);
 **Common Use Case: Blockchain-Based Character Generation**
 
 ```typescript
-import { generateSeed, CharacterGenerator, AudioAnalyzer } from 'playlist-data-engine';
+import { generateSeed, CharacterGenerator } from 'playlist-data-engine';
+import { AudioAnalyzer } from 'playlist-data-engine/analysis';
 
 // Given an NFT's blockchain data
 const nftData = {

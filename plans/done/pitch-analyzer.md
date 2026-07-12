@@ -206,7 +206,7 @@ Create a standalone `PitchAnalyzer` class in `src/core/analysis/PitchAnalyzer.ts
 
   ### Usage Example
 
-  import { PitchAnalyzer } from 'playlist-data-engine';
+  import { PitchAnalyzer } from 'playlist-data-engine/analysis';
 
   const analyzer = new PitchAnalyzer({
     algorithm: 'pitch_melodia',

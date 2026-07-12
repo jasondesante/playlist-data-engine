@@ -29,6 +29,30 @@ The engine's audio analysis is powered by the Web Audio API and provides two dis
 
 ---
 
+## ⚠️ Import path — TensorFlow.js
+
+The audio analysis surface (`AudioAnalyzer`, `MusicClassifier`, `EssentiaPitchDetector`,
+`PitchAnalyzer`, and the level-generation classes) depends on **`@tensorflow/tfjs`**
+(~14 MB). These symbols are exported from the **`playlist-data-engine/analysis`**
+subpath, NOT the default entry. Importing them from the bare `playlist-data-engine`
+will fail and/or pull TensorFlow into your main bundle.
+
+```ts
+// ✅ correct — TF-bearing symbols come from /analysis
+import { AudioAnalyzer, MusicClassifier, PitchAnalyzer } from 'playlist-data-engine/analysis';
+
+// ❌ wrong — these are NOT on the default (TF-free) entry
+import { AudioAnalyzer } from 'playlist-data-engine';
+```
+
+The default `playlist-data-engine` entry is kept TensorFlow-free on purpose so
+apps that only need parsing/generation/gateway utilities don't pay the TF cost.
+For web apps, run analysis in a **Web Worker** so the TF runtime loads on a
+worker thread. (See `src/features/directoryTools/audioAnalysis/analyzeWorker.ts`
+in ApeTapes for a reference worker implementation.)
+
+---
+
 ## 3-Tap Real-Time Analysis
 
 The original `AudioAnalyzer` real-time analysis uses the "Triple Tap" strategy: analyzing three key positions (5%, 40%, 70%) in tracks longer than 3 seconds, or the full buffer for shorter clips.
@@ -42,7 +66,7 @@ extractSonicFingerprint(audioUrl: string): Promise<AudioProfile>
 ### Usage
 
 ```typescript
-import { AudioAnalyzer } from 'playlist-data-engine';
+import { AudioAnalyzer } from 'playlist-data-engine/analysis';
 
 const analyzer = new AudioAnalyzer({
   includeAdvancedMetrics: true,  // Include spectral centroid, rolloff, zero-crossing rate
@@ -144,7 +168,7 @@ const timeline = await analyzer.analyzeTimeline(audioUrl, {
 ### Usage Example
 
 ```typescript
-import { AudioAnalyzer } from 'playlist-data-engine';
+import { AudioAnalyzer } from 'playlist-data-engine/analysis';
 
 const analyzer = new AudioAnalyzer();
 
@@ -183,7 +207,7 @@ analyze(audioUrl: string): Promise<MusicClassificationProfile>
 ### Usage Example
 
 ```typescript
-import { MusicClassifier } from 'playlist-data-engine';
+import { MusicClassifier } from 'playlist-data-engine/analysis';
 
 const classifier = new MusicClassifier({
   topN: 3,                       // Return top 3 genres/moods
@@ -263,7 +287,7 @@ Every model option (`genre`, `mood`, `danceability`, `voice`, `acoustic`) accept
 For URLs where architecture cannot be detected (e.g., Arweave URLs), use `SingleStepModelConfig`:
 
 ```typescript
-import { MusicClassifier, type SingleStepModelConfig } from 'playlist-data-engine';
+import { MusicClassifier, type SingleStepModelConfig } from 'playlist-data-engine/analysis';
 
 const config: SingleStepModelConfig = {
     modelUrl: 'https://arweave.net/xxx/model.json',
@@ -285,7 +309,7 @@ const config: SingleStepModelConfig = {
 Separate embedding and classifier models with optional explicit type parameters:
 
 ```typescript
-import { MusicClassifier, type TwoStepModelConfig } from 'playlist-data-engine';
+import { MusicClassifier, type TwoStepModelConfig } from 'playlist-data-engine/analysis';
 
 const config: TwoStepModelConfig = {
     embedding: '/models/discogs-effnet-bs64-1.json',
@@ -391,7 +415,7 @@ const classifier = new MusicClassifier({
 The default configuration uses pre-configured Arweave-hosted models:
 
 ```typescript
-import { MusicClassifier } from 'playlist-data-engine';
+import { MusicClassifier } from 'playlist-data-engine/analysis';
 
 // Zero setup - models load from Arweave automatically
 const classifier = new MusicClassifier();
@@ -410,7 +434,7 @@ const profile = await classifier.analyze('https://example.com/track.mp3');
 Instead of raw URLs, use preset names to select pre-configured models. This is the simplest way to swap genre/mood/danceability models without managing URLs.
 
 ```typescript
-import { MusicClassifier } from 'playlist-data-engine';
+import { MusicClassifier } from 'playlist-data-engine/analysis';
 
 // Use presets for genre and mood
 const classifier = new MusicClassifier({
@@ -441,7 +465,7 @@ const classifier = new MusicClassifier({
 To enumerate available presets at runtime:
 
 ```typescript
-import { AVAILABLE_PRESETS } from 'playlist-data-engine';
+import { AVAILABLE_PRESETS } from 'playlist-data-engine/analysis';
 console.log(AVAILABLE_PRESETS.genre);       // ['discogs400', 'jamendo', 'tzanetakis', 'musicnn']
 console.log(AVAILABLE_PRESETS.mood);        // ['jamendo', 'happyMusicnn']
 console.log(AVAILABLE_PRESETS.danceability); // ['default']
@@ -450,7 +474,7 @@ console.log(AVAILABLE_PRESETS.danceability); // ['default']
 **Partial Override & Custom Arweave Models:**
 
 ```typescript
-import { MusicClassifier, DEFAULT_ARWEAVE_MODELS } from 'playlist-data-engine';
+import { MusicClassifier, DEFAULT_ARWEAVE_MODELS } from 'playlist-data-engine/analysis';
 
 const classifier = new MusicClassifier({
     models: {
@@ -524,7 +548,7 @@ analyze(audioUrl: string): Promise<PitchAnalysisProfile>
 ### Usage Example
 
 ```typescript
-import { PitchAnalyzer } from 'playlist-data-engine';
+import { PitchAnalyzer } from 'playlist-data-engine/analysis';
 
 const analyzer = new PitchAnalyzer({
   algorithm: 'pitch_melodia',

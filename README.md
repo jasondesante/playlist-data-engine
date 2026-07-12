@@ -107,7 +107,7 @@ const duration = getTotalDuration(playlist); // total seconds
 ### Analyze Audio
 
 ```typescript
-import { AudioAnalyzer, MusicClassifier, PitchAnalyzer } from 'playlist-data-engine';
+import { AudioAnalyzer, MusicClassifier, PitchAnalyzer } from 'playlist-data-engine/analysis';
 
 // Fast sonic fingerprint (samples at 5%, 40%, 70%)
 const analyzer = new AudioAnalyzer();
@@ -148,7 +148,8 @@ const result = stream.checkButtonPress(timestamp);
 ### Generate a Character from a Song
 
 ```typescript
-import { AudioAnalyzer, CharacterGenerator, generateSeed } from 'playlist-data-engine';
+import { CharacterGenerator, generateSeed } from 'playlist-data-engine';
+import { AudioAnalyzer } from 'playlist-data-engine/analysis';
 
 const analyzer = new AudioAnalyzer();
 const audioProfile = await analyzer.extractSonicFingerprint(track.audio_url);
@@ -328,16 +329,20 @@ Dual ESM/CJS package with TypeScript declarations:
 ```typescript
 import {
   PlaylistParser,
-  AudioAnalyzer,
-  MusicClassifier,
-  PitchAnalyzer,
   BeatMapGenerator,
   CharacterGenerator,
   CombatEngine,
   CombatSimulator,
   arweaveGatewayManager,
-  // ... many more
+  // ... many more (TF-free default entry)
 } from 'playlist-data-engine';
+
+// Audio analysis symbols pull @tensorflow/tfjs — import from /analysis
+import {
+  AudioAnalyzer,
+  MusicClassifier,
+  PitchAnalyzer,
+} from 'playlist-data-engine/analysis';
 ```
 
 ### Browser & Node.js

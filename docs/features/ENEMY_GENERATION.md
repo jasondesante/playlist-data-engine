@@ -47,7 +47,8 @@ The Enemy Generation System creates balanced combat encounters through:
 ## Quick Start
 
 ```typescript
-import { AudioAnalyzer, EnemyGenerator } from 'playlist-data-engine';
+import { EnemyGenerator } from 'playlist-data-engine';
+import { AudioAnalyzer } from 'playlist-data-engine/analysis';
 
 // ═══════════════════════════════════════════════════════════════
 // SINGLE ENEMY

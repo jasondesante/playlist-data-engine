@@ -7,9 +7,17 @@ export default defineConfig({
   plugins: [react()],
   build: {
     lib: {
-      entry: 'src/index.ts',
+      entry: {
+        index: 'src/index.ts',
+        gateway: 'src/gateway.ts',
+        analysis: 'src/analysis.ts',
+      },
       name: 'PlaylistDataEngine',
-      fileName: (format: 'es' | 'cjs') => `playlist-data-engine.${format === 'es' ? 'mjs' : 'js'}`
+      fileName: (format: 'es' | 'cjs', entryName: string) => {
+        if (entryName === 'gateway') return `gateway.${format === 'es' ? 'mjs' : 'js'}`;
+        if (entryName === 'analysis') return `analysis.${format === 'es' ? 'mjs' : 'js'}`;
+        return `playlist-data-engine.${format === 'es' ? 'mjs' : 'js'}`;
+      }
     },
     rollupOptions: {
       external: [

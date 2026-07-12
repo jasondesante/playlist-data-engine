@@ -11,11 +11,22 @@
   "main": "./dist/playlist-data-engine.js",
   "module": "./dist/playlist-data-engine.mjs",
   "types": "./dist/index.d.ts",
+  "sideEffects": false,
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/playlist-data-engine.mjs",
       "require": "./dist/playlist-data-engine.js"
+    },
+    "./gateway": {
+      "types": "./dist/gateway.d.ts",
+      "import": "./dist/gateway.mjs",
+      "require": "./dist/gateway.js"
+    },
+    "./analysis": {
+      "types": "./dist/analysis.d.ts",
+      "import": "./dist/analysis.mjs",
+      "require": "./dist/analysis.js"
     }
   },
   "files": [

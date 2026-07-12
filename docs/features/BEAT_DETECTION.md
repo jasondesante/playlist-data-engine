@@ -6,6 +6,32 @@ The Playlist Data Engine provides beat detection and rhythm analysis features fo
 
 ---
 
+## ⚠️ Import paths — split across two entries
+
+Beat detection spans **two** package entries because part of the pipeline depends
+on `@tensorflow/tfjs` (~14 MB) and part does not:
+
+- **`playlist-data-engine`** (default, TF-free): `BeatMapGenerator`, `RhythmGenerator`,
+  `BeatStream`, `BeatInterpolator`, `validateThresholds`, `reapplyDownbeatConfig`,
+  `MultiBandAnalyzer`, `TransientDetector`, `RhythmQuantizer`, `GrooveAnalyzer`, etc.
+- **`playlist-data-engine/analysis`** (TF-bearing): `AudioAnalyzer`, `PitchBeatLinker`,
+  `ButtonMapper`, `LevelGenerator`, `LevelSerializer`, `BeatConverter`.
+
+If a code example below imports symbols from both entries, split the import:
+
+```ts
+// ✅ TF-free beat detection — default entry, no TensorFlow
+import { BeatMapGenerator, validateThresholds } from 'playlist-data-engine';
+
+// ✅ ML-dependent pitch/level pipeline — /analysis pulls TensorFlow
+import { AudioAnalyzer, PitchBeatLinker, LevelGenerator } from 'playlist-data-engine/analysis';
+```
+
+For web apps, keep any `/analysis` usage in a Web Worker so TF loads on a worker
+thread. See ApeTapes' `analyzeWorker.ts` for a reference.
+
+---
+
 ## Table of Contents
 
 - [Overview](#overview)
@@ -646,7 +672,7 @@ new TempoDetector(config?: TempoDetectorConfig)
 #### Basic BeatMap Generation
 
 ```typescript
-import { AudioAnalyzer } from 'playlist-data-engine';
+import { AudioAnalyzer } from 'playlist-data-engine/analysis';
 
 const analyzer = new AudioAnalyzer();
 
@@ -704,7 +730,7 @@ console.log(`Settings used:`, beatMap.metadata.sensitivity, beatMap.metadata.fil
 #### BeatMap Serialization
 
 ```typescript
-import { AudioAnalyzer } from 'playlist-data-engine';
+import { AudioAnalyzer } from 'playlist-data-engine/analysis';
 
 const analyzer = new AudioAnalyzer();
 const beatMap = await analyzer.generateBeatMap('song.mp3', 'track-001');
@@ -725,7 +751,7 @@ const parsedBeatMap = AudioAnalyzer.beatMapFromJSON(jsonString);
 #### Beat Stream Setup
 
 ```typescript
-import { AudioAnalyzer } from 'playlist-data-engine';
+import { AudioAnalyzer } from 'playlist-data-engine/analysis';
 
 const analyzer = new AudioAnalyzer();
 const audioContext = new AudioContext();
@@ -771,7 +797,7 @@ beatStream.start();
 #### Button Press Detection
 
 ```typescript
-import { AudioAnalyzer } from 'playlist-data-engine';
+import { AudioAnalyzer } from 'playlist-data-engine/analysis';
 
 const analyzer = new AudioAnalyzer();
 const audioContext = new AudioContext();
@@ -814,7 +840,8 @@ See [Configuring Difficulty](#configuring-difficulty) for how to customize thres
 The beat detection system supports configurable difficulty through three presets (`easy`, `medium`, `hard`) and custom thresholds.
 
 ```typescript
-import { AudioAnalyzer, validateThresholds } from 'playlist-data-engine';
+import { validateThresholds } from 'playlist-data-engine';
+import { AudioAnalyzer } from 'playlist-data-engine/analysis';
 
 const analyzer = new AudioAnalyzer();
 const audioContext = new AudioContext();
@@ -1309,7 +1336,7 @@ The result is an `InterpolatedBeatMap` with two output streams:
 The simplest way to use beat interpolation is with the default settings:
 
 ```typescript
-import { AudioAnalyzer } from 'playlist-data-engine';
+import { AudioAnalyzer } from 'playlist-data-engine/analysis';
 
 const analyzer = new AudioAnalyzer();
 
@@ -1330,7 +1357,7 @@ console.log(`Quarter note: ${interpolated.quarterNoteBpm} BPM`);
 For convenience, you can generate and interpolate in a single call:
 
 ```typescript
-import { AudioAnalyzer } from 'playlist-data-engine';
+import { AudioAnalyzer } from 'playlist-data-engine/analysis';
 
 const analyzer = new AudioAnalyzer();
 
@@ -1351,7 +1378,7 @@ console.log(`Quarter note confidence: ${interpolated.quarterNoteConfidence}`);
 The `InterpolatedBeatMap` provides two beat streams for different use cases:
 
 ```typescript
-import { AudioAnalyzer } from 'playlist-data-engine';
+import { AudioAnalyzer } from 'playlist-data-engine/analysis';
 
 const analyzer = new AudioAnalyzer();
 const interpolated = await analyzer.generateBeatMapWithInterpolation(
@@ -1382,7 +1409,8 @@ mergedBeats.forEach(beat => {
 You can use interpolated beats directly with BeatStream:
 
 ```typescript
-import { AudioAnalyzer, BeatStream } from 'playlist-data-engine';
+import { BeatStream } from 'playlist-data-engine';
+import { AudioAnalyzer } from 'playlist-data-engine/analysis';
 
 const analyzer = new AudioAnalyzer();
 const audioContext = new AudioContext();
@@ -1414,7 +1442,7 @@ beatStream.start();
 Fine-tune interpolation behavior with these options:
 
 ```typescript
-import { AudioAnalyzer } from 'playlist-data-engine';
+import { AudioAnalyzer } from 'playlist-data-engine/analysis';
 
 const analyzer = new AudioAnalyzer();
 const beatMap = await analyzer.generateBeatMap('song.mp3', 'track-001');
@@ -1476,7 +1504,8 @@ console.log(`Tempo drift ratio: ${meta.tempoDriftRatio.toFixed(2)}`);
 Save and load interpolated beat maps:
 
 ```typescript
-import { AudioAnalyzer, BeatInterpolator } from 'playlist-data-engine';
+import { BeatInterpolator } from 'playlist-data-engine';
+import { AudioAnalyzer } from 'playlist-data-engine/analysis';
 
 const analyzer = new AudioAnalyzer();
 const interpolated = await analyzer.generateBeatMapWithInterpolation(
@@ -1559,7 +1588,7 @@ If any condition is false, the feature does nothing and lets gradual drift handl
 #### Basic Usage
 
 ```typescript
-import { AudioAnalyzer } from 'playlist-data-engine';
+import { AudioAnalyzer } from 'playlist-data-engine/analysis';
 
 const analyzer = new AudioAnalyzer();
 const beatMap = await analyzer.generateBeatMap('song-with-tempo-change.mp3', 'track-001');
@@ -1743,7 +1772,7 @@ The subdivision system operates on a `UnifiedBeatMap` (created from an `Interpol
 The simplest way to subdivide a beat map:
 
 ```typescript
-import { AudioAnalyzer } from 'playlist-data-engine';
+import { AudioAnalyzer } from 'playlist-data-engine/analysis';
 
 const analyzer = new AudioAnalyzer();
 
@@ -1764,7 +1793,8 @@ console.log(`Density multiplier: ${subdivided.subdivisionMetadata.averageDensity
 Use per-beat configuration for fine-grained control over rhythm patterns:
 
 ```typescript
-import { AudioAnalyzer, type SubdivisionConfig } from 'playlist-data-engine';
+import { type SubdivisionConfig } from 'playlist-data-engine';
+import { AudioAnalyzer } from 'playlist-data-engine/analysis';
 
 const analyzer = new AudioAnalyzer();
 const interpolated = await analyzer.generateBeatMapWithInterpolation('song.mp3', 'track-001');
@@ -4009,10 +4039,12 @@ const mapped = buttonMapper.mapVariant(variant, rhythmMetadata, pitchAnalysis);
 ```typescript
 import {
   DifficultyVariantGenerator,
-  LevelGenerator,
-  ButtonMapper,
   deriveAllowedGridTypes,
 } from 'playlist-data-engine';
+import {
+  LevelGenerator,
+  ButtonMapper,
+} from 'playlist-data-engine/analysis';
 
 // 1. Dense chart with only 8th notes (no 16ths, no triplets)
 const variant = variantGenerator.generateAtDensity(
@@ -4065,7 +4097,7 @@ const allowedTypes = deriveAllowedGridTypes(config, bpm);
 ### Basic Rhythm Generation
 
 ```typescript
-import { AudioAnalyzer } from 'playlist-data-engine';
+import { AudioAnalyzer } from 'playlist-data-engine/analysis';
 
 const analyzer = new AudioAnalyzer();
 
@@ -4085,7 +4117,7 @@ console.log(`Hard: ${hardVariant.beats.length} beats`);
 ### Generate with Default Settings
 
 ```typescript
-import { AudioAnalyzer } from 'playlist-data-engine';
+import { AudioAnalyzer } from 'playlist-data-engine/analysis';
 
 const analyzer = new AudioAnalyzer();
 
@@ -4210,7 +4242,7 @@ console.log(`Natural difficulty: ${rhythm.composite.naturalDifficulty}`);
 ### Working with Difficulty Variants
 
 ```typescript
-import { AudioAnalyzer } from 'playlist-data-engine';
+import { AudioAnalyzer } from 'playlist-data-engine/analysis';
 
 const analyzer = new AudioAnalyzer();
 const rhythm = await analyzer.generateRhythm('song.mp3', 'track-001');
@@ -4237,7 +4269,7 @@ console.log(`Natural variant: ${naturalVariant.beats.length} beats (unedited com
 ### Accessing Individual Band Streams
 
 ```typescript
-import { AudioAnalyzer } from 'playlist-data-engine';
+import { AudioAnalyzer } from 'playlist-data-engine/analysis';
 
 const analyzer = new AudioAnalyzer();
 const rhythm = await analyzer.generateRhythm('song.mp3', 'track-001');
@@ -4490,7 +4522,7 @@ For rhythm games, we only need pitch at the moments when players press buttons�
 The `PitchBeatLinker` runs full-spectrum pitch detection and matches pitch frames to composite beat timestamps:
 
 ```typescript
-import { PitchBeatLinker } from 'playlist-data-engine';
+import { PitchBeatLinker } from 'playlist-data-engine/analysis';
 
 const linker = new PitchBeatLinker();
 
@@ -4717,7 +4749,8 @@ When pitch probability is low:
 ### Basic Level Generation
 
 ```typescript
-import { RhythmGenerator, PitchBeatLinker, ButtonMapper } from 'playlist-data-engine';
+import { RhythmGenerator } from 'playlist-data-engine';
+import { PitchBeatLinker, ButtonMapper } from 'playlist-data-engine/analysis';
 
 // Step 1: Generate rhythm
 const rhythmGenerator = new RhythmGenerator({ difficulty: 'medium' });
@@ -4743,7 +4776,8 @@ console.log(`Generated ${buttonMap.keyAssignments.size} button assignments`);
 ### Pattern-Only Generation (No Pitch Analysis)
 
 ```typescript
-import { RhythmGenerator, ButtonMapper } from 'playlist-data-engine';
+import { RhythmGenerator } from 'playlist-data-engine';
+import { ButtonMapper } from 'playlist-data-engine/analysis';
 
 // Generate rhythm without pitch analysis
 const rhythmGenerator = new RhythmGenerator({ difficulty: 'easy' });
@@ -4762,7 +4796,7 @@ const buttonMap = mapper.map(rhythm, 'easy');
 Pass a `seed` to `LevelGenerator` for fully deterministic level generation. The same seed + same audio + same settings always produces the same level:
 
 ```typescript
-import { LevelGenerator } from 'playlist-data-engine';
+import { LevelGenerator } from 'playlist-data-engine/analysis';
 
 // Generate a level with a seed
 const generator = new LevelGenerator({
@@ -4795,10 +4829,9 @@ import {
   BeatMapGenerator,
   BeatInterpolator,
   unifyBeatMap,
-  RhythmGenerator,
-  PitchBeatLinker,
-  ButtonMapper
+  RhythmGenerator
 } from 'playlist-data-engine';
+import { PitchBeatLinker, ButtonMapper } from 'playlist-data-engine/analysis';
 
 // Step 1: Generate beat map
 const beatMapGenerator = new BeatMapGenerator();
@@ -4851,7 +4884,7 @@ The `LevelSerializer` class provides methods to save and load generated levels. 
 - Caching generated levels to avoid re-generation
 
 ```typescript
-import { LevelGenerator, LevelSerializer } from 'playlist-data-engine';
+import { LevelGenerator, LevelSerializer } from 'playlist-data-engine/analysis';
 
 // Generate a level
 const generator = new LevelGenerator({
@@ -4904,7 +4937,8 @@ console.assert(
 The `GeneratedLevel` output includes a `chart` property that is already a `ChartedBeatMap` ready for use with `BeatStream`. No additional conversion is needed.
 
 ```typescript
-import { LevelGenerator, BeatStream } from 'playlist-data-engine';
+import { BeatStream } from 'playlist-data-engine';
+import { LevelGenerator } from 'playlist-data-engine/analysis';
 
 // Generate a level
 const generator = new LevelGenerator({
@@ -5130,7 +5164,7 @@ The serialization format preserves all level data through save/load cycles:
 #### Round-Trip Example
 
 ```typescript
-import { LevelGenerator, LevelSerializer } from 'playlist-data-engine';
+import { LevelGenerator, LevelSerializer } from 'playlist-data-engine/analysis';
 
 // Generate a level
 const level = await generator.generate(audioBuffer, unifiedBeatMap);

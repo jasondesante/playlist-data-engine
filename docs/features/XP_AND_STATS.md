@@ -657,9 +657,9 @@ console.log(`Max Prestige: ${info.isMaxPrestige}`);
 import {
   SessionTracker,
   CharacterUpdater,
-  AudioAnalyzer,
   CharacterGenerator
 } from 'playlist-data-engine';
+import { AudioAnalyzer } from 'playlist-data-engine/analysis';
 
 const analyzer = new AudioAnalyzer();
 const tracker = new SessionTracker();

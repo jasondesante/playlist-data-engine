@@ -569,13 +569,7 @@ export {
     type ResolveIPFSOptions,
 } from './utils/ipfsUtils.js';
 
-// ML Model Cache (localForage-backed IndexedDB persistence for TF.js models)
-export {
-    ModelCache,
-    modelCache,
-    type ModelCacheOptions,
-    type ModelCacheFetchOptions,
-} from './utils/modelCache.js';
+// ML Model Cache moved to `playlist-data-engine/analysis` (persists TF.js models).
 
 // Track extras extraction (stems, mixes, conditions)
 export {
@@ -771,45 +765,16 @@ export {
 // PITCH DETECTION
 // ============================================================================
 
-// Pitch Detector (pYIN algorithm)
+// Pitch Detector (pYIN algorithm) — TF-free, stays on main entry.
 export {
     PitchDetector,
     type PitchDetectorConfig,
     type PitchResult,
 } from './core/analysis/PitchDetector.js';
 
-// Essentia Pitch Detector (WASM algorithms + CREPE)
-export {
-    EssentiaPitchDetector,
-    DEFAULT_CREPE_MODEL_URL,
-    type EssentiaPitchAlgorithm,
-    type PitchAlgorithm,
-} from './core/analysis/EssentiaPitchDetector.js';
-
-// Pitch Beat Linker
-export {
-    PitchBeatLinker,
-    type PitchBeatLinkerConfig,
-    type PitchAtBeat,
-    type PitchBandName as LinkedPitchBandName,
-    type PitchDirection,
-    type IntervalCategory,
-} from './core/generation/PitchBeatLinker.js';
-
-// ============================================================================
-// PITCH ANALYSIS
-// ============================================================================
-
-// PitchAnalyzer - Standalone full-track pitch detection (no beat dependency)
-export {
-    PitchAnalyzer,
-    type PitchAnalyzerConfig,
-    type PitchAnalysisProfile,
-    type PitchContour,
-    type PitchContourSegment,
-    type PitchContourSegmentDirection,
-    type PitchContourDirection,
-} from './core/analysis/PitchAnalyzer.js';
+// EssentiaPitchDetector, PitchBeatLinker, and PitchAnalyzer moved to
+// `playlist-data-engine/analysis` (TF-dependent). The pure pYIN PitchDetector
+// above is TF-free and remains here.
 
 // Button Pattern Library
 export {
@@ -825,34 +790,10 @@ export {
     getPatternLibraryStats,
 } from './core/generation/ButtonPatternLibrary.js';
 
-// Button Mapper (Phase 2.3)
-export {
-    ButtonMapper,
-    type MappedLevelResult,
-    type ButtonMappingMetadata,
-} from './core/generation/ButtonMapper.js';
+// Button Mapper, Beat Converter, Level Generator moved to
+// `playlist-data-engine/analysis` (TF-dependent generation tree).
 
-// Beat Converter (Phase 2.7)
-export {
-    BeatConverter,
-} from './core/generation/BeatConverter.js';
-
-// Level Generator (Phase 3.1)
-export {
-    LevelGenerator,
-    type LevelGenerationOptions,
-    type LevelMetadata,
-    type GeneratedLevel,
-    type AllDifficultiesResult,
-    type LevelProgressCallback,
-    type LevelGenerationProgress,
-} from './core/generation/LevelGenerator.js';
-
-// Level Serializer (Phase 4.2.2)
-export {
-    LevelSerializer,
-    type LevelSerializerOptions,
-} from './core/analysis/LevelSerializer.js';
+// Level Serializer moved to `playlist-data-engine/analysis` (TF-dependent).
 
 // ============================================================================
 // ENEMY GENERATION
@@ -930,33 +871,10 @@ export { PartyAnalyzer, type PartyAnalysis } from './core/combat/PartyAnalyzer.j
 
 export { PlaylistParser, type PlaylistParserOptions } from './core/parser/PlaylistParser.js';
 export { MetadataExtractor } from './core/parser/MetadataExtractor.js';
-export { AudioAnalyzer, type AudioAnalyzerOptions, type SamplingStrategy } from './core/analysis/AudioAnalyzer.js';
-export {
-    MusicClassifier,
-    type MusicClassifierOptions,
-    type ModelArchitecture,
-    type GenreListType,
-    type TwoStepModelConfig,
-    type SingleStepModelConfig,
-    type ModelConfig,
-    type GenrePreset,
-    type MoodPreset,
-    type DanceabilityPreset,
-    type ClassifierPreset,
-    isTwoStepModel,
-    isSingleStepModel,
-    detectModelArchitecture,
-    detectGenreListType,
-    getGenreLabels,
-    formatModelForMetadata,
-    averageEmbeddings,
-    DEFAULT_ARWEAVE_MODELS,
-    GENRE_PRESETS,
-    MOOD_PRESETS,
-    DANCEABILITY_PRESETS,
-    AVAILABLE_PRESETS,
-    DISCOGS400_GENRES
-} from './core/analysis/MusicClassifier.js';
+// NOTE: AudioAnalyzer, MusicClassifier, and the rest of the TensorFlow-dependent
+// audio-analysis + level-generation surface have moved to `playlist-data-engine/analysis`.
+// See `src/analysis.ts`. The main entry is TF-free so consumers that only need
+// gateway/metadata utilities don't pull @tensorflow/tfjs into their bundle.
 export { SpectrumScanner } from './core/analysis/SpectrumScanner.js';
 export { ColorExtractor, type ColorExtractorOptions } from './core/analysis/ColorExtractor.js';
 

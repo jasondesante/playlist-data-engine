@@ -41,6 +41,34 @@ cd /path/to/your/project && npm link playlist-data-engine
 
 ---
 
+## Import paths (read this first)
+
+The engine ships **three entry points**. Picking the right one matters because
+the audio-analysis surface depends on `@tensorflow/tfjs` (~14 MB), and importing
+it accidentally will inflate your bundle.
+
+| Import path | What it provides | Pulls TensorFlow? |
+|---|---|---|
+| `playlist-data-engine` (default) | Everything **except** audio analysis — gateway/URL utils, metadata parsing, character/rhythm generation, beat detection, color extraction. | **No** |
+| `playlist-data-engine/gateway` | Just the Arweave/IPFS gateway manager + URL helpers + `MetadataExtractor`. The lightest entry. | **No** |
+| `playlist-data-engine/analysis` | Audio analysis & level generation that needs ML: `MusicClassifier`, `AudioAnalyzer`, `EssentiaPitchDetector`, `PitchAnalyzer`, `LevelGenerator`, `LevelSerializer`, `BeatConverter`, `ButtonMapper`, `PitchBeatLinker`, `ModelCache`. | **Yes** |
+
+Rules of thumb:
+- **Default to the bare `playlist-data-engine` import.** It is TF-free and covers the vast majority of use cases (parsing, generation, beat detection without ML pitch).
+- **Only import from `/analysis` in code that actually runs ML** — and ideally isolate that code in a Web Worker so the TensorFlow.js runtime is loaded on a worker thread, not the main thread.
+- **Never re-export `/analysis` symbols through the main entry or `/gateway`** — that defeats the split and silently re-introduces TF into every consumer.
+
+```ts
+// ✅ TF-free — most code should look like this
+import { PlaylistParser, MetadataExtractor, BeatMapGenerator } from 'playlist-data-engine';
+import { ArweaveGatewayManager } from 'playlist-data-engine/gateway';
+
+// ✅ TF-bearing — only in your audio-analysis worker
+import { MusicClassifier, AudioAnalyzer } from 'playlist-data-engine/analysis';
+```
+
+---
+
 ## Usage Examples
 
 ### Basic
@@ -95,9 +123,9 @@ See [EQUIPMENT_SYSTEM.md](docs/EQUIPMENT_SYSTEM.md) for:
 ```typescript
 import {
   PlaylistParser,
-  CharacterGenerator,
-  AudioAnalyzer
+  CharacterGenerator
 } from 'playlist-data-engine';
+import { AudioAnalyzer } from 'playlist-data-engine/analysis';
 
 // Parse a playlist
 const parser = new PlaylistParser();
@@ -184,7 +212,7 @@ urls.forEach(url => audioPlayer.add(url));
 Perform a detailed, segment-by-segment analysis of the entire song. This is ideal for generating game levels or showing a song's progression over time.
 
 ```typescript
-import { AudioAnalyzer } from 'playlist-data-engine';
+import { AudioAnalyzer } from 'playlist-data-engine/analysis';
 
 const analyzer = new AudioAnalyzer();
 
@@ -297,7 +325,8 @@ The same seed and audio profile always produces the same character:
 **For more details on deterministic seeding, hash utilities, and seeded randomness, see [ROLLS_AND_SEEDS.md](docs/ROLLS_AND_SEEDS.md)**
 
 ```typescript
-import { CharacterGenerator, AudioAnalyzer, type CharacterSheet } from 'playlist-data-engine';
+import { CharacterGenerator, type CharacterSheet } from 'playlist-data-engine';
+import { AudioAnalyzer } from 'playlist-data-engine/analysis';
 
 const seed = 'ethereum-0x123abc-1';
 const analyzer = new AudioAnalyzer();
@@ -333,12 +362,12 @@ if (!characterCache.has(track.id)) {
 import {
   PlaylistParser,
   CharacterGenerator,
-  AudioAnalyzer,
   EnvironmentalSensors,
   GamingPlatformSensors,
   SessionTracker,
   CharacterUpdater
 } from 'playlist-data-engine';
+import { AudioAnalyzer } from 'playlist-data-engine/analysis';
 
 // Full pipeline: Parse → Analyze → Generate → Track → Level Up
 
