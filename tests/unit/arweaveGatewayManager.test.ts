@@ -594,6 +594,34 @@ describe('Fallback to alternate gateways', () => {
         expect(mockFetch).not.toHaveBeenCalled();
     });
 
+    it('should normalize www.arweave.net to arweave.net in Step 0 (avoid 5s timeout on the www host)', async () => {
+        // Default gateways include arweave.net. A www.arweave.net input used to
+        // be probed as-is in Step 0 and time out; it should normalize to the
+        // bare host so Step 0 hits the working gateway directly.
+        const manager = new ArweaveGatewayManager({ timeout: 1000 });
+
+        const probedHosts: string[] = [];
+        mockFetch.mockImplementation(async (url: string) => {
+            probedHosts.push(new URL(url).host);
+            // Only bare arweave.net answers; www.arweave.net never resolves.
+            if (new URL(url).host === 'arweave.net') {
+                return new Response(null, { status: 200 });
+            }
+            // Simulate the www host hanging until timeout.
+            return new Promise((_, reject) => {
+                const t = setTimeout(() => reject(new DOMException('Aborted', 'AbortError')), 50);
+                manager && void t;
+            });
+        });
+
+        const wwwUrl = 'https://www.arweave.net/' + VALID_TX_ID;
+        const result = await manager.resolveUrl(wwwUrl);
+
+        expect(result).toBe('https://arweave.net/' + VALID_TX_ID);
+        expect(probedHosts).toContain('arweave.net');
+        expect(probedHosts).not.toContain('www.arweave.net');
+    });
+
     it('should check all gateways in parallel', async () => {
         const manager = new ArweaveGatewayManager({
             gateways: CUSTOM_GATEWAYS,

@@ -18,10 +18,25 @@
 import type { GatewayConfig } from './arweaveUtils.js';
 import {
     DEFAULT_GATEWAYS,
+    KNOWN_GATEWAY_HOSTS,
     isArweaveUrl,
     parseArweaveUrl,
     constructGatewayUrl,
 } from './arweaveUtils.js';
+
+/**
+ * Strip a leading `www.` from a hostname when the bare host is itself a known
+ * Arweave gateway. `www.arweave.net` serves the same content as `arweave.net`
+ * but is far less reliable for CORS HEAD probes — Step 0 was burning a full
+ * timeout (5s) on it before reaching the working bare host at Step 2.
+ * Normalizing here makes Step 0 hit the known-good host directly and sets
+ * `excludeHost` so Step 2 won't re-probe it.
+ */
+function normalizeGatewayHost(host: string): string {
+    if (!host.startsWith('www.')) return host;
+    const bare = host.slice(4);
+    return KNOWN_GATEWAY_HOSTS.includes(bare as never) ? bare : host;
+}
 import { Logger } from './logger.js';
 
 /**
@@ -841,7 +856,7 @@ export class ArweaveGatewayManager {
             try {
                 const parsed = new URL(url);
                 const originalGateway: GatewayConfig = {
-                    host: parsed.host, // includes port if present
+                    host: normalizeGatewayHost(parsed.host), // includes port if present; strips www. for known gateways
                     protocol: parsed.protocol.replace(':', '') as 'http' | 'https',
                     priority: 0,
                 };
