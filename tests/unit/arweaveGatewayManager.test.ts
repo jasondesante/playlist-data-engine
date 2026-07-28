@@ -19,7 +19,12 @@ import {
     ArweaveGatewayManager,
     type ArweaveGatewayManagerConfig,
 } from '../../src/utils/arweaveGatewayManager';
-import type { GatewayConfig } from '../../src/utils/arweaveUtils';
+import {
+    type GatewayConfig,
+    isArweaveUrl,
+    parseArweaveUrl,
+    isLegacyRedirectHost,
+} from '../../src/utils/arweaveUtils';
 
 // Mock Wayfinder
 const mockWayfinderInstance = {
@@ -2032,5 +2037,86 @@ describe('reportFetchSuccess', () => {
         expect(result).toContain('example.com');
         // Should have called fetch (new gateway search due to rotation)
         expect(mockFetch).toHaveBeenCalled();
+    });
+});
+
+// ============================================================
+// Test legacy redirect hosts (e.g. gateway.irys.xyz)
+// ============================================================
+//
+// gateway.irys.xyz is a read-layer front that 301/302 redirects to an arbitrary
+// backing gateway, which may be dead or rate-limited. Such URLs must still be
+// RECOGNIZED as Arweave URLs (so the txId is extracted), but the manager must
+// NEVER probe them or follow the redirect — it should re-resolve the txId
+// through the normal working-gateway chain instead.
+describe('Legacy redirect host handling (gateway.irys.xyz)', () => {
+    const IRYS_URL = 'https://gateway.irys.xyz/' + VALID_TX_ID;
+    const IRYS_URL_WITH_PATH = 'https://gateway.irys.xyz/' + VALID_TX_ID + '/model.json';
+
+    it('should still detect gateway.irys.xyz URLs as Arweave URLs', () => {
+        expect(isArweaveUrl(IRYS_URL)).toBe(true);
+        expect(isArweaveUrl(IRYS_URL_WITH_PATH)).toBe(true);
+        expect(isArweaveUrl('https://irys.xyz/' + VALID_TX_ID)).toBe(true);
+    });
+
+    it('should flag irys.xyz / gateway.irys.xyz as legacy redirect hosts', () => {
+        expect(isLegacyRedirectHost('gateway.irys.xyz')).toBe(true);
+        expect(isLegacyRedirectHost('irys.xyz')).toBe(true);
+        // A bare Arweave gateway is NOT a legacy redirect host
+        expect(isLegacyRedirectHost('arweave.net')).toBe(false);
+        expect(isLegacyRedirectHost('ardrive.net')).toBe(false);
+        expect(isLegacyRedirectHost('')).toBe(false);
+    });
+
+    it('should extract the txId from a gateway.irys.xyz URL', () => {
+        const parsed = parseArweaveUrl(IRYS_URL);
+        expect(parsed).not.toBeNull();
+        expect(parsed!.txId).toBe(VALID_TX_ID);
+
+        const parsedWithPath = parseArweaveUrl(IRYS_URL_WITH_PATH);
+        expect(parsedWithPath).not.toBeNull();
+        expect(parsedWithPath!.txId).toBe(VALID_TX_ID);
+        expect(parsedWithPath!.pathSuffix).toBe('/model.json');
+    });
+
+    it('should NOT probe gateway.irys.xyz and should re-resolve via a real gateway', async () => {
+        const manager = new ArweaveGatewayManager();
+        await vi.advanceTimersByTimeAsync(0);
+
+        // arweave.net responds OK; everything else would fail.
+        mockFetch.mockImplementation(async (url: string) => {
+            if (url.includes('arweave.net')) {
+                return new Response(null, { status: 200 });
+            }
+            return new Response(null, { status: 500 });
+        });
+
+        const result = await manager.resolveUrl(IRYS_URL);
+
+        // Resolved URL must point at a real, verified gateway — NOT irys.xyz.
+        expect(result).toContain('arweave.net');
+        expect(result).not.toContain('irys.xyz');
+        expect(result).toContain(VALID_TX_ID);
+
+        // The manager must never have issued a fetch against gateway.irys.xyz.
+        const probedHosts = (mockFetch.mock.calls as [string][])
+            .map(([u]) => { try { return new URL(u).host; } catch { return u; } });
+        expect(probedHosts).not.toContain('gateway.irys.xyz');
+    });
+
+    it('should preserve path suffix when re-resolving a gateway.irys.xyz URL', async () => {
+        const manager = new ArweaveGatewayManager();
+        await vi.advanceTimersByTimeAsync(0);
+
+        mockFetch.mockImplementation(async (url: string) => {
+            if (url.includes('arweave.net')) {
+                return new Response(null, { status: 200 });
+            }
+            return new Response(null, { status: 500 });
+        });
+
+        const result = await manager.resolveUrl(IRYS_URL_WITH_PATH);
+        expect(result).toContain('arweave.net/' + VALID_TX_ID + '/model.json');
+        expect(result).not.toContain('irys.xyz');
     });
 });

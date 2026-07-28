@@ -57,6 +57,43 @@ export const KNOWN_GATEWAY_HOSTS = [
 ] as const;
 
 /**
+ * Legacy / redirecting Arweave hosts.
+ *
+ * These hosts are still recognized as Arweave URLs (a txId embedded in a URL on
+ * one of these hosts IS an Arweave transaction), but they must NEVER be fetched
+ * from directly. They are read-layer fronts that 301/302 redirect to whatever
+ * backing gateway they currently map to — and that backing gateway may be dead,
+ * rate-limited, or otherwise unusable. Trusting the redirect would defeat the
+ * purpose of the working-gateway resolution chain: the manager would hand back
+ * a URL that points at an arbitrary (possibly broken) gateway instead of one it
+ * actually verified.
+ *
+ * Correct handling: parse the txId out of the URL, then re-resolve it through
+ * the normal gateway chain (arweave.net → ardrive.net → turbo-gateway.com → …)
+ * just as if the URL had been `ar://{txId}`.
+ *
+ * Entries are matched as exact host OR any subdomain (`gateway.irys.xyz` is
+ * caught by the `irys.xyz` entry). Keep this list to hosts whose redirects we
+ * explicitly do not want to follow.
+ */
+export const LEGACY_REDIRECT_HOSTS = [
+    'irys.xyz',
+] as const;
+
+/**
+ * Check whether a hostname is a legacy/redirecting Arweave host that must not be
+ * fetched from directly. Matches the host itself or any subdomain of it.
+ *
+ * @param host - The hostname to check (lower-cased by the caller is fine but not required)
+ * @returns True if the host redirects and should be re-resolved rather than probed
+ */
+export function isLegacyRedirectHost(host: string): boolean {
+    if (!host) return false;
+    const h = host.toLowerCase();
+    return LEGACY_REDIRECT_HOSTS.some(base => h === base || h.endsWith('.' + base));
+}
+
+/**
  * Regex pattern for extracting 43-character Arweave transaction IDs
  * Arweave IDs are base64url encoded and exactly 43 characters
  */
@@ -90,7 +127,10 @@ export function isArweaveUrl(url: string): boolean {
     }
 
     // Check for known gateway hosts in the URL (includes subdomain hashes like
-    // abc123hash.arweave.net, abc123hash.ardrive.net, gateway.irys.xyz, etc.)
+    // abc123hash.arweave.net, abc123hash.ardrive.net, gateway.irys.xyz, etc.).
+    // Note: matching here only means "this is an Arweave URL" — some of these
+    // hosts (see LEGACY_REDIRECT_HOSTS) are redirecting fronts that must be
+    // re-resolved rather than fetched from directly.
     const urlLower = url.toLowerCase();
     try {
         const hostname = new URL(url).hostname;

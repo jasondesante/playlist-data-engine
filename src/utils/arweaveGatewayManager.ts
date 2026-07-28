@@ -19,6 +19,7 @@ import type { GatewayConfig } from './arweaveUtils.js';
 import {
     DEFAULT_GATEWAYS,
     KNOWN_GATEWAY_HOSTS,
+    isLegacyRedirectHost,
     isArweaveUrl,
     parseArweaveUrl,
     constructGatewayUrl,
@@ -852,25 +853,38 @@ export class ArweaveGatewayManager {
 
         // Step 0: Try the gateway already in the URL itself — if it's an HTTPS Arweave URL,
         // the gateway in the URL might just work. No sense skipping it.
+        //
+        // EXCEPTION: legacy redirecting hosts (see LEGACY_REDIRECT_HOSTS, e.g. gateway.irys.xyz).
+        // These are read-layer fronts that 301/302 to an arbitrary backing gateway, which may be
+        // dead or rate-limited. Probing them (or following their redirect) would hand back an
+        // unverified URL and defeat the working-gateway chain. So we skip the probe entirely —
+        // the txId has already been parsed upstream — and let Steps 1-4 resolve it through real,
+        // verified gateways, exactly as if the URL had been `ar://{txId}`.
         if (url.startsWith('https://') || url.startsWith('http://')) {
             try {
                 const parsed = new URL(url);
-                const originalGateway: GatewayConfig = {
-                    host: normalizeGatewayHost(parsed.host), // includes port if present; strips www. for known gateways
-                    protocol: parsed.protocol.replace(':', '') as 'http' | 'https',
-                    priority: 0,
-                };
-                const stepStart = Date.now();
-                const result = await this.checkAndSetGateway(url, txId, pathSuffix, originalGateway, signal);
-                const stepMs = Date.now() - stepStart;
-                if (result) {
-                    this.logger.info(`[gateway] Step 0 (original): ${result.kind}`, { host: originalGateway.host, ms: stepMs, totalMs: Date.now() - chainStart });
-                    if (result.kind === 'verified') return result.url;
-                    maybeFallback ??= result.url;
+                const normalizedHost = normalizeGatewayHost(parsed.host);
+                if (isLegacyRedirectHost(normalizedHost)) {
+                    this.logger.info('[gateway] Step 0 (original): skipping legacy redirect host, re-resolving via chain', { host: parsed.host });
+                    excludeHost = normalizedHost;
                 } else {
-                    this.logger.info('[gateway] Step 0 (original): failed', { host: originalGateway.host, ms: stepMs });
+                    const originalGateway: GatewayConfig = {
+                        host: normalizedHost, // includes port if present; strips www. for known gateways
+                        protocol: parsed.protocol.replace(':', '') as 'http' | 'https',
+                        priority: 0,
+                    };
+                    const stepStart = Date.now();
+                    const result = await this.checkAndSetGateway(url, txId, pathSuffix, originalGateway, signal);
+                    const stepMs = Date.now() - stepStart;
+                    if (result) {
+                        this.logger.info(`[gateway] Step 0 (original): ${result.kind}`, { host: originalGateway.host, ms: stepMs, totalMs: Date.now() - chainStart });
+                        if (result.kind === 'verified') return result.url;
+                        maybeFallback ??= result.url;
+                    } else {
+                        this.logger.info('[gateway] Step 0 (original): failed', { host: originalGateway.host, ms: stepMs });
+                    }
+                    excludeHost = originalGateway.host;
                 }
-                excludeHost = originalGateway.host;
             } catch {
                 // URL parsing failed — skip this step
             }
