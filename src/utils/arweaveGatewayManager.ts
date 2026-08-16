@@ -429,15 +429,15 @@ export class ArweaveGatewayManager {
     private readonly slowResponseThreshold: number;
     /** Number of consecutive slow responses before proactive gateway rotation (default: 3) */
     private readonly maxSlowResponses: number;
-    /** Solana RPC URL used by ar.io SDK for the gateway registry */
-    private readonly solanaRpcUrl: string;
+    /** Solana RPC URL used by ar.io SDK for the gateway registry (mutable via setSolanaRpcUrl) */
+    private solanaRpcUrl: string;
     /**
      * Whether the consumer passed their own Solana RPC URL. Used to flip the
      * default of `bypassWayfinder` — when no custom RPC was provided, Wayfinder
      * is opt-in (caller must pass `bypassWayfinder: false`) so the default RPC's
      * rate limits don't silently degrade resolution.
      */
-    private readonly hasCustomSolanaRpc: boolean;
+    private hasCustomSolanaRpc: boolean;
     /** Sort field used by NetworkGatewaysProvider when ranking gateways */
     private readonly wayfinderSortBy: WayfinderSortBy;
     /** Pool size for the primary (FastestPing) provider */
@@ -484,6 +484,23 @@ export class ArweaveGatewayManager {
         // by config: `wayfinderSortBy` controls how AR.IO ranks gateways, `wayfinderPrimaryLimit`
         // and `wayfinderFallbackLimit` size the candidate pools, and `wayfinderStrategy`
         // picks the routing preset. Defaults are tuned for good variety + speed.
+        this.initWayfinder();
+
+        this.logger.info('Gateway manager initialized', {
+            gateways: this.gateways.map(g => g.host),
+            timeout: this.timeout,
+            cacheTTL: this.cacheTTL,
+            activeGateway: this.activeGateway?.host ?? null,
+        });
+    }
+
+    /**
+     * Build the Wayfinder client + ARIO providers on `this.solanaRpcUrl`.
+     * Runs async/fire-and-forget — `this.wayfinder` is null until it lands,
+     * and resolves fall back to the static gateway list meanwhile. Called
+     * from the constructor and again by `setSolanaRpcUrl()` after a RPC swap.
+     */
+    private initWayfinder(): void {
         Promise.all([loadWayfinder(), loadArioSdk(), import('@solana/kit')]).then(([wfMod, sdkMod, solanaKit]) => {
             if (wfMod && sdkMod) {
                 try {
@@ -562,13 +579,27 @@ export class ArweaveGatewayManager {
         }).catch(() => {
             this.logger.debug('Wayfinder client initialization failed, using static gateways');
         });
+    }
 
-        this.logger.info('Gateway manager initialized', {
-            gateways: this.gateways.map(g => g.host),
-            timeout: this.timeout,
-            cacheTTL: this.cacheTTL,
-            activeGateway: this.activeGateway?.host ?? null,
-        });
+    /**
+     * Swap the Solana RPC the ARIO gateway registry is read from. Invalidates
+     * the ranked-gateway caches (memory + localStorage — a fresh 24h list
+     * would otherwise keep serving rankings fetched via the old RPC) and
+     * rebuilds the Wayfinder client on the new RPC. Resolves already in
+     * flight finish on the old providers.
+     */
+    setSolanaRpcUrl(url: string): void {
+        const next = (url ?? '').trim();
+        this.solanaRpcUrl = next || DEFAULT_SOLANA_RPC_URL;
+        this.hasCustomSolanaRpc = next.length > 0;
+        this.rankedGatewaysCache = null;
+        this.rankedGatewaysCacheTimestamp = 0;
+        this.clearPersistedRankedGateways();
+        try {
+            // Host only — the URL may embed an API key.
+            this.logger.info('Solana RPC updated', { host: new URL(this.solanaRpcUrl).host });
+        } catch { /* non-URL value; the ARIO init will surface failures */ }
+        this.initWayfinder();
     }
 
     /**
