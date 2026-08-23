@@ -100,6 +100,12 @@ export function isLegacyRedirectHost(host: string): boolean {
 const ARWEAVE_TX_ID_PATTERN = /[a-zA-Z0-9_-]{43}/;
 
 /**
+ * Matches a leading `ar://` scheme in any casing. URI schemes are
+ * case-insensitive per RFC 3986, so `AR://` is the same link as `ar://`.
+ */
+const AR_SCHEME_PATTERN = /^ar:\/\//i;
+
+/**
  * Check if a URL is an Arweave URL
  *
  * Detects:
@@ -122,7 +128,7 @@ export function isArweaveUrl(url: string): boolean {
     }
 
     // Check for ar:// protocol
-    if (url.startsWith('ar://')) {
+    if (AR_SCHEME_PATTERN.test(url)) {
         return true;
     }
 
@@ -181,13 +187,15 @@ export function parseArweaveUrl(url: string): ArweaveUrlInfo | null {
     let pathSuffix = '';
 
     // Handle ar:// protocol
-    if (url.startsWith('ar://')) {
-        const afterProtocol = url.slice(5); // Remove 'ar://' prefix
-        // Check if there's a path after the txId
-        const slashIndex = afterProtocol.indexOf('/');
-        if (slashIndex !== -1) {
-            txId = afterProtocol.slice(0, slashIndex);
-            pathSuffix = afterProtocol.slice(slashIndex);
+    if (AR_SCHEME_PATTERN.test(url)) {
+        const afterProtocol = url.replace(AR_SCHEME_PATTERN, '');
+        // The txId ends at the first path, query, or fragment delimiter. All
+        // three must be honoured: `ar://{txId}?ext=png` is a common upload
+        // shape, and treating the query as part of the id fails validation.
+        const delimiterIndex = afterProtocol.search(/[/?#]/);
+        if (delimiterIndex !== -1) {
+            txId = afterProtocol.slice(0, delimiterIndex);
+            pathSuffix = afterProtocol.slice(delimiterIndex);
         } else {
             txId = afterProtocol;
         }
