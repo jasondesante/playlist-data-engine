@@ -242,25 +242,15 @@ const LOSSLESS_MIME_TYPES = ['audio/wav', 'audio/x-wav', 'audio/flac'];
 /**
  * Resolve which of a track's mixes a playlist entry plays.
  *
- * The choice belongs to the playlist entry, not the track — the same song can
- * sit in two playlists with two different mixes pinned — so it arrives on the
- * track wrapper as `selected_mix`. Playlists written before that field existed
- * carry it only as a `Selected Mix` attribute, which is why attributes are
- * checked as a fallback.
- *
- * Nothing chosen means "play the track's primary audio", and so does the legacy
- * `"default"` placeholder: no mix was ever named that, so a player matching on
- * it finds nothing and caches the same audio a second time under a mix-specific
- * key. Both cases return null, as does a name that matches no mix on the track.
- *
- * One name can cover two entries — a lossless and a lossy master of the same
- * mix — so both URLs come back and callers fill `audio_url` /
- * `audio_url_lossless` from a single selection.
+ * Reads the wrapper's `selected_mix`, falling back to the `Selected Mix`
+ * attribute for older playlists. One name can cover a lossless and a lossy
+ * master, so both URLs come back.
  *
  * @param wrapperMix - `selected_mix` from the raw track wrapper
  * @param attributes - Converted metadata attributes, for older playlists
  * @param mixes - The track's own mixes, from getTrackExtras
- * @returns The resolved selection, or null when the entry plays primary audio
+ * @returns The selection, or null if nothing was pinned, the legacy "default"
+ *          placeholder was, or the name matches no mix on the track
  */
 export function resolveSelectedMix(
     wrapperMix: unknown,

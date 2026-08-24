@@ -62,14 +62,9 @@ export interface PlaylistTrack {
     /** Optional thumbnail URL extracted from image_thumb or image_thumb_url fields */
     image_thumb_url?: string;
     audio_url: string;              // The result of the Audio Extraction Logic (compressed/preferred)
-    /** Optional uncompressed audio URL for high-fidelity playback */
-    audio_url_lossless?: string;    // Lossless audio (WAV/FLAC) when available
-    /**
-     * Name of the alternate mix this entry plays, when it pins one. Absent
-     * means the entry plays the track's primary audio. Set only when the name
-     * matches a mix the track actually ships, in which case audio_url and
-     * audio_url_lossless point at that mix rather than the primary audio.
-     */
+    /** Highest-fidelity source when it differs from audio_url — not guaranteed lossless */
+    audio_url_lossless?: string;
+    /** Mix this entry plays; absent means primary audio. When set, the audio URLs point at that mix */
     selected_mix?: string;
     duration: number;       // In seconds (parsed or estimated)
 
@@ -116,8 +111,7 @@ export interface RawArweavePlaylist {
         id?: string;
         uuid?: string;
 
-        // Which of the track's mixes this entry plays. Absent when it plays the
-        // primary audio; older playlists carry it as a "Selected Mix" attribute.
+        // Mix this entry plays; older playlists carry it as a "Selected Mix" attribute instead.
         selected_mix?: string;
 
         // v0.4 resolved wrapper fields (may be present on raw tracks from Arweave).

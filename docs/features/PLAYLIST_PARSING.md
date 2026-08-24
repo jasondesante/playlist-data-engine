@@ -33,7 +33,7 @@ After parsing, every track is flattened with consistent field names regardless o
 const track = playlist.tracks[0];
 
 track.audio_url            // Best audio URL
-track.audio_url_lossless   // Lossless audio if available
+track.audio_url_lossless   // Highest-fidelity source available, when it differs from audio_url
 track.selected_mix         // Name of the pinned mix, when the entry pins one
 track.image_url            // Best image/artwork URL (parser accepts artwork_url OR image_url on input, normalizes to image_url)
 track.image_thumb_url      // Thumbnail

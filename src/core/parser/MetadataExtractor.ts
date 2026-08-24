@@ -27,9 +27,9 @@ export class MetadataExtractor {
     }
 
     /**
-     * Extract optional lossless audio URL (uncompressed/high-fidelity source).
-     * Returns a lossless URL only if it differs from the primary audio URL.
-     * Priority: lossless_audio > animation_url (only if it looks like a lossless format)
+     * Extract the highest-fidelity audio URL the track offers — best
+     * available, not a guarantee. A track whose only source is an mp3 gets
+     * that back rather than null.
      */
     static extractAudioUrlLossless(data: Record<string, unknown>): string | null {
         const losslessPriorities = ['lossless_audio', 'losslessAudio', 'wav_url', 'wavUrl', 'flac_url', 'flacUrl', 'audio_url', 'audioUrl'];

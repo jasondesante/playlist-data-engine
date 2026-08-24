@@ -64,11 +64,16 @@ describe('MetadataExtractor', () => {
             expect(MetadataExtractor.extractAudioUrlLossless(data)).toBe('https://example.com/track.flac');
         });
 
-        it('should return null when no lossless field is present', () => {
+        it('should fall back to audio_url rather than answering with nothing', () => {
             const data = {
                 mp3_url: 'https://example.com/track.mp3',
                 audio_url: 'https://example.com/track.wav',
             };
+            expect(MetadataExtractor.extractAudioUrlLossless(data)).toBe('https://example.com/track.wav');
+        });
+
+        it('should return null when the track has no audio fields at all', () => {
+            const data = { image: 'https://example.com/image.jpg' };
             expect(MetadataExtractor.extractAudioUrlLossless(data)).toBeNull();
         });
 
