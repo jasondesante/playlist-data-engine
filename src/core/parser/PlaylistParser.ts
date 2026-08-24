@@ -5,7 +5,7 @@
 
 import type { ServerlessPlaylist, PlaylistTrack, RawArweavePlaylist } from '../types/Playlist.js';
 import { MetadataExtractor } from './MetadataExtractor.js';
-import { getTrackExtras } from './TrackExtras.js';
+import { getTrackExtras, resolveSelectedMix } from './TrackExtras.js';
 import { arweaveGatewayManager } from '../../utils/arweaveGatewayManager.js';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -163,8 +163,20 @@ export class PlaylistParser {
         const audioUrl = wrapperAudioUrl || MetadataExtractor.extractAudioUrl(parsedMetadata || {});
         const audioUrlLossless = MetadataExtractor.extractAudioUrlLossless(parsedMetadata || {});
 
+        // Step 5: Merge Attributes - Convert OpenSea-style attributes array
+        const attributes = MetadataExtractor.convertAttributes(parsedMetadata?.attributes);
+
+        // Extract track extras (stems, alternate mixes)
+        const extras = getTrackExtras(parsedMetadata || {});
+
+        // An entry can pin one of the track's mixes; that mix is then what
+        // plays, so it has to be resolved before the audio URL is validated.
+        const selectedMix = resolveSelectedMix(rawTrack.selected_mix, attributes, extras.mixes);
+        const resolvedAudioUrl = selectedMix?.audio_url || audioUrl;
+        const resolvedAudioUrlLossless = selectedMix ? selectedMix.audio_url_lossless : audioUrlLossless;
+
         // Step 6: Validate - If audio_url is empty, mark as "Unsummonable"
-        if (!audioUrl) {
+        if (!resolvedAudioUrl) {
             if (this.options.strict) {
                 throw new Error(`No audio URL found for track: ${title || id}`);
             }
@@ -174,7 +186,7 @@ export class PlaylistParser {
 
         // Optional: Validate audio URL accessibility
         if (this.options.validateAudioUrls) {
-            const isValid = await this.validateAudioUrl(audioUrl);
+            const isValid = await this.validateAudioUrl(resolvedAudioUrl);
             if (!isValid) {
                 if (this.options.strict) {
                     throw new Error(`Audio URL validation failed for track: ${title || id}`);
@@ -201,12 +213,6 @@ export class PlaylistParser {
         const bpm = parsedMetadata?.bpm ? Number(parsedMetadata.bpm) : undefined;
         const key = typeof parsedMetadata?.key === 'string' ? parsedMetadata.key : undefined;
 
-        // Step 5: Merge Attributes - Convert OpenSea-style attributes array
-        const attributes = MetadataExtractor.convertAttributes(parsedMetadata?.attributes);
-
-        // Extract track extras (stems, alternate mixes)
-        const extras = getTrackExtras(parsedMetadata || {});
-
         const track: PlaylistTrack = {
             id,
             uuid,
@@ -218,8 +224,11 @@ export class PlaylistParser {
             description,
             album,
             image_url: imageUrl,
-            audio_url: audioUrl,
-            audio_url_lossless: audioUrlLossless && audioUrlLossless !== audioUrl ? audioUrlLossless : undefined,
+            audio_url: resolvedAudioUrl,
+            audio_url_lossless: resolvedAudioUrlLossless && resolvedAudioUrlLossless !== resolvedAudioUrl
+                ? resolvedAudioUrlLossless
+                : undefined,
+            ...(selectedMix ? { selected_mix: selectedMix.name } : {}),
             duration,
             genre,
             tags,
