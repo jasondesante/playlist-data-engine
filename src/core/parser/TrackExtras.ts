@@ -36,6 +36,16 @@ export interface MixInfo {
     conditions: MixCondition[];
 }
 
+/** The mix a playlist entry pinned, resolved against the track's own mixes */
+export interface SelectedMixInfo {
+    /** The chosen mix name, as written on the entry */
+    name: string;
+    /** Compressed/preferred version of the chosen mix */
+    audio_url?: string;
+    /** Lossless version, when the track ships one under the same name */
+    audio_url_lossless?: string;
+}
+
 /** Summary of extras available on a track */
 export interface TrackExtrasInfo {
     /** Whether the track has any extras at all */
@@ -223,6 +233,62 @@ export function getTrackExtras(metadata: Record<string, unknown> | null): TrackE
         ...(step_mania ? { step_mania } : {}),
         ...(clone_hero ? { clone_hero } : {}),
         ...(external_url ? { external_url } : {}),
+    };
+}
+
+/** Mime types treated as lossless when several mixes share one name. */
+const LOSSLESS_MIME_TYPES = ['audio/wav', 'audio/x-wav', 'audio/flac'];
+
+/**
+ * Resolve which of a track's mixes a playlist entry plays.
+ *
+ * The choice belongs to the playlist entry, not the track — the same song can
+ * sit in two playlists with two different mixes pinned — so it arrives on the
+ * track wrapper as `selected_mix`. Playlists written before that field existed
+ * carry it only as a `Selected Mix` attribute, which is why attributes are
+ * checked as a fallback.
+ *
+ * Nothing chosen means "play the track's primary audio", and so does the legacy
+ * `"default"` placeholder: no mix was ever named that, so a player matching on
+ * it finds nothing and caches the same audio a second time under a mix-specific
+ * key. Both cases return null, as does a name that matches no mix on the track.
+ *
+ * One name can cover two entries — a lossless and a lossy master of the same
+ * mix — so both URLs come back and callers fill `audio_url` /
+ * `audio_url_lossless` from a single selection.
+ *
+ * @param wrapperMix - `selected_mix` from the raw track wrapper
+ * @param attributes - Converted metadata attributes, for older playlists
+ * @param mixes - The track's own mixes, from getTrackExtras
+ * @returns The resolved selection, or null when the entry plays primary audio
+ */
+export function resolveSelectedMix(
+    wrapperMix: unknown,
+    attributes: Record<string, string | number> | null | undefined,
+    mixes: MixInfo[] | undefined
+): SelectedMixInfo | null {
+    const attributeMix = attributes?.['Selected Mix'];
+    const declared = (typeof wrapperMix === 'string' && wrapperMix)
+        || (typeof attributeMix === 'string' && attributeMix)
+        || null;
+
+    if (!declared || declared === 'default') return null;
+
+    const named = (mixes ?? []).filter(mix => mix.name === declared);
+    if (named.length === 0) return null;
+
+    const isLossless = (mix: MixInfo): boolean =>
+        LOSSLESS_MIME_TYPES.includes((mix.mime_type ?? '').toLowerCase());
+
+    const lossless = named.find(isLossless);
+    const preferred = named.find(mix => !isLossless(mix)) ?? named[0];
+
+    return {
+        name: declared,
+        ...(preferred?.uri ? { audio_url: preferred.uri } : {}),
+        ...(lossless?.uri && lossless.uri !== preferred?.uri
+            ? { audio_url_lossless: lossless.uri }
+            : {}),
     };
 }
 

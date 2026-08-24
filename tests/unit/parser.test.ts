@@ -1041,4 +1041,80 @@ describe('PlaylistParser', () => {
             expect(extras.hasExtras).toBe(false);
         });
     });
+
+    describe('Selected Mix', () => {
+        /** One raw playlist wrapping a track that ships two mixes. */
+        const rawWith = (trackFields: Record<string, unknown>, mixes?: unknown[]) => ({
+            name: 'Test Playlist',
+            image: 'https://example.com/playlist.jpg',
+            creator: '0xCreator',
+            tracks: [{
+                chain_name: 'ethereum',
+                token_address: '0xabc',
+                token_id: '1',
+                platform: 'sound',
+                ...trackFields,
+                metadata: JSON.stringify({
+                    name: 'Track 1',
+                    artist: 'Artist 1',
+                    mp3_url: 'https://example.com/primary.mp3',
+                    image_small: 'https://example.com/image1.jpg',
+                    duration: 180,
+                    ...(trackFields.metadataExtra as object || {}),
+                    mixes: mixes ?? [
+                        { name: 'Extended VIP', uri: 'https://example.com/vip.mp3', mime_type: 'audio/mpeg' },
+                    ],
+                }),
+            }],
+        });
+
+        it('should play the pinned mix instead of the primary audio', async () => {
+            const result = await new PlaylistParser().parse(rawWith({ selected_mix: 'Extended VIP' }));
+
+            expect(result.tracks[0].selected_mix).toBe('Extended VIP');
+            expect(result.tracks[0].audio_url).toBe('https://example.com/vip.mp3');
+        });
+
+        it('should split a lossy and lossless master of the same mix across both URL fields', async () => {
+            const result = await new PlaylistParser().parse(rawWith({ selected_mix: 'Extended VIP' }, [
+                { name: 'Extended VIP', uri: 'https://example.com/vip.wav', mime_type: 'audio/wav' },
+                { name: 'Extended VIP', uri: 'https://example.com/vip.mp3', mime_type: 'audio/mpeg' },
+            ]));
+
+            expect(result.tracks[0].audio_url).toBe('https://example.com/vip.mp3');
+            expect(result.tracks[0].audio_url_lossless).toBe('https://example.com/vip.wav');
+        });
+
+        it('should omit selected_mix entirely when the entry pins no mix', async () => {
+            const result = await new PlaylistParser().parse(rawWith({}));
+
+            expect(result.tracks[0]).not.toHaveProperty('selected_mix');
+            expect(result.tracks[0].audio_url).toBe('https://example.com/primary.mp3');
+        });
+
+        it('should treat the legacy "default" placeholder as no mix at all', async () => {
+            const result = await new PlaylistParser().parse(rawWith({ selected_mix: 'default' }));
+
+            expect(result.tracks[0]).not.toHaveProperty('selected_mix');
+            expect(result.tracks[0].audio_url).toBe('https://example.com/primary.mp3');
+        });
+
+        it('should fall back to the Selected Mix attribute for older playlists', async () => {
+            const result = await new PlaylistParser().parse(rawWith({
+                metadataExtra: {
+                    attributes: [{ trait_type: 'Selected Mix', value: 'Extended VIP' }],
+                },
+            }));
+
+            expect(result.tracks[0].selected_mix).toBe('Extended VIP');
+            expect(result.tracks[0].audio_url).toBe('https://example.com/vip.mp3');
+        });
+
+        it('should ignore a pinned mix the track does not ship', async () => {
+            const result = await new PlaylistParser().parse(rawWith({ selected_mix: 'Nonexistent Mix' }));
+
+            expect(result.tracks[0]).not.toHaveProperty('selected_mix');
+            expect(result.tracks[0].audio_url).toBe('https://example.com/primary.mp3');
+        });
+    });
 });

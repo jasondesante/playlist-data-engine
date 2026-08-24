@@ -576,6 +576,7 @@ export {
     type StemInfo,
     type MixCondition,
     type MixInfo,
+    type SelectedMixInfo,
     type TrackExtrasInfo,
     type ConditionEvaluationResult,
     type MixEvaluationResult,
@@ -587,6 +588,7 @@ export {
     type CreditInfo,
     getTrackMetadata,
     getTrackExtras,
+    resolveSelectedMix,
     evaluateMixConditions,
 } from './core/parser/TrackExtras.js';
 
