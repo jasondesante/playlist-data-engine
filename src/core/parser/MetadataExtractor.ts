@@ -15,7 +15,7 @@ export class MetadataExtractor {
      * 7. multimedia_url (Alternative media field)
      */
     static extractAudioUrl(data: Record<string, unknown>): string | null {
-        const compressedPriorities = ['mp3_url', 'mp3Url', 'lossy_audio', 'lossyAudio', 'animation_url', 'animationUrl', 'audio_url', 'audioUrl', 'lossless_audio', 'losslessAudio', 'audio', 'multimedia_url', 'multimediaUrl'];
+        const compressedPriorities = ['mp3_url', 'mp3Url', 'lossy_audio', 'lossyAudio', 'audio_url', 'audioUrl', 'audio', 'lossless_audio', 'losslessAudio', 'animation_url', 'animationUrl', 'multimedia_url', 'multimediaUrl'];
 
         for (const key of compressedPriorities) {
             if (data[key] && typeof data[key] === 'string') {
