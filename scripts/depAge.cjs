@@ -7,10 +7,10 @@
  * refusing anything younger than the cooldown avoids nearly all of that window.
  * npm has no rolling age gate (only the fixed `--before` date), hence this.
  *
- *   node scripts/depAge.js check          audit direct deps
- *   node scripts/depAge.js check --all    audit every package in the lockfile
- *   node scripts/depAge.js add <pkg>...   install newest version past cooldown, pinned
- *   node scripts/depAge.js pin            rewrite package.json ranges to installed versions
+ *   node scripts/depAge.cjs check          audit direct deps
+ *   node scripts/depAge.cjs check --all    audit every package in the lockfile
+ *   node scripts/depAge.cjs add <pkg>...   install newest version past cooldown, pinned
+ *   node scripts/depAge.cjs pin            rewrite package.json ranges to installed versions
  *
  * Exits non-zero when the audit finds a violation, so CI can gate on it.
  * Override the window with COOLDOWN_DAYS (default 30).
@@ -56,6 +56,19 @@ async function publishTimes(name, attempts = 3) {
   return null;
 }
 
+/**
+ * One request per package name, shared by every version of it in the tree.
+ *
+ * The registry returns the whole publish-date map in a single response, so the
+ * per-version audit costs no extra requests. Caches the promise, not the result,
+ * so concurrent workers asking for the same name coalesce onto one fetch.
+ */
+const _timesCache = new Map();
+function publishTimesCached(name) {
+  if (!_timesCache.has(name)) _timesCache.set(name, publishTimes(name));
+  return _timesCache.get(name);
+}
+
 /** Bounded parallelism: the registry is the bottleneck, not us. */
 async function mapPool(items, limit, fn) {
   const out = new Array(items.length);
@@ -91,63 +104,101 @@ function installedVersion(name) {
   try {
     return readJson(path.join(ROOT, 'node_modules', name, 'package.json')).version;
   } catch {
-    const entry = lockfileEntries()?.get(name);
+    const entry = lockfileEntries()?.byName.get(name);
     return entry ? entry.version : null;
   }
 }
 
-/** name -> version for everything the lockfile resolves, transitive included. */
+/**
+ * Everything the lockfile resolves, transitive included.
+ *
+ * `instances` holds one record per name+version. npm nests duplicate versions of
+ * a package throughout the tree and each one is its own thing to audit, so
+ * collapsing them by name alone would leave most of the tree unchecked.
+ *
+ * `byName` answers "which version of this dependency is in play", preferring the
+ * hoisted copy at `node_modules/<name>` over anything nested beneath a sibling.
+ */
 let _lockCache;
 function lockfileEntries() {
   if (_lockCache !== undefined) return _lockCache;
   const lockPath = path.join(ROOT, 'package-lock.json');
   if (!fs.existsSync(lockPath)) return (_lockCache = null);
-  const out = new Map();
+
+  const instances = new Map();
+  const byName = new Map();
   for (const [key, val] of Object.entries(readJson(lockPath).packages || {})) {
-    if (!key.startsWith('node_modules/') || !val.version) continue;
+    if (!key.startsWith('node_modules/')) continue;
     // Aliased installs ("cbw-sdk": "npm:@coinbase/wallet-sdk") carry the real
     // package in `name`; the directory is the alias and means nothing to the registry.
     const dir = key.slice(key.lastIndexOf('node_modules/') + 'node_modules/'.length);
-    out.set(val.name || dir, { version: val.version, resolved: val.resolved || '' });
+    const name = val.name || dir;
+    // A linked dep carries no version — it is local source, not a release.
+    const entry = { name, version: val.version || null, resolved: val.resolved || '', link: val.link === true };
+    instances.set(`${name}@${entry.version ?? key}`, entry);
+    if (!byName.has(name) || key === `node_modules/${name}`) byName.set(name, entry);
   }
-  return (_lockCache = out);
+  return (_lockCache = { instances: [...instances.values()], byName });
+}
+
+/** Registry tarballs are the only thing carrying a publish date we can read. */
+const REGISTRY_TARBALL = /^https?:\/\/registry\.npmjs\.org\//;
+
+/**
+ * Positively known not to come from the registry: a linked local path, a git or
+ * file spec, or a tarball on another host. None has a publish date to judge, so
+ * these are reported rather than failed. An empty `resolved` is not a
+ * determination — it means the lockfile had nothing to say — so it is fetched.
+ */
+function offRegistry(entry) {
+  if (entry.link) return true;
+  const resolved = entry.resolved || '';
+  return resolved !== '' && !REGISTRY_TARBALL.test(resolved);
 }
 
 async function check(all) {
   const pkg = readJson(pkgJsonPath);
+  const lock = lockfileEntries();
   let targets;
 
   if (all) {
-    const lock = lockfileEntries();
     if (!lock) {
       console.error('No package-lock.json — cannot audit transitive deps.');
       process.exit(2);
     }
-    targets = [...lock.entries()].map(([n, v]) => [n, v.version, v.resolved]);
+    targets = lock.instances;
   } else {
-    targets = Object.keys({ ...pkg.dependencies, ...pkg.devDependencies })
-      .map((n) => [n, installedVersion(n) || (pkg.dependencies?.[n] ?? pkg.devDependencies[n]), '']);
+    // The lockfile supplies how each dependency resolves, which is the only way
+    // to tell a registry release from local source before going to the network.
+    targets = Object.keys({ ...pkg.dependencies, ...pkg.devDependencies }).map((name) => {
+      const entry = lock?.byName.get(name);
+      const spec = pkg.dependencies?.[name] ?? pkg.devDependencies?.[name];
+      return {
+        name,
+        version: installedVersion(name) || spec,
+        resolved: entry?.resolved || '',
+        link: entry?.link || false,
+      };
+    });
   }
 
   console.log(`Cooldown: ${COOLDOWN_DAYS} days (cutoff ${CUTOFF.toISOString().slice(0, 10)})`);
   console.log(`Auditing ${targets.length} package(s)${all ? ' including transitive' : ''}…\n`);
 
-  // Not from the registry, so there is no publish date to judge. A git URL ending
-  // in a commit SHA pins content exactly, which is its own guarantee; a file/link
-  // dep is local source. Neither is an unknown, so neither fails the gate.
-  const offRegistry = (r) => /^(git\+|file:|link:)/.test(r || '');
-
   const young = [], unknown = [], external = [];
   let done = 0;
-  const results = await mapPool(targets, 16, async ([name, version, resolved]) => {
-    if (offRegistry(resolved)) { done++; return { name, version, resolved, skip: true }; }
-    const times = await publishTimes(name);
+  const results = await mapPool(targets, 16, async (target) => {
+    if (offRegistry(target)) { done++; return { ...target, skip: true }; }
+    const times = await publishTimesCached(target.name);
     if (++done % 100 === 0) process.stderr.write(`  …${done}/${targets.length}\n`);
-    return { name, version, times };
+    return { ...target, times };
   });
   for (const { name, version, times, resolved, skip } of results) {
-    if (skip) { external.push(`${name}@${version} (${resolved.split('#')[0].slice(0, 40)}…)`); continue; }
-    if (!times || !times[version]) { unknown.push(name); continue; }
+    if (skip) {
+      external.push(`${name}@${version ?? 'linked'} (${(resolved || 'local path').split('#')[0].slice(0, 40)}…)`);
+      continue;
+    }
+    if (!version || !times || !times[version]) { unknown.push(`${name}@${version ?? '?'}`); continue; }
     const published = new Date(times[version]);
     if (published > CUTOFF) {
       const days = Math.floor((Date.now() - published) / 86400_000);
@@ -176,7 +227,7 @@ async function check(all) {
 }
 
 async function add(names) {
-  if (!names.length) { console.error('Usage: depAge.js add <pkg>...'); process.exit(2); }
+  if (!names.length) { console.error('Usage: depAge.cjs add <pkg>...'); process.exit(2); }
   const specs = [];
   for (const name of names) {
     const aged = await newestAged(name);
@@ -217,4 +268,4 @@ const [cmdName, ...rest] = process.argv.slice(2);
 if (cmdName === 'check') check(rest.includes('--all'));
 else if (cmdName === 'add') add(rest);
 else if (cmdName === 'pin') pin();
-else { console.error('Usage: depAge.js check [--all] | add <pkg>... | pin'); process.exit(2); }
+else { console.error('Usage: depAge.cjs check [--all] | add <pkg>... | pin'); process.exit(2); }
