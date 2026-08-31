@@ -130,20 +130,18 @@ function extractImageThumbUrlFromTrack(track: PlaylistTrack | RawArweavePlaylist
  * VRM is an optional field in track metadata
  */
 function extractVRMFromTrack(track: PlaylistTrack | RawArweavePlaylist['tracks'][number]): string | null {
-    // Parsed track - check if vrm exists in the track object
-    if ('audio_url' in track) {
-        // For parsed tracks, we need to check the raw metadata
-        // The vrm field isn't part of the standard PlaylistTrack interface
-        // so we need to access it through the raw metadata
-        return null;
-    }
-
-    // Raw track - needs metadata parsing
+    // Raw track - the payload metadata is authoritative, even when the v0.4
+    // wrapper fields (audio_url & friends) are also present on the track.
     if ('metadata' in track) {
         const parsed = MetadataExtractor.parseMetadata(track.metadata);
         if (parsed && typeof parsed.vrm === 'string' && parsed.vrm) {
             return parsed.vrm;
         }
+    }
+
+    // Parsed track - the parser promotes vrm into extras
+    if ('extras' in track && track.extras && typeof track.extras.vrm === 'string') {
+        return track.extras.vrm || null;
     }
 
     return null;

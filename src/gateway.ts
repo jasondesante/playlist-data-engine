@@ -55,3 +55,18 @@ export {
 // Lives in this TF-free entry so upload/playlist flows that only need metadata
 // parsing don't drag in the audio-analysis (MusicClassifier) TF dependency.
 export { MetadataExtractor } from './core/parser/MetadataExtractor.js';
+
+// Playlist extraction utilities (pure functions over parsed/raw playlists —
+// only dependency is MetadataExtractor above, TF-free).
+export {
+    getVRMs,
+    getVRMTracks,
+    type PlaylistInput,
+    type SimpleTrack,
+    type VRMTrack,
+} from './utils/playlistUtils.js';
+export type {
+    ServerlessPlaylist,
+    RawArweavePlaylist,
+    PlaylistTrack,
+} from './core/types/Playlist.js';
