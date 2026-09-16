@@ -404,7 +404,7 @@ export class MetadataExtractor {
      * pathological metadata blobs stay cheap.
      */
     private static deepFindString(data: Record<string, unknown>, keyPattern: RegExp, maxDepth = 5): string | null {
-        const seen = new Set<Record<string, unknown>>();
+        const seen = new Set<object>();
         const queue: Array<{ node: Record<string, unknown>; depth: number }> = [{ node: data, depth: 0 }];
 
         while (queue.length > 0) {
