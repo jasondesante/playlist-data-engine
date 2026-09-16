@@ -208,7 +208,10 @@ MetadataExtractor.extractImageThumbUrl(metadata);  // Thumbnail
 MetadataExtractor.extractTitle(metadata);         // Track title
 MetadataExtractor.extractArtist(metadata);        // Artist
 MetadataExtractor.extractGenre(metadata);         // Genre
-```
+MetadataExtractor.extractDescription(metadata);   // Track description (flat, attributes, or nested)
+MetadataExtractor.extractAlbumDescription(metadata); // Album description
+MetadataExtractor.extractArtistDescription(metadata); // Artist description
+  ```
 
 For getting extras from raw tracks (without going through `PlaylistParser`):
 
@@ -347,6 +350,9 @@ Extracts metadata fields from track data. Called automatically during parsing, b
 | `extractTitle()` | Track title |
 | `extractArtist()` | Artist name |
 | `extractGenre()` | Genre — string, array, or OpenSea attributes |
+| `extractDescription()` | Track description — flat variants, OpenSea attributes, then a deep search of nested objects |
+| `extractAlbumDescription()` | Album description — flat variants, then scoped to the `album` object when it is an object |
+| `extractArtistDescription()` | Artist description — flat variants, then scoped to the `artist` object when it is an object |
 | `parseMetadata()` | Parses stringified JSON to object |
 | `convertAttributes()` | Converts OpenSea-style `[{ trait_type, value }]` to `{ key: value }` |
 

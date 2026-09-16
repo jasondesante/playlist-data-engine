@@ -298,6 +298,139 @@ export class MetadataExtractor {
     }
 
     /**
+     * Extract track description with priority:
+     *
+     * Flat fields:
+     * 1. description (Canonical)
+     * 2. track_description / trackDescription (Explicit track-scoped variants)
+     * 3. description_text / descriptionText (Text-suffixed variants)
+     * 4. desc / blurb (Short-form variants)
+     *
+     * Then:
+     * 5. OpenSea-style attributes array with trait_type "description" (case-insensitive)
+     * 6. Deep search fallback — breadth-first walk of nested objects for the
+     *    shallowest key matching /description/i (catches properties.description
+     *    and any other nested home for the field). Arrays are skipped: items
+     *    inside arrays (stems, mixes, attribute entries) carry their own scoped
+     *    descriptions, not the track's.
+     */
+    static extractDescription(data: Record<string, unknown>): string | null {
+        const priorities = ['description', 'track_description', 'trackDescription', 'description_text', 'descriptionText', 'desc', 'blurb'];
+
+        for (const key of priorities) {
+            if (data[key] && typeof data[key] === 'string') {
+                return data[key];
+            }
+        }
+
+        if (Array.isArray(data.attributes)) {
+            const descAttr = data.attributes.find(
+                (attr: { trait_type?: string; value?: unknown }) =>
+                    attr.trait_type?.toLowerCase() === 'description' && typeof attr.value === 'string'
+            );
+            if (descAttr && typeof descAttr.value === 'string') {
+                return descAttr.value;
+            }
+        }
+
+        return MetadataExtractor.deepFindString(data, /description/i);
+    }
+
+    /**
+     * Extract album description — one of the bonus flavors. Priority:
+     *
+     * Flat fields:
+     * 1. album_description (Canonical)
+     * 2. albumDescription (camelCase variant)
+     *
+     * Nested object fields (only when `album` is an object — it is just as
+     * often a plain name string, which yields nothing here):
+     * 3. Deep search scoped to the album object — catches album.description,
+     *    album.liner_notes, album.notes and friends without ever misattributing
+     *    the track's own description to the album.
+     */
+    static extractAlbumDescription(data: Record<string, unknown>): string | null {
+        const priorities = ['album_description', 'albumDescription'];
+
+        for (const key of priorities) {
+            if (data[key] && typeof data[key] === 'string') {
+                return data[key];
+            }
+        }
+
+        const album = data.album;
+        if (album && typeof album === 'object' && !Array.isArray(album)) {
+            return MetadataExtractor.deepFindString(album as Record<string, unknown>, /description|liner|notes/i);
+        }
+
+        return null;
+    }
+
+    /**
+     * Extract artist description — one of the bonus flavors. Priority:
+     *
+     * Flat fields:
+     * 1. artist_description (Canonical)
+     * 2. artistDescription (camelCase variant)
+     * 3. artist_bio / artistBio (Bio variants)
+     *
+     * Nested object fields (only when `artist` is an object — it is just as
+     * often a plain name string, which yields nothing here):
+     * 4. Deep search scoped to the artist object — catches artist.description,
+     *    artist.bio, artist.about and friends without ever misattributing the
+     *    track's own description to the artist.
+     */
+    static extractArtistDescription(data: Record<string, unknown>): string | null {
+        const priorities = ['artist_description', 'artistDescription', 'artist_bio', 'artistBio'];
+
+        for (const key of priorities) {
+            if (data[key] && typeof data[key] === 'string') {
+                return data[key];
+            }
+        }
+
+        const artist = data.artist;
+        if (artist && typeof artist === 'object' && !Array.isArray(artist)) {
+            return MetadataExtractor.deepFindString(artist as Record<string, unknown>, /description|bio|about/i);
+        }
+
+        return null;
+    }
+
+    /**
+     * Breadth-first search for the shallowest string value whose key matches
+     * the given pattern. First match in breadth order wins: shallowest level,
+     * then key order. Objects are descended (arrays skipped), depth-capped so
+     * pathological metadata blobs stay cheap.
+     */
+    private static deepFindString(data: Record<string, unknown>, keyPattern: RegExp, maxDepth = 5): string | null {
+        const seen = new Set<Record<string, unknown>>();
+        const queue: Array<{ node: Record<string, unknown>; depth: number }> = [{ node: data, depth: 0 }];
+
+        while (queue.length > 0) {
+            const { node, depth } = queue.shift()!;
+
+            for (const key of Object.keys(node)) {
+                const value = node[key];
+                if (typeof value === 'string' && value && keyPattern.test(key)) {
+                    return value;
+                }
+            }
+
+            if (depth >= maxDepth) continue;
+            for (const key of Object.keys(node)) {
+                const value = node[key];
+                if (value && typeof value === 'object' && !Array.isArray(value) && !seen.has(value)) {
+                    seen.add(value);
+                    queue.push({ node: value as Record<string, unknown>, depth: depth + 1 });
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Normalize a list of raw tag values into a deduped, lowercased,
      * trimmed string[] with empties removed.
      */

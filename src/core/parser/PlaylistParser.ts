@@ -204,8 +204,10 @@ export class PlaylistParser {
             return null;
         }
 
-        // Extract optional fields from parsed metadata
-        const description = typeof parsedMetadata?.description === 'string' ? parsedMetadata.description : undefined;
+        // Extract optional fields from parsed metadata. extractDescription walks
+        // the flat variants, OpenSea attributes, then a nested deep search —
+        // superset of the old flat `description`-only grab.
+        const description = MetadataExtractor.extractDescription(parsedMetadata || {}) ?? undefined;
         const album = typeof parsedMetadata?.album === 'string' ? parsedMetadata.album : undefined;
         const duration = parsedMetadata?.duration ? Number(parsedMetadata.duration) : 0;
         const genre = MetadataExtractor.extractGenre(parsedMetadata || {});

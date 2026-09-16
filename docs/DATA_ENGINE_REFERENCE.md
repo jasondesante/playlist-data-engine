@@ -1486,6 +1486,9 @@ Extracts metadata fields from playlist track data. All methods are static.
 | `static extractTitle(data)` | `string \| null` | Extracts name/title with priority: name > title |
 | `static extractArtist(data)` | `string \| null` | Extracts artist with priority: artist > created_by > minter |
 | `static extractGenre(data)` | `string` | Extracts genre from string, array (first element), or OpenSea attributes with "Genre" trait_type |
+| `static extractDescription(data)` | `string \| null` | Extracts track description with priority: description > track_description > desc > blurb, then OpenSea "Description" trait, then a breadth-first deep search for the shallowest /description/i key (arrays skipped) |
+| `static extractAlbumDescription(data)` | `string \| null` | Extracts album description with priority: album_description > albumDescription, then a search scoped to the `album` object when it is an object (description/liner/notes) |
+| `static extractArtistDescription(data)` | `string \| null` | Extracts artist description with priority: artist_description > artistDescription > artist_bio, then a search scoped to the `artist` object when it is an object (description/bio/about) |
 | `static parseMetadata(metadata)` | `Record<string, unknown> \| null` | Parses metadata string to JSON object with error handling |
 | `static convertAttributes(attributes)` | `Record<string, string \| number> \| null` | Converts OpenSea-style attributes array to key-value object |
 
