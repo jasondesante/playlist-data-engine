@@ -1515,7 +1515,7 @@ Simple functions that return arrays of basic data from playlists. Works with bot
 
 | Function | Returns | Description |
 |----------|---------|-------------|
-| `getTracks(playlist)` | `SimpleTrack[]` | Simplified objects: `{ title, artist, audio_url, audio_url_lossless?, image_url, image_thumb_url?, audio_ipfs_hash?, artwork_ipfs_hash? }` |
+| `getTracks(playlist)` | `SimpleTrack[]` | Simplified objects: `{ title, artist, description?, audio_url, audio_url_lossless?, image_url, image_thumb_url?, audio_ipfs_hash?, artwork_ipfs_hash? }` |
 | `getFullTracks(playlist)` | `object[]` | All available track data as plain objects |
 
 #### VRM Extraction Functions
@@ -1523,7 +1523,7 @@ Simple functions that return arrays of basic data from playlists. Works with bot
 | Function | Returns | Description |
 |----------|---------|-------------|
 | `getVRMs(playlist)` | `string[]` | VRM URLs from tracks that have the optional `vrm` field |
-| `getVRMTracks(playlist)` | `VRMTrack[]` | Track objects with VRM data: `{ title, artist, audio_url, audio_url_lossless?, image_url, image_thumb_url?, vrm }` |
+| `getVRMTracks(playlist)` | `VRMTrack[]` | Track objects with VRM data: `{ title, artist, description?, audio_url, audio_url_lossless?, image_url, image_thumb_url?, vrm }` |
 
 #### Types
 
@@ -1532,8 +1532,8 @@ Simple functions that return arrays of basic data from playlists. Works with bot
 | Type | Description |
 |------|-------------|
 | `PlaylistInput` | Union of `ServerlessPlaylist` or `RawArweavePlaylist` |
-| `SimpleTrack` | Simplified track: `{ title, artist, audio_url, audio_url_lossless?, image_url, image_thumb_url?, audio_ipfs_hash?, artwork_ipfs_hash? }` |
-| `VRMTrack` | Track with VRM: `{ title, artist, audio_url, audio_url_lossless?, image_url, image_thumb_url?, vrm }` |
+| `SimpleTrack` | Simplified track: `{ title, artist, description?, audio_url, audio_url_lossless?, image_url, image_thumb_url?, audio_ipfs_hash?, artwork_ipfs_hash? }` |
+| `VRMTrack` | Track with VRM: `{ title, artist, description?, audio_url, audio_url_lossless?, image_url, image_thumb_url?, vrm }` |
 
 *For usage examples, see [USAGE_IN_OTHER_PROJECTS.md](USAGE_IN_OTHER_PROJECTS.md#playlist-utilities).*
 

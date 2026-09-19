@@ -17,6 +17,7 @@ export type PlaylistInput = ServerlessPlaylist | RawArweavePlaylist;
 export interface SimpleTrack {
     title: string;
     artist: string;
+    description?: string;
     audio_url: string;
     audio_url_lossless?: string;
     image_url: string;
@@ -29,6 +30,7 @@ export interface SimpleTrack {
 export interface VRMTrack {
     title: string;
     artist: string;
+    description?: string;
     audio_url: string;
     audio_url_lossless?: string;
     image_url: string;
@@ -400,17 +402,21 @@ export function getTracks(playlist: PlaylistInput): SimpleTrack[] {
 
         let title = '';
         let artist = '';
+        let description: string | undefined;
 
         // Parsed track
         if ('title' in track) {
             title = track.title || '';
             artist = track.artist || '';
+            // Parser already ran extractDescription on the metadata
+            description = track.description || undefined;
         } else if ('metadata' in track) {
             // Raw track
             const parsed = MetadataExtractor.parseMetadata(track.metadata);
             if (parsed) {
                 title = MetadataExtractor.extractTitle(parsed) || '';
                 artist = MetadataExtractor.extractArtist(parsed) || '';
+                description = MetadataExtractor.extractDescription(parsed) || undefined;
             }
         }
 
@@ -432,6 +438,11 @@ export function getTracks(playlist: PlaylistInput): SimpleTrack[] {
             // Only add image_thumb_url if present
             if (image_thumb_url) {
                 simpleTrack.image_thumb_url = image_thumb_url;
+            }
+
+            // Only add description if present
+            if (description) {
+                simpleTrack.description = description;
             }
 
             // v0.4 IPFS hash fields
@@ -495,7 +506,7 @@ export function getFullTracks(playlist: PlaylistInput): Array<Record<string, unk
                     bpm: parsed.bpm,
                     key: parsed.key,
                     album: parsed.album,
-                    description: parsed.description,
+                    description: MetadataExtractor.extractDescription(parsed),
                     attributes: MetadataExtractor.convertAttributes(parsed.attributes),
                     ...(audioUrlLossless && audioUrlLossless !== primaryAudioUrl ? { audio_url_lossless: audioUrlLossless } : {}),
                     // v0.4 IPFS hash fields from raw track (mint fields live only in metadata interior)
@@ -559,17 +570,21 @@ export function getVRMTracks(playlist: PlaylistInput): VRMTrack[] {
 
         let title = '';
         let artist = '';
+        let description: string | undefined;
 
         // Parsed track
         if ('title' in track) {
             title = track.title || '';
             artist = track.artist || '';
+            // Parser already ran extractDescription on the metadata
+            description = track.description || undefined;
         } else if ('metadata' in track) {
             // Raw track
             const parsed = MetadataExtractor.parseMetadata(track.metadata);
             if (parsed) {
                 title = MetadataExtractor.extractTitle(parsed) || '';
                 artist = MetadataExtractor.extractArtist(parsed) || '';
+                description = MetadataExtractor.extractDescription(parsed) || undefined;
             }
         }
 
@@ -584,6 +599,11 @@ export function getVRMTracks(playlist: PlaylistInput): VRMTrack[] {
         // Only add image_thumb_url if present
         if (image_thumb_url) {
             vrmTrack.image_thumb_url = image_thumb_url;
+        }
+
+        // Only add description if present
+        if (description) {
+            vrmTrack.description = description;
         }
 
         tracks.push(vrmTrack);
