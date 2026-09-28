@@ -31,6 +31,45 @@ export const DEFAULT_IPFS_GATEWAY = 'ipfs.io';
 const IPFS_GATEWAY_PATH_SEGMENT = '/ipfs/';
 
 /**
+ * CID sanity check — CIDv0 (base58btc, `Qm…`, 46 chars) or CIDv1
+ * (base32, `b…`, ≥56 chars). Deliberately strict: embedded-CID detection
+ * runs against ARBITRARY hosts, so the CID syntax is the only guard
+ * against false positives.
+ */
+const CID_V0_RE = /^Qm[1-9A-HJ-NP-Za-km-z]{44}$/;
+const CID_V1_RE = /^b[a-z2-7]{55,}$/;
+
+function looksLikeCid(segment: string): boolean {
+    return CID_V0_RE.test(segment) || CID_V1_RE.test(segment);
+}
+
+/**
+ * Path-segment prefix CDNs use when they serve raw IPFS content under a
+ * transform path (Cloudinary-style). Spinamp's content CDN is the known
+ * case: `https://content.spinamp.xyz/video/upload/ipfs_audio/{cid}` —
+ * the CDN mapping has come and gone, but the CID in the path is the
+ * durable identifier, so the URL is recoverable to any gateway.
+ */
+const EMBEDDED_CID_SEGMENT_RE = /^ipfs_[a-z]+$/;
+
+/**
+ * Extract a CID embedded after an `ipfs_*` path segment
+ * (`…/ipfs_audio/{cid}/subpath`, `…/ipfs_image/{cid}`), host-agnostic.
+ * Returns the CID (+ subpath when present), or null.
+ */
+function extractEmbeddedCid(pathname: string): string | null {
+    const segments = pathname.split('/').filter(Boolean);
+    for (let i = 0; i < segments.length - 1; i++) {
+        if (EMBEDDED_CID_SEGMENT_RE.test(segments[i]) && looksLikeCid(segments[i + 1])) {
+            const cid = segments[i + 1];
+            const rest = segments.slice(i + 2);
+            return rest.length > 0 ? `${cid}/${rest.join('/')}` : cid;
+        }
+    }
+    return null;
+}
+
+/**
  * Extract the IPFS CID and optional path from any IPFS URL.
  * Returns null if the URL isn't a recognized IPFS URL.
  *
@@ -39,6 +78,9 @@ const IPFS_GATEWAY_PATH_SEGMENT = '/ipfs/';
  * - `ipfs://{cid}/path` — native scheme
  * - `https://gateway/ipfs/{cid}/path` — standard gateway format
  * - `https://{cid}.ipfs.dweb.link` — subdomain format
+ * - `https://any-cdn/…/ipfs_audio/{cid}` and `…/ipfs_image/{cid}` —
+ *   CID embedded after an `ipfs_*` transform segment on an arbitrary
+ *   (possibly dead) CDN host
  *
  * @param url - The URL to extract from
  * @returns The CID + path (e.g. "QmXxx/file.jpg"), or null
@@ -72,6 +114,11 @@ export function extractIPFSPath(url: string): string | null {
         if (isKnownHost && pathname.startsWith(IPFS_GATEWAY_PATH_SEGMENT)) {
             return pathname.slice(IPFS_GATEWAY_PATH_SEGMENT.length);
         }
+
+        // Embedded CID after an ipfs_* segment on ANY host — the CDN that
+        // served it may be dead, but the CID resolves on any gateway.
+        const embedded = extractEmbeddedCid(pathname);
+        if (embedded) return embedded;
     } catch {
         // Not a valid URL — fall through
     }
@@ -86,6 +133,8 @@ export function extractIPFSPath(url: string): string | null {
  * - `ipfs://` protocol URLs (native scheme)
  * - URLs on known IPFS gateway hosts with `/ipfs/` path segment
  * - Subdomain format: `{cid}.ipfs.dweb.link`
+ * - CIDs embedded after an `ipfs_*` transform segment on any host
+ *   (CDN shapes like `/video/upload/ipfs_audio/{cid}`)
  *
  * @param url - The URL to check
  * @returns True if the URL is an IPFS URL
@@ -101,7 +150,9 @@ export function extractIPFSPath(url: string): string | null {
  * isIPFS('https://soundxyz.mypinata.cloud/ipfs/QmXxx'); // true
  * isIPFS('https://nftstorage.link/ipfs/QmXxx'); // true
  * isIPFS('https://QmXxx.ipfs.dweb.link'); // true
+ * isIPFS('https://content.spinamp.xyz/video/upload/ipfs_audio/QmfX6sKmbVDFrpatmnBDQR2j4ALZhFriJSywRTf8ue8bzY'); // true
  * isIPFS('https://example.com/image.png'); // false
+ * isIPFS('https://example.com/video/upload/ipfs_audio/not-a-cid'); // false
  * isIPFS(undefined); // false
  * ```
  */
@@ -124,6 +175,10 @@ export function isIPFS(url: string | undefined): boolean {
         );
 
         if (isKnownHost && pathname.startsWith(IPFS_GATEWAY_PATH_SEGMENT)) return true;
+
+        // Embedded CID after an ipfs_* segment on any host (CDN-transform
+        // paths like /video/upload/ipfs_audio/{cid}).
+        if (extractEmbeddedCid(pathname)) return true;
     } catch {
         // Not a valid URL
     }
