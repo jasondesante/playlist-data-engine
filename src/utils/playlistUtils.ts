@@ -24,6 +24,10 @@ export interface SimpleTrack {
     image_thumb_url?: string;
     audio_ipfs_hash?: string;
     artwork_ipfs_hash?: string;
+    mint_function?: string;
+    mint_price?: string;
+    mint_snapshot_time?: number;
+    mint_token?: string;
 }
 
 /** Track object with VRM data for getVRMTracks() */
@@ -453,6 +457,20 @@ export function getTracks(playlist: PlaylistInput): SimpleTrack[] {
                 simpleTrack.artwork_ipfs_hash = track.artwork_ipfs_hash;
             }
 
+            // v0.4 mint fields (wrapper-level)
+            if ('mint_function' in track && typeof track.mint_function === 'string') {
+                simpleTrack.mint_function = track.mint_function;
+            }
+            if ('mint_price' in track && typeof track.mint_price === 'string') {
+                simpleTrack.mint_price = track.mint_price;
+            }
+            if ('mint_snapshot_time' in track && typeof track.mint_snapshot_time === 'number') {
+                simpleTrack.mint_snapshot_time = track.mint_snapshot_time;
+            }
+            if ('mint_token' in track && typeof track.mint_token === 'string') {
+                simpleTrack.mint_token = track.mint_token;
+            }
+
             tracks.push(simpleTrack);
         }
     }
@@ -509,9 +527,13 @@ export function getFullTracks(playlist: PlaylistInput): Array<Record<string, unk
                     description: MetadataExtractor.extractDescription(parsed),
                     attributes: MetadataExtractor.convertAttributes(parsed.attributes),
                     ...(audioUrlLossless && audioUrlLossless !== primaryAudioUrl ? { audio_url_lossless: audioUrlLossless } : {}),
-                    // v0.4 IPFS hash fields from raw track (mint fields live only in metadata interior)
+                    // v0.4 IPFS hash + mint fields from the raw track wrapper
                     ...(track.audio_ipfs_hash ? { audio_ipfs_hash: track.audio_ipfs_hash } : {}),
                     ...(track.artwork_ipfs_hash ? { artwork_ipfs_hash: track.artwork_ipfs_hash } : {}),
+                    ...(track.mint_function ? { mint_function: track.mint_function } : {}),
+                    ...(track.mint_price ? { mint_price: track.mint_price } : {}),
+                    ...(track.mint_snapshot_time ? { mint_snapshot_time: track.mint_snapshot_time } : {}),
+                    ...(track.mint_token ? { mint_token: track.mint_token } : {}),
                 });
             }
         }

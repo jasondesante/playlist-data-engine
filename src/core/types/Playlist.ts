@@ -77,9 +77,15 @@ export interface PlaylistTrack {
     // --- Raw Attributes (for edge cases) ---
     attributes?: Record<string, string | number>;
 
-    // --- v0.4 IPFS Hash Fields (promoted from metadata interior) ---
+    // --- v0.4 IPFS Hash Fields (promoted from the track wrapper) ---
     audio_ipfs_hash?: string;       // IPFS CID of the audio file
     artwork_ipfs_hash?: string;     // IPFS CID of the artwork/image file
+
+    // --- v0.4 Mint Fields (wrapper-level snapshot; metadata is never their home) ---
+    mint_function?: string;         // Preferred mint function on the track's contract
+    mint_price?: string;            // Mint price in wei
+    mint_snapshot_time?: number;    // Unix timestamp of the mint-info capture
+    mint_token?: string;            // ERC20 address if the sale takes a token
 
     // --- Extras (stems, alternate mixes) ---
     extras?: TrackExtrasInfo;
@@ -124,6 +130,12 @@ export interface RawArweavePlaylist {
         // v0.4 IPFS hash fields (may be promoted on raw tracks from Arweave)
         audio_ipfs_hash?: string;
         artwork_ipfs_hash?: string;
+
+        // v0.4 mint fields — wrapper-level snapshot state, read straight off the track object
+        mint_function?: string;
+        mint_price?: string;
+        mint_snapshot_time?: number;
+        mint_token?: string;
 
         // The Payload — stringified JSON or a plain JSON object.
         // parseMetadata() handles both formats transparently.

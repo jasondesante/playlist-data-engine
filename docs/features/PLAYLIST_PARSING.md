@@ -274,9 +274,11 @@ ServerlessPlaylist
 
 > **v0.4 naming convention:** Fields that travel on the wire (playlist body, track wrapper,
 > metadata interior, Arweave tags) use snake_case for JSON body fields and Pascal-Kebab for
-> Arweave tags. Mint metadata (`mint_function`, `mint_price`, `mint_snapshot_time`, `mint_token`)
-> lives **only inside the stringified `metadata` interior** — it is never promoted onto the track
-> wrapper and never emitted as an Arweave tag. Use `getTrackMetadata()` to read those values.
+> Arweave tags. Mint fields (`mint_function`, `mint_price`, `mint_snapshot_time`, `mint_token`)
+> live on the **track wrapper** — the same shallow-read layer as the resolved media fields — and
+> are never emitted as Arweave tags. The parser copies them straight from the raw track onto the
+> parsed `PlaylistTrack`; the metadata interior is never their home (`metadata` mirrors `token_uri`,
+> and mint prices are snapshot state that changes without rewriting metadata).
 >
 > **Image field aliasing:** The ApeTapes app writes `artwork_url` onto track wrappers when uploading
 > playlists. The engine's parser accepts **either** `artwork_url` **or** `image_url` on input and
@@ -312,6 +314,12 @@ PlaylistTrack
 │   ├── image_thumb_url?: string        // Thumbnail if available
 │   ├── audio_ipfs_hash?: string        // IPFS CID of the audio file (v0.4)
 │   └── artwork_ipfs_hash?: string      // IPFS CID of the artwork/image file (v0.4)
+│
+├── Mint (v0.4 — wrapper-level snapshot, read off the track object)
+│   ├── mint_function?: string          // e.g. "mint", "mintCopy"
+│   ├── mint_price?: string             // wei
+│   ├── mint_snapshot_time?: number     // unix seconds
+│   └── mint_token?: string             // ERC20 address, if any
 │
 ├── Metadata
 │   ├── duration: number        // Seconds

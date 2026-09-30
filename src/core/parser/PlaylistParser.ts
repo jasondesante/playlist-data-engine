@@ -246,7 +246,6 @@ export class PlaylistParser {
         }
 
         // v0.4 IPFS hash fields — prefer top-level track field, fall back to parsed metadata interior.
-        // Mint-* fields live ONLY inside the metadata interior and are never promoted onto the wrapper.
         if (typeof parsedMetadata?.audio_ipfs_hash === 'string') {
             track.audio_ipfs_hash = rawTrack.audio_ipfs_hash || parsedMetadata.audio_ipfs_hash;
         } else if (rawTrack.audio_ipfs_hash) {
@@ -257,6 +256,13 @@ export class PlaylistParser {
         } else if (rawTrack.artwork_ipfs_hash) {
             track.artwork_ipfs_hash = rawTrack.artwork_ipfs_hash;
         }
+
+        // v0.4 mint fields — wrapper-level snapshot state, read straight off the
+        // track object. The metadata interior is never their home.
+        if (typeof rawTrack.mint_function === 'string') track.mint_function = rawTrack.mint_function;
+        if (typeof rawTrack.mint_price === 'string') track.mint_price = rawTrack.mint_price;
+        if (typeof rawTrack.mint_snapshot_time === 'number') track.mint_snapshot_time = rawTrack.mint_snapshot_time;
+        if (typeof rawTrack.mint_token === 'string') track.mint_token = rawTrack.mint_token;
 
         // Add token_address and token_id for non-Arweave chains
         if (chainName !== 'AR') {
