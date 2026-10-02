@@ -459,8 +459,9 @@ export async function resolveMixUrl(
     let target = direct;
 
     if (options?.followMetadata !== false && isMetadataUri(mix, direct)) {
-        target = await fetchMetadataAudioUrl(direct, options?.fetchTimeoutMs);
-        if (!target) return null;
+        const followed = await fetchMetadataAudioUrl(direct, options?.fetchTimeoutMs);
+        if (!followed) return null;
+        target = followed;
     }
 
     if (options?.resolveUrl === false) return target;
