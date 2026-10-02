@@ -54,7 +54,8 @@ The engine is modular — use what you want, ignore the rest. Everything here se
 ### Playlist Parsing & Data Extraction (Core Feature)
 
 - **Serverless Playlist Parser** — Parse Arweave-hosted playlists into clean, structured data with automatic gateway failover via the Ario Wayfinder network
-- **Quick Data Extraction** — One-liners to grab audio URLs, image URLs, track titles, artists, genres, tags, durations, VRM models, and more
+- **Quick Data Extraction** — One-liners to grab audio URLs, image URLs, track titles, artists, genres, tags, durations, VRM models, mixes (`getMixes`, `getMixTracks`), and more
+- **Stems & Alternate Mixes** — Tracks ship stems and alternate mixes (Instrumental, Radio Edit) in metadata: find a mix by name (`findMixByName`), resolve it to a playable URL (`resolveMixUrl`), or swap a parsed track's playback (`selectMix`)
 - **Color Extraction** — K-means color palette extraction from track artwork
 - **Arweave Gateway Manager** — Built-in resilience: automatically races multiple Arweave gateways plus the Ario Wayfinder, caches working gateways, and falls back seamlessly when one fails
 
@@ -357,6 +358,8 @@ The engine runs in both environments. Audio analysis uses the Web Audio API (bro
 |----------|---------------|
 | **[DATA_ENGINE_REFERENCE.md](docs/DATA_ENGINE_REFERENCE.md)** | Complete API reference — every type, class, method, and reference table |
 | **[USAGE_IN_OTHER_PROJECTS.md](docs/USAGE_IN_OTHER_PROJECTS.md)** | Integration guide with working code examples for every major feature |
+| **[PLAYLIST_PARSING.md](docs/features/PLAYLIST_PARSING.md)** | Playlist parsing options, track data fields, track extras, alternate mixes, and mix selection |
+| **[GATEWAY_RESOLUTION.md](docs/features/GATEWAY_RESOLUTION.md)** | Arweave gateway resolution, AR.IO Wayfinder failover, IPFS URL utilities |
 | **[AUDIO_ANALYSIS.md](docs/features/AUDIO_ANALYSIS.md)** | Sonic fingerprinting, full timeline, TensorFlow genre/mood classification, pitch detection |
 | **[BEAT_DETECTION.md](docs/features/BEAT_DETECTION.md)** | Beat detection, manual charts, auto chart generation, pitch-based button mapping |
 | **[COMBAT_SYSTEM.md](docs/features/COMBAT_SYSTEM.md)** | Turn-based combat engine, simulations, AI combat, parameter sweeps |
@@ -364,7 +367,7 @@ The engine runs in both environments. Audio analysis uses the Web Audio API (bro
 | **[EQUIPMENT_SYSTEM.md](docs/features/EQUIPMENT_SYSTEM.md)** | Equipment generation, enchanting, set bonuses, stat effects |
 | **[CONTENT_PACKS.md](docs/features/CONTENT_PACKS.md)** | Content pack system, creating custom content packs |
 | **[CUSTOM_CONTENT.md](docs/features/CUSTOM_CONTENT.md)** | Custom races, classes, enemies, equipment, spells |
-| **[ROLS_AND_SEEDS.md](docs/features/ROLS_AND_SEEDS.md)** | Seeded RNG, dice rolling, deterministic combat simulations |
+| **[ROLLS_AND_SEEDS.md](docs/features/ROLLS_AND_SEEDS.md)** | Seeded RNG, dice rolling, deterministic combat simulations |
 | **[XP_AND_STATS.md](docs/features/XP_AND_STATS.md)** | XP sources, leveling, stat strategies, prestige system |
 | **[IRL_SENSORS.md](docs/features/IRL_SENSORS.md)** | Real-world sensor integration, activity bonuses |
 | **[PREREQUISITES.md](docs/features/PREREQUISITES.md)** | Dependencies, environment setup, system requirements |
@@ -374,7 +377,7 @@ The engine runs in both environments. Audio analysis uses the Web Audio API (bro
 
 ## Project Status
 
-- **Version**: 1.1.1
+- **Version**: 1.7.2
 - **TypeScript**: Strict mode
 - **Tests**: 7,205 tests across 183 test files
 - **Module**: Dual ESM/CJS with full type declarations

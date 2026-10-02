@@ -78,7 +78,7 @@ Complete API reference for the Playlist Data Engine. Contains all type definitio
     - [Subrace Support](#subrace-support)
     - [Custom Classes](#custom-classes)
 
-    **For spawn rates, CharacterGenerator extensions, validation rules, and advanced patterns, see [EXTENSIBILITY_GUIDE.md](docs/EXTENSIBILITY_GUIDE.md)**
+    **For spawn rates, CharacterGenerator extensions, validation rules, and advanced patterns, see [EXTENSIBILITY_GUIDE.md](features/EXTENSIBILITY_GUIDE.md)**
 15. [Cross-References](#cross-references)
 
 ---
@@ -95,6 +95,8 @@ A concise overview of all main exports from the library, organized by category.
 | `MetadataExtractor` | Extract metadata from track objects | [Core Modules](#core-modules) |
 | `getAudioUrls`, `getImageUrls`, etc. | Simple playlist data extraction utilities | [Core Modules](#core-modules) |
 | `getTrackMetadata`, `getTrackExtras`, `evaluateMixConditions` | Track extras: stems, mixes, lyrics, visualizer, video, vrm, merch, credits, game charts | [Track Extras](#track-extras) |
+| `resolveSelectedMix`, `findMixByName`, `getPreferredMixByQuality`, `getUniqueMixes`, `resolveMixUrl`, `selectMix` | Alternate mixes: entry-pin resolution, name lookup, grouping, URL resolution, playback selection | [Track Extras](#track-extras) |
+| `getMixes`, `getMixTracks` | Flattened mixes and per-track mix data across a playlist | [Playlist Utilities](#playlist-utilities) |
 | `isIPFS`, `extractIPFSPath`, `resolveIPFSLink` | IPFS URL detection, extraction, and resolution | [GATEWAY_RESOLUTION.md — IPFS URL Utilities](features/GATEWAY_RESOLUTION.md#ipfs-url-utilities) |
 | `AudioAnalyzer` | Analyze audio frequency characteristics | [Core Modules](#core-modules) |
 | `MusicClassifier` | Deep ML classification (genre, mood, vibe) | [Core Modules](#core-modules) |
@@ -155,7 +157,7 @@ A concise overview of all main exports from the library, organized by category.
 | `EquipmentSpawnHelper` | Batch spawn equipment by rarity, tags, or templates | [Equipment System](#equipment-system) |
 | `BoxOpener` | Open box-type items and generate their contents | [Equipment System](#boxopener) |
 
-**Additional Equipment:** Predefined enchantment library, 38+ pre-built magic items, templates — see [Equipment System](#equipment-system) and [EQUIPMENT_SYSTEM.md](docs/EQUIPMENT_SYSTEM.md)
+**Additional Equipment:** Predefined enchantment library, 38+ pre-built magic items, templates — see [Equipment System](#equipment-system) and [EQUIPMENT_SYSTEM.md](features/EQUIPMENT_SYSTEM.md)
 
 ### Sensors
 
@@ -272,7 +274,7 @@ A concise overview of all main exports from the library, organized by category.
 | `SensorDashboard` / `display*Diagnostics()` | Diagnostic dashboard for sensors | [Utilities](#utilities) |
 | `ImageValidator` | Validate icon/image URL fields | [Utilities](#utilities) |
 
-**Validation Schemas:** `PlaylistTrackSchema`, `ServerlessPlaylistSchema`, `AudioProfileSchema`, `AbilityScoresSchema`, `CharacterSheetSchema` — see [Utilities](#utilities)
+**Validation Schemas:** `PlaylistTrackSchema`, `ServerlessPlaylistSchema`, `AudioProfileSchema`, `AbilityScoresSchema`, `CharacterSheetSchema`, `MixConditionSchema`, `MixInfoSchema`, `StemInfoSchema` — see [Utilities](#utilities)
 
 **Configuration:** `DEFAULT_SENSOR_CONFIG`, `loadConfigFromEnv()`, `mergeConfig()`, `DEFAULT_PROGRESSION_CONFIG`, `mergeProgressionConfig()` — see [Configuration](#configuration)
 
@@ -290,7 +292,7 @@ All TypeScript types are exported, including:
 
 **Prestige Types:** `PrestigeLevel`, `PrestigeInfo`, `PrestigeResult`, `CustomThresholds` — see [Prestige System](#prestige-system)
 
-**Extensibility Types:** `ClassFeature`, `RacialTrait`, `CustomSkill`, `FeatureEffect`, `FeaturePrerequisite`, `SkillPrerequisite`, `SpellPrerequisite`, `ValidationResult`, `ExtensionCategory` — see [Extensibility System](#extensibility-system) and [PREREQUISITES.md](docs/PREREQUISITES.md)
+**Extensibility Types:** `ClassFeature`, `RacialTrait`, `CustomSkill`, `FeatureEffect`, `FeaturePrerequisite`, `SkillPrerequisite`, `SpellPrerequisite`, `ValidationResult`, `ExtensionCategory` — see [Extensibility System](#extensibility-system) and [PREREQUISITES.md](features/PREREQUISITES.md)
 
 **Equipment Types:** `EnhancedEquipment` (primary), `Equipment` (legacy), `InventoryItem`, `EquipmentProperty`, `EquipmentCondition`, `EquipmentModification`, `EnhancedInventoryItem`, `EquipmentMiniFeature`, `SpawnRandomOptions`, `TreasureHoardResult` — see [Equipment System](#equipment-system)
 
@@ -298,11 +300,11 @@ All TypeScript types are exported, including:
 
 **Enemy Types:** `EnemyCategory`, `EnemyRarity`, `EnemyArchetype`, `EnemyMixMode`, `EncounterDifficulty`, `SignatureAbility`, `AudioPreference`, `EnemyTemplate`, `RarityConfig`, `EnemyGenerationOptions`, `EncounterGenerationOptions`, `EnemyMetadata`, `EnemyFeature`, `StatLevelOverrides`, `LegendaryAction`, `LegendaryConfig`, `InnateSpell`, `SpellcastingConfig` — see [Enemy Generation](#enemy-generation)
 
-**Beat Detection Types:** `Beat`, `BeatMap`, `BeatMapMetadata`, `BeatEvent`, `BeatEventType`, `BeatStreamCallback`, `AudioSyncState`, `BeatMapGeneratorOptions`, `BeatStreamOptions`, `BeatMapJSON`, `BeatAccuracy`, `ButtonPressResult`, `AccuracyThresholds`, `DifficultyPreset`, `TempoEstimate`, `OSEConfig`, `BeatTrackerConfig`, `TempoDetectorConfig`, `TimeSignatureConfig`, `DownbeatSegment`, `DownbeatConfig`, `BeatMapGenerationProgress` — see [Beat Detection](#beat-detection) and [docs/AUDIO_ANALYSIS.md](docs/AUDIO_ANALYSIS.md)
+**Beat Detection Types:** `Beat`, `BeatMap`, `BeatMapMetadata`, `BeatEvent`, `BeatEventType`, `BeatStreamCallback`, `AudioSyncState`, `BeatMapGeneratorOptions`, `BeatStreamOptions`, `BeatMapJSON`, `BeatAccuracy`, `ButtonPressResult`, `AccuracyThresholds`, `DifficultyPreset`, `TempoEstimate`, `OSEConfig`, `BeatTrackerConfig`, `TempoDetectorConfig`, `TimeSignatureConfig`, `DownbeatSegment`, `DownbeatConfig`, `BeatMapGenerationProgress` — see [Beat Detection](#beat-detection) and [features/AUDIO_ANALYSIS.md](features/AUDIO_ANALYSIS.md)
 
-**Beat Interpolation Types:** `BeatSource`, `BeatWithSource`, `QuarterNoteDetection`, `GapAnalysis`, `InterpolationMetadata`, `InterpolatedBeatMap`, `BeatInterpolationOptions`, `InterpolatedBeatMapJSON`, `TempoSection`, `TempoSectionJSON` — see [Beat Detection](#beat-detection) and [docs/AUDIO_ANALYSIS.md](docs/AUDIO_ANALYSIS.md)
+**Beat Interpolation Types:** `BeatSource`, `BeatWithSource`, `QuarterNoteDetection`, `GapAnalysis`, `InterpolationMetadata`, `InterpolatedBeatMap`, `BeatInterpolationOptions`, `InterpolatedBeatMapJSON`, `TempoSection`, `TempoSectionJSON` — see [Beat Detection](#beat-detection) and [features/AUDIO_ANALYSIS.md](features/AUDIO_ANALYSIS.md)
 
-**Beat Subdivision Types:** `SubdivisionType`, `SubdivisionConfig`, `UnifiedBeatMap`, `SubdividedBeat`, `SubdividedBeatMap`, `SubdivisionMetadata`, `BeatSubdividerOptions` — see [Beat Detection](#beat-detection) and [docs/AUDIO_ANALYSIS.md](docs/AUDIO_ANALYSIS.md)
+**Beat Subdivision Types:** `SubdivisionType`, `SubdivisionConfig`, `UnifiedBeatMap`, `SubdividedBeat`, `SubdividedBeatMap`, `SubdivisionMetadata`, `BeatSubdividerOptions` — see [Beat Detection](#beat-detection) and [features/AUDIO_ANALYSIS.md](features/AUDIO_ANALYSIS.md)
 
 **Beat Key Types:** `KeyAssignableBeatMap`, `KeyAssignment` — see [Beat Key Helper Functions](#beat-key-helper-functions)
 
@@ -310,19 +312,19 @@ All TypeScript types are exported, including:
 
 **Rhythm Generation Types:** `GeneratedRhythm`, `RhythmGenerationOptions`, `RhythmMetadata`, `OutputMode`, `Band`, `RhythmPresetName`, `RhythmPresetConfig`, `DifficultyVariant`, `DifficultyLevel`, `PresetDifficultyLevel`, `VariantBeat`, `CompositeStream`, `CompositeBeat`, `CompositeSection`, `GeneratedRhythmMap`, `GeneratedBeat`, `GridType`, `GridDecision`, `QuantizedBandStreams`, `QuantizationConfig`, `DensityGenerationConfig`, `DensityValidationConfig`, `DensityValidationResult`, `BandDensityValidationResult`, `TransientAnalysis`, `TransientResult`, `TransientDetectionMethod`, `TransientDetectorConfig`, `BandTransientConfig`, `BandTransientConfigOverrides`, `MultiBandResult`, `BandAnalysis`, `MultiBandAnalyzerConfig`, `PhraseAnalysisResult`, `RhythmicPhrase`, `PhraseOccurrence`, `BandPhraseAnalysis`, `PhraseAnalyzerConfig`, `DensityAnalysisResult`, `BandDensityMetrics`, `SectionDensityMetrics`, `BeatDensityMetrics`, `DensityCategory`, `NaturalDifficulty`, `StreamScoringResult`, `SectionScore`, `SectionWinner`, `ScoringFactors`, `BalancerAction`, `BalanceStats`, `BalanceResult` — see [Procedural Rhythm Generation](#procedural-rhythm-generation)
 
-**Pitch Detection Types:** `PitchDetectorConfig`, `PitchResult` — see [Pitch Detection & Button Mapping](#pitch-detection--button-mapping) and [docs/BEAT_DETECTION.md](docs/BEAT_DETECTION.md#pitch-detection)
+**Pitch Detection Types:** `PitchDetectorConfig`, `PitchResult` — see [Pitch Detection & Button Mapping](#pitch-detection--button-mapping) and [features/BEAT_DETECTION.md](features/BEAT_DETECTION.md#pitch-detection)
 
 **Pitch Analysis Types:** `PitchAtBeat`, `PitchBandName`, `IntervalCategory`, `PitchDirection`, `PitchBeatLinkerConfig` — see [Pitch Detection & Button Mapping](#pitch-detection--button-mapping)
 
 **Melody Contour Types:** `MelodyContourAnalysisResult`, `MelodyContour`, `MelodySegment`, `MelodyContourDirection`, `DirectionStats`, `IntervalStats` — see [Pitch Detection & Button Mapping](#pitch-detection--button-mapping)
 
-**Button Mapping Types:** `ButtonMappingConfig`, `ControllerMode`, `DDRButton`, `GuitarHeroButton`, `Button`, `ButtonPattern`, `ButtonPatternCategory`, `ButtonPatternLibrary`, `MappedLevelResult`, `ButtonMappingMetadata` — see [Pitch Detection & Button Mapping](#pitch-detection--button-mapping) and [docs/BEAT_DETECTION.md](docs/BEAT_DETECTION.md#button-mapping-strategies)
+**Button Mapping Types:** `ButtonMappingConfig`, `ControllerMode`, `DDRButton`, `GuitarHeroButton`, `Button`, `ButtonPattern`, `ButtonPatternCategory`, `ButtonPatternLibrary`, `MappedLevelResult`, `ButtonMappingMetadata` — see [Pitch Detection & Button Mapping](#pitch-detection--button-mapping) and [features/BEAT_DETECTION.md](features/BEAT_DETECTION.md#button-mapping-strategies)
 
 **Level Generation Types:** `LevelGenerationOptions`, `LevelMetadata`, `GeneratedLevel`, `LevelGenerationProgress`, `LevelProgressCallback`, `AllDifficultiesResult` — see [Pitch Detection & Button Mapping](#pitch-detection--button-mapping)
 
 **Charted Beat Types:** `ChartedBeat`, `ChartedBeatMap`, `ChartMetadata`, `PitchMetadata`, `RhythmMetadataSummary`, `ChartConversionOptions` — see [Pitch Detection & Button Mapping](#pitch-detection--button-mapping)
 
-**Level Export Types:** `FullBeatMapExportData`, `FullExportDetectedBeat`, `FullExportMergedBeat`, `FullExportSubdividedBeat`, `SubdivisionExportData`, `ChartExportData`, `ProceduralGenerationMetadata`, `FullBeatMapImportResult`, `TrackReference`, `TrackMatchResult`, `LevelPackExport` — see [Pitch Detection & Button Mapping](#pitch-detection--button-mapping) and [docs/BEAT_DETECTION.md](docs/BEAT_DETECTION.md#serialization-format)
+**Level Export Types:** `FullBeatMapExportData`, `FullExportDetectedBeat`, `FullExportMergedBeat`, `FullExportSubdividedBeat`, `SubdivisionExportData`, `ChartExportData`, `ProceduralGenerationMetadata`, `FullBeatMapImportResult`, `TrackReference`, `TrackMatchResult`, `LevelPackExport` — see [Pitch Detection & Button Mapping](#pitch-detection--button-mapping) and [features/BEAT_DETECTION.md](features/BEAT_DETECTION.md#serialization-format)
 
 **Game Data:** `RACE_DATA`, `CLASS_DATA`, `SPELL_DATABASE`, `XP_THRESHOLDS` — see [Game Data Reference](#game-data-reference)
 
@@ -1235,6 +1237,9 @@ Zod schemas for runtime type validation. Use `safeParse()` for validation.
 |--------|-----------|
 | `PlaylistTrackSchema` | Track metadata with chain-specific validation (AR: tx_id, others: token_address + token_id) |
 | `ServerlessPlaylistSchema` | Complete playlist structure (metadata + tracks array) |
+| `MixConditionSchema` | Mix condition (`{ type, value }`, both strings) |
+| `MixInfoSchema` | Alternate mix (name, optional uri and mime_type, conditions array) |
+| `StemInfoSchema` | Stem (name, optional uri and mime_type) |
 | `AudioProfileSchema` | Audio analysis (frequency, color palette, analysis metadata) |
 | `AbilityScoresSchema` | All six ability scores (STR, DEX, CON, INT, WIS, CHA) in range 1-20 |
 | `CharacterSheetSchema` | Complete character sheet (abilities, HP, skills, equipment, appearance, XP) |
@@ -1431,7 +1436,7 @@ Retrieves data from default constants and custom extensions registered via Exten
 
 Skills, spells, and features can have prerequisites: base skills/spells/features, ability scores, minimum level, class/race requirements, or custom conditions.
 
-**See [docs/PREREQUISITES.md](docs/PREREQUISITES.md)** for complete guide and examples.
+**See [features/PREREQUISITES.md](features/PREREQUISITES.md)** for complete guide and examples.
 
 #### Type Helper Functions
 
@@ -1515,8 +1520,8 @@ Simple functions that return arrays of basic data from playlists. Works with bot
 
 | Function | Returns | Description |
 |----------|---------|-------------|
-| `getTracks(playlist)` | `SimpleTrack[]` | Simplified objects: `{ title, artist, description?, audio_url, audio_url_lossless?, image_url, image_thumb_url?, audio_ipfs_hash?, artwork_ipfs_hash?, mint_function?, mint_price?, mint_snapshot_time?, mint_token? }` |
-| `getFullTracks(playlist)` | `object[]` | All available track data as plain objects |
+| `getTracks(playlist)` | `SimpleTrack[]` | Simplified objects: `{ title, artist, description?, audio_url, audio_url_lossless?, image_url, image_thumb_url?, audio_ipfs_hash?, artwork_ipfs_hash?, mint_function?, mint_price?, mint_snapshot_time?, mint_token?, selected_mix? }` — a pinned entry's audio URLs point at its pinned mix |
+| `getFullTracks(playlist)` | `object[]` | All available track data as plain objects; raw input gets the entry's pin applied, matching parsed input |
 
 #### VRM Extraction Functions
 
@@ -1525,6 +1530,13 @@ Simple functions that return arrays of basic data from playlists. Works with bot
 | `getVRMs(playlist)` | `string[]` | VRM URLs from tracks that have the optional `vrm` field |
 | `getVRMTracks(playlist)` | `VRMTrack[]` | Track objects with VRM data: `{ title, artist, description?, audio_url, audio_url_lossless?, image_url, image_thumb_url?, vrm }` |
 
+#### Mix Extraction Functions
+
+| Function | Returns | Description |
+|----------|---------|-------------|
+| `getMixes(playlist)` | `MixInfo[]` | All mixes across tracks, flattened |
+| `getMixTracks(playlist)` | `MixTrackInfo[]` | Track objects with mix data: `{ title, artist, description?, audio_url, audio_url_lossless?, image_url, selected_mix?, mixes }` — the entry's pin applied on parsed and raw input alike |
+
 #### Types
 
 *Location:* *[src/utils/playlistUtils.ts](src/utils/playlistUtils.ts)*
@@ -1532,8 +1544,9 @@ Simple functions that return arrays of basic data from playlists. Works with bot
 | Type | Description |
 |------|-------------|
 | `PlaylistInput` | Union of `ServerlessPlaylist` or `RawArweavePlaylist` |
-| `SimpleTrack` | Simplified track: `{ title, artist, description?, audio_url, audio_url_lossless?, image_url, image_thumb_url?, audio_ipfs_hash?, artwork_ipfs_hash?, mint_function?, mint_price?, mint_snapshot_time?, mint_token? }` |
+| `SimpleTrack` | Simplified track: `{ title, artist, description?, audio_url, audio_url_lossless?, image_url, image_thumb_url?, audio_ipfs_hash?, artwork_ipfs_hash?, mint_function?, mint_price?, mint_snapshot_time?, mint_token?, selected_mix? }` |
 | `VRMTrack` | Track with VRM: `{ title, artist, description?, audio_url, audio_url_lossless?, image_url, image_thumb_url?, vrm }` |
+| `MixTrackInfo` | Track with mixes: `{ title, artist, description?, audio_url, audio_url_lossless?, image_url, selected_mix?, mixes }` |
 
 *For usage examples, see [USAGE_IN_OTHER_PROJECTS.md](USAGE_IN_OTHER_PROJECTS.md#playlist-utilities).*
 
@@ -1555,6 +1568,8 @@ For supported condition types, usage examples, and the full workflow, see [PLAYL
 | `StemInfo` | `{ name, uri?, mime_type? }` |
 | `MixCondition` | `{ type, value }` |
 | `MixInfo` | `{ name, uri?, mime_type?, conditions[] }` |
+| `SelectedMixInfo` | `{ name, audio_url?, audio_url_lossless? }` |
+| `MixGroup` | `{ name, mixes[] }` |
 | `LyricsInfo` | `{ text? }` |
 | `MediaAssetInfo` | `{ mime_type?, uri? }` |
 | `MerchInfo` | `{ mime_type?, type?, uri? }` |
@@ -1562,7 +1577,7 @@ For supported condition types, usage examples, and the full workflow, see [PLAYL
 | `ConditionEvaluationResult` | `{ type, value, met, reason }` |
 | `MixEvaluationResult` | `{ mix, conditions[], allMet, unmetConditions[] }` |
 | `AppState` | `{ playCount?, isFavorite?, userBirthday? }` |
-| `EvaluationContext` | `{ environment?, appState? }` |
+| `EvaluationContext` | `{ environment?: EnvironmentalContext, appState?: AppState }` — see [EnvironmentalContext](#environmentalcontext) |
 
 #### Functions
 
@@ -1570,7 +1585,13 @@ For supported condition types, usage examples, and the full workflow, see [PLAYL
 |----------|---------|-------------|
 | `getTrackMetadata(track)` | `Record<string, unknown> \| null` | Full raw parsed metadata (access any field beyond standard extractions) |
 | `getTrackExtras(metadata)` | `TrackExtrasInfo` | Summary of available extras: stems, mixes, media assets (lyrics, visualizer, video, vrm, merch), credits, game charts (midi, step_mania, clone_hero), external link |
+| `resolveSelectedMix(wrapperMix, attributes, mixes)` | `SelectedMixInfo \| null` | Which mix a playlist entry plays: wrapper `selected_mix` with legacy attribute fallback, `default` = unpinned, exact case-sensitive match, lossy/lossless pair split into `audio_url` + `audio_url_lossless` |
 | `evaluateMixConditions(extras, context?)` | `MixEvaluationResult[]` | Evaluates all mixes' conditions against current environment and app state |
+| `findMixByName(mixes, name, options?)` | `MixInfo \| null` | Tolerant mix lookup — case-insensitive, trimmed, alias-aware; `aliases: false` for exact names; `prefer` picks the master when a name ships twice |
+| `getPreferredMixByQuality(namedMixes, prefer?)` | `MixInfo \| null` | Picks the mp3 (lossy) or wav/flac (lossless) master among same-named mixes |
+| `getUniqueMixes(mixes)` | `MixGroup[]` | Groups a track's mixes by name, one group per distinct name |
+| `resolveMixUrl(mix, options?)` | `Promise<string \| null>` | Resolves a mix to a playable URL — gateway resolution plus the metadata-JSON indirection; null when no uri or resolution fails |
+| `selectMix(track, mixName, options?)` | `Promise<PlaylistTrack \| null>` | The consumer-side pin: a copy of the track with audio URLs swapped to the chosen mix and `selected_mix` set; null on no match or unmet conditions |
 
 ### IPFS URL Utilities
 
@@ -1791,7 +1812,7 @@ All model loading includes exponential backoff retries (1s, 2s, 4s) on transient
 
 Full-track pitch detection that operates on raw audio with zero dependency on beat detection or rhythm generation. Returns per-frame pitch results, melody contour analysis, and summary statistics.
 
-**For comprehensive documentation including usage examples, see [docs/AUDIO_ANALYSIS.md](docs/AUDIO_ANALYSIS.md#pitch-analysis)**
+**For comprehensive documentation including usage examples, see [features/AUDIO_ANALYSIS.md](features/AUDIO_ANALYSIS.md#pitch-analysis)**
 
 #### Constructor Options
 
@@ -2039,7 +2060,7 @@ Generates RPG-style character names from track metadata using 7 naming formats w
 
 Beat detection system based on the Ellis Dynamic Programming algorithm. Provides pre-analysis beat map generation and real-time beat event streaming synchronized with audio playback.
 
-**For comprehensive documentation including usage examples, see [docs/AUDIO_ANALYSIS.md](docs/AUDIO_ANALYSIS.md)**
+**For comprehensive documentation including usage examples, see [features/AUDIO_ANALYSIS.md](features/AUDIO_ANALYSIS.md)**
 
 ### Beat Types
 
@@ -2325,7 +2346,7 @@ The `tier` field is included in both `GrooveResult` and `GrooveState` for easy U
 | `getGrooveWindowMs(hotness)` | Get pocket window in milliseconds |
 | `getMinHotnessForTier(tier)` | Get minimum hotness for a tier |
 
-**For detailed formulas (BPM-aware window calculation, consistency quadratic falloff) and examples:** See [docs/AUDIO_ANALYSIS.md#groove-meter](docs/AUDIO_ANALYSIS.md#groove-meter)
+**For detailed formulas (BPM-aware window calculation, consistency quadratic falloff) and examples:** See [features/AUDIO_ANALYSIS.md#groove-meter](features/AUDIO_ANALYSIS.md#groove-meter)
 
 **Design Notes:**
 
@@ -2463,7 +2484,7 @@ function reapplyDownbeatConfig(beatMap: BeatMap, newConfig: DownbeatConfig): Bea
 
 **Throws:** Error if configuration is invalid or `downbeatBeatIndex` exceeds total beats
 
-**For usage examples:** See [docs/AUDIO_ANALYSIS.md#downbeat-configuration](docs/AUDIO_ANALYSIS.md#downbeat-configuration)
+**For usage examples:** See [features/AUDIO_ANALYSIS.md#downbeat-configuration](features/AUDIO_ANALYSIS.md#downbeat-configuration)
 
 ### BeatInterpolator
 
@@ -2513,7 +2534,7 @@ constructor(options?: BeatInterpolationOptions)
 | `static saveToFile(interpolatedBeatMap, filePath)` | `Promise<void>` | Save to disk (Node.js only) |
 | `static loadFromFile(filePath)` | `Promise<InterpolatedBeatMap>` | Load from disk (Node.js only) |
 
-**For usage examples:** See [docs/AUDIO_ANALYSIS.md#beat-interpolation](docs/AUDIO_ANALYSIS.md#beat-interpolation)
+**For usage examples:** See [features/AUDIO_ANALYSIS.md#beat-interpolation](features/AUDIO_ANALYSIS.md#beat-interpolation)
 
 **Confidence Model:**
 
@@ -2582,7 +2603,7 @@ constructor(options?: BeatSubdividerOptions)
 
 **2-Beat Structure Types:** `triplet4` and `dotted4` are 2-beat structures that only process beats at even `beatInMeasure` positions (0, 2, 4, 6...). This allows proper triplet and dotted patterns across beat pairs.
 
-**For usage examples:** See [docs/AUDIO_ANALYSIS.md#beat-subdivision](docs/AUDIO_ANALYSIS.md#beat-subdivision)
+**For usage examples:** See [features/AUDIO_ANALYSIS.md#beat-subdivision](features/AUDIO_ANALYSIS.md#beat-subdivision)
 
 **Per-Beat Configuration:**
 
@@ -2626,7 +2647,7 @@ function unifyBeatMap(interpolatedBeatMap: InterpolatedBeatMap): UnifiedBeatMap
 
 **Returns:** `UnifiedBeatMap` ready for subdivision
 
-**For usage examples:** See [docs/AUDIO_ANALYSIS.md#beat-subdivision](docs/AUDIO_ANALYSIS.md#beat-subdivision)
+**For usage examples:** See [features/AUDIO_ANALYSIS.md#beat-subdivision](features/AUDIO_ANALYSIS.md#beat-subdivision)
 
 ### subdivideBeatMap
 
@@ -2654,7 +2675,7 @@ function subdivideBeatMap(
 
 **Returns:** `SubdividedBeatMap` with subdivision applied
 
-**For usage examples:** See [docs/AUDIO_ANALYSIS.md#beat-subdivision](docs/AUDIO_ANALYSIS.md#beat-subdivision)
+**For usage examples:** See [features/AUDIO_ANALYSIS.md#beat-subdivision](features/AUDIO_ANALYSIS.md#beat-subdivision)
 
 ### SubdivisionPlaybackController
 
@@ -2732,7 +2753,7 @@ constructor(
 | `'next-downbeat'` | Wait for the next downbeat before switching |
 | `'next-measure'` | Wait for the next measure before switching |
 
-**For usage examples:** See [docs/AUDIO_ANALYSIS.md#real-time-subdivision-playground-practice-mode](docs/AUDIO_ANALYSIS.md#real-time-subdivision-playground-practice-mode)
+**For usage examples:** See [features/AUDIO_ANALYSIS.md#real-time-subdivision-playground-practice-mode](features/AUDIO_ANALYSIS.md#real-time-subdivision-playground-practice-mode)
 
 **Event Types:**
 
@@ -2798,7 +2819,7 @@ The `SubdivisionBeatEvent` includes:
 
 The Onset Strength Envelope (OSE) calculation uses several parameters that affect beat detection quality and performance. To make these parameters more accessible, the engine provides a **tiered mode system** that maps user-friendly mode names to optimized technical values.
 
-**For comprehensive documentation including usage examples, see [docs/AUDIO_ANALYSIS.md](docs/AUDIO_ANALYSIS.md#ose-parameter-modes)**
+**For comprehensive documentation including usage examples, see [features/AUDIO_ANALYSIS.md](features/AUDIO_ANALYSIS.md#ose-parameter-modes)**
 
 #### Tier 1: Primary Controls (Hop Size)
 
@@ -2855,7 +2876,7 @@ Gaussian smoothing determines how much the onset envelope is smoothed. More smoo
 | `getMelBands(config?: MelBandsConfig)` | `number` | Convert mel bands mode to actual count |
 | `getGaussianSmoothMs(config?: GaussianSmoothConfig)` | `number` | Convert gaussian smooth mode to actual milliseconds value |
 
-**For detailed examples (mode-based configuration, helper functions, precedence rules):** See [docs/AUDIO_ANALYSIS.md#ose-parameter-modes](docs/AUDIO_ANALYSIS.md#ose-parameter-modes)
+**For detailed examples (mode-based configuration, helper functions, precedence rules):** See [features/AUDIO_ANALYSIS.md#ose-parameter-modes](features/AUDIO_ANALYSIS.md#ose-parameter-modes)
 
 ## Procedural Rhythm Generation
 
@@ -2863,9 +2884,9 @@ System for generating procedural rhythm patterns from audio. Takes a `UnifiedBea
 
 **Pipeline flow:** `MultiBandAnalyzer` → `TransientDetector` → `RhythmQuantizer` → `PhraseAnalyzer` → `DensityAnalyzer` → `StreamScorer` → `CompositeStreamGenerator` → **`RhythmicBalancer`** → `DifficultyVariantGenerator`
 
-**For comprehensive documentation including usage examples, see [docs/AUDIO_ANALYSIS.md](docs/AUDIO_ANALYSIS.md)**
+**For comprehensive documentation including usage examples, see [features/AUDIO_ANALYSIS.md](features/AUDIO_ANALYSIS.md)**
 
-**For algorithm details (multi-band analysis, transient detection strategies, quantization, scoring, phrase detection), see [docs/BEAT_DETECTION.md#procedural-rhythm-generation](docs/BEAT_DETECTION.md#procedural-rhythm-generation)**
+**For algorithm details (multi-band analysis, transient detection strategies, quantization, scoring, phrase detection), see [features/BEAT_DETECTION.md#procedural-rhythm-generation](features/BEAT_DETECTION.md#procedural-rhythm-generation)**
 
 **Also known as:** *Rhythm synthesis, procedural beat generation, auto-chart generation*
 
@@ -2966,7 +2987,7 @@ constructor(options?: RhythmGenerationOptions)
 
 Splits audio into multiple frequency bands and analyzes each band separately for transient detection. Each band is processed independently to detect band-specific rhythmic elements.
 
-**For multi-band analysis approach and diagrams, see [docs/BEAT_DETECTION.md#transient-detection](docs/BEAT_DETECTION.md#transient-detection)**
+**For multi-band analysis approach and diagrams, see [features/BEAT_DETECTION.md#transient-detection](features/BEAT_DETECTION.md#transient-detection)**
 
 **Constructor:**
 
@@ -2996,7 +3017,7 @@ constructor(config?: MultiBandAnalyzerConfig)
 
 Detects transients (onsets) in audio using band-specific detection strategies. Each frequency band uses a different algorithm optimized for its typical content.
 
-**For detection strategies (Energy, Spectral Flux, HFC) and adaptive thresholding, see [docs/BEAT_DETECTION.md#detection-strategies](docs/BEAT_DETECTION.md#detection-strategies)**
+**For detection strategies (Energy, Spectral Flux, HFC) and adaptive thresholding, see [features/BEAT_DETECTION.md#detection-strategies](features/BEAT_DETECTION.md#detection-strategies)**
 
 **Detection Strategies:**
 
@@ -3035,7 +3056,7 @@ constructor(config?: TransientDetectorConfig)
 
 Within a buffer window (per-band `minInterval`), only the strongest transient is kept. Weaker transients are suppressed. This prevents multiple detections for the same acoustic event.
 
- (see [docs/BEAT_DETECTION.md#transient-detection](docs/BEAT_DETECTION.md#transient-detection) for details)
+ (see [features/BEAT_DETECTION.md#transient-detection](features/BEAT_DETECTION.md#transient-detection) for details)
 
 **Methods:**
 
@@ -3048,7 +3069,7 @@ Within a buffer window (per-band `minInterval`), only the strongest transient is
 
 Translates raw transients into quantized rhythmic subdivisions that align with the beat map grid. Uses a **decide-then-quantize** architecture: grid decisions are made first (per-beat detection of 16th vs triplet), then transients are snapped from their original timestamps to the chosen grid positions. This separation allows BPM-aware rules (via [TempoAwareQuantizer](#tempoawarequantizer)) to modify grid decisions before quantization occurs, avoiding double-quantization error.
 
-**For per-beat grid detection, density validation, and intensity filtering, see [docs/BEAT_DETECTION.md#rhythm-quantization](docs/BEAT_DETECTION.md#rhythm-quantization)**
+**For per-beat grid detection, density validation, and intensity filtering, see [features/BEAT_DETECTION.md#rhythm-quantization](features/BEAT_DETECTION.md#rhythm-quantization)**
 
 **Constructor:**
 
@@ -3147,7 +3168,7 @@ Thresholds are configurable via `HighBpmGridRestrictionConfig`.
 
 Analyzes quantized rhythm streams to detect duplicate multi-beat phrases. These detected phrases form a song-specific pattern library used for density enhancement.
 
-**For phrase detection algorithm and significance scoring, see [docs/BEAT_DETECTION.md#phrase-detection](docs/BEAT_DETECTION.md#phrase-detection)**
+**For phrase detection algorithm and significance scoring, see [features/BEAT_DETECTION.md#phrase-detection](features/BEAT_DETECTION.md#phrase-detection)**
 
 **Constructor:**
 
@@ -3196,14 +3217,14 @@ Single occurrence of a detected phrase. Timestamps enable pitch analysis of spec
 | `startTimestamp` | `number` | Start time in seconds (for pitch analysis reference) |
 | `endTimestamp` | `number` | End time in seconds (for pitch analysis reference) |
 
-**For phrase-level pitch correlation, see [docs/BEAT_DETECTION.md#phrase-level-pitch-correlation](docs/BEAT_DETECTION.md#phrase-level-pitch-correlation)**
+**For phrase-level pitch correlation, see [features/BEAT_DETECTION.md#phrase-level-pitch-correlation](features/BEAT_DETECTION.md#phrase-level-pitch-correlation)**
 
 ### DensityAnalyzer
 *Location:* *[src/core/analysis/beat/DensityAnalyzer.ts](src/core/analysis/beat/DensityAnalyzer.ts)*
 
 Analyzes quantized rhythm streams to measure density and determine natural difficulty. Calculates notes per second (tempo-adjusted density) and categorizes streams as sparse, moderate, or dense. Requires BPM to convert per-beat transient counts to a tempo-independent metric.
 
-**For density analysis and natural difficulty detection, see [docs/BEAT_DETECTION.md#natural-difficulty-detection](docs/BEAT_DETECTION.md#natural-difficulty-detection)**
+**For density analysis and natural difficulty detection, see [features/BEAT_DETECTION.md#natural-difficulty-detection](features/BEAT_DETECTION.md#natural-difficulty-detection)**
 
 **Methods:**
 
@@ -3224,7 +3245,7 @@ Analyzes quantized rhythm streams to measure density and determine natural diffi
 
 Scores each band stream section for rhythmic interest. Uses IOI variance, syncopation, phrase significance, and density factors.
 
-**For scoring factors and section scoring algorithm, see [docs/BEAT_DETECTION.md#scoring-and-composite-generation](docs/BEAT_DETECTION.md#scoring-and-composite-generation)**
+**For scoring factors and section scoring algorithm, see [features/BEAT_DETECTION.md#scoring-and-composite-generation](features/BEAT_DETECTION.md#scoring-and-composite-generation)**
 
 **Constructor:**
 
@@ -3296,7 +3317,7 @@ Factor weights vary per controller mode (band bias weights are shared):
 
 Creates a composite stream by slicing together the highest-scoring sections from each band. The composite represents the most interesting rhythm patterns across all frequency bands. Density is calculated as `totalBeats / trackDurationSeconds` using the actual audio duration from `unifiedBeatMap.duration`.
 
-**For composite stream generation algorithm, see [docs/BEAT_DETECTION.md#composite-stream-generation](docs/BEAT_DETECTION.md#composite-stream-generation)**
+**For composite stream generation algorithm, see [features/BEAT_DETECTION.md#composite-stream-generation](features/BEAT_DETECTION.md#composite-stream-generation)**
 
 **Methods:**
 
@@ -3404,7 +3425,7 @@ Describes what action the balancer took on a beat (tagged on `CompositeBeat.bala
 
 Generates preset difficulty variants (easy/medium/hard/natural) and density-based custom variants from the composite stream. Uses **global target-based density control** that calculates the exact beat count needed from the target density range, then distributes across indices. Employs a grid lock mechanism to ensure all density operations respect the single-grid-per-beat rule. Density is measured in notes per second as `beats.length / unifiedBeatMap.duration`.
 
-**For variant generation strategy, simplification rules, and density enhancement, see [docs/BEAT_DETECTION.md#difficulty-variant-generation](docs/BEAT_DETECTION.md#difficulty-variant-generation)**
+**For variant generation strategy, simplification rules, and density enhancement, see [features/BEAT_DETECTION.md#difficulty-variant-generation](features/BEAT_DETECTION.md#difficulty-variant-generation)**
 
 **For density-based generation, see [Density-Based Generation](#density-based-generation)**
 
@@ -3552,13 +3573,13 @@ This section covers pitch detection, melody analysis, button mapping, and level 
 >
 > For rhythm game chart generation that requires pitch aligned to beats, use `PitchBeatLinker` + `MelodyContourAnalyzer` (documented in this section).
 
-**For pitch detection algorithms (pYIN with HMM), see [docs/BEAT_DETECTION.md#pitch-detection](docs/BEAT_DETECTION.md#pitch-detection)**
+**For pitch detection algorithms (pYIN with HMM), see [features/BEAT_DETECTION.md#pitch-detection](features/BEAT_DETECTION.md#pitch-detection)**
 
-**For controller mode strategies (DDR, Guitar Hero), see [docs/BEAT_DETECTION.md#button-mapping-strategies](docs/BEAT_DETECTION.md#button-mapping-strategies)**
+**For controller mode strategies (DDR, Guitar Hero), see [features/BEAT_DETECTION.md#button-mapping-strategies](features/BEAT_DETECTION.md#button-mapping-strategies)**
 
-**For melody contour analysis approach, see [docs/BEAT_DETECTION.md#melody-contour](docs/BEAT_DETECTION.md#melody-contour)**
+**For melody contour analysis approach, see [features/BEAT_DETECTION.md#melody-contour](features/BEAT_DETECTION.md#melody-contour)**
 
-**For usage examples, see [docs/BEAT_DETECTION.md#level-generation-examples](docs/BEAT_DETECTION.md#level-generation-examples)**
+**For usage examples, see [features/BEAT_DETECTION.md#level-generation-examples](features/BEAT_DETECTION.md#level-generation-examples)**
 
 ### Controller Modes
 
@@ -3566,9 +3587,9 @@ The button mapper supports three controller styles:
 
 | Mode | Buttons | Axes | Pitch Expression | See Details |
 |------|---------|------|------------------|-------------|
-| DDR | up, down, left, right | 2 (vertical + horizontal) | Vertical: up→high, down→low; Horizontal: left→low, right→high | [BEAT_DETECTION.md#ddr-mode](docs/BEAT_DETECTION.md#ddr-mode) |
-| Guitar Hero | 1, 2, 3, 4, 5 | 1 (horizontal only) | Fretboard metaphor: 1→lowest pitch, 5→highest pitch | [BEAT_DETECTION.md#guitar-hero-mode](docs/BEAT_DETECTION.md#guitar-hero-mode) |
-| Tap | tap | 0 | None — skips pitch detection entirely, all beats are simple taps | [BEAT_DETECTION.md#tap-mode](docs/BEAT_DETECTION.md#tap-mode) |
+| DDR | up, down, left, right | 2 (vertical + horizontal) | Vertical: up→high, down→low; Horizontal: left→low, right→high | [BEAT_DETECTION.md#ddr-mode](features/BEAT_DETECTION.md#ddr-mode) |
+| Guitar Hero | 1, 2, 3, 4, 5 | 1 (horizontal only) | Fretboard metaphor: 1→lowest pitch, 5→highest pitch | [BEAT_DETECTION.md#guitar-hero-mode](features/BEAT_DETECTION.md#guitar-hero-mode) |
+| Tap | tap | 0 | None — skips pitch detection entirely, all beats are simple taps | [BEAT_DETECTION.md#tap-mode](features/BEAT_DETECTION.md#tap-mode) |
 
 ### PitchDetector
 
@@ -3702,7 +3723,7 @@ Links pitch detection to rhythm beat timestamps. Performs full-spectrum pitch de
 
 *Also known as: beat-timestamped pitch detection, pitch-to-rhythm linking*
 
-**For pitch detection approach, see [docs/BEAT_DETECTION.md#beat-timestamped-pitch](docs/BEAT_DETECTION.md#beat-timestamped-pitch)**
+**For pitch detection approach, see [features/BEAT_DETECTION.md#beat-timestamped-pitch](features/BEAT_DETECTION.md#beat-timestamped-pitch)**
 
 #### Class: `PitchBeatLinker`
 
@@ -3739,7 +3760,7 @@ Analyzes pitch data to extract melodic contour information for button mapping. C
 
 *Also known as: pitch direction analysis, interval analysis, melody segment detection*
 
-**For pitch-to-pitch comparison approach, see [docs/BEAT_DETECTION.md#melody-contour](docs/BEAT_DETECTION.md#melody-contour)**
+**For pitch-to-pitch comparison approach, see [features/BEAT_DETECTION.md#melody-contour](features/BEAT_DETECTION.md#melody-contour)**
 
 #### Class: `MelodyContourAnalyzer`
 
@@ -3781,7 +3802,7 @@ Maps pitch analysis to button assignments for rhythm games. Uses pitch detection
 
 *Also known as: key assignment, chart generation, button pattern mapping*
 
-**For DDR and Guitar Hero strategies, see [docs/BEAT_DETECTION.md#button-mapping-strategies](docs/BEAT_DETECTION.md#button-mapping-strategies)**
+**For DDR and Guitar Hero strategies, see [features/BEAT_DETECTION.md#button-mapping-strategies](features/BEAT_DETECTION.md#button-mapping-strategies)**
 
 #### Class: `ButtonMapper`
 
@@ -3859,7 +3880,7 @@ Main orchestrator for complete rhythm game level generation. Combines rhythm gen
 
 *Also known as: chart generator, level orchestrator*
 
-**For full workflow example, see [docs/BEAT_DETECTION.md#level-generation-examples](docs/BEAT_DETECTION.md#level-generation-examples)**
+**For full workflow example, see [features/BEAT_DETECTION.md#level-generation-examples](features/BEAT_DETECTION.md#level-generation-examples)**
 
 #### Class: `LevelGenerator`
 
@@ -3937,7 +3958,7 @@ Serializes and deserializes generated levels. Converts between engine internal f
 
 *Also known as: level export, chart serialization*
 
-**For serialization format details, see [docs/BEAT_DETECTION.md#serialization-format](docs/BEAT_DETECTION.md#serialization-format)**
+**For serialization format details, see [features/BEAT_DETECTION.md#serialization-format](features/BEAT_DETECTION.md#serialization-format)**
 
 #### Class: `LevelSerializer` (static methods)
 
@@ -4062,7 +4083,7 @@ Interface for session tracking operations required by the prestige system. Allow
 | `getTrackXPTotal(trackUuid)` | `number` | Get the total XP earned for a specific track |
 | `clearTrackSessions(trackUuid)` | `number` | Clear all listening sessions for a track; returns count removed |
 
-**For usage examples (Zustand adapter, mock for testing):** See [docs/XP_AND_STATS.md#isessiontracker-adapter](docs/XP_AND_STATS.md#isessiontracker-adapter)
+**For usage examples (Zustand adapter, mock for testing):** See [features/XP_AND_STATS.md#isessiontracker-adapter](features/XP_AND_STATS.md#isessiontracker-adapter)
 
 ### ListeningSession
 
@@ -4153,7 +4174,7 @@ Configuration for XP calculation.
 
 Orchestrates applying session results to a character, handling leveling up and mastery.
 
-**For usage examples, see [XP_AND_STATS.md](docs/XP_AND_STATS.md)**
+**For usage examples, see [XP_AND_STATS.md](features/XP_AND_STATS.md)**
 
 #### Method Reference
 
@@ -4178,7 +4199,7 @@ Orchestrates applying session results to a character, handling leveling up and m
 | `standard` (capped at 20) | `dnD5e` (manual) | 2-step level-up: XP adds HP/proficiency/features, stats require manual selection via `applyPendingStatIncrease()` |
 | `uncapped` | `dnD5e_smart` (auto) | 1-step level-up: Everything applied automatically, intelligently boosts primary/lowest stats |
 
-**For custom StatManager configuration and strategy options:** See [docs/XP_AND_STATS.md#stat-increase-strategies](docs/XP_AND_STATS.md#stat-increase-strategies)
+**For custom StatManager configuration and strategy options:** See [features/XP_AND_STATS.md#stat-increase-strategies](features/XP_AND_STATS.md#stat-increase-strategies)
 
 #### Types
 
@@ -4315,7 +4336,7 @@ The system supports two parallel XP systems:
 1. **Per-button-press XP** (this class) - rewards timing accuracy, combos, groove
 2. **Listening session XP boost** (XPCalculator) - boosts background listening XP while playing
 
-**For usage examples, see [XP_AND_STATS.md](docs/XP_AND_STATS.md#rhythm-game-xp)**
+**For usage examples, see [XP_AND_STATS.md](features/XP_AND_STATS.md#rhythm-game-xp)**
 
 #### Constructor
 
@@ -4381,7 +4402,7 @@ The calculator supports two modes:
 | `mergeRhythmXPConfig(userConfig?)` | `RhythmXPConfig` | Merge user config with defaults |
 | `shouldAccuracyBreakCombo(accuracy, okBreaksCombo?)` | `boolean` | Check if accuracy should break combo streak. Returns `true` for 'miss' and 'wrongKey', always. For 'ok', returns `true` by default (configurable). Perfect/great/good never break combo. |
 
-**For configuration details, session tracking, and stateless usage examples:** See [docs/XP_AND_STATS.md#rhythm-game-xp](docs/XP_AND_STATS.md#rhythm-game-xp)
+**For configuration details, session tracking, and stateless usage examples:** See [features/XP_AND_STATS.md#rhythm-game-xp](features/XP_AND_STATS.md#rhythm-game-xp)
 
 ---
 
@@ -4419,7 +4440,7 @@ Manages D&D 5e-style stat increases for character progression with flexible stra
 | `StatIncreaseResult` | [src/core/types/Progression.ts](src/core/types/Progression.ts) | Result with updated character, increases array, capped array, source, timestamp |
 | `StatSelectionValidationError` | [src/core/types/Progression.ts](src/core/types/Progression.ts) | Validation error with reason (invalid_ability, invalid_amount, exceeds_cap, wrong_pattern, duplicate_ability) |
 
-For complete stat increase examples (manual selection, auto-selection, custom formulas, potions/curses), see [XP_AND_STATS.md](docs/XP_AND_STATS.md#stat-increase-strategies).
+For complete stat increase examples (manual selection, auto-selection, custom formulas, potions/curses), see [XP_AND_STATS.md](features/XP_AND_STATS.md#stat-increase-strategies).
 
 ### Built-in Strategies
 
@@ -4468,7 +4489,7 @@ The engine supports two game modes for character progression:
 
 The `gameMode` is stored on the character and automatically used during level-ups.
 
-**For usage examples and progression configuration:** See [docs/XP_AND_STATS.md#game-mode-selection](docs/XP_AND_STATS.md#game-mode-selection)
+**For usage examples and progression configuration:** See [features/XP_AND_STATS.md#game-mode-selection](features/XP_AND_STATS.md#game-mode-selection)
 
 ---
 
@@ -4557,7 +4578,7 @@ Configuration for XP thresholds, stat increases, and level-up behavior.
 
 *Location:* *[src/core/sensors/EnvironmentalSensors.ts](src/core/sensors/EnvironmentalSensors.ts)*
 
-**For usage examples, see [docs/IRL_SENSORS.md](docs/IRL_SENSORS.md)**
+**For usage examples, see [features/IRL_SENSORS.md](features/IRL_SENSORS.md)**
 
 Integrates real-world data (GPS, Weather, Motion, Light) to influence XP generation.
 
@@ -4701,7 +4722,7 @@ Astronomical calculations for sunrise, sunset, and day stage. **Works without an
 | `day` | Between sunrise and sunset |
 | `dusk` | Between sunset and civil dusk (~30 min) |
 
-*For usage examples, see [IRL_SENSORS.md](docs/IRL_SENSORS.md#solar-information-no-api-key-required).*
+*For usage examples, see [IRL_SENSORS.md](features/IRL_SENSORS.md#solar-information-no-api-key-required).*
 
 ---
 
@@ -4745,7 +4766,7 @@ Monitors Steam activity to award gaming bonuses.
 
 *Also known as: D&D 5e combat, turn-based combat, battle system, encounter system*
 
-**For usage examples, see [COMBAT_SYSTEM.md](docs/COMBAT_SYSTEM.md)**
+**For usage examples, see [COMBAT_SYSTEM.md](features/COMBAT_SYSTEM.md)**
 
 ### CombatEngine
 
@@ -4930,7 +4951,7 @@ Handles spell casting mechanics (spell slots, saving throws, spell damage).
 
 > **Note:** Instance class — create with `new SeededDiceRoller(seed)` or `createSeededRoller(seed)`
 >
-> **For full documentation, see [Seeded Dice Roller](docs/ROLLS_AND_SEEDS.md#seeded-dice-roller) and [Seeded RNG in Combat Simulations](docs/ROLLS_AND_SEEDS.md#seeded-rng-in-combat-simulations) in ROLLS_AND_SEEDS.md.**
+> **For full documentation, see [Seeded Dice Roller](features/ROLLS_AND_SEEDS.md#seeded-dice-roller) and [Seeded RNG in Combat Simulations](features/ROLLS_AND_SEEDS.md#seeded-rng-in-combat-simulations) in ROLLS_AND_SEEDS.md.**
 
 Deterministic D&D-style dice rolling for reproducible combat simulations. Implements the same API as `DiceRoller` but uses `SeededRNG` internally, producing deterministic results given the same seed and call sequence.
 
@@ -4946,7 +4967,7 @@ Deterministic D&D-style dice rolling for reproducible combat simulations. Implem
 |----------|-------------|
 | `createSeededRoller(seed: string): SeededDiceRoller` | Create a seeded roller from a seed string (convenience factory) |
 
-**Methods:** Mirrors the static `DiceRoller` API — see [ROLLS_AND_SEEDS.md](docs/ROLLS_AND_SEEDS.md#api-reference) for the full table.
+**Methods:** Mirrors the static `DiceRoller` API — see [ROLLS_AND_SEEDS.md](features/ROLLS_AND_SEEDS.md#api-reference) for the full table.
 
 ### CombatAI
 
@@ -5043,7 +5064,7 @@ Post-hoc analysis that computes per-combatant statistics from a completed `Comba
 
 > **Note:** Instance class — create with `new CombatSimulator()`
 >
-> **For usage examples and detailed explanation, see [Monte Carlo Simulation](docs/COMBAT_SYSTEM.md#monte-carlo-simulation) in COMBAT_SYSTEM.md.**
+> **For usage examples and detailed explanation, see [Monte Carlo Simulation](features/COMBAT_SYSTEM.md#monte-carlo-simulation) in COMBAT_SYSTEM.md.**
 
 Monte Carlo combat simulation engine. Runs N independent combat simulations with seeded RNG, aggregates statistical results, and returns structured data for balance analysis. Each run gets a unique seed (`baseSeed-runIndex`). Stateless between `run()` calls.
 
@@ -5086,7 +5107,7 @@ Monte Carlo combat simulation engine. Runs N independent combat simulations with
 
 > **Note:** Instance class — create with `new BalanceValidator()`
 >
-> **For usage examples and detailed explanation, see [Simulation-Based Balance Validation](docs/ENEMY_GENERATION.md#simulation-based-balance-validation) in ENEMY_GENERATION.md.**
+> **For usage examples and detailed explanation, see [Simulation-Based Balance Validation](features/ENEMY_GENERATION.md#simulation-based-balance-validation) in ENEMY_GENERATION.md.**
 
 Validates encounter balance using Monte Carlo simulation results. Compares actual player win rate against expected win rates per difficulty tier. Produces a `BalanceReport` with balance score, variance classification, and actionable recommendations.
 
@@ -5119,7 +5140,7 @@ Validates encounter balance using Monte Carlo simulation results. Compares actua
 
 > **Note:** Instance class — create with `new ParameterSweep()`
 >
-> **For usage examples and detailed explanation, see [Parameter Sweep](docs/ENEMY_GENERATION.md#parameter-sweep) in ENEMY_GENERATION.md.**
+> **For usage examples and detailed explanation, see [Parameter Sweep](features/ENEMY_GENERATION.md#parameter-sweep) in ENEMY_GENERATION.md.**
 
 Varies a single encounter parameter across a range and runs simulations at each data point. Produces `SweepResults` with one data point per parameter value, useful for finding difficulty sweet spots. Stateless between `sweep()` calls.
 
@@ -5158,7 +5179,7 @@ Varies a single encounter parameter across a range and runs simulations at each 
 
 > **Note:** Instance class — create with `new ComparativeAnalyzer()`
 >
-> **For usage examples and detailed explanation, see [Comparative Analysis](docs/ENEMY_GENERATION.md#comparative-analysis) in ENEMY_GENERATION.md.**
+> **For usage examples and detailed explanation, see [Comparative Analysis](features/ENEMY_GENERATION.md#comparative-analysis) in ENEMY_GENERATION.md.**
 
 Compares two encounter configurations using identical-seed simulation. Both configs are simulated with the same seed sequence, eliminating dice roll variance so outcome differences are attributable to the configuration change. Stateless between `compare()` calls.
 
@@ -5197,7 +5218,7 @@ Compares two encounter configurations using identical-seed simulation. Both conf
 
 > **Note:** Instance class — create with `new DifficultyCalculator()`
 >
-> **For usage examples and detailed explanation, see [Difficulty Calculator](docs/ENEMY_GENERATION.md#difficulty-calculator) in ENEMY_GENERATION.md.**
+> **For usage examples and detailed explanation, see [Difficulty Calculator](features/ENEMY_GENERATION.md#difficulty-calculator) in ENEMY_GENERATION.md.**
 
 Suggests enemy CR for a target difficulty using simulation-driven binary search. Two-phase approach: (1) XP-budget initial CR estimate, (2) simulation-driven refinement adjusting CR up/down until win rate converges. Stateless between `suggest()` calls.
 
@@ -5266,7 +5287,7 @@ Bidirectional conversion between Challenge Rating (CR) and character level for e
 | `formatCR(cr: number)` | `string` | Format CR with fractional notation (e.g., "1/4", "1/2") |
 | `createCRTuning(options?: Partial<CRTuningConfig>)` | `CRTuningConfig` | Create custom CR tuning configuration |
 
-**For usage examples (single enemy generation, encounter generation, audio influence):** See [docs/ENEMY_GENERATION.md](docs/ENEMY_GENERATION.md#enemy-generation)
+**For usage examples (single enemy generation, encounter generation, audio influence):** See [features/ENEMY_GENERATION.md](features/ENEMY_GENERATION.md#enemy-generation)
 
 **Generation Options (EnemyGenerationOptions):**
 
@@ -5643,7 +5664,7 @@ The following template files contain enemy definitions organized by category:
 
 *Location:* *[src/core/equipment/](src/core/equipment/)*, `src/core/types/Equipment.ts`, `src/core/generation/EquipmentGenerator.ts`
 
-**For comprehensive documentation, see [EQUIPMENT_SYSTEM.md](docs/EQUIPMENT_SYSTEM.md)**
+**For comprehensive documentation, see [EQUIPMENT_SYSTEM.md](features/EQUIPMENT_SYSTEM.md)**
 
 ### Equipment Types
 
@@ -5785,7 +5806,7 @@ Static class for equipment modification including enchanting (positive effects),
 | `createModification(id, name, properties, source)` | `EquipmentModification` | Create EquipmentModification object |
 | `generateModificationId(prefix?)` | `string` | Generate unique modification ID (timestamp-based) |
 
-For usage examples, see [EQUIPMENT_SYSTEM.md](../docs/EQUIPMENT_SYSTEM.md#equipment-modification).
+For usage examples, see [EQUIPMENT_SYSTEM.md](features/EQUIPMENT_SYSTEM.md#equipment-modification).
 
 ### EquipmentSpawnHelper
 
@@ -5806,7 +5827,7 @@ Batch spawning utilities for equipment. Spawns from lists, by rarity, by tags, r
 | `addToCharacter(character: CharacterSheet, items: EnhancedEquipment[], equip?: boolean)` | `CharacterSheet` | Add spawned equipment to character inventory |
 | `openBoxForCharacter(character: CharacterSheet, boxName: string, rng: SeededRNG)` | `{ character, result } \| null` | Open a named box in the character's inventory, remove it, add contents — see [BoxOpener](#boxopener) |
 
-For usage examples, see [EQUIPMENT_SYSTEM.md](../docs/EQUIPMENT_SYSTEM.md#batch-spawning).
+For usage examples, see [EQUIPMENT_SYSTEM.md](features/EQUIPMENT_SYSTEM.md#batch-spawning).
 
 ### BoxOpener
 
@@ -5848,7 +5869,7 @@ Static utility class for opening `type: 'box'` equipment items and generating th
 | `BoxOpenRequirement` | `itemName`, `quantity?` | A single requirement to open a box. `itemName` is the item to consume, `quantity` defaults to 1. Gold requirements use `"Gold Coin"` as itemName. |
 | `BoxOpenError` | `code`, `message`, `requirement?` | Error returned when box cannot be opened. `code` is `'MISSING_ITEM'`, `'INSUFFICIENT_QUANTITY'`, or `'NO_BOX_CONTENTS'`. |
 
-**For usage examples (openBox, isBox, previewContents, locked boxes with requirements):** See [EQUIPMENT_SYSTEM.md](docs/EQUIPMENT_SYSTEM.md#boxopener-class)
+**For usage examples (openBox, isBox, previewContents, locked boxes with requirements):** See [EQUIPMENT_SYSTEM.md](features/EQUIPMENT_SYSTEM.md#boxopener-class)
 
 #### Box Behavior Rules
 
@@ -5860,7 +5881,7 @@ Static utility class for opening `type: 'box'` equipment items and generating th
 - **Deterministic**: Same seed + same box = same result every time.
 - **Opening requirements**: Boxes with `openRequirements` require consuming items from inventory. All requirements must be met (atomic operation). Gold requirements use `"Gold Coin"` as itemName with quantity.
 
-For comprehensive examples and all box definitions, see [EQUIPMENT_SYSTEM.md](docs/EQUIPMENT_SYSTEM.md#box-equipment-type).
+For comprehensive examples and all box definitions, see [EQUIPMENT_SYSTEM.md](features/EQUIPMENT_SYSTEM.md#box-equipment-type).
 
 ### EquipmentGenerator
 *Also known as: Equipment manager, inventory system, gear handler, starting equipment provider*
@@ -5901,7 +5922,7 @@ Manages equipment assignment, inventory, and equipped items for characters. Supp
 |--------|---------|-------------|
 | `getEquipmentDataStatic(itemName)` | `EnhancedEquipment \| undefined` | Get equipment data from extended database (defaults + custom) |
 
-For equipment properties, enchanting, and custom equipment examples, see [EQUIPMENT_SYSTEM.md](../docs/EQUIPMENT_SYSTEM.md).
+For equipment properties, enchanting, and custom equipment examples, see [EQUIPMENT_SYSTEM.md](features/EQUIPMENT_SYSTEM.md).
 
 ---
 
@@ -6004,7 +6025,7 @@ Functions that create stat-boosting enchantments with configurable bonus levels 
 | `createWisdomEnchantment` | `bonus: 1 \| 2 \| 3 \| 4` | `EquipmentModification` | Enchantment adding +bonus to WIS |
 | `createCharismaEnchantment` | `bonus: 1 \| 2 \| 3 \| 4` | `EquipmentModification` | Enchantment adding +bonus to CHA |
 
-**For usage examples:** See [docs/EQUIPMENT_SYSTEM.md#creating-stat-boosting-enchantments](docs/EQUIPMENT_SYSTEM.md#creating-stat-boosting-enchantments)
+**For usage examples:** See [features/EQUIPMENT_SYSTEM.md#creating-stat-boosting-enchantments](features/EQUIPMENT_SYSTEM.md#creating-stat-boosting-enchantments)
 
 ### Query Functions
 
@@ -6016,7 +6037,7 @@ Functions that create stat-boosting enchantments with configurable bonus levels 
 | `getAllCurses` | - | `EquipmentModification[]` | Get all curses |
 | `getEnchantmentsByType` | `type: 'weapon' \| 'armor' \| 'resistance' \| 'combo'` | `EquipmentModification[]` | Get enchantments filtered by type |
 
-**For usage examples (applying enchantments, curses, stat boosts):** See [docs/EQUIPMENT_SYSTEM.md#applying-enchantments](docs/EQUIPMENT_SYSTEM.md#applying-enchantments)
+**For usage examples (applying enchantments, curses, stat boosts):** See [features/EQUIPMENT_SYSTEM.md#applying-enchantments](features/EQUIPMENT_SYSTEM.md#applying-enchantments)
 
 ---
 
@@ -6135,7 +6156,7 @@ Templates that can be applied to base equipment to create magic variants:
 | `getItemsWithProperty` | `propertyType: string` | `EnhancedEquipment[]` | Get all items with a specific property type |
 | `applyTemplate` | `baseEquipment: EnhancedEquipment, templateId: string` | `EnhancedEquipment \| null` | Apply a template to base equipment, returns enhanced item or null if template not found |
 
-**For usage examples (querying items, applying templates, registration with ExtensionManager):** See [docs/EQUIPMENT_SYSTEM.md](docs/EQUIPMENT_SYSTEM.md#magic-items-and-templates)
+**For usage examples (querying items, applying templates, registration with ExtensionManager):** See [features/EQUIPMENT_SYSTEM.md](features/EQUIPMENT_SYSTEM.md#magic-items-and-templates)
 
 ---
 
@@ -6143,7 +6164,7 @@ Templates that can be applied to base equipment to create magic variants:
 
 *Location:* *[src/core/extensions/](src/core/extensions/)*
 
-**For comprehensive extensibility documentation, see [EXTENSIBILITY_GUIDE.md](docs/EXTENSIBILITY_GUIDE.md)**
+**For comprehensive extensibility documentation, see [EXTENSIBILITY_GUIDE.md](features/EXTENSIBILITY_GUIDE.md)**
 
 The extensibility system allows runtime customization of ALL procedural generation lists with spawn rate control.
 
@@ -6172,7 +6193,7 @@ The extensibility system allows runtime customization of ALL procedural generati
 
 Singleton registry for managing runtime customization of procedural generation lists with spawn rate control.
 
-**For usage examples and detailed guides:** See [docs/EXTENSIBILITY_GUIDE.md](docs/EXTENSIBILITY_GUIDE.md)
+**For usage examples and detailed guides:** See [features/EXTENSIBILITY_GUIDE.md](features/EXTENSIBILITY_GUIDE.md)
 
 ---
 
@@ -6248,7 +6269,7 @@ The following categories support `icon` and `image` fields for batch operations:
 | `races.data` | RaceDataEntry | `name` (race name) |
 | `classes.data` | ClassDataEntry | `name` (class name) |
 
-**For batch image usage examples (batchAddIcons, batchUpdateImages, batchByCategory):** See [docs/EXTENSIBILITY_GUIDE.md#batch-image-operations](docs/EXTENSIBILITY_GUIDE.md#batch-image-operations)
+**For batch image usage examples (batchAddIcons, batchUpdateImages, batchByCategory):** See [features/EXTENSIBILITY_GUIDE.md#batch-image-operations](features/EXTENSIBILITY_GUIDE.md#batch-image-operations)
 
 ### FeatureQuery
 
@@ -6258,7 +6279,7 @@ The following categories support `icon` and `image` fields for batch operations:
 
 Query and validation layer for class features and racial traits stored in ExtensionManager.
 
-**For usage examples and detailed guides:** See [docs/EXTENSIBILITY_GUIDE.md](docs/EXTENSIBILITY_GUIDE.md)
+**For usage examples and detailed guides:** See [features/EXTENSIBILITY_GUIDE.md](features/EXTENSIBILITY_GUIDE.md)
 
 ---
 
@@ -6313,7 +6334,7 @@ Query and validation layer for class features and racial traits stored in Extens
 
 Utility class for validating class features and racial traits against strict schemas. All methods are static.
 
-**For detailed validation rules and runtime behavior:** See [docs/PREREQUISITES.md#validation-system](docs/PREREQUISITES.md#validation-system)
+**For detailed validation rules and runtime behavior:** See [features/PREREQUISITES.md#validation-system](features/PREREQUISITES.md#validation-system)
 
 ---
 
@@ -6382,7 +6403,7 @@ Utility class for weighted random selection supporting different spawn modes for
 
 Query and validation layer for character skills stored in ExtensionManager.
 
-**For comprehensive guide, examples, and best practices:** See [docs/EXTENSIBILITY_GUIDE.md](docs/EXTENSIBILITY_GUIDE.md)
+**For comprehensive guide, examples, and best practices:** See [features/EXTENSIBILITY_GUIDE.md](features/EXTENSIBILITY_GUIDE.md)
 
 #### Types
 
@@ -6437,13 +6458,13 @@ Utility class for validating custom skills, skill proficiencies, and skill list 
 | `isValidAbility(ability: string)` | `ability is Ability` | Check if valid ability score (STR, DEX, CON, INT, WIS, CHA) |
 | `isValidSkillId(id: string)` | `boolean` | Check if skill ID follows lowercase_with_underscores format |
 
-**Note:** For detailed prerequisite validation rules, see [docs/PREREQUISITES.md](docs/PREREQUISITES.md).
+**Note:** For detailed prerequisite validation rules, see [features/PREREQUISITES.md](features/PREREQUISITES.md).
 
 ---
 
 ### Skill Prerequisites
 
-**For comprehensive guide, examples, and best practices:** See [docs/PREREQUISITES.md](docs/PREREQUISITES.md)
+**For comprehensive guide, examples, and best practices:** See [features/PREREQUISITES.md](features/PREREQUISITES.md)
 
 Skills can have prerequisites that must be met before a character can gain proficiency in them. This allows for advanced skills that require base skills, specific features, spells, ability scores, level, class, or race.
 
@@ -6461,7 +6482,7 @@ Skills can have prerequisites that must be met before a character can gain profi
 
 Query and validation layer for spells stored in ExtensionManager.
 
-**For comprehensive guide, examples, and best practices:** See [docs/EXTENSIBILITY_GUIDE.md](docs/EXTENSIBILITY_GUIDE.md)
+**For comprehensive guide, examples, and best practices:** See [features/EXTENSIBILITY_GUIDE.md](features/EXTENSIBILITY_GUIDE.md)
 
 #### Types
 
@@ -6515,13 +6536,13 @@ Utility class for validating spells and their prerequisites. All methods are sta
 | `isValidSchool(school: string)` | `school is Spell['school']` | Check if valid spell school |
 | `isValidSpellLevel(level: number)` | `boolean` | Check if valid spell level (0-9) |
 
-**Note:** For detailed prerequisite validation rules, see [docs/PREREQUISITES.md](docs/PREREQUISITES.md).
+**Note:** For detailed prerequisite validation rules, see [features/PREREQUISITES.md](features/PREREQUISITES.md).
 
 ---
 
 ### Spell Prerequisites
 
-**For comprehensive guide, examples, and best practices:** See [docs/PREREQUISITES.md](docs/PREREQUISITES.md)
+**For comprehensive guide, examples, and best practices:** See [features/PREREQUISITES.md](features/PREREQUISITES.md)
 
 Spells can have prerequisites that must be met before a spellcaster can learn them. This allows for specialized spells that require specific features, abilities, spells, skills, level, or class.
 
@@ -6535,7 +6556,7 @@ Spells can have prerequisites that must be met before a spellcaster can learn th
 
 *Also known as: Race customization system, custom race registration*
 
-**For comprehensive guide, examples, and best practices:** See [docs/CUSTOM_CONTENT.md](docs/CUSTOM_CONTENT.md)
+**For comprehensive guide, examples, and best practices:** See [features/CUSTOM_CONTENT.md](features/CUSTOM_CONTENT.md)
 
 The engine supports custom races through the ExtensionManager. Custom races can define ability score bonuses, speed, traits, and available subraces.
 
@@ -6543,7 +6564,7 @@ The engine supports custom races through the ExtensionManager. Custom races can 
 
 *Location:* *[src/utils/constants.ts](src/utils/constants.ts)*
 
-**RaceDataEntry** - Complete interface definition: [docs/CUSTOM_CONTENT.md](docs/CUSTOM_CONTENT.md#racedataentry-interface)
+**RaceDataEntry** - Complete interface definition: [features/CUSTOM_CONTENT.md](features/CUSTOM_CONTENT.md#racedataentry-interface)
 
 | Property | Type | Description |
 |----------|------|-------------|
@@ -6559,7 +6580,7 @@ The engine supports custom races through the ExtensionManager. Custom races can 
 
 ### Subrace Support
 
-**For comprehensive guide, examples, and best practices:** See [docs/CUSTOM_CONTENT.md](docs/CUSTOM_CONTENT.md)
+**For comprehensive guide, examples, and best practices:** See [features/CUSTOM_CONTENT.md](features/CUSTOM_CONTENT.md)
 
 Characters can have a subrace property (e.g., 'High Elf', 'Hill Dwarf'). Subraces allow for more granular racial trait assignment and prerequisite validation.
 
@@ -6584,7 +6605,7 @@ Characters can have a subrace property (e.g., 'High Elf', 'Hill Dwarf'). Subrace
 
 *Also known as: Class customization system, custom class registration, template-based classes*
 
-**For comprehensive guide, examples, and best practices:** See [docs/CUSTOM_CONTENT.md](docs/CUSTOM_CONTENT.md)
+**For comprehensive guide, examples, and best practices:** See [features/CUSTOM_CONTENT.md](features/CUSTOM_CONTENT.md)
 
 The engine supports template-based custom classes through the ExtensionManager. Custom classes can extend existing D&D 5e base classes or be defined from scratch.
 
@@ -6592,7 +6613,7 @@ The engine supports template-based custom classes through the ExtensionManager. 
 
 *Location:* *[src/utils/constants.ts](src/utils/constants.ts)*
 
-**ClassDataEntry** - Complete interface definition with JSDoc comments: [docs/CUSTOM_CONTENT.md](docs/CUSTOM_CONTENT.md#classdataentry-interface)
+**ClassDataEntry** - Complete interface definition with JSDoc comments: [features/CUSTOM_CONTENT.md](features/CUSTOM_CONTENT.md#classdataentry-interface)
 
 | Property | Type | Description |
 |----------|------|-------------|
@@ -6627,11 +6648,13 @@ Documentation Style Guide for DATA_ENGINE_REFERENCE.md: This API reference prior
 
 - For quick overview, see [specs/001-core-engine/SPEC.md](specs/001-core-engine/SPEC.md)
 - For usage examples, see [USAGE_IN_OTHER_PROJECTS.md](USAGE_IN_OTHER_PROJECTS.md)
-- For equipment system guide, see [docs/EQUIPMENT_SYSTEM.md](docs/EQUIPMENT_SYSTEM.md)
-- For prerequisites guide, see [docs/PREREQUISITES.md](docs/PREREQUISITES.md)
-- For custom content guide, see [docs/CUSTOM_CONTENT.md](docs/CUSTOM_CONTENT.md)
-- For extensibility guide, see [docs/EXTENSIBILITY_GUIDE.md](docs/EXTENSIBILITY_GUIDE.md)
-- For XP and stat system guide, see [docs/XP_AND_STATS.md](docs/XP_AND_STATS.md)
-- For combat system guide, see [docs/COMBAT_SYSTEM.md](docs/COMBAT_SYSTEM.md)
-- For IRL sensors guide, see [docs/IRL_SENSORS.md](docs/IRL_SENSORS.md)
-- For rolls and seeds guide, see [docs/ROLLS_AND_SEEDS.md](docs/ROLLS_AND_SEEDS.md)
+- For equipment system guide, see [features/EQUIPMENT_SYSTEM.md](features/EQUIPMENT_SYSTEM.md)
+- For prerequisites guide, see [features/PREREQUISITES.md](features/PREREQUISITES.md)
+- For custom content guide, see [features/CUSTOM_CONTENT.md](features/CUSTOM_CONTENT.md)
+- For extensibility guide, see [features/EXTENSIBILITY_GUIDE.md](features/EXTENSIBILITY_GUIDE.md)
+- For XP and stat system guide, see [features/XP_AND_STATS.md](features/XP_AND_STATS.md)
+- For combat system guide, see [features/COMBAT_SYSTEM.md](features/COMBAT_SYSTEM.md)
+- For IRL sensors guide, see [features/IRL_SENSORS.md](features/IRL_SENSORS.md)
+- For rolls and seeds guide, see [features/ROLLS_AND_SEEDS.md](features/ROLLS_AND_SEEDS.md)
+- For playlist parsing and mix selection guide, see [features/PLAYLIST_PARSING.md](features/PLAYLIST_PARSING.md)
+- For gateway resolution guide, see [features/GATEWAY_RESOLUTION.md](features/GATEWAY_RESOLUTION.md)

@@ -4,15 +4,22 @@
 
 The playlist parsing pipeline takes a raw `ServerlessPlaylist` object (from Arweave, IPFS, or any JSON source) and flattens each track into a consistent shape — stripping redundant fields and normalizing platform-specific names so you only have what you need.
 
+When the playlist JSON sits on Arweave, loading it is three steps — resolve a working gateway, fetch the JSON, parse:
+
 ```typescript
-import { PlaylistParser } from 'playlist-data-engine';
+import { PlaylistParser, arweaveGatewayManager } from 'playlist-data-engine';
+
+const url = await arweaveGatewayManager.resolveUrl(`https://arweave.net/${txId}`);
+const raw = await (await fetch(url)).json();
 
 const parser = new PlaylistParser();
-const playlist = await parser.parse(rawData);
+const playlist = await parser.parse(raw);
 
 console.log(`${playlist.tracks.length} tracks loaded`);
 // playlist.name, playlist.image, playlist.creator, ...
 ```
+
+JSON already in hand (IPFS, a local file, a test fixture) skips the first two lines — `parse()` takes any raw playlist object. What `resolveUrl()` does is the subject of [GATEWAY_RESOLUTION.md](GATEWAY_RESOLUTION.md).
 
 **Options:**
 
@@ -60,7 +67,69 @@ track.audio_url_lossless  // → the Extended VIP wav, when the track ships one
 
 **`selected_mix` is absent when nothing was pinned.** There is no placeholder value — a missing field means "play the primary audio". Older playlists carry the choice as a `Selected Mix` attribute instead, which the parser reads as a fallback, and some of them store the string `"default"` to mean "no mix"; that placeholder is treated as absent. A name that matches no mix on the track is also treated as absent, so a parsed track never claims a mix it cannot play.
 
+Inputs are lenient on the read side: a mix whose name arrives wrapped as `{ value: 'Instrumental' }` parses the same as a plain string, and when one name ships twice — a lossy and a lossless master — the pin resolves to the lossy master and puts the lossless one on `audio_url_lossless`.
+
 To resolve a selection outside the parser, `resolveSelectedMix(wrapperMix, attributes, mixes)` returns `{ name, audio_url?, audio_url_lossless? }`, or `null` in any of the absent cases above.
+
+### Choosing a Mix
+
+As covered in [Selected Mix](#selected-mix), a pinned entry needs nothing extra — the parser already repointed `audio_url` (and `audio_url_lossless`) at the pinned mix, so it plays like any other track. Playing a mix the entry did *not* pin — a user picks the Instrumental mix from a picker, say — is a lookup plus resolution, or one call:
+
+```typescript
+import { findMixByName, resolveMixUrl } from 'playlist-data-engine';
+
+const mix = findMixByName(track.extras.mixes, 'instrumental'); // case-insensitive, trimmed
+if (!mix) return;                                              // no such mix on this track
+
+const url = await resolveMixUrl(mix);                          // gateway-resolved, play-ready
+if (url) audio.src = url;
+```
+
+On a raw track, the mixes come from the metadata instead: `getTrackExtras(getTrackMetadata(rawTrack)).mixes`.
+
+`selectMix` does the same in one call — find, resolve, and return a play-ready copy of the track:
+
+```typescript
+import { selectMix } from 'playlist-data-engine';
+
+const instrumental = await selectMix(track, 'Instrumental', { prefer: 'lossless' });
+if (instrumental) {
+    audio.src = instrumental.audio_url;    // the mix, gateway-resolved
+    instrumental.selected_mix;             // 'Instrumental'
+}
+```
+
+`selectMix` mirrors the pin: it swaps `audio_url` and `audio_url_lossless` onto the chosen mix and sets `selected_mix`. It never mutates its input — the return value is a new track object. The entry's own pin still wins at parse time; `selectMix` is for user choice *after* parsing. Pass `conditionsContext` to require the chosen mix's conditions to currently pass (see [Evaluating Mix Conditions](#evaluating-mix-conditions)).
+
+**Mix uris are not resolved at parse time.** `MixInfo.uri` is stored as written in the metadata — the parser's only URL resolution is images, and only when `resolveImageUrls: true`. An `ar://` or `ipfs://` uri, or a bare gateway URL, must be resolved before playback: `resolveMixUrl()` runs `arweaveGatewayManager.resolveUrl()` on the final target for you, or you can call the gateway manager yourself — see [GATEWAY_RESOLUTION.md](GATEWAY_RESOLUTION.md). One uri shape is not audio at all: with `mime_type: 'application/json'` (or a `.json` path) the mix points at a metadata file whose audio fields name the actual song, and `resolveMixUrl()` follows that indirection one level before resolving.
+
+**Name matching.** The pin and the lookup helpers do not match names the same way:
+
+| Where | Rule |
+|-------|------|
+| Entry pin (`selected_mix`, legacy `Selected Mix` attribute) | Exact and case-sensitive — a name matching nothing is treated as unpinned |
+| `findMixByName` / `selectMix` | Case-insensitive, trimmed, alias-aware — `'inst'` finds `'Instrumental'`; whole-word matching, exact names win, `aliases: false` disables. Vocabulary lives in the alias tables in `TrackExtras.ts` |
+| `weather` / `day` condition values | Case-insensitive — `'rain'` matches `'Rain'` |
+| Unknown condition types | Always pass |
+
+When one name ships twice — a lossy and a lossless master — `findMixByName` and `selectMix` take `prefer: 'lossy' | 'lossless'`, defaulting to `'lossy'` to match the pin flow.
+
+**Listing and grouping.** For pickers and playlist-wide views:
+
+```typescript
+import { getUniqueMixes, getPreferredMixByQuality, getMixes, getMixTracks } from 'playlist-data-engine';
+
+// One group per distinct name; lossy/lossless pairs collapse into one group.
+const groups = getUniqueMixes(track.extras.mixes);
+const vip = groups.find(g => g.name === 'Extended VIP');
+
+// Pick a master explicitly from a same-name group:
+const lossless = getPreferredMixByQuality(vip?.mixes, 'lossless');
+
+// Playlist scope — works on raw or parsed input:
+getMixes(playlist);     // MixInfo[] — every mix on every track, in track order
+getMixTracks(playlist); // tracks that ship mixes, each entry's pin already applied
+```
 
 ### Track Extras
 
@@ -104,7 +173,7 @@ metadata?.credits;
 
 ## Playlist Utilities
 
-Quick functions to extract arrays of data from a playlist. Works with both parsed (`ServerlessPlaylist`) and raw (`RawArweavePlaylist`) formats:
+Quick functions to extract arrays of data from a playlist. Works with both parsed (`ServerlessPlaylist`) and raw (`RawArweavePlaylist`) formats — and the two agree on mixes: `getTracks` and `getFullTracks` apply the entry's pin to raw input exactly as the parser does at parse time, so the returned `audio_url` is the pinned mix's, `selected_mix` is set, and `getFullTracks` also carries `extras`.
 
 ```typescript
 import {
@@ -118,6 +187,8 @@ import {
     getTrackCount,       // number
     getTracks,           // SimpleTrack[] — simplified objects with core fields
     getFullTracks,       // object[] — all available data
+    getMixes,            // MixInfo[] — every alternate mix across tracks
+    getMixTracks,        // MixTrackInfo[] — tracks that ship mixes, pin applied
     getVRMs,             // string[] — VRM URLs from tracks that have one
     getVRMTracks,        // VRMTrack[] — track data paired with VRM URLs
 } from 'playlist-data-engine';
@@ -137,10 +208,13 @@ Tracks can carry additional content beyond the primary audio — individual inst
 ### Evaluating Mix Conditions
 
 ```typescript
-import { evaluateMixConditions } from 'playlist-data-engine';
+import { evaluateMixConditions, EnvironmentalSensors } from 'playlist-data-engine';
+
+const sensors = new EnvironmentalSensors();
+const environment = await sensors.updateSnapshot();
 
 const results = evaluateMixConditions(track.extras, {
-    environment: environmentalSensors.getContext(),
+    environment,
     appState: { playCount: 5, isFavorite: true },
 });
 
@@ -166,12 +240,14 @@ for (const result of results) {
 | `end_time` | `"HH:MM"` format | Current time (met if before value) |
 | `min_plays` | Integer | `appState.playCount` (met if >= value) |
 | `max_plays` | Integer | `appState.playCount` (met if <= value) |
-| `every_x_plays` | Integer | `appState.playCount` (met if evenly divisible) |
+| `every_x_plays` | Integer | `appState.playCount` (met if evenly divisible and greater than 0) |
 | `altitude` | Comparison like `">1000"`, `"<=500"` | `environment.geolocation.altitude` |
 | `favorite` | `"true"` or `"false"` | `appState.isFavorite` |
 | `birthday` | `"MM-DD"` format | Current date matches user birthday |
 | `weight` | Number | Not a gate — always passes; used for random selection probability |
 | Unknown types | Any | Always passes (flexible/extensible) |
+
+> Condition values coerce to strings during extraction — `{ type: 'min_plays', value: 10 }` parses the same as `value: '10'` instead of arriving as a mix with no conditions (which would evaluate as always available).
 
 ### Extras Types
 
@@ -181,6 +257,7 @@ for (const result of results) {
 | `StemInfo` | `{ name, uri?, mime_type? }` — an individual instrument track |
 | `MixCondition` | `{ type, value }` — a condition on a mix (e.g., weather, time) |
 | `MixInfo` | `{ name, uri?, mime_type?, conditions[] }` — an alternate mix |
+| `MixGroup` | `{ name, mixes[] }` — mixes sharing one name, from `getUniqueMixes()` |
 | `SelectedMixInfo` | `{ name, audio_url?, audio_url_lossless? }` — the mix an entry pinned, resolved against the track's own mixes |
 | `LyricsInfo` | `{ text? }` — song lyrics |
 | `MediaAssetInfo` | `{ mime_type?, uri? }` — a media asset (visualizer, video) |
@@ -224,8 +301,10 @@ if (!metadata) return;
 const extras = getTrackExtras(metadata);
 if (!extras.hasExtras) return;
 
-console.log(`${extras.stems.length} stems, ${extras.mixes.length} mixes`);
+console.log(`${extras.stems?.length ?? 0} stems, ${extras.mixes?.length ?? 0} mixes`);
 ```
+
+Populated fields appear only when non-empty — a lyrics-only track has `hasExtras: true` but no `stems` or `mixes` key at all.
 
 To resolve which mix a raw entry pinned:
 

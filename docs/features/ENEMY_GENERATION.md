@@ -1706,6 +1706,6 @@ type EncounterDifficulty = 'easy' | 'medium' | 'hard' | 'deadly';
 
 ## See Also
 
-- [COMBAT_SYSTEM.md](docs/COMBAT_SYSTEM.md) - Combat system reference
+- [COMBAT_SYSTEM.md](COMBAT_SYSTEM.md) - Combat system reference
 - [DATA_ENGINE_REFERENCE.md](DATA_ENGINE_REFERENCE.md) - Complete API reference
 - [specs/001-core-engine/SPEC.md](specs/001-core-engine/SPEC.md) - Core engine specification

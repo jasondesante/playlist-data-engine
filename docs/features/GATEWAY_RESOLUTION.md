@@ -2,7 +2,7 @@
 
 ## Overview
 
-The playlist-data-engine loads ML models, playlist metadata, artwork, and WASM modules from the Arweave permaweb. Since any single gateway can be slow, down, or return errors, the engine uses a custom **`ArweaveGatewayManager`** combined with **@ar.io/wayfinder-core** (v1.9.1) to provide resilient, multi-tier gateway routing.
+The playlist-data-engine loads ML models, playlist metadata, artwork, and WASM modules from the Arweave permaweb. Since any single gateway can be slow, down, or return errors, the engine uses a custom **`ArweaveGatewayManager`** combined with **@ar.io/wayfinder-core** (v2.0.1) to provide resilient, multi-tier gateway routing.
 
 Playlists, ML models, audio, and images are all stored on Arweave. Every Arweave URL that the engine encounters passes through this resolution pipeline.
 
@@ -67,7 +67,7 @@ Each step runs a real `HEAD` request to verify the gateway can serve the specifi
 
 AR.IO Wayfinder is a dynamic gateway routing system for Arweave. Instead of relying on a hardcoded list of gateways, it selects the best gateway from a network of community-operated Arweave gateways ranked by operator stake.
 
-The engine uses `@ar.io/wayfinder-core` (v1.9.1+) and `@ar.io/sdk` as peer dependencies. Both are **externalized** in the Vite build — they are not bundled into the library and must be provided by the consuming application.
+The engine uses `@ar.io/wayfinder-core` (v2.0.1) and `@ar.io/sdk` (v4.0.3). Both ship as **regular dependencies** — they install with the engine rather than being peer dependencies the consumer must provide — and are **externalized** in the Vite build, so the library imports them at runtime instead of bundling them.
 
 ### Lazy Dynamic Import
 
@@ -517,7 +517,7 @@ Runs a parallel HEAD check against all static gateways using a known transaction
 
 #### `checkGateway(txId, gateway, pathSuffix?, signal?)`
 
-Verifies a single gateway can serve a transaction. Returns `true`/`false`.
+Verifies a single gateway can serve a transaction. Returns `true`, `false`, or `'maybe'` when the check is inconclusive.
 
 ---
 
@@ -534,6 +534,25 @@ These engine components use the gateway manager automatically — no configurati
 | `ColorExtractor` | Track artwork image URLs | `arweaveGatewayManager.resolveUrl` directly |
 
 Each component also accepts an optional `resolveUrl` callback override if a consumer wants to provide custom resolution logic.
+
+---
+
+## Resolving Mix and Audio URIs
+
+The parser resolves image URLs only, and only when `resolveImageUrls: true` (see `PlaylistParser` above). Audio and mix URIs pass through parsing exactly as written — `ar://` identifiers, `ipfs://` paths, plain gateway URLs — and are not playable until something resolves them.
+
+Before playback, hand the URI to the gateway manager:
+
+```typescript
+import { arweaveGatewayManager } from 'playlist-data-engine';
+
+const url = await arweaveGatewayManager.resolveUrl(track.audio_url);
+
+// Play `url`. When the real fetch fails, rotate gateways and get a new URL:
+const retryUrl = await arweaveGatewayManager.reportGatewayFailure(url);
+```
+
+Mix URIs have one extra wrinkle: a mix can point at a metadata JSON file (`mime_type: 'application/json'`, or a `.json` path) rather than at audio, with the actual song named in that file's audio fields. [`resolveMixUrl()`](./PLAYLIST_PARSING.md#choosing-a-mix) wraps the same gateway resolution for mixes and follows that indirection one level — see [PLAYLIST_PARSING.md — Choosing a Mix](./PLAYLIST_PARSING.md#choosing-a-mix).
 
 ---
 
@@ -559,9 +578,9 @@ These are tried in priority order after the persisted gateway. The persisted gat
 
 ---
 
-## Peer Dependencies
+## Externalized Dependencies
 
-The gateway manager requires `@ar.io/wayfinder-core` and `@ar.io/sdk` for Wayfinder functionality. Both are listed as dependencies in `package.json` and externalized in the [vite.config.ts](../../vite.config.ts) rollup config:
+The gateway manager requires `@ar.io/wayfinder-core` and `@ar.io/sdk` for Wayfinder functionality. Both are listed as regular dependencies in `package.json` (`@ar.io/wayfinder-core` 2.0.1, `@ar.io/sdk` 4.0.3) and externalized in the [vite.config.ts](../../vite.config.ts) rollup config:
 
 ```typescript
 // vite.config.ts:19-20

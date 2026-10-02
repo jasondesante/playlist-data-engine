@@ -6,12 +6,18 @@
  *
  * - getTrackMetadata: Full raw parsed metadata passthrough
  * - getTrackExtras: Summary of available stems, mixes, and their conditions
+ * - resolveSelectedMix: Which of a track's mixes a playlist entry pinned
+ * - findMixByName / getPreferredMixByQuality / getUniqueMixes: Mix lookup & grouping
+ * - resolveMixUrl / selectMix: Turn a chosen mix into a playable track
  * - evaluateMixConditions: Evaluate mix conditions against sensor context
  *
  * @module core/parser/TrackExtras
  */
 
 import type { EnvironmentalContext } from '../types/Environmental.js';
+import type { PlaylistTrack } from '../types/Playlist.js';
+import { MetadataExtractor } from './MetadataExtractor.js';
+import { arweaveGatewayManager } from '../../utils/arweaveGatewayManager.js';
 
 // ─── Types ──────────────────────────────────────────────────────────────
 
@@ -282,6 +288,394 @@ export function resolveSelectedMix(
     };
 }
 
+// ─── Mix lookup & grouping ───────────────────────────────────────────
+
+/** Options for findMixByName */
+export interface FindMixByNameOptions {
+    /** Match names ignoring case and surrounding whitespace (default: true) */
+    caseInsensitive?: boolean;
+    /** Which master to prefer when several mixes share the name (default: 'lossy', matching the pin flow) */
+    prefer?: 'lossy' | 'lossless';
+    /**
+     * Also match alias spellings and concept names — 'inst' finds 'Instrumental',
+     * 'aca' finds 'Acapella', 'vox' finds 'Vocals Only'. Exact names always win.
+     * Only applies in case-insensitive mode (default: true)
+     */
+    aliases?: boolean;
+}
+
+/**
+ * Find a track's mix by name.
+ *
+ * Unlike the playlist entry's pin (resolveSelectedMix), which matches names
+ * exactly and case-sensitively, this is the tolerant lookup for user-facing
+ * choice. Three passes, strictest first: the name as written (modulo case and
+ * whitespace), then alias spellings — 'inst' and 'no vocals' find
+ * 'Instrumental'; 'aca', 'acap' and 'vox' find 'Acapella'; 'tvmix' and
+ * 'tv mix' find 'Karaoke', which is its own concept, never an instrumental —
+ * matched as whole words so 'Industrial' never matches 'instrumental'.
+ * When several mixes match (a lossy and a lossless master), the quality
+ * preference decides.
+ *
+ * @param mixes - The track's mixes, from getTrackExtras
+ * @param name - The mix name to find
+ * @param options - Matching and quality-preference options
+ * @returns The mix, or null when no mix matches
+ *
+ * @example
+ * ```ts
+ * const extras = getTrackExtras(metadata);
+ * const instrumental = findMixByName(extras.mixes, 'instrumental');
+ * const strict = findMixByName(extras.mixes, 'Instrumental', { aliases: false });
+ * ```
+ */
+export function findMixByName(
+    mixes: MixInfo[] | null | undefined,
+    name: string,
+    options?: FindMixByNameOptions
+): MixInfo | null {
+    if (!mixes || !name) return null;
+    const matched = matchMixes(mixes, name, options?.caseInsensitive !== false, options?.aliases !== false);
+    return matched.length > 0 ? getPreferredMixByQuality(matched, options?.prefer ?? 'lossy') : null;
+}
+
+/**
+ * Pick the preferred master among mixes that share one name.
+ *
+ * A mix name can ship twice — once lossy (mp3) and once lossless (wav/flac).
+ * `prefer: 'lossy'` picks the compressed master (the parser's own behavior
+ * when resolving a pin), `'lossless'` the high-fidelity one. Mixes without a
+ * recognized mime type only win as the last-resort fallback.
+ *
+ * @param namedMixes - Mixes sharing one name
+ * @param prefer - Which quality to prefer (default: 'lossy')
+ * @returns The preferred mix, or null when the list is empty
+ */
+export function getPreferredMixByQuality(
+    namedMixes: MixInfo[] | null | undefined,
+    prefer: 'lossy' | 'lossless' = 'lossy'
+): MixInfo | null {
+    if (!namedMixes || namedMixes.length === 0) return null;
+    if (namedMixes.length === 1) return namedMixes[0];
+
+    const preferredTypes = prefer === 'lossy'
+        ? ['audio/mpeg', 'audio/wav', 'audio/flac']
+        : ['audio/wav', 'audio/flac', 'audio/mpeg'];
+
+    for (const type of preferredTypes) {
+        const match = namedMixes.find(mix => canonicalMime(mix.mime_type) === type);
+        if (match) return match;
+    }
+
+    return namedMixes[0];
+}
+
+/** Mixes grouped under one name (e.g. a lossy + lossless pair) */
+export interface MixGroup {
+    /** The shared name, in the casing the metadata declares it */
+    name: string;
+    /** Every mix under this name; the first entry is the display pick */
+    mixes: MixInfo[];
+}
+
+/**
+ * Group a track's mixes by name, collapsing lossy/lossless pairs.
+ *
+ * The grouping key ignores case and surrounding whitespace, so 'Instrumental'
+ * and 'instrumental ' land in one group; the group's name keeps the casing of
+ * its first member.
+ *
+ * @param mixes - The track's mixes, from getTrackExtras
+ * @returns One group per distinct mix name, in first-appearance order
+ *
+ * @example
+ * ```ts
+ * for (const group of getUniqueMixes(extras.mixes)) {
+ *   console.log(`${group.name} (${group.mixes.length} masters)`);
+ * }
+ * ```
+ */
+export function getUniqueMixes(mixes: MixInfo[] | null | undefined): MixGroup[] {
+    if (!mixes || !Array.isArray(mixes)) return [];
+
+    const groups = new Map<string, MixInfo[]>();
+    for (const mix of mixes) {
+        const key = mix.name.trim().toLowerCase();
+        const group = groups.get(key);
+        if (group) {
+            group.push(mix);
+        } else {
+            groups.set(key, [mix]);
+        }
+    }
+
+    return Array.from(groups.values()).map(groupMixes => ({
+        name: groupMixes[0].name,
+        mixes: groupMixes,
+    }));
+}
+
+// ─── Mix URL resolution & selection ──────────────────────────────────
+
+/** Options for resolveMixUrl */
+export interface ResolveMixUrlOptions {
+    /** Gateway-resolve the final URL through arweaveGatewayManager (default: true) */
+    resolveUrl?: boolean;
+    /** Follow a mix whose uri points at a metadata JSON file rather than audio (default: true) */
+    followMetadata?: boolean;
+    /** Timeout for the metadata fetch, in milliseconds (default: 10000) */
+    fetchTimeoutMs?: number;
+}
+
+/**
+ * Resolve a mix to a playable audio URL.
+ *
+ * The parser returns mix uris as written in the metadata — it never resolves
+ * them — so this is the last mile before playback. Mix uris come in three
+ * shapes, all handled: direct Arweave/IPFS identifiers and URLs (gateway-
+ * resolved), and the standard's metadata-JSON indirection, where a mix's uri
+ * points at a metadata file whose audio fields name the actual song (followed
+ * one level, per the 721J "Alt Outro" example).
+ *
+ * @param mix - A mix from getTrackExtras, or a selection from resolveSelectedMix
+ * @param options - Resolution options
+ * @returns The playable URL, or null when the mix has no uri or resolution failed
+ *
+ * @example
+ * ```ts
+ * const url = await resolveMixUrl(findMixByName(extras.mixes, 'Instrumental'));
+ * ```
+ */
+export async function resolveMixUrl(
+    mix: MixInfo | SelectedMixInfo | null | undefined,
+    options?: ResolveMixUrlOptions
+): Promise<string | null> {
+    if (!mix) return null;
+
+    const candidate = mix as MixInfo & SelectedMixInfo;
+    const direct = candidate.uri ?? candidate.audio_url ?? candidate.audio_url_lossless;
+    if (!direct) return null;
+
+    let target = direct;
+
+    if (options?.followMetadata !== false && isMetadataUri(mix, direct)) {
+        target = await fetchMetadataAudioUrl(direct, options?.fetchTimeoutMs);
+        if (!target) return null;
+    }
+
+    if (options?.resolveUrl === false) return target;
+
+    try {
+        return await arweaveGatewayManager.resolveUrl(target);
+    } catch {
+        return null;
+    }
+}
+
+/** Options for selectMix */
+export interface SelectMixOptions {
+    /** Which master to prefer when several mixes share the name (default: 'lossy', matching the pin flow) */
+    prefer?: 'lossy' | 'lossless';
+    /** Also match alias spellings — 'inst' finds 'Instrumental' (default: true) */
+    aliases?: boolean;
+    /** Gateway-resolve the resulting audio URLs (default: true) */
+    resolveUrl?: boolean;
+    /** Follow metadata-JSON mix uris to the song file (default: true) */
+    followMetadata?: boolean;
+    /** When provided, the chosen mix must currently satisfy its conditions */
+    conditionsContext?: EvaluationContext;
+}
+
+/**
+ * Choose which of a track's mixes plays, returning a play-ready track.
+ *
+ * The consumer-side twin of the playlist entry's pin: the parser repoints a
+ * pinned track's audio URLs at the pinned mix at parse time, and this does
+ * the same for a user's choice. The input track is never mutated. Name
+ * matching is tolerant (case-insensitive, trimmed, aliased — 'inst' finds
+ * 'Instrumental'); conditions, when a
+ * context is given, must currently pass.
+ *
+ * @param track - A parsed playlist track (with extras from the parser)
+ * @param mixName - The mix to play (e.g. 'Instrumental')
+ * @param options - Quality preference, resolution, and condition gating
+ * @returns A copy of the track with audio URLs swapped to the mix, or null
+ *          when the track has no such mix or it is unavailable
+ *
+ * @example
+ * ```ts
+ * const playlist = await new PlaylistParser().parse(raw);
+ * const track = playlist.tracks[0];
+ * const instrumental = await selectMix(track, 'Instrumental', { prefer: 'lossless' });
+ * if (instrumental) audio.src = instrumental.audio_url;
+ * ```
+ */
+export async function selectMix(
+    track: PlaylistTrack,
+    mixName: string,
+    options?: SelectMixOptions
+): Promise<PlaylistTrack | null> {
+    const mixes = track.extras?.mixes;
+    if (!mixes || mixes.length === 0 || !mixName) return null;
+
+    let named = matchMixes(mixes, mixName, true, options?.aliases !== false);
+    if (named.length === 0) return null;
+
+    if (options?.conditionsContext) {
+        const evaluations = evaluateMixConditions(
+            { hasExtras: track.extras?.hasExtras ?? true, mixes },
+            options.conditionsContext
+        );
+        const available = new Set(evaluations.filter(e => e.allMet).map(e => e.mix.name));
+        named = named.filter(mix => available.has(mix.name));
+        if (named.length === 0) return null;
+    }
+
+    const preferred = getPreferredMixByQuality(named, options?.prefer ?? 'lossy');
+    if (!preferred || !preferred.uri) return null;
+
+    const resolveOptions: ResolveMixUrlOptions = {
+        resolveUrl: options?.resolveUrl,
+        followMetadata: options?.followMetadata,
+    };
+    const audio_url = await resolveMixUrl(preferred, resolveOptions);
+    if (!audio_url) return null;
+
+    const lossless = named.find(isLosslessMix);
+    const audio_url_lossless = lossless && lossless !== preferred && lossless.uri
+        ? await resolveMixUrl(lossless, resolveOptions)
+        : undefined;
+
+    return {
+        ...track,
+        audio_url,
+        audio_url_lossless: audio_url_lossless && audio_url_lossless !== audio_url
+            ? audio_url_lossless
+            : undefined,
+        selected_mix: preferred.name,
+    };
+}
+
+/** Mime types whose payload is a metadata JSON document, not audio */
+const METADATA_MIME_TYPES = ['application/json', 'application/ld+json'];
+
+/** Mime aliases folded to their canonical form before quality comparisons */
+const MIME_ALIASES: Record<string, string> = {
+    'audio/x-wav': 'audio/wav',
+    'audio/wave': 'audio/wav',
+    'audio/vnd.wave': 'audio/wav',
+    'audio/x-flac': 'audio/flac',
+    'audio/mp3': 'audio/mpeg',
+    'audio/mpeg3': 'audio/mpeg',
+};
+
+function canonicalMime(mime: string | undefined): string {
+    const lower = (mime ?? '').trim().toLowerCase();
+    return MIME_ALIASES[lower] ?? lower;
+}
+
+function isLosslessMix(mix: MixInfo): boolean {
+    return LOSSLESS_MIME_TYPES.includes(canonicalMime(mix.mime_type));
+}
+
+function findNamedMixes(
+    mixes: MixInfo[] | null | undefined,
+    name: string,
+    caseInsensitive: boolean
+): MixInfo[] {
+    if (!mixes || !name) return [];
+    const normalize = (value: string): string =>
+        caseInsensitive ? value.trim().toLowerCase() : value.trim();
+    const target = normalize(name);
+    return mixes.filter(mix => normalize(mix.name) === target);
+}
+
+// ─── Mix name aliases ────────────────────────────────────────────────
+
+/**
+ * Phrases rewritten before token aliasing, rescuing meanings the bare tokens
+ * would flip ('no vocals' means instrumental, not acapella).
+ */
+const MIX_NAME_PHRASES: ReadonlyArray<readonly [from: string, to: string]> = [
+    ['no vocals', 'instrumental'],
+    ['vocals only', 'acapella'],
+    ['vocal only', 'acapella'],
+    ['a cappella', 'acapella'],
+    ['tv mix', 'karaoke'],
+    ['tv version', 'karaoke'],
+    ['karaoke version', 'karaoke'],
+    ['karaoke mix', 'karaoke'],
+];
+
+/** Spelling variants mapped onto their canonical concept token */
+const MIX_NAME_ALIASES: Readonly<Record<string, string>> = {
+    inst: 'instrumental',
+    instr: 'instrumental',
+    instrument: 'instrumental',
+    instrumentals: 'instrumental',
+    aca: 'acapella',
+    acap: 'acapella',
+    acappella: 'acapella',
+    cappella: 'acapella',
+    vox: 'acapella',
+    vocal: 'acapella',
+    vocals: 'acapella',
+    rmx: 'remix',
+    tvmix: 'karaoke',
+    tv: 'karaoke',
+    karoake: 'karaoke',
+};
+
+/** Reduce a mix name to its concept tokens: canonical concepts + leftover words */
+function mixNameSignature(name: string): string[] {
+    let normalized = ' ' + name.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim() + ' ';
+    for (const [from, to] of MIX_NAME_PHRASES) {
+        normalized = normalized.split(' ' + from + ' ').join(' ' + to + ' ');
+    }
+    return normalized.trim().split(' ').filter(Boolean).map(token => MIX_NAME_ALIASES[token] ?? token);
+}
+
+/**
+ * Find the mixes a name refers to: exact (modulo case/whitespace) first,
+ * then — in tolerant mode only — whole-word alias matching where every word
+ * of the query appears in the mix name, aliased to its canonical concept.
+ */
+function matchMixes(mixes: MixInfo[], name: string, caseInsensitive: boolean, useAliases: boolean): MixInfo[] {
+    const named = findNamedMixes(mixes, name, caseInsensitive);
+    if (named.length > 0 || !useAliases || !caseInsensitive) return named;
+
+    const queryTokens = mixNameSignature(name);
+    if (queryTokens.length === 0) return [];
+    return mixes.filter(mix => {
+        const tokens = mixNameSignature(mix.name);
+        return queryTokens.every(token => tokens.includes(token));
+    });
+}
+
+function isMetadataUri(mix: MixInfo | SelectedMixInfo, uri: string): boolean {
+    const mime = ('mime_type' in mix ? mix.mime_type : '') ?? '';
+    if (METADATA_MIME_TYPES.includes(mime.toLowerCase())) return true;
+    if (mime) return false;
+    return uri.split(/[?#]/)[0].toLowerCase().endsWith('.json');
+}
+
+/** Follow one level of metadata-JSON indirection to the audio url it names */
+async function fetchMetadataAudioUrl(url: string, timeoutMs = 10000): Promise<string | null> {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+        const response = await fetch(url, { signal: controller.signal });
+        if (!response.ok) return null;
+        const parsed = MetadataExtractor.parseMetadata(await response.text());
+        if (!parsed) return null;
+        return MetadataExtractor.extractAudioUrl(parsed);
+    } catch {
+        return null;
+    } finally {
+        clearTimeout(timeout);
+    }
+}
+
 function extractLyrics(raw: unknown): LyricsInfo | undefined {
     if (!raw) return undefined;
     if (typeof raw === 'string') return { text: raw };
@@ -388,8 +782,12 @@ function extractConditions(raw: unknown): MixCondition[] {
     for (const cond of raw) {
         if (cond && typeof cond === 'object') {
             const c = cond as Record<string, unknown>;
-            if (typeof c.type === 'string' && typeof c.value === 'string') {
-                conditions.push({ type: c.type, value: c.value });
+            // Numbers and booleans are coerced rather than dropped — a mix
+            // authored with { type: 'min_plays', value: 10 } would otherwise
+            // parse to an empty conditions array and evaluate as always-available.
+            if (typeof c.type === 'string'
+                && (typeof c.value === 'string' || typeof c.value === 'number' || typeof c.value === 'boolean')) {
+                conditions.push({ type: c.type, value: String(c.value) });
             }
         }
     }
@@ -412,8 +810,9 @@ function extractConditions(raw: unknown): MixCondition[] {
  * @example
  * ```ts
  * const extras = getTrackExtras(metadata);
+ * const sensors = new EnvironmentalSensors();
  * const context: EvaluationContext = {
- *   environment: environmentalSensors.getContext(),
+ *   environment: await sensors.updateSnapshot(),
  *   appState: { playCount: 5, isFavorite: true },
  * };
  * const results = evaluateMixConditions(extras, context);

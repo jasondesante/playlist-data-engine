@@ -504,6 +504,9 @@ export {
     AudioProfileSchema,
     CharacterSheetSchema,
     AbilityScoresSchema,
+    MixConditionSchema,
+    MixInfoSchema,
+    StemInfoSchema,
 } from './utils/validators.js';
 
 // Logger utility
@@ -515,6 +518,7 @@ export {
     type PlaylistInput,
     type SimpleTrack,
     type VRMTrack,
+    type MixTrackInfo,
     getAudioUrls,
     getImageUrls,
     getTrackTitles,
@@ -526,7 +530,9 @@ export {
     getTracks,
     getFullTracks,
     getVRMs,
-    getVRMTracks
+    getVRMTracks,
+    getMixes,
+    getMixTracks
 } from './utils/playlistUtils.js';
 
 // Arweave URL utilities
@@ -586,10 +592,19 @@ export {
     type MediaAssetInfo,
     type MerchInfo,
     type CreditInfo,
+    type FindMixByNameOptions,
+    type MixGroup,
+    type ResolveMixUrlOptions,
+    type SelectMixOptions,
     getTrackMetadata,
     getTrackExtras,
     resolveSelectedMix,
     evaluateMixConditions,
+    findMixByName,
+    getPreferredMixByQuality,
+    getUniqueMixes,
+    resolveMixUrl,
+    selectMix,
 } from './core/parser/TrackExtras.js';
 
 // Type helpers

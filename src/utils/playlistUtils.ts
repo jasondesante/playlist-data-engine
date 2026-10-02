@@ -5,6 +5,7 @@
 
 import type { ServerlessPlaylist, RawArweavePlaylist, PlaylistTrack } from '../core/types/Playlist.js';
 import { MetadataExtractor } from '../core/parser/MetadataExtractor.js';
+import { getTrackExtras, resolveSelectedMix, type MixInfo, type SelectedMixInfo } from '../core/parser/TrackExtras.js';
 
 // =============================================================================
 // TYPES
@@ -28,6 +29,23 @@ export interface SimpleTrack {
     mint_price?: string;
     mint_snapshot_time?: number;
     mint_token?: string;
+    /** Name of the entry's pinned mix (absent when the entry plays primary audio) */
+    selected_mix?: string;
+}
+
+/** Track object with mix data for getMixTracks() */
+export interface MixTrackInfo {
+    title: string;
+    artist: string;
+    description?: string;
+    /** The entry's audio URL, already repointed when the entry pins a mix */
+    audio_url: string;
+    audio_url_lossless?: string;
+    image_url: string;
+    /** Name of the entry's pinned mix (absent when the entry plays primary audio) */
+    selected_mix?: string;
+    /** All mixes the track ships */
+    mixes: MixInfo[];
 }
 
 /** Track object with VRM data for getVRMTracks() */
@@ -151,6 +169,42 @@ function extractVRMFromTrack(track: PlaylistTrack | RawArweavePlaylist['tracks']
     }
 
     return null;
+}
+
+/**
+ * Extract a track's mixes (handles both parsed and raw).
+ * Parsed tracks carry them in extras; raw tracks need the metadata parsed.
+ */
+function extractMixesFromTrack(track: PlaylistTrack | RawArweavePlaylist['tracks'][number]): MixInfo[] {
+    if ('extras' in track && track.extras?.mixes) {
+        return track.extras.mixes;
+    }
+
+    if ('metadata' in track) {
+        const parsed = MetadataExtractor.parseMetadata(track.metadata);
+        if (parsed) {
+            return getTrackExtras(parsed).mixes ?? [];
+        }
+    }
+
+    return [];
+}
+
+/**
+ * Resolve a raw track's pinned mix the way the parser would at parse time.
+ * Parsed tracks already carry the applied pin, so they resolve to null here.
+ */
+function extractPinFromTrack(track: PlaylistTrack | RawArweavePlaylist['tracks'][number]): SelectedMixInfo | null {
+    if ('audio_url' in track || !('metadata' in track)) {
+        return null;
+    }
+
+    const parsed = MetadataExtractor.parseMetadata(track.metadata);
+    return resolveSelectedMix(
+        track.selected_mix,
+        MetadataExtractor.convertAttributes(parsed?.attributes),
+        parsed ? getTrackExtras(parsed).mixes : undefined
+    );
 }
 
 // =============================================================================
@@ -400,9 +454,17 @@ export function getTracks(playlist: PlaylistInput): SimpleTrack[] {
     const tracks: SimpleTrack[] = [];
 
     for (const track of playlist.tracks) {
-        const audio_url = extractAudioUrlFromTrack(track);
+        let audio_url = extractAudioUrlFromTrack(track);
         const image_url = extractImageUrlFromTrack(track);
         const image_thumb_url = extractImageThumbUrlFromTrack(track);
+
+        // Apply the entry's pin the way the parser would, so raw input yields
+        // the same audio a parsed track would.
+        const pin = extractPinFromTrack(track);
+        if (pin?.audio_url) {
+            audio_url = pin.audio_url;
+        }
+        const selected_mix = pin ? pin.name : ('audio_url' in track ? track.selected_mix : undefined);
 
         let title = '';
         let artist = '';
@@ -433,10 +495,18 @@ export function getTracks(playlist: PlaylistInput): SimpleTrack[] {
                 image_url: image_url || ''
             };
 
-            // Add lossless audio URL if present and different from primary
-            const audio_url_lossless = extractAudioUrlLosslessFromTrack(track);
-            if (audio_url_lossless && audio_url_lossless !== audio_url) {
+            // Add lossless audio URL if present and different from primary.
+            // A pinned entry's lossless master is the pin's, not the metadata's.
+            const rawLossless = extractAudioUrlLosslessFromTrack(track);
+            const audio_url_lossless = pin
+                ? pin.audio_url_lossless
+                : (rawLossless && rawLossless !== audio_url ? rawLossless : undefined);
+            if (audio_url_lossless) {
                 simpleTrack.audio_url_lossless = audio_url_lossless;
+            }
+
+            if (selected_mix) {
+                simpleTrack.selected_mix = selected_mix;
             }
 
             // Only add image_thumb_url if present
@@ -501,8 +571,20 @@ export function getFullTracks(playlist: PlaylistInput): Array<Record<string, unk
         if ('metadata' in track) {
             const parsed = MetadataExtractor.parseMetadata(track.metadata);
             if (parsed) {
+                const extras = getTrackExtras(parsed);
+                // Apply the entry's pin the way the parser would, so raw input
+                // yields the same audio a parsed track would.
+                const pin = resolveSelectedMix(
+                    track.selected_mix,
+                    MetadataExtractor.convertAttributes(parsed.attributes),
+                    extras.mixes
+                );
                 const audioUrlLossless = MetadataExtractor.extractAudioUrlLossless(parsed);
                 const primaryAudioUrl = MetadataExtractor.extractAudioUrl(parsed);
+                const resolvedAudioUrl = pin?.audio_url || primaryAudioUrl;
+                const resolvedLossless = pin
+                    ? pin.audio_url_lossless
+                    : (audioUrlLossless && audioUrlLossless !== resolvedAudioUrl ? audioUrlLossless : undefined);
 
                 tracks.push({
                     id: track.chain_name === 'AR'
@@ -515,7 +597,7 @@ export function getFullTracks(playlist: PlaylistInput): Array<Record<string, unk
                     platform: track.platform,
                     title: MetadataExtractor.extractTitle(parsed),
                     artist: MetadataExtractor.extractArtist(parsed),
-                    audio_url: primaryAudioUrl,
+                    audio_url: resolvedAudioUrl,
                     image_url: MetadataExtractor.extractImageUrl(parsed),
                     image_thumb_url: MetadataExtractor.extractImageThumbUrl(parsed),
                     duration: parsed.duration,
@@ -526,7 +608,9 @@ export function getFullTracks(playlist: PlaylistInput): Array<Record<string, unk
                     album: parsed.album,
                     description: MetadataExtractor.extractDescription(parsed),
                     attributes: MetadataExtractor.convertAttributes(parsed.attributes),
-                    ...(audioUrlLossless && audioUrlLossless !== primaryAudioUrl ? { audio_url_lossless: audioUrlLossless } : {}),
+                    ...(resolvedLossless ? { audio_url_lossless: resolvedLossless } : {}),
+                    ...(pin ? { selected_mix: pin.name } : {}),
+                    ...(extras.hasExtras ? { extras } : {}),
                     // v0.4 IPFS hash + mint fields from the raw track wrapper
                     ...(track.audio_ipfs_hash ? { audio_ipfs_hash: track.audio_ipfs_hash } : {}),
                     ...(track.artwork_ipfs_hash ? { artwork_ipfs_hash: track.artwork_ipfs_hash } : {}),
@@ -629,6 +713,98 @@ export function getVRMTracks(playlist: PlaylistInput): VRMTrack[] {
         }
 
         tracks.push(vrmTrack);
+    }
+
+    return tracks;
+}
+
+// =============================================================================
+// MIX EXTRACTION FUNCTIONS
+// =============================================================================
+
+/**
+ * Get all alternate mixes across a playlist's tracks
+ * @param playlist - Parsed or raw playlist
+ * @returns Array of mixes (flattened across tracks, in track order)
+ *
+ * @example
+ * const mixes = getMixes(playlist);
+ * // [{ name: 'Instrumental', uri: '...', mime_type: 'audio/mpeg', conditions: [] }, ...]
+ */
+export function getMixes(playlist: PlaylistInput): MixInfo[] {
+    const mixes: MixInfo[] = [];
+
+    for (const track of playlist.tracks) {
+        mixes.push(...extractMixesFromTrack(track));
+    }
+
+    return mixes;
+}
+
+/**
+ * Get tracks that ship alternate mixes, with each entry's pin resolved
+ * @param playlist - Parsed or raw playlist
+ * @returns Array of track objects with their mixes and pinned mix name
+ *
+ * @example
+ * const mixTracks = getMixTracks(playlist);
+ * // [{ title: 'Song', artist: 'Artist', audio_url: '...', selected_mix: 'Instrumental', mixes: [...] }, ...]
+ */
+export function getMixTracks(playlist: PlaylistInput): MixTrackInfo[] {
+    const tracks: MixTrackInfo[] = [];
+
+    for (const track of playlist.tracks) {
+        const mixes = extractMixesFromTrack(track);
+        if (mixes.length === 0) continue;
+
+        const pin = extractPinFromTrack(track);
+
+        let title = '';
+        let artist = '';
+        let description: string | undefined;
+
+        // Parsed track
+        if ('title' in track) {
+            title = track.title || '';
+            artist = track.artist || '';
+            // Parser already ran extractDescription on the metadata
+            description = track.description || undefined;
+        } else if ('metadata' in track) {
+            // Raw track
+            const parsed = MetadataExtractor.parseMetadata(track.metadata);
+            if (parsed) {
+                title = MetadataExtractor.extractTitle(parsed) || '';
+                artist = MetadataExtractor.extractArtist(parsed) || '';
+                description = MetadataExtractor.extractDescription(parsed) || undefined;
+            }
+        }
+
+        // A parsed track's audio URLs are already pin-repointed by the parser;
+        // a raw track's need the pin applied here.
+        let audio_url = extractAudioUrlFromTrack(track) || '';
+        let audio_url_lossless: string | undefined;
+        if (pin) {
+            audio_url = pin.audio_url || audio_url;
+            audio_url_lossless = pin.audio_url_lossless;
+        } else {
+            const rawLossless = extractAudioUrlLosslessFromTrack(track);
+            audio_url_lossless = rawLossless && rawLossless !== audio_url ? rawLossless : undefined;
+        }
+
+        const selected_mix = pin
+            ? pin.name
+            : ('audio_url' in track ? track.selected_mix : undefined);
+
+        tracks.push({
+            title,
+            artist,
+            audio_url,
+            image_url: extractImageUrlFromTrack(track) || '',
+            ...(audio_url_lossless ? { audio_url_lossless } : {}),
+            ...(selected_mix ? { selected_mix } : {}),
+            ...(description ? { description } : {}),
+            mixes,
+        });
     }
 
     return tracks;

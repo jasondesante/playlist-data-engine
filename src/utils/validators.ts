@@ -156,3 +156,30 @@ export const CharacterSheetSchema = z.object({
     seed: z.string(),
     generated_at: z.string(),
 });
+
+/**
+ * Mix condition schema (alternate mixes)
+ */
+export const MixConditionSchema = z.object({
+    type: z.string(),
+    value: z.string(),
+});
+
+/**
+ * Alternate mix schema
+ */
+export const MixInfoSchema = z.object({
+    name: z.string(),
+    uri: z.string().optional(),
+    mime_type: z.string().optional(),
+    conditions: z.array(MixConditionSchema),
+});
+
+/**
+ * Stem schema
+ */
+export const StemInfoSchema = z.object({
+    name: z.string(),
+    uri: z.string().optional(),
+    mime_type: z.string().optional(),
+});

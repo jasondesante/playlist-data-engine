@@ -61,10 +61,26 @@ export { MetadataExtractor } from './core/parser/MetadataExtractor.js';
 export {
     getVRMs,
     getVRMTracks,
+    getMixes,
+    getMixTracks,
     type PlaylistInput,
     type SimpleTrack,
     type VRMTrack,
+    type MixTrackInfo,
 } from './utils/playlistUtils.js';
+
+// Mix lookup & resolution (TrackExtras + gateway manager above, TF-free).
+export {
+    findMixByName,
+    resolveMixUrl,
+    selectMix,
+    type MixInfo,
+    type SelectedMixInfo,
+    type FindMixByNameOptions,
+    type ResolveMixUrlOptions,
+    type SelectMixOptions,
+} from './core/parser/TrackExtras.js';
+
 export type {
     ServerlessPlaylist,
     RawArweavePlaylist,

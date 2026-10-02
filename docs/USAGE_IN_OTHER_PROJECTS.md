@@ -4,19 +4,19 @@ Transform music playlists into D&D 5e-inspired RPG characters through audio/visu
 
 **Quick Links:**
 - **[API Reference](DATA_ENGINE_REFERENCE.md)** — Complete class and method documentation
-- **[Audio Analysis](docs/AUDIO_ANALYSIS.md)** — Triple-tap real-time, full timeline
-- **[Beat Detection](docs/BEAT_DETECTION.md)** — Beat detection, rhythm game
-- **[XP and Leveling](docs/XP_AND_STATS.md)** — Progression, stat increases, mastery
-- **[Environmental Sensors](docs/IRL_SENSORS.md)** — GPS, motion, weather, light modifiers
-- **[Rolls and Seeds](docs/ROLLS_AND_SEEDS.md)** — Deterministic random number generation
-- **[Combat System](docs/COMBAT_SYSTEM.md)** — Turn-based D&D 5e combat
-- **[Enemy Generation](docs/ENEMY_GENERATION.md)** — CR-based enemies, encounters, rarity scaling
-- **[Extensibility Guide](docs/EXTENSIBILITY_GUIDE.md)** — Custom content, classes, races, skills
-- **[Equipment System](docs/EQUIPMENT_SYSTEM.md)** — Properties, enchanting, templates
-- **[Playlist Parsing](docs/features/PLAYLIST_PARSING.md)** — Parsed playlist structure, metadata extraction, track extras, IPFS, VRMs
-- **[Prerequisites](docs/PREREQUISITES.md)** — Level/ability/class/skill/feature requirements
-- **[Custom Classes & Races](docs/CUSTOM_CONTENT.md)** — Template-based class inheritance
-- **[Content Packs](docs/CONTENT_PACKS.md)** — Data packs for custom content
+- **[Audio Analysis](features/AUDIO_ANALYSIS.md)** — Triple-tap real-time, full timeline
+- **[Beat Detection](features/BEAT_DETECTION.md)** — Beat detection, rhythm game
+- **[XP and Leveling](features/XP_AND_STATS.md)** — Progression, stat increases, mastery
+- **[Environmental Sensors](features/IRL_SENSORS.md)** — GPS, motion, weather, light modifiers
+- **[Rolls and Seeds](features/ROLLS_AND_SEEDS.md)** — Deterministic random number generation
+- **[Combat System](features/COMBAT_SYSTEM.md)** — Turn-based D&D 5e combat
+- **[Enemy Generation](features/ENEMY_GENERATION.md)** — CR-based enemies, encounters, rarity scaling
+- **[Extensibility Guide](features/EXTENSIBILITY_GUIDE.md)** — Custom content, classes, races, skills
+- **[Equipment System](features/EQUIPMENT_SYSTEM.md)** — Properties, enchanting, templates
+- **[Playlist Parsing](features/PLAYLIST_PARSING.md)** — Parsed playlist structure, metadata extraction, track extras, IPFS, VRMs
+- **[Prerequisites](features/PREREQUISITES.md)** — Level/ability/class/skill/feature requirements
+- **[Custom Classes & Races](features/CUSTOM_CONTENT.md)** — Template-based class inheritance
+- **[Content Packs](features/CONTENT_PACKS.md)** — Data packs for custom content
 
 ---
 
@@ -82,7 +82,7 @@ import { MusicClassifier, AudioAnalyzer } from 'playlist-data-engine/analysis';
 - [Deterministic Character Generation](#deterministic-character-generation) — Same seed, same character
 - [Stat Strategies](#stat-strategies) — Level-up stat increase options
 - [XP Scaling](#xp-scaling) — Progression configuration
-- [Prestige System](docs/XP_AND_STATS.md#track-mastery-prestige-system) — Reset for badge upgrades after mastering tracks
+- [Prestige System](features/XP_AND_STATS.md#track-mastery-prestige-system) — Reset for badge upgrades after mastering tracks
 - [Environmental Sensors](#environmental-sensors) — GPS, motion, weather, light modifiers
 - [Gaming Platform Integration](#gaming-platform-integration) — Steam bonuses
 - [Combat System](#combat-system) — Turn-based D&D 5e combat
@@ -90,7 +90,7 @@ import { MusicClassifier, AudioAnalyzer } from 'playlist-data-engine/analysis';
 
 ### Audio Analysis
 - [Full Song Analysis](#full-song-analysis) — Segment-by-segment timeline analysis for visualization
-- [Beat Detection](docs/BEAT_DETECTION.md) — Rhythm game timing, beat maps, button press accuracy
+- [Beat Detection](features/BEAT_DETECTION.md) — Rhythm game timing, beat maps, button press accuracy
 
 ### Advanced Pipeline
 - [Combining All Systems](#combining-all-systems) — Full pipeline with environmental and gaming context
@@ -99,7 +99,7 @@ import { MusicClassifier, AudioAnalyzer } from 'playlist-data-engine/analysis';
 See [Extensibility System](#extensibility-system) below for complete extensibility documentation and links to detailed guides.
 
 ### Equipment System Links
-See [EQUIPMENT_SYSTEM.md](docs/EQUIPMENT_SYSTEM.md) for:
+See [EQUIPMENT_SYSTEM.md](features/EQUIPMENT_SYSTEM.md) for:
 - Custom equipment — Properties, enchanting, templates
 - Equipment spawning — Batch spawn by rarity, tags, or templates
 - Box items — Containers, adventure packs, loot boxes (see also [BoxOpener](DATA_ENGINE_REFERENCE.md#boxopener))
@@ -205,7 +205,7 @@ const fullTracks = getFullTracks(playlist);
 urls.forEach(url => audioPlayer.add(url));
 ```
 
-> For VRM extraction, track extras, stems, mixes, and IPFS URLs, see [PLAYLIST_PARSING.md](features/PLAYLIST_PARSING.md) and [GATEWAY_RESOLUTION.md](features/GATEWAY_RESOLUTION.md).
+> For VRM extraction, track extras, stems, mixes, and IPFS URLs, see [PLAYLIST_PARSING.md](features/PLAYLIST_PARSING.md) and [GATEWAY_RESOLUTION.md](features/GATEWAY_RESOLUTION.md). For mix playback, find a mix by name with `findMixByName`, resolve it to a playable URL with `resolveMixUrl`, or swap a track's audio with `selectMix` — see PLAYLIST_PARSING.md.
 
 ### Full Song Analysis
 
@@ -239,11 +239,11 @@ timelineCount.forEach(event => {
 });
 ```
 
-**For detailed documentation, see [AUDIO_ANALYSIS.md](docs/AUDIO_ANALYSIS.md)**
+**For detailed documentation, see [AUDIO_ANALYSIS.md](features/AUDIO_ANALYSIS.md)**
 
 ### Beat Detect
 
-**For detailed documentation, see [BEAT_DETECTION.md](docs/BEAT_DETECTION.md)**
+**For detailed documentation, see [BEAT_DETECTION.md](features/BEAT_DETECTION.md)**
 
 ### Earning XP from Listening to Music
 
@@ -275,7 +275,7 @@ if (session) {
 - **XP sources**: Music listening, combat, quests, or any custom activity
 - **Level scaling**: Default D&D 5e pattern or provide your own XP formulas
 
-For complete details on progression, stat increases, prestige system, and customization, see **[XP_AND_STATS.md](docs/XP_AND_STATS.md)**.
+For complete details on progression, stat increases, prestige system, and customization, see **[XP_AND_STATS.md](features/XP_AND_STATS.md)**.
 
 
 ## Specific Features
@@ -322,7 +322,7 @@ console.log(`Generated name: "${character.name}"`);
 
 The same seed and audio profile always produces the same character:
 
-**For more details on deterministic seeding, hash utilities, and seeded randomness, see [ROLLS_AND_SEEDS.md](docs/ROLLS_AND_SEEDS.md)**
+**For more details on deterministic seeding, hash utilities, and seeded randomness, see [ROLLS_AND_SEEDS.md](features/ROLLS_AND_SEEDS.md)**
 
 ```typescript
 import { CharacterGenerator, type CharacterSheet } from 'playlist-data-engine';
@@ -430,7 +430,7 @@ for (const track of playlist.tracks) {
 
 ## Stat Strategies & XP Scaling
 
-**For detailed documentation, see [XP_AND_STATS.md](docs/XP_AND_STATS.md)**
+**For detailed documentation, see [XP_AND_STATS.md](features/XP_AND_STATS.md)**
 
 ---
 
@@ -440,7 +440,7 @@ GPS, motion, and weather sensors that provide XP modifiers based on real-world c
 
 Steam game detection integration that provides XP bonuses based on gaming activity.
 
-**For detailed documentation, see [IRL_SENSORS.md](docs/IRL_SENSORS.md)**
+**For detailed documentation, see [IRL_SENSORS.md](features/IRL_SENSORS.md)**
 
 ---
 
@@ -448,7 +448,7 @@ Steam game detection integration that provides XP bonuses based on gaming activi
 
 Turn-based D&D 5e-inspired combat with initiative, attacks, spell casting, and dice rolling.
 
-**For detailed documentation, see [COMBAT_SYSTEM.md](docs/COMBAT_SYSTEM.md)**
+**For detailed documentation, see [COMBAT_SYSTEM.md](features/COMBAT_SYSTEM.md)**
 
 ### Enemy Generation
 
@@ -461,7 +461,7 @@ Generate enemies and balanced encounters using the `EnemyGenerator` class. The s
 
 **Key principle:** Any CR can combine with any rarity.
 
-**For detailed documentation**, see [ENEMY_GENERATION.md](docs/ENEMY_GENERATION.md) for:
+**For detailed documentation**, see [ENEMY_GENERATION.md](features/ENEMY_GENERATION.md) for:
 - Complete template list
 - Rarity tier breakdowns
 - Leader promotion system
@@ -477,10 +477,10 @@ Generate enemies and balanced encounters using the `EnemyGenerator` class. The s
 The extensibility system allows you to add custom content at runtime, including spells, equipment, races, classes, features, skills, and appearance options.
 
 **Detailed guides:**
-- [docs/EXTENSIBILITY_GUIDE.md](docs/EXTENSIBILITY_GUIDE.md) - Complete extensibility system (custom content, spawn rates, export/import, content packs)
-- [docs/CUSTOM_CONTENT.md](docs/CUSTOM_CONTENT.md) - Custom races, subraces, and classes
-- [docs/CONTENT_PACKS.md](docs/CONTENT_PACKS.md) - Content packs with data of many types all in one file.
-- [docs/PREREQUISITES.md](docs/PREREQUISITES.md) - Skill, spell, and feature prerequisites
+- [features/EXTENSIBILITY_GUIDE.md](features/EXTENSIBILITY_GUIDE.md) - Complete extensibility system (custom content, spawn rates, export/import, content packs)
+- [features/CUSTOM_CONTENT.md](features/CUSTOM_CONTENT.md) - Custom races, subraces, and classes
+- [features/CONTENT_PACKS.md](features/CONTENT_PACKS.md) - Content packs with data of many types all in one file.
+- [features/PREREQUISITES.md](features/PREREQUISITES.md) - Skill, spell, and feature prerequisites
 - [DATA_ENGINE_REFERENCE.md](DATA_ENGINE_REFERENCE.md) - Complete API reference
 
 ---
@@ -490,7 +490,7 @@ The extensibility system allows you to add custom content at runtime, including 
 
 Comprehensive equipment system with custom items, properties, enchanting, templates, batch spawning, and box-type containers.
 
-**See [EQUIPMENT_SYSTEM.md](docs/EQUIPMENT_SYSTEM.md)** for:
+**See [EQUIPMENT_SYSTEM.md](features/EQUIPMENT_SYSTEM.md)** for:
 - Equipment properties — Stat bonuses, skills, abilities, damage, conditions
 - Equipment modification — Enchanting, cursing, upgrading at runtime
 - Equipment spawning — Batch spawn by rarity, tags, or templates
