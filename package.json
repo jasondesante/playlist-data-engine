@@ -8,6 +8,9 @@
   },
   "version": "1.7.3",
   "type": "module",
+  "bin": {
+    "playlist-data-engine": "bin/cli.cjs"
+  },
   "main": "./dist/playlist-data-engine.js",
   "module": "./dist/playlist-data-engine.mjs",
   "types": "./dist/index.d.ts",
@@ -30,7 +33,11 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "docs",
+    "bin",
+    "skills",
+    "llms.txt"
   ],
   "keywords": [
     "arweave",

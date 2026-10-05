@@ -26,6 +26,20 @@ npm install
 
 </details>
 
+### Documentation
+
+Full docs ship inside the package — no GitHub trip needed:
+
+| Where | What |
+|---|---|
+| `node_modules/playlist-data-engine/docs/` | The whole docs folder, version-matched to your install |
+| `npx playlist-data-engine docs` | List every doc — `npx playlist-data-engine docs <topic>` reads one |
+| `engineHelp()` from the package | Same index, returned as markdown — built for AI agents |
+
+**Table of contents:** [Data Engine Reference](docs/DATA_ENGINE_REFERENCE.md) (every function, one row each) · [Usage in Other Projects](docs/USAGE_IN_OTHER_PROJECTS.md) · [Playlist Parsing](docs/features/PLAYLIST_PARSING.md) (tracks, mixes, quality) · [Gateway Resolution](docs/features/GATEWAY_RESOLUTION.md) · [Audio Analysis](docs/features/AUDIO_ANALYSIS.md) · [Beat Detection](docs/features/BEAT_DETECTION.md) — plus the game systems (combat, equipment, XP, sensors, seeds) in `docs/features/`.
+
+Building with Claude or another coding agent? `npx playlist-data-engine skill` prints the companion Claude Code skill; `engineHelp('skill')` returns it from inside the package.
+
 ### The Vision: An Intelligent Music Player
 
 The original idea — five years ago — was a music player that goes beyond playing static audio. Think of how the best Nintendo games use dynamic music — different arrangements and mixes depending on what the player does. That's a whole category of experiencing recorded music, but only a handful of games have ever explored it. This engine opens that door for any music. It listens to your tracks and reacts to you — the genre, the mood, the beats, the groove, where you are, what you're doing, the weather outside, the time of day. Every song comes with a character, a combat encounter, a rhythm game chart — all generated from the music itself.

@@ -1,0 +1,33 @@
+# playlist-data-engine
+
+> Parse Arweave serverless music playlists into clean data, resolve alternate mixes and lossy/lossless audio quality, and reach files through automatic gateway failover — the engine behind ar://listen.
+
+The docs live inside the npm package itself, version-matched to your install: `node_modules/playlist-data-engine/docs/`. Also readable via `npx playlist-data-engine docs <topic>`, and programmatically via the exported `engineHelp()`.
+
+## Core (music player infrastructure)
+
+- [docs/DATA_ENGINE_REFERENCE.md](docs/DATA_ENGINE_REFERENCE.md): every public function, one row each — signatures, inputs, outputs
+- [docs/USAGE_IN_OTHER_PROJECTS.md](docs/USAGE_IN_OTHER_PROJECTS.md): install, main vs gateway entry, first parsed playlist
+- [docs/features/PLAYLIST_PARSING.md](docs/features/PLAYLIST_PARSING.md): loading playlists, track objects, alternate mixes (pins, alias matching, lossy/lossless pairs)
+- [docs/features/GATEWAY_RESOLUTION.md](docs/features/GATEWAY_RESOLUTION.md): gateway failover, Wayfinder, resolving tx and IPFS URLs
+
+## Audio analysis
+
+- [docs/features/AUDIO_ANALYSIS.md](docs/features/AUDIO_ANALYSIS.md): BPM, key, mood, genre classification (TensorFlow + essentia)
+- [docs/features/BEAT_DETECTION.md](docs/features/BEAT_DETECTION.md): beat streams and rhythm-game chart generation
+
+## Game systems (RPG-from-audio)
+
+- [docs/features/COMBAT_SYSTEM.md](docs/features/COMBAT_SYSTEM.md): seeded combat simulations driven by track energy
+- [docs/features/ENEMY_GENERATION.md](docs/features/ENEMY_GENERATION.md): characters generated from sonic fingerprints
+- [docs/features/EQUIPMENT_SYSTEM.md](docs/features/EQUIPMENT_SYSTEM.md): loot and equipment
+- [docs/features/XP_AND_STATS.md](docs/features/XP_AND_STATS.md): progression and persistence
+- [docs/features/ROLLS_AND_SEEDS.md](docs/features/ROLLS_AND_SEEDS.md): deterministic seeded dice
+- [docs/features/IRL_SENSORS.md](docs/features/IRL_SENSORS.md): weather, time, motion context
+- [docs/features/CONTENT_PACKS.md](docs/features/CONTENT_PACKS.md) / [CUSTOM_CONTENT.md](docs/features/CUSTOM_CONTENT.md) / [EXTENSIBILITY_GUIDE.md](docs/features/EXTENSIBILITY_GUIDE.md) / [PREREQUISITES.md](docs/features/PREREQUISITES.md): extending the engine
+
+## For AI agents
+
+- `engineHelp()` (exported from both package entries) returns this index as markdown; `engineHelp('<topic>')` returns where to read one doc
+- `engineHelp('skill')` returns the companion Claude Code skill file (also `npx playlist-data-engine skill`)
+- TypeScript users: the `.d.ts` in dist/ is the complete API surface with JSDoc

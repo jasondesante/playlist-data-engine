@@ -1257,3 +1257,12 @@ export {
     getItemsWithProperty,
     applyTemplate
 } from './utils/magicItemExamples.js';
+
+// Self-describing docs index (inlined — browser-safe, version-matched)
+export {
+    engineHelp,
+    ENGINE_DOC_TOPICS,
+    ENGINE_DOC_ARCHIVE,
+    type EngineDocTopic,
+    type EngineDocArchiveEntry
+} from './utils/engineDocs.js';

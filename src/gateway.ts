@@ -86,3 +86,12 @@ export type {
     RawArweavePlaylist,
     PlaylistTrack,
 } from './core/types/Playlist.js';
+
+// Self-describing docs index (inlined at build time — TF-free, browser-safe)
+export {
+    engineHelp,
+    ENGINE_DOC_TOPICS,
+    ENGINE_DOC_ARCHIVE,
+    type EngineDocTopic,
+    type EngineDocArchiveEntry
+} from './utils/engineDocs.js';
