@@ -31,6 +31,17 @@
  * Logger.enableDiagnosticMode();         // Maximum verbosity for debugging
  * Logger.isDiagnosticMode();             // Check diagnostic state
  * Logger.disableDiagnosticMode();        // Reset to default
+ *
+ * // Status events — structured progress from long-running flows (gateway
+ * // resolution, model fetching). Sinks are additive: console output is
+ * // unaffected, and status() delivers below the global level so slow-path
+ * // detail (probe timeouts, retries) reaches the UI.
+ * const unsubscribe = Logger.addSink({
+ *     contexts: ['ArweaveGateway'],
+ *     replay: true, // receive the last 100 events that fired before attach
+ *     handle: (entry) => renderProgress(entry.event, entry.message),
+ * });
+ * Logger.getEventHistory(); // events buffered before any sink attached
  * ```
  */
 
@@ -57,6 +68,47 @@ const LOG_LEVEL_NAMES: Record<LogLevel, string> = {
 };
 
 /**
+ * Structured status event describing progress through a long-running flow
+ * (gateway resolution, model fetching, parsing). Carried on a LogEntry so a
+ * UI can render step-by-step feedback ("checking gateway 3 of 7… (2.1s)")
+ * without parsing message strings.
+ */
+export interface StatusEvent {
+    /** Event discriminator, e.g. 'gateway.probe.start' | 'gateway.chain.resolved' | 'model.fetch' */
+    kind: string;
+    /** Flow stage the event belongs to */
+    phase: 'init' | 'chain' | 'probe' | 'fallback' | 'wayfinder' | 'rotation' | 'failure' | 'health' | 'prefetch' | 'model' | 'parser';
+    /** Chain step index (0-based) for flows with numbered steps */
+    step?: number;
+    /** Total number of chain steps */
+    stepTotal?: number;
+    /** Gateway hostname this event is about */
+    gateway?: string;
+    /** Fully constructed URL being probed/used */
+    gatewayUrl?: string;
+    /** Arweave transaction id the flow is resolving */
+    txId?: string;
+    /** Per-walk correlation id ('<txId>:<seq>') grouping one resolution chain */
+    correlationId?: string;
+    /** 1-based position of this candidate within the current step */
+    attempt?: number;
+    /** Total candidates in the current step */
+    attemptTotal?: number;
+    /** Duration of the finished probe/step in ms (absent on *-start events) */
+    elapsedMs?: number;
+    /** Duration since the flow started in ms */
+    totalElapsedMs?: number;
+    /** Probe outcome */
+    result?: 'verified' | 'maybe' | 'failed';
+    /** Why a probe/step ended ('timeout' | 'external-abort' | 'cors-retry' | 'load-error' | …) */
+    reason?: string;
+    /** Model URL — model.fetch events only */
+    modelUrl?: string;
+    /** Retry backoff delay in ms — model.fetch retry events only */
+    delayMs?: number;
+}
+
+/**
  * Log entry structure
  */
 export interface LogEntry {
@@ -65,6 +117,24 @@ export interface LogEntry {
     context: string;
     message: string;
     data?: unknown;
+    /** Present when the entry was emitted via logger.status() */
+    event?: StatusEvent;
+}
+
+/**
+ * A sink receiving log entries — the additive counterpart to the
+ * all-or-nothing LoggerConfig.customHandler. Sinks fan out; console output
+ * is unaffected by their presence.
+ */
+export interface LogSink {
+    /** Stable id; attaching a sink with an existing id replaces the previous one */
+    id?: string;
+    /** Only receive entries for these contexts; omit to receive everything */
+    contexts?: string[];
+    /** Replay the buffered event history (last 100 event-bearing entries) on attach */
+    replay?: boolean;
+    /** Receive an entry. Exceptions are swallowed — a broken sink never breaks the engine. */
+    handle: (entry: LogEntry) => void;
 }
 
 /**
@@ -89,11 +159,26 @@ let includeTimestamp = true;
 let includeContext = true;
 let customHandler: ((entry: LogEntry) => void) | null = null;
 
+/** Registered sinks, fanned out on every entry */
+const sinks: LogSink[] = [];
+/** Ring buffer of event-bearing entries for late-subscriber replay */
+const eventHistory: LogEntry[] = [];
+const EVENT_HISTORY_LIMIT = 100;
+
 /**
  * Global diagnostic mode flag
  * When enabled, sets log level to DEBUG and enables verbose output
  */
 let diagnosticMode = false;
+
+/**
+ * Context filter for sinks. Level never gates sink delivery of status()
+ * entries — the global gate only applies to the console leg.
+ */
+function matchesSink(sink: LogSink, entry: LogEntry): boolean {
+    if (sink.contexts && !sink.contexts.includes(entry.context)) return false;
+    return true;
+}
 
 /**
  * Global verbose mode flag
@@ -232,6 +317,47 @@ export class Logger {
     }
 
     /**
+     * Register a sink that receives log entries. Unlike customHandler, sinks
+     * are additive — console output continues unchanged. Returns an
+     * unsubscribe function.
+     */
+    static addSink(sink: LogSink): () => void {
+        if (sink.id) {
+            const existing = sinks.findIndex(s => s.id === sink.id);
+            if (existing >= 0) sinks.splice(existing, 1);
+        }
+        sinks.push(sink);
+        if (sink.replay) {
+            for (const entry of [...eventHistory]) {
+                if (!matchesSink(sink, entry)) continue;
+                try {
+                    sink.handle(entry);
+                } catch {
+                    // same contract as live delivery — a broken sink never breaks setup
+                }
+            }
+        }
+        return () => Logger.removeSink(sink);
+    }
+
+    /**
+     * Remove a previously registered sink
+     */
+    static removeSink(sink: LogSink): void {
+        const index = sinks.indexOf(sink);
+        if (index >= 0) sinks.splice(index, 1);
+    }
+
+    /**
+     * Snapshot of the buffered status-event history (oldest first). Captures
+     * events that fired before any subscriber existed — the gateway manager
+     * singleton constructs at import time, ahead of any front-end sink.
+     */
+    static getEventHistory(): LogEntry[] {
+        return [...eventHistory];
+    }
+
+    /**
      * Reset logger to default configuration
      */
     static reset(): void {
@@ -241,6 +367,8 @@ export class Logger {
         customHandler = null;
         diagnosticMode = false;
         verboseMode = false;
+        sinks.length = 0;
+        eventHistory.length = 0;
     }
 
     /**
@@ -280,6 +408,35 @@ export class Logger {
     }
 
     /**
+     * Emit a structured status event for a long-running flow.
+     *
+     * Status events ALWAYS reach registered sinks — even below the global
+     * level — so slow-path details that are debug-gated on console (probe
+     * timeouts, CORS retries) still drive UI status. The console leg then
+     * runs through the standard level gate, so console output matches the
+     * plain logger.info/debug call this replaces.
+     */
+    status(event: StatusEvent, message: string, data?: unknown, level: LogLevel = LogLevel.INFO): void {
+        const entry: LogEntry = {
+            timestamp: new Date(),
+            level,
+            context: this.context,
+            message,
+            data,
+            event,
+        };
+
+        this.deliverToSinks(entry);
+
+        eventHistory.push(entry);
+        if (eventHistory.length > EVENT_HISTORY_LIMIT) eventHistory.shift();
+
+        if (level >= globalLevel) {
+            this.writeConsole(entry, data ?? event);
+        }
+    }
+
+    /**
      * Internal logging method
      */
     private log(level: LogLevel, message: string, data?: unknown): void {
@@ -296,6 +453,30 @@ export class Logger {
             data,
         };
 
+        this.deliverToSinks(entry);
+        this.writeConsole(entry, data);
+    }
+
+    /**
+     * Fan an entry out to all matching sinks. Exceptions are swallowed —
+     * a broken sink must never break the engine flow.
+     */
+    private deliverToSinks(entry: LogEntry): void {
+        for (const sink of [...sinks]) {
+            if (!matchesSink(sink, entry)) continue;
+            try {
+                sink.handle(entry);
+            } catch {
+                // ignore
+            }
+        }
+    }
+
+    /**
+     * The gated console/customHandler leg. Assumes the level gate already
+     * passed — log() and status() each apply it with their own rules.
+     */
+    private writeConsole(entry: LogEntry, data?: unknown): void {
         // Use custom handler if provided
         if (customHandler) {
             customHandler(entry);
@@ -306,7 +487,7 @@ export class Logger {
         const formattedMessage = this.formatMessage(entry);
 
         // Use appropriate console method based on level
-        switch (level) {
+        switch (entry.level) {
             case LogLevel.DEBUG:
                 if (data !== undefined) {
                     console.debug(formattedMessage, data);

@@ -38,7 +38,41 @@ function normalizeGatewayHost(host: string): string {
     const bare = host.slice(4);
     return KNOWN_GATEWAY_HOSTS.includes(bare as never) ? bare : host;
 }
-import { Logger } from './logger.js';
+import { Logger, LogLevel, type StatusEvent } from './logger.js';
+
+/**
+ * Status event kinds emitted by the gateway manager (StatusEvent.kind values).
+ * Sinks subscribe via Logger.addSink — see utils/logger.ts.
+ */
+export type GatewayEventKind =
+    | 'gateway.init'
+    | 'gateway.wayfinder-ready'
+    | 'gateway.cache-hit'
+    | 'gateway.inflight-reuse'
+    | 'gateway.rotation'
+    | 'gateway.chain.start'
+    | 'gateway.chain.step'
+    | 'gateway.probe.start'
+    | 'gateway.probe.result'
+    | 'gateway.chain.resolved'
+    | 'gateway.chain.exhausted'
+    | 'gateway.failure-retry'
+    | 'gateway.prefetch';
+
+/**
+ * Correlation + position metadata threaded from a resolution walk into
+ * checkGateway so probe events know where they sit ("step 4, probe 3 of 10").
+ * `chainStart` stamps totalElapsedMs; `correlationId` groups one walk.
+ */
+export interface GatewayProbeMeta {
+    correlationId?: string;
+    phase?: StatusEvent['phase'];
+    step?: number;
+    stepTotal?: number;
+    attempt?: number;
+    attemptTotal?: number;
+    chainStart?: number;
+}
 
 /**
  * Dynamically import Wayfinder to avoid bundling Node.js `crypto` polyfills
@@ -384,6 +418,8 @@ export class ArweaveGatewayManager {
     private cacheTTL: number;
     private cache: Map<string, GatewayCache> = new Map();
     private logger = Logger.for('ArweaveGateway');
+    /** Monotonic counter for per-walk status correlation ids */
+    private statusSeq: number = 0;
     /** Cache hit counter for statistics */
     private hitCount: number = 0;
     /** Cache miss counter for statistics */
@@ -447,6 +483,31 @@ export class ArweaveGatewayManager {
     /** Routing strategy preset */
     private readonly wayfinderStrategy: WayfinderStrategy;
 
+    /**
+     * Correlation id for one resolution walk. Concurrent resolves dedupe per
+     * txId, so events need txId + seq to attribute a chain unambiguously.
+     */
+    private nextCorrelationId(txId: string): string {
+        this.statusSeq += 1;
+        return `${txId}:${this.statusSeq}`;
+    }
+
+    /**
+     * Emit a status event: sinks always receive it (bypassing the log level),
+     * while the console leg keeps the given level's standard gate — so default
+     * console output stays put and slow-path detail reaches the UI.
+     */
+    private emitStatus(
+        kind: GatewayEventKind,
+        phase: StatusEvent['phase'],
+        message: string,
+        detail: Omit<StatusEvent, 'kind' | 'phase'>,
+        level: LogLevel = LogLevel.INFO,
+        consoleData?: unknown,
+    ): void {
+        this.logger.status({ kind, phase, ...detail }, message, consoleData, level);
+    }
+
     constructor(config?: ArweaveGatewayManagerConfig) {
         // Deep-clone gateways to avoid mutating the original config objects
         this.gateways = (config?.gateways ?? DEFAULT_GATEWAYS).map(g => ({ ...g }));
@@ -486,7 +547,11 @@ export class ArweaveGatewayManager {
         // picks the routing preset. Defaults are tuned for good variety + speed.
         this.initWayfinder();
 
-        this.logger.info('Gateway manager initialized', {
+        this.logger.status({
+            kind: 'gateway.init',
+            phase: 'init',
+            gateway: this.activeGateway?.host,
+        }, 'Gateway manager initialized', {
             gateways: this.gateways.map(g => g.host),
             timeout: this.timeout,
             cacheTTL: this.cacheTTL,
@@ -561,7 +626,11 @@ export class ArweaveGatewayManager {
                     })();
 
                     this.wayfinder = wfMod.createWayfinderClient({ routingStrategy }) as Wayfinder;
-                    this.logger.info('Wayfinder client initialized', {
+                    this.logger.status({
+                        kind: 'gateway.wayfinder-ready',
+                        phase: 'init',
+                        reason: 'configured',
+                    }, 'Wayfinder client initialized', {
                         strategy: this.wayfinderStrategy,
                         sortBy: this.wayfinderSortBy,
                         primaryLimit: this.wayfinderPrimaryLimit,
@@ -570,15 +639,36 @@ export class ArweaveGatewayManager {
                 } catch (err) {
                     this.logger.warn('Failed to configure Wayfinder routing strategy, using defaults', { error: err });
                     this.wayfinder = wfMod.createWayfinderClient() as Wayfinder;
-                    this.logger.info('Wayfinder client initialized with default routing');
+                    this.logger.status({
+                        kind: 'gateway.wayfinder-ready',
+                        phase: 'init',
+                        reason: 'default-routing',
+                    }, 'Wayfinder client initialized with default routing');
                 }
             } else if (wfMod) {
                 this.wayfinder = wfMod.createWayfinderClient() as Wayfinder;
-                this.logger.info('Wayfinder client initialized with default routing (SDK unavailable)');
+                this.logger.status({
+                    kind: 'gateway.wayfinder-ready',
+                    phase: 'init',
+                    reason: 'sdk-unavailable',
+                }, 'Wayfinder client initialized with default routing (SDK unavailable)');
             }
         }).catch(() => {
-            this.logger.debug('Wayfinder client initialization failed, using static gateways');
+            this.logger.status({
+                kind: 'gateway.wayfinder-ready',
+                phase: 'init',
+                reason: 'failed',
+            }, 'Wayfinder client initialization failed, using static gateways', undefined, LogLevel.DEBUG);
         });
+    }
+
+    /**
+     * Whether the async Wayfinder init has landed. Constructor-time events
+     * fire before any sink can attach, so late subscribers read this instead
+     * of waiting for a wayfinder-ready replay.
+     */
+    get isWayfinderReady(): boolean {
+        return this.wayfinder !== null;
     }
 
     /**
@@ -814,7 +904,14 @@ export class ArweaveGatewayManager {
         if (cachedGateway) {
             this.hitCount++;
             const workingUrl = constructGatewayUrl(txId, cachedGateway, pathSuffix);
-            this.logger.debug('Cache hit for txId', { txId, gateway: cachedGateway.host, pathSuffix });
+            this.logger.status({
+                kind: 'gateway.cache-hit',
+                phase: 'chain',
+                txId,
+                gateway: cachedGateway.host,
+                gatewayUrl: workingUrl,
+                result: 'verified',
+            }, 'Cache hit for txId', { txId, gateway: cachedGateway.host, pathSuffix }, LogLevel.DEBUG);
             return workingUrl;
         }
 
@@ -823,11 +920,16 @@ export class ArweaveGatewayManager {
 
         // Proactive rotation: if active gateway is degrading, force a new selection
         if (this.consecutiveSlowResponses >= this.maxSlowResponses) {
-            this.logger.warn('Proactive gateway rotation triggered', {
+            this.logger.status({
+                kind: 'gateway.rotation',
+                phase: 'rotation',
+                gateway: activeGatewayHost,
+                reason: 'slow-responses',
+            }, 'Proactive gateway rotation triggered', {
                 slowCount: this.consecutiveSlowResponses,
                 threshold: this.maxSlowResponses,
                 previousGateway: activeGatewayHost,
-            });
+            }, LogLevel.WARN);
             this.activeGateway = null;
             this.consecutiveSlowResponses = 0;
             this.clearPersistedGateway();
@@ -841,7 +943,11 @@ export class ArweaveGatewayManager {
             // Reuse the in-flight resolve — don't cancel it.
             // Cancelling a working resolve just because a second caller
             // asked for the same txId causes false failures.
-            this.logger.debug('Reusing in-flight resolve for txId', { txId });
+            this.logger.status({
+                kind: 'gateway.inflight-reuse',
+                phase: 'chain',
+                txId,
+            }, 'Reusing in-flight resolve for txId', { txId }, LogLevel.DEBUG);
             return inflight;
         }
 
@@ -872,7 +978,15 @@ export class ArweaveGatewayManager {
     private async resolveGatewayChain(url: string, txId: string, pathSuffix: string, signal?: AbortSignal, options?: ResolveUrlOptions): Promise<string> {
         const chainStart = Date.now();
         const bypassArweaveNet = options?.bypassArweaveNet ?? false;
+        const correlationId = this.nextCorrelationId(txId);
         let excludeHost: string | null = null;
+
+        this.emitStatus('gateway.chain.start', 'chain', `[gateway] Resolving ${txId}${pathSuffix}`, {
+            txId,
+            correlationId,
+            stepTotal: 5,
+            totalElapsedMs: 0,
+        }, LogLevel.DEBUG);
         // Track a 'maybe' result as a last-resort fallback. The chain
         // prefers 'verified' results and continues walking past 'maybe's
         // to find one — but if no gateway verifies, returning the best
@@ -905,14 +1019,21 @@ export class ArweaveGatewayManager {
                         priority: 0,
                     };
                     const stepStart = Date.now();
-                    const result = await this.checkAndSetGateway(url, txId, pathSuffix, originalGateway, signal);
+                    const result = await this.checkAndSetGateway(url, txId, pathSuffix, originalGateway, signal, { correlationId, phase: 'chain', step: 0, stepTotal: 5, chainStart });
                     const stepMs = Date.now() - stepStart;
+                    const totalMs = Date.now() - chainStart;
                     if (result) {
-                        this.logger.info(`[gateway] Step 0 (original): ${result.kind}`, { host: originalGateway.host, ms: stepMs, totalMs: Date.now() - chainStart });
+                        this.emitStatus('gateway.chain.step', 'chain', `[gateway] Step 0 (original): ${result.kind}`, {
+                            step: 0, stepTotal: 5, gateway: originalGateway.host, txId, correlationId,
+                            elapsedMs: stepMs, totalElapsedMs: totalMs, result: result.kind,
+                        });
                         if (result.kind === 'verified') return result.url;
                         maybeFallback ??= result.url;
                     } else {
-                        this.logger.info('[gateway] Step 0 (original): failed', { host: originalGateway.host, ms: stepMs });
+                        this.emitStatus('gateway.chain.step', 'chain', '[gateway] Step 0 (original): failed', {
+                            step: 0, stepTotal: 5, gateway: originalGateway.host, txId, correlationId,
+                            elapsedMs: stepMs, totalElapsedMs: totalMs, result: 'failed',
+                        });
                     }
                     excludeHost = originalGateway.host;
                 }
@@ -923,15 +1044,23 @@ export class ArweaveGatewayManager {
 
         // Step 1: Try persisted gateway first (user's known-working gateway from previous session)
         if (this.activeGateway && this.activeGateway.host !== excludeHost) {
+            const persistedHost = this.activeGateway.host;
             const stepStart = Date.now();
-            const result = await this.checkAndSetGateway(url, txId, pathSuffix, this.activeGateway, signal);
+            const result = await this.checkAndSetGateway(url, txId, pathSuffix, this.activeGateway, signal, { correlationId, phase: 'chain', step: 1, stepTotal: 5, chainStart });
             const stepMs = Date.now() - stepStart;
+            const totalMs = Date.now() - chainStart;
             if (result) {
-                this.logger.info(`[gateway] Step 1 (persisted): ${result.kind}`, { host: this.activeGateway.host, ms: stepMs, totalMs: Date.now() - chainStart });
+                this.emitStatus('gateway.chain.step', 'chain', `[gateway] Step 1 (persisted): ${result.kind}`, {
+                    step: 1, stepTotal: 5, gateway: persistedHost, txId, correlationId,
+                    elapsedMs: stepMs, totalElapsedMs: totalMs, result: result.kind,
+                });
                 if (result.kind === 'verified') return result.url;
                 maybeFallback ??= result.url;
             } else {
-                this.logger.info('[gateway] Step 1 (persisted): failed, clearing', { ms: stepMs });
+                this.emitStatus('gateway.chain.step', 'chain', '[gateway] Step 1 (persisted): failed, clearing', {
+                    step: 1, stepTotal: 5, gateway: persistedHost, txId, correlationId,
+                    elapsedMs: stepMs, totalElapsedMs: totalMs, result: 'failed',
+                });
                 this.activeGateway = null;
                 this.clearPersistedGateway();
             }
@@ -944,28 +1073,42 @@ export class ArweaveGatewayManager {
             const arweaveNet = this.gateways.find(g => g.host === 'arweave.net');
             if (arweaveNet) {
                 const stepStart = Date.now();
-                const result = await this.checkAndSetGateway(url, txId, pathSuffix, arweaveNet, signal);
+                const result = await this.checkAndSetGateway(url, txId, pathSuffix, arweaveNet, signal, { correlationId, phase: 'chain', step: 2, stepTotal: 5, chainStart });
                 const stepMs = Date.now() - stepStart;
+                const totalMs = Date.now() - chainStart;
                 if (result) {
-                    this.logger.info(`[gateway] Step 2 (arweave.net): ${result.kind}`, { ms: stepMs, totalMs: Date.now() - chainStart });
+                    this.emitStatus('gateway.chain.step', 'chain', `[gateway] Step 2 (arweave.net): ${result.kind}`, {
+                        step: 2, stepTotal: 5, gateway: arweaveNet.host, txId, correlationId,
+                        elapsedMs: stepMs, totalElapsedMs: totalMs, result: result.kind,
+                    });
                     if (result.kind === 'verified') return result.url;
                     maybeFallback ??= result.url;
                 } else {
-                    this.logger.info('[gateway] Step 2 (arweave.net): failed', { ms: stepMs });
+                    this.emitStatus('gateway.chain.step', 'chain', '[gateway] Step 2 (arweave.net): failed', {
+                        step: 2, stepTotal: 5, gateway: arweaveNet.host, txId, correlationId,
+                        elapsedMs: stepMs, totalElapsedMs: totalMs, result: 'failed',
+                    });
                 }
             }
         }
 
         // Step 3: Try remaining static fallback gateways in parallel (exclude any already-tried host)
         const stepStart = Date.now();
-        const fallbackResult = await this.tryFallbackGateways(url, txId, pathSuffix, signal, excludeHost);
+        const fallbackResult = await this.tryFallbackGateways(url, txId, pathSuffix, signal, excludeHost, { correlationId, phase: 'fallback', step: 3, stepTotal: 5, chainStart });
         const stepMs = Date.now() - stepStart;
+        const totalMs = Date.now() - chainStart;
         if (fallbackResult) {
-            this.logger.info(`[gateway] Step 3 (fallbacks): ${fallbackResult.kind}`, { ms: stepMs, totalMs: Date.now() - chainStart });
+            this.emitStatus('gateway.chain.step', 'fallback', `[gateway] Step 3 (fallbacks): ${fallbackResult.kind}`, {
+                step: 3, stepTotal: 5, txId, correlationId,
+                elapsedMs: stepMs, totalElapsedMs: totalMs, result: fallbackResult.kind,
+            });
             if (fallbackResult.kind === 'verified') return fallbackResult.url;
             maybeFallback ??= fallbackResult.url;
         } else {
-            this.logger.info('[gateway] Step 3 (fallbacks): failed', { ms: stepMs });
+            this.emitStatus('gateway.chain.step', 'fallback', '[gateway] Step 3 (fallbacks): failed', {
+                step: 3, stepTotal: 5, txId, correlationId,
+                elapsedMs: stepMs, totalElapsedMs: totalMs, result: 'failed',
+            });
         }
 
         // Step 4: Try Wayfinder as last resort (wider pool, but slower).
@@ -978,15 +1121,24 @@ export class ArweaveGatewayManager {
         const bypassWayfinder = options?.bypassWayfinder ?? defaultBypassWayfinder;
         if (this.wayfinder && !bypassWayfinder) {
             const stepStart = Date.now();
-            this.logger.info('[gateway] Step 4 (wayfinder): trying');
-            const wayfinderResult = await this.tryWayfinder(txId, pathSuffix, signal, excludeHost);
+            this.emitStatus('gateway.chain.step', 'wayfinder', '[gateway] Step 4 (wayfinder): trying', {
+                step: 4, stepTotal: 5, txId, correlationId,
+            });
+            const wayfinderResult = await this.tryWayfinder(txId, pathSuffix, signal, excludeHost, { correlationId, phase: 'wayfinder', step: 4, stepTotal: 5, chainStart });
             const stepMs = Date.now() - stepStart;
+            const totalMs = Date.now() - chainStart;
             if (wayfinderResult) {
-                this.logger.info(`[gateway] Step 4 (wayfinder): ${wayfinderResult.kind}`, { ms: stepMs, totalMs: Date.now() - chainStart });
+                this.emitStatus('gateway.chain.step', 'wayfinder', `[gateway] Step 4 (wayfinder): ${wayfinderResult.kind}`, {
+                    step: 4, stepTotal: 5, txId, correlationId,
+                    elapsedMs: stepMs, totalElapsedMs: totalMs, result: wayfinderResult.kind,
+                });
                 if (wayfinderResult.kind === 'verified') return wayfinderResult.url;
                 maybeFallback ??= wayfinderResult.url;
             } else {
-                this.logger.info('[gateway] Step 4 (wayfinder): failed', { ms: stepMs });
+                this.emitStatus('gateway.chain.step', 'wayfinder', '[gateway] Step 4 (wayfinder): failed', {
+                    step: 4, stepTotal: 5, txId, correlationId,
+                    elapsedMs: stepMs, totalElapsedMs: totalMs, result: 'failed',
+                });
             }
         }
 
@@ -995,10 +1147,14 @@ export class ArweaveGatewayManager {
         // that responded via no-cors (status hidden) — better than nothing,
         // and the consumer's actual content fetch will catch any 404s.
         if (maybeFallback) {
-            this.logger.warn('No gateway verified, returning best maybe-result', { txId, pathSuffix, maybeUrl: maybeFallback });
+            this.emitStatus('gateway.chain.exhausted', 'chain', 'No gateway verified, returning best maybe-result', {
+                txId, correlationId, gatewayUrl: maybeFallback, result: 'maybe', totalElapsedMs: Date.now() - chainStart,
+            }, LogLevel.WARN);
             return maybeFallback;
         }
-        this.logger.warn('All gateways (arweave.net + Wayfinder + fallbacks) failed, returning original URL', { txId, pathSuffix, originalUrl: url });
+        this.emitStatus('gateway.chain.exhausted', 'chain', 'All gateways (arweave.net + Wayfinder + fallbacks) failed, returning original URL', {
+            txId, correlationId, gatewayUrl: url, result: 'failed', totalElapsedMs: Date.now() - chainStart,
+        }, LogLevel.WARN);
         return url;
     }
 
@@ -1038,11 +1194,20 @@ export class ArweaveGatewayManager {
         if (!parsed) return url;
         const { txId, pathSuffix } = parsed;
 
-        this.logger.warn('Gateway failure reported, finding new gateway', {
+        const correlationId = this.nextCorrelationId(txId);
+        const failureStart = Date.now();
+        this.logger.status({
+            kind: 'gateway.failure-retry',
+            phase: 'failure',
+            txId,
+            correlationId,
+            gateway: this.activeGateway?.host,
+            reason: reason ?? 'load-error',
+        }, 'Gateway failure reported, finding new gateway', {
             failedHost: this.activeGateway?.host,
             txId,
             reason: reason ?? 'load-error',
-        });
+        }, LogLevel.WARN);
 
         // Capture failed host before clearing active gateway
         const failedHost = this.activeGateway?.host ?? excludeHost;
@@ -1053,14 +1218,15 @@ export class ArweaveGatewayManager {
 
         // Retry with same order: arweave.net → Wayfinder → fallbacks.
         // Each helper now returns {kind, url} | null — extract .url.
+        const failureMeta: GatewayProbeMeta = { correlationId, phase: 'failure', chainStart: failureStart };
         const arweaveNet = this.gateways.find(g => g.host === 'arweave.net' && g.host !== failedHost);
         if (arweaveNet) {
-            const result = await this.checkAndSetGateway(url, txId, pathSuffix, arweaveNet, signal);
+            const result = await this.checkAndSetGateway(url, txId, pathSuffix, arweaveNet, signal, failureMeta);
             if (result) return result.url;
         }
 
         if (this.wayfinder) {
-            const wayfinderResult = await this.tryWayfinder(txId, pathSuffix, signal);
+            const wayfinderResult = await this.tryWayfinder(txId, pathSuffix, signal, null, failureMeta);
             if (wayfinderResult) return wayfinderResult.url;
         }
 
@@ -1069,10 +1235,15 @@ export class ArweaveGatewayManager {
         if (failedHost) {
             this.gateways = this.gateways.filter(g => g.host !== failedHost);
         }
-        const fallbackResult = await this.tryFallbackGateways(url, txId, pathSuffix, signal);
+        const fallbackResult = await this.tryFallbackGateways(url, txId, pathSuffix, signal, null, failureMeta);
         this.gateways = origGateways;
         if (fallbackResult) return fallbackResult.url;
 
+        // Close the failure walk — every correlationId must end in a terminal
+        // (resolved or exhausted) or correlation-scoped consumers stay open forever.
+        this.emitStatus('gateway.chain.exhausted', 'failure', 'Gateway failure retry exhausted, returning original URL', {
+            txId, correlationId, gatewayUrl: url, result: 'failed', totalElapsedMs: Date.now() - failureStart,
+        }, LogLevel.WARN);
         return url;
     }
 
@@ -1127,30 +1298,46 @@ export class ArweaveGatewayManager {
      * and never tried alternates. Surfacing the distinction lets the chain prefer verified
      * results and use 'maybe' only as a fallback.
      */
-    private async checkAndSetGateway(url: string, txId: string, pathSuffix: string, gateway: GatewayConfig, signal?: AbortSignal): Promise<{ kind: 'verified' | 'maybe'; url: string } | null> {
+    private async checkAndSetGateway(
+        url: string,
+        txId: string,
+        pathSuffix: string,
+        gateway: GatewayConfig,
+        signal?: AbortSignal,
+        meta?: GatewayProbeMeta,
+    ): Promise<{ kind: 'verified' | 'maybe'; url: string } | null> {
         if (signal?.aborted) return null;
 
-        const result = await this.checkGateway(txId, gateway, pathSuffix, signal);
+        const result = await this.checkGateway(txId, gateway, pathSuffix, signal, meta);
         if (result === true) {
             this.setActiveGateway(gateway, txId);
             const workingUrl = constructGatewayUrl(txId, gateway, pathSuffix);
-            this.logger.info('Gateway resolved', {
+            // Single terminal resolved event per walk — step and probe events
+            // lead up to this, so sinks get one success instead of several.
+            this.emitStatus('gateway.chain.resolved', meta?.phase ?? 'chain', 'Gateway resolved', {
                 txId,
+                correlationId: meta?.correlationId,
                 gateway: gateway.host,
-                pathSuffix,
-                workingUrl,
+                gatewayUrl: workingUrl,
+                step: meta?.step,
+                stepTotal: meta?.stepTotal,
+                result: 'verified',
+                totalElapsedMs: meta?.chainStart !== undefined ? Date.now() - meta.chainStart : undefined,
             });
             return { kind: 'verified', url: workingUrl };
         }
         if (result === 'maybe') {
             // no-cors says server responded but we can't confirm — return URL without caching
             const workingUrl = constructGatewayUrl(txId, gateway, pathSuffix);
-            this.logger.info('Gateway maybe resolved (no-cors)', {
+            this.emitStatus('gateway.chain.step', meta?.phase ?? 'chain', 'Gateway maybe resolved (no-cors)', {
                 txId,
+                correlationId: meta?.correlationId,
                 gateway: gateway.host,
-                pathSuffix,
-                workingUrl,
-            });
+                gatewayUrl: workingUrl,
+                step: meta?.step,
+                stepTotal: meta?.stepTotal,
+                result: 'maybe',
+            }, LogLevel.DEBUG);
             return { kind: 'maybe', url: workingUrl };
         }
 
@@ -1161,7 +1348,14 @@ export class ArweaveGatewayManager {
      * Try remaining fallback gateways (everything except arweave.net) in parallel.
      * Returns the URL of the first gateway that responds, or null if all fail.
      */
-    private async tryFallbackGateways(url: string, txId: string, pathSuffix: string, signal?: AbortSignal, excludeHost?: string | null): Promise<{ kind: 'verified' | 'maybe'; url: string } | null> {
+    private async tryFallbackGateways(
+        url: string,
+        txId: string,
+        pathSuffix: string,
+        signal?: AbortSignal,
+        excludeHost?: string | null,
+        meta?: GatewayProbeMeta,
+    ): Promise<{ kind: 'verified' | 'maybe'; url: string } | null> {
         this.missCount++;
 
         const HEALTHY_FAILURE_THRESHOLD = 0.70;
@@ -1180,6 +1374,20 @@ export class ArweaveGatewayManager {
 
         if (signal?.aborted) return null;
         if (gatewaysToTry.length === 0) return null;
+
+        const correlationId = meta?.correlationId;
+        // Thread the caller's walk context through — failure walks re-use this
+        // helper with phase 'failure' and no step, so never fabricate chain steps.
+        const phase = meta?.phase ?? 'fallback';
+        const step = meta?.step;
+        const stepTotal = meta?.stepTotal;
+        const stepLabel = step !== undefined ? `Step ${step} (fallbacks): ` : '';
+        this.emitStatus('gateway.chain.step', phase, `[gateway] ${stepLabel}checking ${gatewaysToTry.length} gateways in parallel`, {
+            step, stepTotal, txId, correlationId,
+            attemptTotal: gatewaysToTry.length,
+            reason: 'parallel-race',
+            totalElapsedMs: meta?.chainStart !== undefined ? Date.now() - meta.chainStart : undefined,
+        }, LogLevel.DEBUG);
 
         // Promise.any returns the first fulfilled — but Promise.any's "fulfilled"
         // includes both verified AND maybe results (both are truthy in the inner
@@ -1201,30 +1409,37 @@ export class ArweaveGatewayManager {
                 // results across all gateways, then prefer verified. Promise.any
                 // would return whatever resolved first regardless of kind.
                 const settled = await Promise.allSettled(
-                    gateways.map(async (gateway): Promise<{ kind: 'verified' | 'maybe'; url: string }> => {
-                        const checkResult = await this.checkGateway(txId, gateway, pathSuffix, controller.signal);
+                    gateways.map(async (gateway, gatewayIndex): Promise<{ kind: 'verified' | 'maybe'; url: string }> => {
+                        const checkResult = await this.checkGateway(txId, gateway, pathSuffix, controller.signal, {
+                            correlationId,
+                            phase,
+                            step,
+                            stepTotal,
+                            attempt: gatewayIndex + 1,
+                            attemptTotal: gateways.length,
+                            chainStart: meta?.chainStart,
+                        });
                         if (!checkResult) throw new Error(`Gateway ${gateway.host} failed check`);
                         const workingUrl = constructGatewayUrl(txId, gateway, pathSuffix);
                         const kind = checkResult === true ? 'verified' as const : 'maybe' as const;
                         // Side effects: only the FIRST resolution sets active gateway,
-                        // and only for verified results.
+                        // and only for verified results. The winner's step/resolved
+                        // line is emitted by the caller — stay quiet here to keep
+                        // one terminal event per walk.
                         if (!resolved) {
                             resolved = true;
                             if (kind === 'verified') {
                                 this.setActiveGateway(gateway, txId);
-                                this.logger.info('Gateway resolved via fallback', {
-                                    txId,
-                                    gateway: gateway.host,
-                                    pathSuffix,
-                                    workingUrl,
-                                });
+                                this.emitStatus('gateway.chain.resolved', phase, 'Gateway resolved via fallback', {
+                                    txId, correlationId, gateway: gateway.host, gatewayUrl: workingUrl,
+                                    step, stepTotal, result: 'verified',
+                                    totalElapsedMs: meta?.chainStart !== undefined ? Date.now() - meta.chainStart : undefined,
+                                }, LogLevel.DEBUG);
                             } else {
-                                this.logger.info('Gateway maybe resolved via fallback (no-cors)', {
-                                    txId,
-                                    gateway: gateway.host,
-                                    pathSuffix,
-                                    workingUrl,
-                                });
+                                this.emitStatus('gateway.chain.step', phase, 'Gateway maybe resolved via fallback (no-cors)', {
+                                    txId, correlationId, gateway: gateway.host, gatewayUrl: workingUrl,
+                                    step, stepTotal, result: 'maybe',
+                                }, LogLevel.DEBUG);
                             }
                         }
                         return { kind, url: workingUrl };
@@ -1262,7 +1477,14 @@ export class ArweaveGatewayManager {
             const excludedHosts = fallbackGateways
                 .filter(g => !healthyGateways.some(h => h.host === g.host))
                 .map(g => g.host);
-            this.logger.debug('Healthy gateways exhausted, retrying with previously unhealthy', { excludedHosts });
+            // Promoted from debug to info: "all healthy gateways exhausted" is a
+            // status-worthy state — sinks and console both see it now.
+            this.emitStatus('gateway.chain.step', phase, 'Healthy gateways exhausted, retrying with previously unhealthy', {
+                step, stepTotal, txId, correlationId,
+                reason: 'unhealthy-retry',
+                attemptTotal: fallbackGateways.length,
+                totalElapsedMs: meta?.chainStart !== undefined ? Date.now() - meta.chainStart : undefined,
+            }, LogLevel.INFO, { excludedHosts });
             const fullResult = await tryGateways(fallbackGateways);
             if (fullResult) {
                 // Prefer the full-set result if it's verified, or if we had no result before.
@@ -1296,8 +1518,14 @@ export class ArweaveGatewayManager {
         }
     }
 
-    private async tryWayfinder(txId: string, pathSuffix: string, signal?: AbortSignal, excludeHost?: string | null): Promise<{ kind: 'verified' | 'maybe'; url: string } | null> {
+    private async tryWayfinder(txId: string, pathSuffix: string, signal?: AbortSignal, excludeHost?: string | null, meta?: GatewayProbeMeta): Promise<{ kind: 'verified' | 'maybe'; url: string } | null> {
         if (!this.wayfinder) return null;
+        const correlationId = meta?.correlationId;
+        // Thread the caller's walk context — failure walks carry phase 'failure'
+        // and no step, so never fabricate "Step 4 of 5" for them.
+        const phase = meta?.phase ?? 'wayfinder';
+        const step = meta?.step;
+        const stepTotal = meta?.stepTotal;
 
         // Best 'maybe' result seen so far. Like in tryFallbackGateways, we
         // prefer verified results and keep walking past 'maybe's — only
@@ -1343,19 +1571,28 @@ export class ArweaveGatewayManager {
                     priority: 0,
                 };
 
-                const checkResult = await this.checkGateway(txId, wayfinderGateway, pathSuffix, signal);
+                const checkResult = await this.checkGateway(txId, wayfinderGateway, pathSuffix, signal, {
+                    correlationId,
+                    phase,
+                    step,
+                    stepTotal,
+                    chainStart: meta?.chainStart,
+                });
                 if (checkResult) {
                     const workingUrl = constructGatewayUrl(txId, wayfinderGateway, pathSuffix);
                     const kind = checkResult === true ? 'verified' as const : 'maybe' as const;
                     if (kind === 'verified') {
                         this.setActiveGateway(wayfinderGateway, txId);
-                        this.logger.info('Gateway resolved via Wayfinder (first pick)', {
-                            txId, gateway: wayfinderHost, pathSuffix, workingUrl,
-                        });
+                        this.emitStatus('gateway.chain.resolved', phase, 'Gateway resolved via Wayfinder (first pick)', {
+                            txId, correlationId, gateway: wayfinderHost, gatewayUrl: workingUrl,
+                            step, stepTotal, result: 'verified',
+                            totalElapsedMs: meta?.chainStart !== undefined ? Date.now() - meta.chainStart : undefined,
+                        }, LogLevel.DEBUG);
                     } else {
-                        this.logger.info('Gateway maybe resolved via Wayfinder (first pick, no-cors)', {
-                            txId, gateway: wayfinderHost, pathSuffix, workingUrl,
-                        });
+                        this.emitStatus('gateway.chain.step', phase, 'Gateway maybe resolved via Wayfinder (first pick, no-cors)', {
+                            txId, correlationId, gateway: wayfinderHost, gatewayUrl: workingUrl,
+                            step, stepTotal, result: 'maybe',
+                        }, LogLevel.DEBUG);
                     }
                     // Don't return immediately on 'maybe' — keep walking the
                     // ranked list to find a verified result.
@@ -1387,13 +1624,15 @@ export class ArweaveGatewayManager {
             .filter(g => !failedHosts.has(g.hostname))
             .slice(0, MAX_WALK_DEPTH);
 
-        this.logger.debug('Walking Wayfinder ranked list', {
-            txId,
-            poolSize: rankedGateways.length,
-            walkSize: toWalk.length,
-        });
+        const walkLabel = step !== undefined ? `Step ${step} (wayfinder): ` : '';
+        this.emitStatus('gateway.chain.step', phase, `[gateway] ${walkLabel}walking ${toWalk.length} ranked gateways`, {
+            step, stepTotal, txId, correlationId,
+            attemptTotal: toWalk.length,
+            reason: 'ranked-walk',
+            totalElapsedMs: meta?.chainStart !== undefined ? Date.now() - meta.chainStart : undefined,
+        }, LogLevel.DEBUG);
 
-        for (const gatewayUrl of toWalk) {
+        for (const [walkIndex, gatewayUrl] of toWalk.entries()) {
             if (signal?.aborted) return bestMaybe;
 
             const candidate: GatewayConfig = {
@@ -1402,21 +1641,34 @@ export class ArweaveGatewayManager {
                 priority: 0,
             };
 
-            const checkResult = await this.checkGateway(txId, candidate, pathSuffix, signal);
+            const checkResult = await this.checkGateway(txId, candidate, pathSuffix, signal, {
+                correlationId,
+                phase,
+                step,
+                stepTotal,
+                attempt: walkIndex + 1,
+                attemptTotal: toWalk.length,
+                chainStart: meta?.chainStart,
+            });
             if (checkResult) {
                 const workingUrl = constructGatewayUrl(txId, candidate, pathSuffix);
                 const kind = checkResult === true ? 'verified' as const : 'maybe' as const;
                 if (kind === 'verified') {
                     this.setActiveGateway(candidate, txId);
-                    this.logger.info('Gateway resolved via Wayfinder ranked walk', {
-                        txId, gateway: candidate.host, pathSuffix, workingUrl,
-                    });
+                    this.emitStatus('gateway.chain.resolved', phase, 'Gateway resolved via Wayfinder ranked walk', {
+                        txId, correlationId, gateway: candidate.host, gatewayUrl: workingUrl,
+                        step, stepTotal, result: 'verified',
+                        attempt: walkIndex + 1, attemptTotal: toWalk.length,
+                        totalElapsedMs: meta?.chainStart !== undefined ? Date.now() - meta.chainStart : undefined,
+                    }, LogLevel.DEBUG);
                     // Verified — stop walking, return immediately.
                     return { kind, url: workingUrl };
                 }
-                this.logger.info('Gateway maybe resolved via Wayfinder ranked walk (no-cors)', {
-                    txId, gateway: candidate.host, pathSuffix, workingUrl,
-                });
+                this.emitStatus('gateway.chain.step', phase, 'Gateway maybe resolved via Wayfinder ranked walk (no-cors)', {
+                    txId, correlationId, gateway: candidate.host, gatewayUrl: workingUrl,
+                    step, stepTotal, result: 'maybe',
+                    attempt: walkIndex + 1, attemptTotal: toWalk.length,
+                }, LogLevel.DEBUG);
                 bestMaybe ??= { kind, url: workingUrl };
                 // Continue walking — maybe a verified result is just around the corner.
             }
@@ -1564,16 +1816,36 @@ export class ArweaveGatewayManager {
      *
      * Uses a HEAD request with timeout to check if the gateway responds.
      * Handles CORS errors gracefully (treats as failure, not exception).
+     * Emits gateway.probe.start / gateway.probe.result status events; pass
+     * `meta` from a resolution walk so probes carry step/attempt/correlation.
      *
      * @param txId - The transaction ID to check
      * @param gateway - The gateway to check
      * @param pathSuffix - Optional path suffix to append after txId
      * @param signal - Optional external AbortSignal to cancel the check
+     * @param meta - Optional chain position/correlation for status events
      * @returns true if the gateway can serve the transaction
      */
-    async checkGateway(txId: string, gateway: GatewayConfig, pathSuffix: string = '', signal?: AbortSignal): Promise<boolean | 'maybe'> {
+    async checkGateway(txId: string, gateway: GatewayConfig, pathSuffix: string = '', signal?: AbortSignal, meta?: GatewayProbeMeta): Promise<boolean | 'maybe'> {
         const url = constructGatewayUrl(txId, gateway, pathSuffix);
         const startTime = Date.now();
+        const phase = meta?.phase ?? 'probe';
+
+        const probeDetail = () => ({
+            txId,
+            correlationId: meta?.correlationId,
+            gateway: gateway.host,
+            gatewayUrl: url,
+            step: meta?.step,
+            stepTotal: meta?.stepTotal,
+            attempt: meta?.attempt,
+            attemptTotal: meta?.attemptTotal,
+        });
+
+        this.emitStatus('gateway.probe.start', phase, `[gateway] Probing ${gateway.host}${meta?.attempt != null && meta?.attemptTotal != null ? ` (${meta.attempt}/${meta.attemptTotal})` : ''}`, {
+            ...probeDetail(),
+            totalElapsedMs: meta?.chainStart !== undefined ? Date.now() - meta.chainStart : undefined,
+        }, LogLevel.DEBUG);
 
         // Create AbortController for timeout, combined with external signal if provided
         const controller = new AbortController();
@@ -1601,6 +1873,13 @@ export class ArweaveGatewayManager {
             // Record response for health tracking
             this.recordGatewayResponse(gateway.host, responseTime, success);
 
+            this.emitStatus('gateway.probe.result', phase, `[gateway] ${gateway.host} probe ${success ? 'verified' : 'failed'}`, {
+                ...probeDetail(),
+                elapsedMs: responseTime,
+                totalElapsedMs: meta?.chainStart !== undefined ? Date.now() - meta.chainStart : undefined,
+                result: success ? ('verified' as const) : ('failed' as const),
+            }, LogLevel.DEBUG);
+
             return success;
         } catch (error) {
             clearTimeout(timeoutId);
@@ -1613,11 +1892,13 @@ export class ArweaveGatewayManager {
             // Handle timeout or external abort
             if (error instanceof Error && error.name === 'AbortError') {
                 const wasExternal = signal?.aborted;
-                this.logger.debug(wasExternal ? 'Gateway check aborted by external signal' : 'Gateway check timed out', {
-                    txId,
-                    gateway: gateway.host,
-                    timeout: this.timeout,
-                });
+                this.emitStatus('gateway.probe.result', phase, wasExternal ? 'Gateway check aborted by external signal' : 'Gateway check timed out', {
+                    ...probeDetail(),
+                    elapsedMs: responseTime,
+                    totalElapsedMs: meta?.chainStart !== undefined ? Date.now() - meta.chainStart : undefined,
+                    result: 'failed',
+                    reason: wasExternal ? 'external-abort' : 'timeout',
+                }, LogLevel.DEBUG);
                 return false;
             }
 
@@ -1628,11 +1909,16 @@ export class ArweaveGatewayManager {
             // We can't read the status, so we return 'maybe' instead of true — the caller
             // decides whether to cache (no) or return the URL for external verification (yes).
             if (error instanceof TypeError) {
-                this.logger.debug('HEAD failed (likely CORS), retrying with no-cors', {
-                    txId,
-                    gateway: gateway.host,
-                    error: error.message,
-                });
+                this.emitStatus('gateway.probe.result', phase, 'HEAD failed (likely CORS), retrying with no-cors', {
+                    ...probeDetail(),
+                    elapsedMs: responseTime,
+                    result: 'failed',
+                    reason: 'cors-retry',
+                }, LogLevel.DEBUG);
+                // The HEAD timer was already cleared above — arm a fresh one so a
+                // hung no-cors GET can't stall the probe past its timeout budget.
+                signal?.addEventListener('abort', onExternalAbort, { once: true });
+                const retryTimeoutId = setTimeout(() => controller.abort(), this.timeout);
                 try {
                     await fetch(url, {
                         method: 'GET',
@@ -1640,21 +1926,40 @@ export class ArweaveGatewayManager {
                         signal: controller.signal,
                     });
                     // Didn't throw — server responded (but we can't read status)
-                    const responseTime = Date.now() - startTime;
-                    this.recordGatewayResponse(gateway.host, responseTime, true);
+                    const retryResponseTime = Date.now() - startTime;
+                    this.recordGatewayResponse(gateway.host, retryResponseTime, true);
+                    this.emitStatus('gateway.probe.result', phase, `[gateway] ${gateway.host} probe maybe (no-cors)`, {
+                        ...probeDetail(),
+                        elapsedMs: retryResponseTime,
+                        totalElapsedMs: meta?.chainStart !== undefined ? Date.now() - meta.chainStart : undefined,
+                        result: 'maybe',
+                        reason: 'cors-retry',
+                    }, LogLevel.DEBUG);
                     return 'maybe';
                 } catch {
-                    const responseTime = Date.now() - startTime;
-                    this.recordGatewayResponse(gateway.host, responseTime, false);
+                    const retryResponseTime = Date.now() - startTime;
+                    this.recordGatewayResponse(gateway.host, retryResponseTime, false);
+                    this.emitStatus('gateway.probe.result', phase, `[gateway] ${gateway.host} probe failed (no-cors)`, {
+                        ...probeDetail(),
+                        elapsedMs: retryResponseTime,
+                        totalElapsedMs: meta?.chainStart !== undefined ? Date.now() - meta.chainStart : undefined,
+                        result: 'failed',
+                        reason: 'cors-retry',
+                    }, LogLevel.DEBUG);
                     return false;
+                } finally {
+                    clearTimeout(retryTimeoutId);
+                    signal?.removeEventListener('abort', onExternalAbort);
                 }
             }
 
-            this.logger.debug('Gateway HEAD failed', {
-                txId,
-                gateway: gateway.host,
-                error: error instanceof Error ? error.message : String(error),
-            });
+            this.emitStatus('gateway.probe.result', phase, 'Gateway HEAD failed', {
+                ...probeDetail(),
+                elapsedMs: responseTime,
+                totalElapsedMs: meta?.chainStart !== undefined ? Date.now() - meta.chainStart : undefined,
+                result: 'failed',
+                reason: 'error',
+            }, LogLevel.DEBUG);
 
             return false;
         }
@@ -1752,8 +2057,15 @@ export class ArweaveGatewayManager {
         let skipped = 0;
 
         // Process URLs in batches for controlled concurrency
+        const batchCount = Math.ceil(urls.length / concurrency);
+        let batchIndex = 0;
         for (let i = 0; i < urls.length; i += concurrency) {
             const batch = urls.slice(i, i + concurrency);
+            batchIndex++;
+            this.emitStatus('gateway.prefetch', 'prefetch', `[gateway] Prefetching batch ${batchIndex}/${batchCount} (${batch.length} URLs)`, {
+                attempt: batchIndex,
+                attemptTotal: batchCount,
+            }, LogLevel.DEBUG);
 
             const batchResults = await Promise.allSettled(
                 batch.map(async (url): Promise<PrefetchResultEntry> => {

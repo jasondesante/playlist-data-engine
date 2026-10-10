@@ -39,7 +39,24 @@ export {
     type HealthCheckResult,
     type HealthCheckOptions,
     type GatewayDiagnostics,
+    type GatewayEventKind,
+    type GatewayProbeMeta,
 } from './utils/arweaveGatewayManager.js';
+
+// Logger + status-event types (TF-free). Gateway consumers need these to
+// subscribe to the manager's status events — without this re-export the
+// Logger lives only behind the main entry, which drags in TensorFlow.
+export {
+    Logger,
+    createLogger,
+    LogLevel,
+} from './utils/logger.js';
+export type {
+    LogEntry,
+    LoggerConfig,
+    LogSink,
+    StatusEvent,
+} from './utils/logger.js';
 
 // IPFS URL utilities (pure functions, zero external deps)
 export {

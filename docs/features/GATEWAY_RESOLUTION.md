@@ -704,6 +704,35 @@ For the full list, see `KNOWN_IPFS_GATEWAY_HOSTS` in [src/utils/ipfsUtils.ts](..
 
 ---
 
+## Status Events
+
+Every step the resolution pipeline logs is also emitted as a structured status event, so a front end can display live progress ("checking gateway 3 of 7… (2.1s)") instead of dead air during slow resolves.
+
+Events ride the `Logger` (`utils/logger.ts`). A sink receives every level-gated log entry from its filtered contexts, plus status events regardless of level. Entries carrying progress have `.event` as a `StatusEvent`: `kind` (see `GatewayEventKind` — `gateway.chain.start`, `gateway.probe.start`, `gateway.probe.result`, `gateway.chain.step`, `gateway.chain.resolved`, `gateway.chain.exhausted`, `gateway.rotation`, `gateway.failure-retry`, `gateway.cache-hit`, `gateway.prefetch`, …), plus `phase`, `step`/`stepTotal`, `gateway`, `gatewayUrl`, `txId`, `correlationId` (one per resolution walk — concurrent resolves dedupe per txId), `attempt`/`attemptTotal`, `elapsedMs`/`totalElapsedMs`, `result`, `reason`. Ordinary log entries arrive with `.event` undefined — guard for it.
+
+Subscribing:
+
+```ts
+import { Logger } from 'playlist-data-engine/gateway';
+
+const unsubscribe = Logger.addSink({
+    contexts: ['ArweaveGateway', 'ModelCache'],
+    replay: true, // replay the last 100 event-bearing entries that fired before attach
+    handle: (entry) => {
+        if (entry.event) updateUi(entry.event, entry.message);
+    },
+});
+```
+
+Contract details:
+
+- Status events reach sinks **regardless of log level** — probe timeouts and CORS retries are debug-gated on console but always drive sinks. Console output keeps its standard level gate, so with no sinks registered nothing changes.
+- The manager is a module-import singleton, so init/wayfinder-ready events fire before any subscriber; `Logger.getEventHistory()` and `replay: true` cover late attach, and `manager.isWayfinderReady` replaces a missed ready event.
+- `Logger.reset()` clears sinks and history. `Logger.configure({ customHandler })` still replaces console output for consumers that want a full take-over; sinks are the additive alternative.
+- `modelCache` emits the same way under context `'ModelCache'` with `kind: 'model.fetch'` (reasons: `download-start`, `cache-hit`, `cached`, `shard-retry`, `re-resolve-retry`), so model download retries are visible on the same feed — include `'ModelCache'` in the sink's contexts (or omit `contexts`) to receive those.
+
+---
+
 ## Known Shortcomings & Future Improvements
 
 These are issues and improvement opportunities identified in the current implementation. None are bugs — the system works correctly as-is — but each represents an area where the implementation could be improved in a future iteration.

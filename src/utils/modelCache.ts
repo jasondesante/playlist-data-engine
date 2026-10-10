@@ -12,6 +12,29 @@
 
 import localforage from 'localforage';
 import type * as tf from '@tensorflow/tfjs';
+import { Logger, LogLevel, type StatusEvent } from './logger.js';
+
+const logger = Logger.for('ModelCache');
+
+/**
+ * Emit a model-fetch status event so sinks see download/retry progress.
+ * The console leg runs through the level gate — pass `consoleData` to keep
+ * the console payload identical to the plain logger call this replaces.
+ */
+function emitModelStatus(
+    reason: NonNullable<StatusEvent['reason']>,
+    message: string,
+    detail: { modelUrl: string; attempt?: number; attemptTotal?: number; delayMs?: number },
+    level: LogLevel = LogLevel.INFO,
+    consoleData?: unknown,
+): void {
+    logger.status({
+        kind: 'model.fetch',
+        phase: 'model',
+        reason,
+        ...detail,
+    }, message, consoleData, level);
+}
 
 // ============================================================================
 // Types
@@ -78,10 +101,12 @@ async function fetchUrlWithRetry(
             if (attempt === maxRetries - 1) throw error;
 
             const delay = baseDelayMs * Math.pow(2, attempt);
-            console.warn(
-                `[ModelCache] Fetch failed (attempt ${attempt + 1}/${maxRetries}), retrying in ${delay}ms...`,
-                { url, error: String(error) }
-            );
+            emitModelStatus('shard-retry', `Fetch failed (attempt ${attempt + 1}/${maxRetries}), retrying in ${delay}ms...`, {
+                modelUrl: url,
+                attempt: attempt + 1,
+                attemptTotal: maxRetries,
+                delayMs: delay,
+            }, LogLevel.WARN, { url, error: String(error) });
             await new Promise(resolve => setTimeout(resolve, delay));
         }
     }
@@ -155,11 +180,12 @@ async function fetchModelArtifacts(
             invalidateUrlCache?.(modelUrl);
 
             const delay = baseDelayMs * Math.pow(2, attempt);
-            console.warn(
-                `[ModelCache] Model fetch failed (attempt ${attempt + 1}/${maxRetries}), ` +
-                `re-resolving and retrying in ${delay}ms...`,
-                { url: modelUrl, resolvedUrl, error: String(error) }
-            );
+            emitModelStatus('re-resolve-retry', `Model fetch failed (attempt ${attempt + 1}/${maxRetries}), re-resolving and retrying in ${delay}ms...`, {
+                modelUrl,
+                attempt: attempt + 1,
+                attemptTotal: maxRetries,
+                delayMs: delay,
+            }, LogLevel.WARN, { url: modelUrl, resolvedUrl, error: String(error) });
             await new Promise(resolve => setTimeout(resolve, delay));
         }
     }
@@ -341,17 +367,17 @@ export class ModelCache {
         try {
             const entry = await this.store.getItem<ModelCacheEntry>(key);
             if (entry) {
-                console.info(`[ModelCache] Loading model from cache: ${modelUrl}`);
+                emitModelStatus('cache-hit', `Loading model from cache: ${modelUrl}`, { modelUrl });
                 const model = await tfModule.loadGraphModel(createIOHandler(tfModule, entry));
                 return model;
             }
         } catch (error) {
-            console.warn('[ModelCache] Cache load failed, clearing and re-fetching:', error);
+            logger.warn('Cache load failed, clearing and re-fetching:', error);
             await this.store.removeItem(key);
         }
 
         // Cache miss — fetch, cache, then load
-        console.info(`[ModelCache] Downloading model: ${modelUrl}`);
+        emitModelStatus('download-start', `Downloading model: ${modelUrl}`, { modelUrl });
         const entry = await fetchModelArtifacts(
             modelUrl,
             options.resolveUrl,
@@ -362,7 +388,7 @@ export class ModelCache {
 
         // Save to cache before loading (so we don't lose the download if load fails)
         await this.store.setItem(key, entry);
-        console.info(`[ModelCache] Model cached: ${modelUrl} (${Object.keys(entry.weights).length} shards)`);
+        emitModelStatus('cached', `Model cached: ${modelUrl} (${Object.keys(entry.weights).length} shards)`, { modelUrl });
 
         return tfModule.loadGraphModel(createIOHandler(tfModule, entry));
     }
@@ -387,7 +413,7 @@ export class ModelCache {
         // Ensure model is cached (fetch if needed)
         const entry = await this.store.getItem<ModelCacheEntry>(key);
         if (!entry) {
-            console.info(`[ModelCache] Downloading model for Essentia: ${modelUrl}`);
+            emitModelStatus('download-start', `Downloading model for Essentia: ${modelUrl}`, { modelUrl });
             const fetched = await fetchModelArtifacts(
                 modelUrl,
                 options.resolveUrl,
@@ -396,9 +422,9 @@ export class ModelCache {
                 options.baseDelayMs ?? 1000
             );
             await this.store.setItem(key, fetched);
-            console.info(`[ModelCache] Model cached: ${modelUrl} (${Object.keys(fetched.weights).length} shards)`);
+            emitModelStatus('cached', `Model cached: ${modelUrl} (${Object.keys(fetched.weights).length} shards)`, { modelUrl });
         } else {
-            console.info(`[ModelCache] Loading Essentia model from cache: ${modelUrl}`);
+            emitModelStatus('cache-hit', `Loading Essentia model from cache: ${modelUrl}`, { modelUrl });
         }
 
         // Register this cached:// URL in the module-level registry
@@ -413,10 +439,10 @@ export class ModelCache {
     async clear(modelUrl?: string): Promise<void> {
         if (modelUrl) {
             await this.store.removeItem(makeKey(modelUrl));
-            console.info(`[ModelCache] Cleared cache for: ${modelUrl}`);
+            logger.info(`Cleared cache for: ${modelUrl}`);
         } else {
             await this.store.clear();
-            console.info('[ModelCache] Cleared all cached models');
+            logger.info('Cleared all cached models');
         }
     }
 

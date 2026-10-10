@@ -1273,7 +1273,11 @@ Centralized logging utility with configurable log levels and diagnostic modes.
 | `Logger.setLevel(level)` | `void` | Set minimum log level to display (default: INFO) |
 | `Logger.getLevel()` | `LogLevel` | Get current global log level |
 | `Logger.configure(config)` | `void` | Configure logger globally (level, timestamps, handler) |
-| `Logger.reset()` | `void` | Reset to default configuration |
+| `Logger.addSink(sink)` | `() => void` | Register a `LogSink` that receives entries additively (console unaffected); returns unsubscribe. `sink.contexts` filters by context, `sink.replay` replays buffered status events on attach |
+| `Logger.removeSink(sink)` | `void` | Remove a previously registered sink |
+| `Logger.getEventHistory()` | `LogEntry[]` | Snapshot of the last 100 status-event entries — covers events that fired before any sink attached |
+| `status(event, message, data?, level?)` | `void` | Emit a structured `StatusEvent`: always reaches sinks regardless of level, console leg keeps the standard level gate |
+| `Logger.reset()` | `void` | Reset to default configuration (also clears sinks and event history) |
 | `Logger.enableVerbose()` | `void` | Enable verbose mode (sets level to DEBUG) |
 | `Logger.disableVerbose()` | `void` | Disable verbose mode (sets level to INFO) |
 | `Logger.setVerbose(enabled)` | `void` | Set verbose mode on/off |
@@ -1282,14 +1286,18 @@ Centralized logging utility with configurable log levels and diagnostic modes.
 | `Logger.disableDiagnosticMode()` | `void` | Disable diagnostic mode |
 | `Logger.isDiagnosticMode()` | `boolean` | Check if diagnostic mode is enabled |
 
+Status events (`logger.status()` / sinks) carry structured progress from long-running flows — the Arweave gateway resolution chain emits every step (`gateway.probe.start`, `gateway.probe.result`, `gateway.chain.resolved`, …) and model fetching emits `model.fetch`. See [GATEWAY_RESOLUTION.md](features/GATEWAY_RESOLUTION.md) → Status Events for the subscription example and the full event contract.
+
 **Types**
 
 *Location:* *[src/utils/logger.ts](src/utils/logger.ts)*
 
 | Type | Description |
 |------|-------------|
-| `LogEntry` | Single log entry structure (timestamp, level, context, message, data) |
+| `LogEntry` | Single log entry structure (timestamp, level, context, message, data, optional `event`) |
 | `LoggerConfig` | Configuration options (level, includeTimestamp, includeContext, customHandler) |
+| `StatusEvent` | Structured progress event carried on `LogEntry.event` — kind, phase, step/stepTotal, gateway, gatewayUrl, txId, correlationId, attempt/attemptTotal, elapsedMs/totalElapsedMs, result, reason, modelUrl, delayMs |
+| `LogSink` | Sink registration for `Logger.addSink` — optional id/contexts/replay plus `handle(entry)` |
 
 #### ImageValidator
 

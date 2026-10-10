@@ -25,6 +25,7 @@ import {
     parseArweaveUrl,
     isLegacyRedirectHost,
 } from '../../src/utils/arweaveUtils';
+import { Logger, type LogEntry } from '../../src/utils/logger';
 
 // Mock Wayfinder
 const mockWayfinderInstance = {
@@ -2118,5 +2119,168 @@ describe('Legacy redirect host handling (gateway.irys.xyz)', () => {
         const result = await manager.resolveUrl(IRYS_URL_WITH_PATH);
         expect(result).toContain('arweave.net/' + VALID_TX_ID + '/model.json');
         expect(result).not.toContain('irys.xyz');
+    });
+});
+
+// ============================================================
+// Status event emission (Logger sinks)
+//
+// These tests stub checkGateway so no fetch happens — they assert the
+// event stream a front-end sink receives, not network behavior.
+// ============================================================
+
+describe('Status event emission', () => {
+    let events: LogEntry[];
+    let unsubscribe: () => void;
+
+    beforeEach(() => {
+        events = [];
+        unsubscribe = Logger.addSink({ contexts: ['ArweaveGateway'], handle: e => events.push(e) });
+    });
+
+    afterEach(() => {
+        unsubscribe();
+    });
+
+    const kinds = () => events.map(e => e.event?.kind);
+
+    it('emits chain → probe → resolved with correlation ids for a verified step', async () => {
+        const manager = new ArweaveGatewayManager({ gateways: CUSTOM_GATEWAYS });
+        // Step 0 (arweave.net in the URL) fails; the fallback race verifies
+        mockFetch.mockImplementation(async (url: string) => {
+            if (url.includes('arweave.net')) {
+                return new Response(null, { status: 500 });
+            }
+            return new Response(null, { status: 200 });
+        });
+
+        const result = await manager.resolveUrl(ARWEAVE_URL);
+
+        expect(result).toContain('example.com');
+        expect(kinds()).toContain('gateway.chain.start');
+        expect(kinds()).toContain('gateway.probe.start');
+        expect(kinds()).toContain('gateway.probe.result');
+
+        const resolved = events.filter(e => e.event?.kind === 'gateway.chain.resolved');
+        expect(resolved).toHaveLength(1);
+        expect(resolved[0].event?.result).toBe('verified');
+        expect(resolved[0].event?.step).toBe(3);
+        expect(resolved[0].event?.correlationId).toBeTruthy();
+
+        const probeResult = events.find(e => e.event?.kind === 'gateway.probe.result');
+        expect(probeResult?.event?.correlationId).toBe(resolved[0].event?.correlationId);
+        expect(probeResult?.event?.elapsedMs).toBeGreaterThanOrEqual(0);
+    });
+
+    it('emits per-candidate probe events with attempt counters on the wayfinder walk', async () => {
+        const manager = new ArweaveGatewayManager({
+            gateways: CUSTOM_GATEWAYS,
+            solanaRpcUrl: 'https://custom-rpc.example.com',
+        });
+        await vi.advanceTimersByTimeAsync(0);
+        (manager as any).wayfinder = mockWayfinderInstance;
+        (manager as any).wayfinderGatewaysProvider = {
+            getGateways: async () => [
+                new URL('https://walk-a.io/' + VALID_TX_ID),
+                new URL('https://walk-b.io/' + VALID_TX_ID),
+            ],
+        };
+
+        mockWayfinderInstance.resolveUrl.mockResolvedValue(new URL('https://first-pick.io/' + VALID_TX_ID));
+        // Everything fails except walk candidate b
+        mockFetch.mockImplementation(async (url: string) => {
+            if (url.includes('walk-b.io')) {
+                return new Response(null, { status: 200 });
+            }
+            return new Response(null, { status: 500 });
+        });
+
+        const result = await manager.resolveUrl(ARWEAVE_URL);
+
+        expect(result).toContain('walk-b.io');
+
+        const walkStart = events.find(e => e.message.includes('walking 2 ranked gateways'));
+        expect(walkStart?.event?.attemptTotal).toBe(2);
+
+        const walkProbes = events.filter(
+            e => e.event?.kind === 'gateway.probe.start' && e.event?.gatewayUrl?.includes('walk-'),
+        );
+        expect(walkProbes.map(e => e.event?.attempt)).toEqual([1, 2]);
+        expect(walkProbes[0].event?.attemptTotal).toBe(2);
+
+        const resolved = events.filter(e => e.event?.kind === 'gateway.chain.resolved');
+        expect(resolved).toHaveLength(1);
+        expect(resolved[0].event?.gateway).toBe('walk-b.io');
+        expect(resolved[0].event?.attempt).toBe(2);
+    });
+
+    it('emits cache-hit without a chain walk on a cached txId', async () => {
+        const manager = new ArweaveGatewayManager({ gateways: CUSTOM_GATEWAYS });
+        const checkSpy = vi.spyOn(manager, 'checkGateway').mockResolvedValue(true);
+
+        await manager.resolveUrl(ARWEAVE_URL);
+
+        events.length = 0;
+        await manager.resolveUrl(ARWEAVE_URL);
+
+        expect(kinds()).toContain('gateway.cache-hit');
+        expect(kinds()).not.toContain('gateway.chain.start');
+        expect(checkSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('emits exhausted when no gateway verifies', async () => {
+        const manager = new ArweaveGatewayManager({ gateways: CUSTOM_GATEWAYS });
+        vi.spyOn(manager, 'checkGateway').mockResolvedValue(false);
+
+        const result = await manager.resolveUrl(ARWEAVE_URL, { bypassWayfinder: true });
+
+        expect(result).toBe(ARWEAVE_URL);
+        const exhausted = events.filter(e => e.event?.kind === 'gateway.chain.exhausted');
+        expect(exhausted).toHaveLength(1);
+        expect(exhausted[0].event?.result).toBe('failed');
+    });
+
+    it('emits failure-retry with a fresh correlation id on reportGatewayFailure', async () => {
+        const manager = new ArweaveGatewayManager({ gateways: CUSTOM_GATEWAYS });
+        mockFetch.mockResolvedValue(new Response(null, { status: 200 }));
+
+        await manager.resolveUrl(ARWEAVE_URL);
+        const originalCorrelationId = events.find(e => e.event?.kind === 'gateway.chain.resolved')?.event?.correlationId;
+
+        events.length = 0;
+        await manager.reportGatewayFailure(ARWEAVE_URL, { reason: 'load-error' });
+
+        const failure = events.find(e => e.event?.kind === 'gateway.failure-retry');
+        expect(failure).toBeDefined();
+        expect(failure?.event?.reason).toBe('load-error');
+
+        // The retry walk is its own chain: fresh correlation id, resolved under it
+        const resolved = events.filter(e => e.event?.kind === 'gateway.chain.resolved');
+        expect(resolved).toHaveLength(1);
+        expect(failure?.event?.correlationId).not.toBe(originalCorrelationId);
+        expect(resolved[0].event?.correlationId).toBe(failure?.event?.correlationId);
+    });
+
+    it('closes the failure walk with an exhausted terminal when every retry fails', async () => {
+        const manager = new ArweaveGatewayManager({ gateways: CUSTOM_GATEWAYS });
+        mockFetch.mockResolvedValue(new Response(null, { status: 500 }));
+
+        await manager.resolveUrl(ARWEAVE_URL, { bypassWayfinder: true });
+
+        events.length = 0;
+        const result = await manager.reportGatewayFailure(ARWEAVE_URL, { reason: 'load-error' });
+
+        expect(result).toBe(ARWEAVE_URL);
+        const failure = events.find(e => e.event?.kind === 'gateway.failure-retry');
+        const exhausted = events.find(e => e.event?.kind === 'gateway.chain.exhausted');
+        expect(exhausted).toBeDefined();
+        expect(exhausted?.event?.phase).toBe('failure');
+        expect(exhausted?.event?.result).toBe('failed');
+        expect(exhausted?.event?.correlationId).toBe(failure?.event?.correlationId);
+
+        // Failure-walk events keep the failure phase — no fabricated chain steps
+        const raceStart = events.find(e => e.message.includes('gateways in parallel'));
+        expect(raceStart?.event?.phase).toBe('failure');
+        expect(raceStart?.event?.step).toBeUndefined();
     });
 });

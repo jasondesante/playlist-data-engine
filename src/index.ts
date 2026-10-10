@@ -511,7 +511,7 @@ export {
 
 // Logger utility
 export { Logger, createLogger, LogLevel } from './utils/logger.js';
-export type { LogEntry, LoggerConfig } from './utils/logger.js';
+export type { LogEntry, LoggerConfig, LogSink, StatusEvent } from './utils/logger.js';
 
 // Playlist utilities
 export {
@@ -563,6 +563,8 @@ export {
     type HealthCheckResult,
     type HealthCheckOptions,
     type GatewayDiagnostics,
+    type GatewayEventKind,
+    type GatewayProbeMeta,
 } from './utils/arweaveGatewayManager.js';
 
 // IPFS URL utilities
