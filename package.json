@@ -6,7 +6,7 @@
     "type": "git",
     "url": "git+https://github.com/jasondesante/playlist-data-engine.git"
   },
-  "version": "1.8.0",
+  "version": "1.9.0",
   "type": "module",
   "bin": {
     "playlist-data-engine": "bin/cli.cjs"
