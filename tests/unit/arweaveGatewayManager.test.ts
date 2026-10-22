@@ -1842,6 +1842,51 @@ describe('Persisted gateway TTL', () => {
 });
 
 // ============================================================
+// Persisted gateway failure handling
+// ============================================================
+
+describe('Persisted gateway failure handling', () => {
+    it('should not re-probe the persisted gateway at Step 2 after a Step 1 failure', async () => {
+        // Persist a fresh arweave.net gateway so Step 1 probes it. The URL
+        // points at ardrive.net so Step 0 probes (and fails) a different host.
+        localStorage.setItem('arweave_active_gateway', JSON.stringify({
+            host: 'arweave.net',
+            protocol: 'https',
+            priority: 0,
+            timestamp: Date.now() - 5 * 60 * 1000, // 5 minutes ago
+        }));
+
+        const manager = new ArweaveGatewayManager({
+            gateways: [
+                { host: 'arweave.net', protocol: 'https', priority: 0 },
+                ...CUSTOM_GATEWAYS,
+            ],
+            timeout: 1000,
+        });
+
+        // Step 0 (ardrive.net) and Step 1 (arweave.net) fail; the Step 3
+        // fallbacks succeed.
+        mockFetch.mockImplementation(async (url: any) => {
+            const target = String(url);
+            if (target.includes('arweave.net') || target.includes('ardrive.net')) {
+                return new Response(null, { status: 500 });
+            }
+            return new Response(null, { status: 200 });
+        });
+
+        const result = await manager.resolveUrl('https://ardrive.net/' + VALID_TX_ID);
+
+        expect(result).toContain('example.com');
+        // arweave.net must be probed exactly once: Step 1. A Step 2 re-probe
+        // means the Step 1 failure didn't exclude the host.
+        const arweaveNetProbes = mockFetch.mock.calls.filter(
+            (c: any[]) => String(c[0]).includes('arweave.net'),
+        );
+        expect(arweaveNetProbes).toHaveLength(1);
+    });
+});
+
+// ============================================================
 // Phase 4 New Tests: Parallel gateway checking
 // ============================================================
 

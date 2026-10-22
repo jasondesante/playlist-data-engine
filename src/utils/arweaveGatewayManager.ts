@@ -1063,6 +1063,10 @@ export class ArweaveGatewayManager {
                 });
                 this.activeGateway = null;
                 this.clearPersistedGateway();
+                // Same contract as a Step 0 failure: the host was tried and is
+                // dead. Without this, a persisted arweave.net gets re-probed at
+                // Step 2 — two back-to-back 10s timeouts for the same host.
+                excludeHost = persistedHost;
             }
         }
 
