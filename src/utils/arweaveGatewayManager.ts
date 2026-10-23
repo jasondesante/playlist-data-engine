@@ -57,7 +57,8 @@ export type GatewayEventKind =
     | 'gateway.chain.resolved'
     | 'gateway.chain.exhausted'
     | 'gateway.failure-retry'
-    | 'gateway.prefetch';
+    | 'gateway.prefetch'
+    | 'gateway.path-manifest-check';
 
 /**
  * Correlation + position metadata threaded from a resolution walk into
@@ -106,6 +107,15 @@ export interface ResolveUrlOptions {
     bypassArweaveNet?: boolean;
     /** Skip Wayfinder in the resolution chain — only use static gateways */
     bypassWayfinder?: boolean;
+    /**
+     * Fail-only path-manifest diagnostic. When a manifest+path URL fails on
+     * arweave.net, fetch the raw manifest from `arweave.net/raw/{txId}`, map
+     * the path to its original per-file txId, and check whether arweave.net
+     * serves that txId directly. Findings land in
+     * `getDiagnostics().pathManifestFindings` — resolution is never delayed
+     * and runs at most once per manifest+path per instance.
+     */
+    pathManifestVerification?: boolean;
 }
 
 /**
@@ -346,6 +356,31 @@ export interface HealthCheckOptions {
 }
 
 /**
+ * Result of the fail-only path-manifest verification for one manifest+path URL.
+ * A finding exists only because arweave.net failed to serve the path directly,
+ * so "the path failed on arweave.net" is implied — the remaining fields answer
+ * whether the failure is arweave.net's manifest handling or the upload itself.
+ */
+export interface PathManifestFinding {
+    /** The manifest transaction ID from the failed URL */
+    manifestTxId: string;
+    /** The requested path after the manifest txId (no leading slash) */
+    path: string;
+    /** Whether `arweave.net/raw/{manifestTxId}` returned a parseable arweave/paths manifest (null = probe errored) */
+    rawManifestFound: boolean | null;
+    /** The original per-file txId from the manifest (null = path absent or manifest unreadable) */
+    originalTxId: string | null;
+    /** Whether arweave.net serves the original txId directly (null = not probed, or probe errored) */
+    originalTxWorked: boolean | null;
+    /** HTTP status of the original-txId probe, when one was made */
+    originalTxStatus: number | null;
+    /** When the check ran (ms since epoch) */
+    checkedAt: number;
+    /** Correlation id of the resolution walk that triggered the check */
+    correlationId?: string;
+}
+
+/**
  * Diagnostic snapshot of the gateway manager's current state
  */
 export interface GatewayDiagnostics {
@@ -361,6 +396,8 @@ export interface GatewayDiagnostics {
     consecutiveSlowResponses: number;
     /** Per-gateway health summary */
     healthSummary: { host: string; avgMs: number; successRate: number; checks: number }[];
+    /** Findings from fail-only path-manifest verification (newest first) */
+    pathManifestFindings?: PathManifestFinding[];
 }
 
 /**
@@ -482,6 +519,12 @@ export class ArweaveGatewayManager {
     private readonly wayfinderFallbackLimit: number;
     /** Routing strategy preset */
     private readonly wayfinderStrategy: WayfinderStrategy;
+    /** Findings from fail-only path-manifest verification, newest first */
+    private pathManifestFindings: PathManifestFinding[] = [];
+    /** Dedup for path-manifest checks — one per manifest+path per instance */
+    private pathManifestChecked: Set<string> = new Set();
+    /** Cap on stored path-manifest findings (newest are kept) */
+    private readonly MAX_PATH_MANIFEST_FINDINGS = 50;
 
     /**
      * Correlation id for one resolution walk. Concurrent resolves dedupe per
@@ -863,7 +906,109 @@ export class ArweaveGatewayManager {
             lastFetchTiming: this.lastFetchTiming,
             consecutiveSlowResponses: this.consecutiveSlowResponses,
             healthSummary,
+            pathManifestFindings: [...this.pathManifestFindings],
         };
+    }
+
+    /**
+     * Findings from fail-only path-manifest verification, newest first.
+     *
+     * Populated only when resolveUrl runs with `pathManifestVerification: true`
+     * and a manifest+path URL fails on arweave.net.
+     */
+    getPathManifestFindings(): PathManifestFinding[] {
+        return [...this.pathManifestFindings];
+    }
+
+    /**
+     * Fail-only diagnostic fired when arweave.net fails a manifest+path URL.
+     *
+     * Fetches the raw path manifest (`arweave.net/raw/{txId}`), maps the
+     * requested path to its original per-file txId, and HEAD-checks whether
+     * arweave.net serves that txId directly. A working original txId isolates
+     * the failure to arweave.net's path-manifest handling; a failing one
+     * points at the upload or the data. Fire-and-forget — the resolution
+     * chain never waits on this, and it runs at most once per manifest+path.
+     */
+    private maybeVerifyPathManifest(txId: string, pathSuffix: string, host: string, correlationId: string, options?: ResolveUrlOptions): void {
+        if (!options?.pathManifestVerification) return;
+        if (host !== 'arweave.net' || !pathSuffix) return;
+
+        const dedupKey = `${txId}${pathSuffix}`;
+        if (this.pathManifestChecked.has(dedupKey)) return;
+        this.pathManifestChecked.add(dedupKey);
+
+        const path = pathSuffix.replace(/^\//, '');
+        let decodedPath: string | null = null;
+        try {
+            decodedPath = decodeURIComponent(path);
+        } catch {
+            decodedPath = path;
+        }
+
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), this.timeout * 2);
+
+        void (async () => {
+            const finding: PathManifestFinding = {
+                manifestTxId: txId,
+                path: decodedPath ?? path,
+                rawManifestFound: null,
+                originalTxId: null,
+                originalTxWorked: null,
+                originalTxStatus: null,
+                checkedAt: Date.now(),
+                correlationId,
+            };
+            try {
+                const manifestRes = await fetch(`https://arweave.net/raw/${txId}`, { signal: controller.signal });
+                if (!manifestRes.ok) {
+                    finding.rawManifestFound = false;
+                    return;
+                }
+                const manifest = await manifestRes.json() as { manifest?: string; paths?: Record<string, { id?: string }> };
+                if (manifest?.manifest !== 'arweave/paths' || !manifest.paths) {
+                    finding.rawManifestFound = false;
+                    return;
+                }
+                finding.rawManifestFound = true;
+
+                // Manifest keys are exact and unescaped; percent-encoded URL
+                // paths decode to them, so try the decoded form then the raw one.
+                const entry = manifest.paths[decodedPath ?? path] ?? manifest.paths[path];
+                if (!entry?.id) return;
+                finding.originalTxId = entry.id;
+
+                const txRes = await fetch(`https://arweave.net/${entry.id}`, { method: 'HEAD', signal: controller.signal });
+                finding.originalTxStatus = txRes.status;
+                finding.originalTxWorked = txRes.ok;
+            } catch {
+                // Probe error (network/CORS/abort) leaves the fields null —
+                // "unknown", not "failed".
+            } finally {
+                clearTimeout(timeout);
+                this.pathManifestFindings.unshift(finding);
+                if (this.pathManifestFindings.length > this.MAX_PATH_MANIFEST_FINDINGS) {
+                    this.pathManifestFindings.length = this.MAX_PATH_MANIFEST_FINDINGS;
+                }
+                const reason = finding.rawManifestFound !== true
+                    ? 'manifest-unreachable'
+                    : finding.originalTxWorked === true
+                        ? 'manifest-path-issue'
+                        : finding.originalTxWorked === false
+                            ? 'original-tx-unavailable'
+                            : 'inconclusive';
+                this.emitStatus('gateway.path-manifest-check', 'probe',
+                    `[gateway] Path-manifest check ${finding.manifestTxId}${pathSuffix}: manifest=${finding.rawManifestFound} originalTx=${finding.originalTxWorked}`,
+                    {
+                        txId: finding.manifestTxId,
+                        gateway: 'arweave.net',
+                        correlationId,
+                        reason,
+                    },
+                    LogLevel.INFO, finding);
+            }
+        })();
     }
 
     /**
@@ -1034,6 +1179,7 @@ export class ArweaveGatewayManager {
                             step: 0, stepTotal: 5, gateway: originalGateway.host, txId, correlationId,
                             elapsedMs: stepMs, totalElapsedMs: totalMs, result: 'failed',
                         });
+                        this.maybeVerifyPathManifest(txId, pathSuffix, originalGateway.host, correlationId, options);
                     }
                     excludeHost = originalGateway.host;
                 }
@@ -1061,6 +1207,7 @@ export class ArweaveGatewayManager {
                     step: 1, stepTotal: 5, gateway: persistedHost, txId, correlationId,
                     elapsedMs: stepMs, totalElapsedMs: totalMs, result: 'failed',
                 });
+                this.maybeVerifyPathManifest(txId, pathSuffix, persistedHost, correlationId, options);
                 this.activeGateway = null;
                 this.clearPersistedGateway();
                 // Same contract as a Step 0 failure: the host was tried and is
@@ -1092,6 +1239,7 @@ export class ArweaveGatewayManager {
                         step: 2, stepTotal: 5, gateway: arweaveNet.host, txId, correlationId,
                         elapsedMs: stepMs, totalElapsedMs: totalMs, result: 'failed',
                     });
+                    this.maybeVerifyPathManifest(txId, pathSuffix, arweaveNet.host, correlationId, options);
                 }
             }
         }

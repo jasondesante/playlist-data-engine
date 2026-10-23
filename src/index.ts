@@ -563,6 +563,7 @@ export {
     type HealthCheckResult,
     type HealthCheckOptions,
     type GatewayDiagnostics,
+    type PathManifestFinding,
     type GatewayEventKind,
     type GatewayProbeMeta,
 } from './utils/arweaveGatewayManager.js';

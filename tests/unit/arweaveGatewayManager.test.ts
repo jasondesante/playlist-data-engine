@@ -2329,3 +2329,170 @@ describe('Status event emission', () => {
         expect(raceStart?.event?.step).toBeUndefined();
     });
 });
+
+// ============================================================
+// Test fail-only path-manifest verification
+// ============================================================
+
+/** A second 43-char txId playing the original per-file id inside the manifest */
+const ORIGINAL_TX_ID = 'a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0uvw';
+
+/** Manifest+path URL of the kind that 404s on arweave.net while other gateways serve it */
+const MANIFEST_PATH_URL = ARWEAVE_URL + '/video.mp4';
+
+/** Raw manifest body as served by arweave.net/raw/{manifestTxId} */
+const TEST_MANIFEST = JSON.stringify({
+    manifest: 'arweave/paths',
+    version: '0.1.0',
+    index: { path: 'index.html' },
+    paths: {
+        'index.html': { id: VALID_TX_ID },
+        'video.mp4': { id: ORIGINAL_TX_ID },
+    },
+});
+
+/** Poll until the fire-and-forget check has recorded its finding */
+async function waitForFindings(manager: ArweaveGatewayManager, count = 1): Promise<void> {
+    for (let i = 0; i < 50 && manager.getPathManifestFindings().length < count; i++) {
+        await vi.advanceTimersByTimeAsync(10);
+    }
+}
+
+describe('Path-manifest verification (fail-only diagnostic)', () => {
+    it('records a full finding when arweave.net fails a manifest+path URL and the original txId works', async () => {
+        const manager = new ArweaveGatewayManager({ gateways: CUSTOM_GATEWAYS, timeout: 1000 });
+        mockFetch.mockImplementation(async (url: string) => {
+            if (url.includes('arweave.net/' + VALID_TX_ID + '/video.mp4')) return new Response(null, { status: 404 });
+            if (url.includes('/raw/' + VALID_TX_ID)) return new Response(TEST_MANIFEST, { status: 200 });
+            return new Response(null, { status: 200 });
+        });
+
+        const result = await manager.resolveUrl(MANIFEST_PATH_URL, { pathManifestVerification: true });
+
+        // Resolution itself is untouched — another gateway serves the path
+        expect(result).toContain('example.com');
+        await waitForFindings(manager);
+
+        const findings = manager.getPathManifestFindings();
+        expect(findings).toHaveLength(1);
+        expect(findings[0].manifestTxId).toBe(VALID_TX_ID);
+        expect(findings[0].path).toBe('video.mp4');
+        expect(findings[0].rawManifestFound).toBe(true);
+        expect(findings[0].originalTxId).toBe(ORIGINAL_TX_ID);
+        expect(findings[0].originalTxWorked).toBe(true);
+        expect(findings[0].originalTxStatus).toBe(200);
+        // Also surfaced through getDiagnostics
+        expect(manager.getDiagnostics().pathManifestFindings).toHaveLength(1);
+    });
+
+    it('marks originalTxWorked false when arweave.net cannot serve the original txId either', async () => {
+        const manager = new ArweaveGatewayManager({ gateways: CUSTOM_GATEWAYS, timeout: 1000 });
+        mockFetch.mockImplementation(async (url: string) => {
+            if (url.includes('arweave.net/' + VALID_TX_ID + '/video.mp4')) return new Response(null, { status: 404 });
+            if (url.includes('/raw/' + VALID_TX_ID)) return new Response(TEST_MANIFEST, { status: 200 });
+            if (url.includes(ORIGINAL_TX_ID)) return new Response(null, { status: 404 });
+            return new Response(null, { status: 200 });
+        });
+
+        await manager.resolveUrl(MANIFEST_PATH_URL, { pathManifestVerification: true });
+        await waitForFindings(manager);
+
+        const finding = manager.getPathManifestFindings()[0];
+        expect(finding.rawManifestFound).toBe(true);
+        expect(finding.originalTxWorked).toBe(false);
+        expect(finding.originalTxStatus).toBe(404);
+    });
+
+    it('leaves originalTxId null when the path is absent from the manifest', async () => {
+        const manager = new ArweaveGatewayManager({ gateways: CUSTOM_GATEWAYS, timeout: 1000 });
+        mockFetch.mockImplementation(async (url: string) => {
+            if (url.includes('arweave.net/' + VALID_TX_ID + '/video.mp4')) return new Response(null, { status: 404 });
+            if (url.includes('/raw/' + VALID_TX_ID)) {
+                return new Response(JSON.stringify({
+                    manifest: 'arweave/paths',
+                    version: '0.1.0',
+                    index: { path: 'index.html' },
+                    paths: { 'index.html': { id: VALID_TX_ID } },
+                }), { status: 200 });
+            }
+            return new Response(null, { status: 200 });
+        });
+
+        await manager.resolveUrl(MANIFEST_PATH_URL, { pathManifestVerification: true });
+        await waitForFindings(manager);
+
+        const finding = manager.getPathManifestFindings()[0];
+        expect(finding.rawManifestFound).toBe(true);
+        expect(finding.originalTxId).toBeNull();
+        expect(finding.originalTxWorked).toBeNull();
+        expect(finding.originalTxStatus).toBeNull();
+    });
+
+    it('does not run without the option', async () => {
+        const manager = new ArweaveGatewayManager({ gateways: CUSTOM_GATEWAYS, timeout: 1000 });
+        mockFetch.mockImplementation(async (url: string) => {
+            if (url.includes('arweave.net/')) return new Response(null, { status: 404 });
+            return new Response(null, { status: 200 });
+        });
+
+        await manager.resolveUrl(MANIFEST_PATH_URL);
+        await waitForFindings(manager);
+
+        expect(manager.getPathManifestFindings()).toHaveLength(0);
+    });
+
+    it('does not run for bare tx URLs without a path', async () => {
+        const manager = new ArweaveGatewayManager({ gateways: CUSTOM_GATEWAYS, timeout: 1000 });
+        mockFetch.mockImplementation(async (url: string) => {
+            if (url.includes('arweave.net/')) return new Response(null, { status: 404 });
+            return new Response(null, { status: 200 });
+        });
+
+        await manager.resolveUrl(ARWEAVE_URL, { pathManifestVerification: true });
+        await waitForFindings(manager);
+
+        expect(manager.getPathManifestFindings()).toHaveLength(0);
+    });
+
+    it('runs at most once per manifest+path', async () => {
+        const manager = new ArweaveGatewayManager({ gateways: CUSTOM_GATEWAYS, timeout: 1000 });
+        mockFetch.mockImplementation(async (url: string) => {
+            if (url.includes('arweave.net/' + VALID_TX_ID + '/video.mp4')) return new Response(null, { status: 404 });
+            if (url.includes('/raw/' + VALID_TX_ID)) return new Response(TEST_MANIFEST, { status: 200 });
+            return new Response(null, { status: 200 });
+        });
+
+        await manager.resolveUrl(MANIFEST_PATH_URL, { pathManifestVerification: true });
+        await waitForFindings(manager);
+        // Force a second full walk of the same manifest+path
+        manager.invalidateCacheForUrl(MANIFEST_PATH_URL);
+        await manager.resolveUrl(MANIFEST_PATH_URL, { pathManifestVerification: true });
+        await waitForFindings(manager);
+
+        expect(manager.getPathManifestFindings()).toHaveLength(1);
+    });
+
+    it('emits a gateway.path-manifest-check event with the outcome reason', async () => {
+        const events: LogEntry[] = [];
+        const sink = Logger.addSink({ contexts: ['ArweaveGateway'], handle: e => events.push(e) });
+        const manager = new ArweaveGatewayManager({ gateways: CUSTOM_GATEWAYS, timeout: 1000 });
+        mockFetch.mockImplementation(async (url: string) => {
+            if (url.includes('arweave.net/' + VALID_TX_ID + '/video.mp4')) return new Response(null, { status: 404 });
+            if (url.includes('/raw/' + VALID_TX_ID)) return new Response(TEST_MANIFEST, { status: 200 });
+            return new Response(null, { status: 200 });
+        });
+
+        try {
+            await manager.resolveUrl(MANIFEST_PATH_URL, { pathManifestVerification: true });
+            await waitForFindings(manager);
+
+            const check = events.find(e => e.event?.kind === 'gateway.path-manifest-check');
+            expect(check).toBeDefined();
+            expect(check?.event?.reason).toBe('manifest-path-issue');
+            expect(check?.event?.txId).toBe(VALID_TX_ID);
+            expect(check?.event?.gateway).toBe('arweave.net');
+        } finally {
+            sink();
+        }
+    });
+});

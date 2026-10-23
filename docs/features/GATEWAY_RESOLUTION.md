@@ -325,6 +325,66 @@ arweave.net reliability can be spotty — the gateway may be up but unable to se
 
 To monitor arweave.net availability independently, use `checkGateway()` directly.
 
+### Path Manifests
+
+An Arweave path manifest is a single transaction whose content maps friendly paths to other transaction IDs. URLs of the form `https://arweave.net/{manifestTxId}/{path}` are resolved by the gateway itself: it reads the manifest stored at `{manifestTxId}` and serves the transaction that `{path}` maps to. The engine treats these like any other URL — `parseArweaveUrl` splits them into `{ txId: manifestTxId, pathSuffix: '/{path}' }` and every gateway probe carries the full path, so a gateway is only "verified" if it serves the path.
+
+The manifest format (`arweave/paths` v0.1.0) is JSON with three parts:
+
+```json
+{
+  "manifest": "arweave/paths",
+  "version": "0.1.0",
+  "index": { "path": "index.html" },
+  "paths": {
+    "index.html": { "id": "<txId-of-index.html>" },
+    "videos/clip.mp4": { "id": "<txId-of-clip.mp4>" }
+  }
+}
+```
+
+- `manifest` + `version` — format discriminator.
+- `index.path` — the default transaction served when the URL has **no** path (`arweave.net/{manifestTxId}` alone). This is what makes a manifest behave like a deployed folder/site.
+- `paths` — the map. Keys are exact, unescaped path strings (no leading slash); values are the **original per-file transaction IDs** the manifest was built from.
+
+#### The /raw/ endpoint
+
+`https://arweave.net/raw/{txId}` serves any transaction's raw stored data — for a manifest transaction, that's the manifest JSON itself. This is the inspection tool for path URLs: when `arweave.net/{manifestTxId}/{path}` misbehaves, `GET /raw/{manifestTxId}` shows you the actual map and every file's original txId, which you can then probe directly (`arweave.net/{originalTxId}`) to tell a gateway problem from an upload problem. ApeTapes' `manifestIndexLoader.ts` uses the same endpoint to resolve manifest entries to their own bare-txId URLs.
+
+Fetch the raw **directly from arweave.net** — never route it through `resolveUrl()`/the resolver. `/raw/` is a path *prefix* (before the txId), and a resolver whose parser only understands path *suffixes* silently drops it, turning the request into a bare `{gateway}/{txId}` — which serves the manifest's default path (or 404s on ar.io subdomain gateways). Which gateway a resolver picks is deterministic per txId, so the mangle looks like "works for some txIds, not others." This is also why the verification check below hardcodes the arweave.net raw URL instead of resolving it.
+
+#### Fail-only path-manifest verification
+
+Rarely, arweave.net 404s a manifest+path URL that other gateways serve fine — the path resolution inside arweave.net fails while the underlying file is intact. `resolveUrl()` has an opt-in diagnostic for exactly that case:
+
+```ts
+const url = await manager.resolveUrl(manifestPathUrl, { pathManifestVerification: true });
+```
+
+When enabled and arweave.net fails a URL that carries a path suffix (Steps 0, 1, or 2 — whichever probes arweave.net first), the manager runs a side check without delaying resolution:
+
+1. `GET https://arweave.net/raw/{manifestTxId}` — fetch and parse the manifest.
+2. Look up the requested path → its original txId.
+3. `HEAD https://arweave.net/{originalTxId}` — can arweave.net serve the file directly?
+
+The check runs at most once per manifest+path per manager instance and never changes what `resolveUrl()` returns. Findings are readable three ways:
+
+- `getDiagnostics().pathManifestFindings` — bounded list (newest 50, newest first)
+- `getPathManifestFindings()` — the same list
+- `'gateway.path-manifest-check'` status events (sink subscribers; `reason` classifies the outcome)
+
+Each `PathManifestFinding` answers three questions in order — the later ones only matter when the earlier one fails:
+
+| Question | Field |
+|----------|-------|
+| Did the path fail on arweave.net? | (a finding exists only when yes) |
+| Was the raw manifest found? | `rawManifestFound` (null = probe errored) |
+| Does the original txId work? | `originalTxWorked` + `originalTxStatus` (`originalTxId` null = path absent from manifest) |
+
+Reading a finding: `originalTxWorked: true` isolates the failure to arweave.net's path-manifest handling (event `reason: 'manifest-path-issue'`) — harmless for consumers, since the chain resolved the path on another gateway. `originalTxWorked: false` (`reason: 'original-tx-unavailable'`) points at the upload or the data itself. `rawManifestFound: false` (`reason: 'manifest-unreachable'`) means arweave.net couldn't serve the manifest transaction at all.
+
+The manager keeps findings in memory only (bounded to 50) — persistence is a consumer concern. ApeTapes subscribes a Logger sink to `manifest-path-issue` events and stores the verdicts in localForage, exposing a downloadable JSON report in its admin settings page next to its missing-files list.
+
 ### Bypassing Wayfinder
 
 The `bypassWayfinder` flag skips AR.IO Wayfinder resolution entirely. The chain becomes: persisted → arweave.net → static fallback gateways. Useful when you want to stick to known static gateways and avoid the latency of Wayfinder's composite routing (ping checks, network provider calls).
@@ -347,7 +407,8 @@ Everything is exported from `'playlist-data-engine'`:
 | `ArweaveGatewayManager` | Class | Create custom instances |
 | `GatewayConfig` | Interface | `{ host, protocol, priority }` |
 | `ArweaveGatewayManagerConfig` | Interface | Constructor options |
-| `ResolveUrlOptions` | Interface | Options for `resolveUrl()` (signal, bypassArweaveNet, bypassWayfinder) |
+| `ResolveUrlOptions` | Interface | Options for `resolveUrl()` (signal, bypassArweaveNet, bypassWayfinder, pathManifestVerification) |
+| `PathManifestFinding` | Interface | Fail-only path-manifest verification result |
 | `GatewayCache` | Interface | Cache entry shape |
 | `GatewayCheckResult` | Interface | Resolution result with gateway info |
 | `PrefetchOptions` | Interface | Prefetch concurrency/behavior |
