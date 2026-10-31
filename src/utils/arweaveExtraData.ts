@@ -159,10 +159,14 @@ const verdicts = new Map<string, ExtraDataVerdict>();
  * Record a confirmed wrapped-copy detection for a tx. Oldest verdicts are
  * evicted once the cap is exceeded — this store only needs to remember the
  * recent history of a rare bug.
+ *
+ * `detectedAt` defaults to now; pass the original detection time when
+ * replaying a host app's persisted records, so old entries hydrate as
+ * already-stale and TTL forgiveness governs what still steers to raw.
  */
-export function markExtraData(txId: string, host: string): void {
+export function markExtraData(txId: string, host: string, detectedAt: number = Date.now()): void {
     if (!txId) return;
-    verdicts.set(txId, { host, detectedAt: Date.now() });
+    verdicts.set(txId, { host, detectedAt });
 
     if (verdicts.size > EXTRA_DATA_VERDICT_CAP) {
         const oldest = [...verdicts.entries()]
