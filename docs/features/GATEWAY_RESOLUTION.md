@@ -51,7 +51,7 @@ When [`resolveUrl()`](#resolveurlurl-signal) is called with an Arweave URL, the 
 0. Cache lookup (per-txId, 24-hour TTL) — return immediately if hit
 1. Persisted gateway from localStorage (known-working gateway from previous session)
 2. arweave.net (official gateway — reliable fallback)
-3. Remaining static fallback gateways (ardrive.net → turbo-gateway.com, parallel)
+3. Remaining static fallback gateways (turbo-gateway.com → ardrive.net by priority, raced in parallel)
 4. AR.IO Wayfinder (dynamic routing via NetworkGatewaysProvider, up to 3 retries)
 ```
 
@@ -269,12 +269,12 @@ The ranked gateway list returned by `NetworkGatewaysProvider.getGateways()` is c
 1. **In-memory cache** — held on the manager instance after the first fetch. Used for the walk step of `tryWayfinder()` so retries within a single session never re-hit Solana.
 2. **localStorage persistence** — written under the key `arweave_ranked_gateways` whenever the in-memory cache refreshes. On the next page load, the persisted list hydrates the in-memory cache before any Wayfinder call.
 
-Both layers share the same **2-hour TTL** (`RANKED_GATEWAYS_TTL_MS`). The TTL is intentionally long: the AR.IO registry is slow-moving (gateways stake AR tokens to join, rankings shift on epoch-length performance metrics), so the top 50 by `compositeWeight` is essentially stable across hours. When the TTL expires, the next walk triggers a single refresh from the provider, which writes back to both layers. If the refresh fails (e.g. RPC outage), the stale cache is used as a fallback rather than returning nothing.
+Both layers share the same **24-hour TTL** (`RANKED_GATEWAYS_TTL_MS`). The TTL is intentionally long: the AR.IO registry is slow-moving (gateways stake AR tokens to join, rankings shift on epoch-length performance metrics), so the top 50 by `compositeWeight` is essentially stable across hours. When the TTL expires, the next walk triggers a single refresh from the provider, which writes back to both layers. If the refresh fails (e.g. RPC outage), the stale cache is used as a fallback rather than returning nothing.
 
 **Net effect on Solana RPC usage:**
 - Cold start (no cache): 1 RPC call to fetch the list
-- Returning visit within 2 hours: 0 RPC calls (loaded from localStorage)
-- After 2 hours: 1 RPC call to refresh
+- Returning visit within 24 hours: 0 RPC calls (loaded from localStorage)
+- After 24 hours: 1 RPC call to refresh
 - Per file resolve within the cache window: 0 additional RPC calls
 
 This is especially important when using the default public RPC (`solana-rpc.publicnode.com`), since it's rate-limited. Persisting the list across sessions means even heavy users typically only make a handful of RPC calls per hour.
@@ -385,6 +385,38 @@ Reading a finding: `originalTxWorked: true` isolates the failure to arweave.net'
 
 The manager keeps findings in memory only (bounded to 50) — persistence is a consumer concern. ApeTapes subscribes a Logger sink to `manifest-path-issue` events and stores the verdicts in localForage, exposing a downloadable JSON report in its admin settings page next to its missing-files list.
 
+#### AO extra-data verified fetch
+
+Separately from path failures, arweave.net's AO serving path occasionally answers a normal request with the file's **original multipart/form-data upload envelope** — boundary, `content-type` tag part, the payload inline, trailing upload fields — instead of the payload alone. The tx data is intact: `/raw/{txId}` on the same gateway serves clean bytes, and non-AO gateways never wrap. The symptom set is distinctive: `JSON.parse` throws on a 200, audio/image decoders choke on the envelope before the file signature, and browsers prompt a download because the wrapped body has no sniffable type.
+
+`fetchArweaveVerified(url, options)` is the corruption-aware fetch:
+
+```ts
+const result = await manager.fetchArweaveVerified(url, {
+    validate: (bytes) => {
+        try {
+            const data = JSON.parse(new TextDecoder().decode(bytes)) as { name?: string };
+            return typeof data.name === 'string' ? { ok: true } : { ok: false, reason: 'no name', label: 'json' };
+        } catch {
+            return { ok: false, reason: 'invalid json', label: 'json' };
+        }
+    },
+});
+// { ok, bytes, url, recoveredVia, finding, reason }
+```
+
+Contract:
+
+- **Happy path costs nothing extra** — one resolve + one fetch. Only a *failed* `validate` triggers the envelope sniff, on bytes already in hand; legit JSON, WAV, MP3, and image signatures can't match it (it requires a boundary line at offset 0 plus a part header).
+- **Not this method's bugs** — 404/410 (missing) and 5xx/network (unhealthy) are plain failures: no sniff, no recovery, no health reporting. A validation failure on non-wrapped bytes stops the walk immediately; every candidate serves identical bytes.
+- **Recovery chain (max 2 hosts)** — the failed host's `/raw/` first; if that host wasn't arweave.net, arweave.net plain + raw follow; if it was, one ranked mirror's plain URL is the last resort. Raw candidates fetch directly, never through `resolveUrl()` (the `/raw/` prefix problem above).
+- **Sticky verdicts** — a confirmed wrap marks the tx in a session-only store (bounded, oldest evicted). Later fetches skip diagnosis and start at raw until the 24h TTL expires (`EXTRA_DATA_VERDICT_TTL_MS`) or a plain URL on the blamed host validates clean. A clean mirror does not clear the verdict — it says nothing about the blamed host. Durability is a consumer concern, matching the path-manifest convention.
+- **One event per detection** — `'gateway.ao-extra-data'` status events carry the full `AoExtraDataFinding` (txId, host, url, boundary, sniffed content type, `validatedAs`, `recoveredVia`/`recoveredUrl`). Findings also land in `getExtraDataFindings()` and `getDiagnostics().extraDataFindings` (newest 50, newest first).
+
+Exported helpers alongside: `isMultipartEnvelope(bytesOrText)` (the sniff, pure), `extractEnvelopeContentType(bytesOrText)`, `getExtraDataCandidates(failedUrl, mirrorHosts)` (the chain as plain URLs — for consumers that fetch bytes themselves, e.g. handing `<audio>` a better URL), and the verdict store (`markExtraData`, `getFreshExtraData`, `clearExtraData`, `clearAllExtraDataVerdicts`).
+
+ApeTapes persists detections via a Logger sink into a downloadable admin-settings report next to its other two failure lists, and replays the stored list into the verdict store at startup with original timestamps preserved — so TTL forgiveness, not the replay, decides what still counts as fresh.
+
 ### Bypassing Wayfinder
 
 The `bypassWayfinder` flag skips AR.IO Wayfinder resolution entirely. The chain becomes: persisted → arweave.net → static fallback gateways. Useful when you want to stick to known static gateways and avoid the latency of Wayfinder's composite routing (ping checks, network provider calls).
@@ -409,6 +441,18 @@ Everything is exported from `'playlist-data-engine'`:
 | `ArweaveGatewayManagerConfig` | Interface | Constructor options |
 | `ResolveUrlOptions` | Interface | Options for `resolveUrl()` (signal, bypassArweaveNet, bypassWayfinder, pathManifestVerification) |
 | `PathManifestFinding` | Interface | Fail-only path-manifest verification result |
+| `FetchArweaveVerifiedOptions` | Interface | Options for `fetchArweaveVerified()` (validate, signal, timeoutMs) |
+| `VerifiedFetchResult` | Interface | Verified-fetch outcome (bytes, url, recoveredVia, finding, reason) |
+| `VerifiedFetchValidation` | Type | Consumer content-check outcome for `validate` |
+| `AoExtraDataFinding` | Interface | AO extra-data detection record |
+| `ExtraDataCandidate` | Interface | One recovery-chain candidate URL |
+| `MultipartSniff` | Interface | Envelope sniff result (boundary) |
+| `ExtraDataRecoveryVia` / `ExtraDataRecoveryKind` | Type | Recovery labels (kind = non-null members) |
+| `isMultipartEnvelope` | Function | Detect the multipart upload envelope in a response head |
+| `extractEnvelopeContentType` | Function | Read the payload type from the envelope's tag part |
+| `getExtraDataCandidates` | Function | Build the max-2-host recovery chain for a failed URL |
+| `markExtraData` / `getFreshExtraData` / `clearExtraData` / `clearAllExtraDataVerdicts` | Function | Sticky verdict store (session memory) |
+| `EXTRA_DATA_VERDICT_TTL_MS` | Constant | Verdict TTL (24h) |
 | `GatewayCache` | Interface | Cache entry shape |
 | `GatewayCheckResult` | Interface | Resolution result with gateway info |
 | `PrefetchOptions` | Interface | Prefetch concurrency/behavior |
@@ -493,6 +537,32 @@ const workingUrl = await arweaveGatewayManager.resolveUrl(
     'https://arweave.net/abc123.../model.json',
     { bypassWayfinder: true }
 );
+```
+
+#### `fetchArweaveVerified(url, options)`
+
+Corruption-aware fetch for the AO extra-data bug (see [AO extra-data verified fetch](#ao-extra-data-verified-fetch)). Resolves and fetches the body, runs the consumer's `validate` on the bytes, and only on a failed validation sniffs for the multipart envelope — then walks the /raw/-first recovery chain, marks the sticky verdict, and emits `'gateway.ao-extra-data'`. Returns `{ ok, bytes, url, recoveredVia, finding, reason }`.
+
+**Options (`FetchArweaveVerifiedOptions`):**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `validate` | `(bytes: Uint8Array) => VerifiedFetchValidation \| Promise<...>` | required | The consumer's content check — JSON parse + field checks, an audio header probe, whatever "usable" means here |
+| `signal` | `AbortSignal` | — | Cancels the whole verified fetch, recovery chain included |
+| `timeoutMs` | `number` | manager `timeout` | Per-fetch timeout |
+
+```typescript
+const result = await arweaveGatewayManager.fetchArweaveVerified(metadataUrl, {
+    validate: (bytes) => {
+        try {
+            JSON.parse(new TextDecoder().decode(bytes));
+            return { ok: true };
+        } catch {
+            return { ok: false, reason: 'invalid json', label: 'json' };
+        }
+    },
+});
+if (!result.ok) console.warn(result.reason, result.finding);
 ```
 
 #### `resolveUrlSimple(url)`

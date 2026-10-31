@@ -25,6 +25,12 @@ import {
     parseArweaveUrl,
     isLegacyRedirectHost,
 } from '../../src/utils/arweaveUtils';
+import {
+    markExtraData,
+    getFreshExtraData,
+    clearAllExtraDataVerdicts,
+    EXTRA_DATA_VERDICT_TTL_MS,
+} from '../../src/utils/arweaveExtraData';
 import { Logger, type LogEntry } from '../../src/utils/logger';
 
 // Mock Wayfinder
@@ -2494,5 +2500,244 @@ describe('Path-manifest verification (fail-only diagnostic)', () => {
         } finally {
             sink();
         }
+    });
+});
+
+// ============================================================
+// AO extra-data verified fetch
+// ============================================================
+
+const EXTRA_DATA_BOUNDARY = 'XqUuDjt7g_u-3LomV5_Gq8xaEU0Wn_V6e07DKGCfZE4';
+
+/** Wrapped metadata: the multipart upload envelope arweave.net's AO path serves */
+const WRAPPED_BODY = [
+    `--${EXTRA_DATA_BOUNDARY}`,
+    'content-disposition: form-data;name="content-type"',
+    '',
+    'application/json',
+    `--${EXTRA_DATA_BOUNDARY}`,
+    'content-disposition: inline',
+    '',
+    '{ "name": "Sell Me Chat You\'re Calling Over" }',
+    `--${EXTRA_DATA_BOUNDARY}--`,
+].join('\r\n');
+
+/** Clean metadata payload as /raw/ and non-AO gateways serve it */
+const CLEAN_BODY = JSON.stringify({ name: 'Sell Me Chat', artist: 'City Stranger' });
+
+/** Consumer validator: metadata must parse as JSON with a name */
+const validateJson: (bytes: Uint8Array) => { ok: boolean; reason?: string; label?: string } = (bytes) => {
+    try {
+        const parsed = JSON.parse(new TextDecoder().decode(bytes)) as { name?: string };
+        if (typeof parsed.name !== 'string') return { ok: false, reason: 'no name', label: 'json' };
+        return { ok: true };
+    } catch {
+        return { ok: false, reason: 'invalid json', label: 'json' };
+    }
+};
+
+const getUrlsCalled = (): string[] => mockFetch.mock.calls.map((call: unknown[]) => String(call[0]));
+
+describe('AO extra-data verified fetch', () => {
+    beforeEach(() => {
+        // the verdict store is module-level — keep tests isolated
+        clearAllExtraDataVerdicts();
+    });
+
+    it('succeeds on the plain URL with no extra requests when content validates', async () => {
+        const manager = new ArweaveGatewayManager({ gateways: CUSTOM_GATEWAYS, timeout: 1000 });
+        mockFetch.mockImplementation(async (url: string, init?: { method?: string }) => {
+            if (init?.method === 'HEAD') return new Response(null, { status: 200 });
+            return new Response(CLEAN_BODY, { status: 200 });
+        });
+
+        const result = await manager.fetchArweaveVerified(ARWEAVE_URL, { validate: validateJson });
+
+        expect(result.ok).toBe(true);
+        expect(result.recoveredVia).toBeNull();
+        expect(result.finding).toBeNull();
+        expect(getUrlsCalled().some(u => u.includes('/raw/'))).toBe(false);
+        // verdict untouched by success
+        expect(getFreshExtraData(VALID_TX_ID)).toBeNull();
+    });
+
+    it('detects a wrapped copy on arweave.net and recovers via raw-same-host', async () => {
+        const events: LogEntry[] = [];
+        const sink = Logger.addSink({ contexts: ['ArweaveGateway'], handle: e => events.push(e) });
+        const manager = new ArweaveGatewayManager({ gateways: CUSTOM_GATEWAYS, timeout: 1000 });
+        mockFetch.mockImplementation(async (url: string, init?: { method?: string }) => {
+            if (init?.method === 'HEAD') return new Response(null, { status: 200 });
+            if (url.includes('/raw/' + VALID_TX_ID)) return new Response(CLEAN_BODY, { status: 200 });
+            if (url.includes(VALID_TX_ID)) return new Response(WRAPPED_BODY, { status: 200 });
+            return new Response(null, { status: 200 });
+        });
+
+        try {
+            const result = await manager.fetchArweaveVerified(ARWEAVE_URL, { validate: validateJson });
+
+            expect(result.ok).toBe(true);
+            expect(result.recoveredVia).toBe('raw-same-host');
+            expect(result.url).toContain('/raw/' + VALID_TX_ID);
+            expect(JSON.parse(new TextDecoder().decode(result.bytes!))).toEqual({ name: 'Sell Me Chat', artist: 'City Stranger' });
+
+            expect(result.finding).not.toBeNull();
+            expect(result.finding!.txId).toBe(VALID_TX_ID);
+            expect(result.finding!.host).toBe('arweave.net');
+            expect(result.finding!.boundary).toBe(EXTRA_DATA_BOUNDARY);
+            expect(result.finding!.sniffedContentType).toBe('application/json');
+            expect(result.finding!.validatedAs).toBe('json');
+
+            // finding stored + surfaced through diagnostics
+            expect(manager.getExtraDataFindings()).toHaveLength(1);
+            expect(manager.getDiagnostics().extraDataFindings).toHaveLength(1);
+
+            // exactly one event, carrying the finding
+            const emit = events.filter(e => e.event?.kind === 'gateway.ao-extra-data');
+            expect(emit).toHaveLength(1);
+            expect(emit[0].event?.reason).toBe('extra-data');
+
+            // the detection is sticky
+            expect(getFreshExtraData(VALID_TX_ID)).not.toBeNull();
+        } finally {
+            sink();
+        }
+    });
+
+    it('does not attempt recovery when validation fails on non-wrapped bytes', async () => {
+        const manager = new ArweaveGatewayManager({ gateways: CUSTOM_GATEWAYS, timeout: 1000 });
+        mockFetch.mockImplementation(async (url: string, init?: { method?: string }) => {
+            if (init?.method === 'HEAD') return new Response(null, { status: 200 });
+            return new Response(JSON.stringify({ wrong: 'shape' }), { status: 200 });
+        });
+
+        const result = await manager.fetchArweaveVerified(ARWEAVE_URL, { validate: validateJson });
+
+        expect(result.ok).toBe(false);
+        expect(result.reason).toBe('no name');
+        expect(result.finding).toBeNull();
+        expect(getUrlsCalled().some(u => u.includes('/raw/'))).toBe(false);
+        expect(manager.getExtraDataFindings()).toHaveLength(0);
+    });
+
+    it('treats HTTP errors as plain failures with no sniff or recovery', async () => {
+        const manager = new ArweaveGatewayManager({ gateways: CUSTOM_GATEWAYS, timeout: 1000 });
+        mockFetch.mockImplementation(async (url: string, init?: { method?: string }) => {
+            if (init?.method === 'HEAD') return new Response(null, { status: 200 });
+            if (url.includes(VALID_TX_ID)) return new Response(null, { status: 404 });
+            return new Response(null, { status: 200 });
+        });
+
+        const result = await manager.fetchArweaveVerified(ARWEAVE_URL, { validate: validateJson });
+
+        expect(result.ok).toBe(false);
+        expect(result.reason).toBe('HTTP 404');
+        expect(result.finding).toBeNull();
+    });
+
+    it('skips diagnosis entirely on a fresh verdict (straight to raw)', async () => {
+        markExtraData(VALID_TX_ID, 'arweave.net');
+        const manager = new ArweaveGatewayManager({ gateways: CUSTOM_GATEWAYS, timeout: 1000 });
+        mockFetch.mockImplementation(async (url: string, init?: { method?: string }) => {
+            if (url.includes('/raw/' + VALID_TX_ID)) return new Response(CLEAN_BODY, { status: 200 });
+            if (url.includes(VALID_TX_ID)) return new Response(WRAPPED_BODY, { status: 200 });
+            return new Response(null, { status: 200 });
+        });
+
+        const result = await manager.fetchArweaveVerified(ARWEAVE_URL, { validate: validateJson });
+
+        expect(result.ok).toBe(true);
+        expect(result.recoveredVia).toBe('raw-same-host');
+        // never touched the plain URL — not even a HEAD probe
+        expect(getUrlsCalled().every(u => u.includes('/raw/'))).toBe(true);
+        // raw success keeps the verdict (plain is still the broken path)
+        expect(getFreshExtraData(VALID_TX_ID)).not.toBeNull();
+    });
+
+    it('clears a stale verdict when the TTL-expired plain URL validates clean', async () => {
+        markExtraData(VALID_TX_ID, 'arweave.net');
+        vi.advanceTimersByTime(EXTRA_DATA_VERDICT_TTL_MS + 1); // natural forgiveness window passes
+
+        const manager = new ArweaveGatewayManager({ gateways: CUSTOM_GATEWAYS, timeout: 1000 });
+        mockFetch.mockImplementation(async (url: string, init?: { method?: string }) => {
+            if (init?.method === 'HEAD') return new Response(null, { status: 200 });
+            if (url.includes(VALID_TX_ID)) return new Response(CLEAN_BODY, { status: 200 });
+            return new Response(null, { status: 200 });
+        });
+
+        const result = await manager.fetchArweaveVerified(ARWEAVE_URL, { validate: validateJson });
+
+        // stale verdict doesn't steer — the plain URL was fetched normally and worked
+        expect(result.ok).toBe(true);
+        expect(result.recoveredVia).toBeNull();
+        expect(result.url).toBe(ARWEAVE_URL);
+        // the stale entry got cleaned up by the clean plain fetch
+        expect(getFreshExtraData(VALID_TX_ID)).toBeNull();
+    });
+
+    it('walks raw(failed mirror) → arweave.net plain → arweave.net raw for a non-arweave.net failure', async () => {
+        const manager = new ArweaveGatewayManager({ gateways: CUSTOM_GATEWAYS, timeout: 1000 });
+        const TURBO_URL = 'https://turbo-gateway.com/' + VALID_TX_ID;
+        mockFetch.mockImplementation(async (url: string, init?: { method?: string }) => {
+            if (init?.method === 'HEAD') return new Response(null, { status: 200 });
+            if (url.includes('turbo-gateway.com/raw/')) return new Response(null, { status: 502 });
+            if (url.includes('turbo-gateway.com')) return new Response(WRAPPED_BODY, { status: 200 });
+            if (url.includes('/raw/' + VALID_TX_ID)) return new Response(null, { status: 502 });
+            if (url.includes(VALID_TX_ID)) return new Response(CLEAN_BODY, { status: 200 });
+            return new Response(null, { status: 200 });
+        });
+
+        const result = await manager.fetchArweaveVerified(TURBO_URL, { validate: validateJson });
+
+        expect(result.ok).toBe(true);
+        expect(result.recoveredVia).toBe('arweave-net');
+        // recovery order: raw(turbo) 502 → plain(arweave.net) clean
+        const called = getUrlsCalled();
+        expect(called.findIndex(u => u.includes('turbo-gateway.com/raw/'))).toBeLessThan(called.findIndex(u => u.includes('arweave.net/' + VALID_TX_ID)));
+    });
+
+    it('falls back to the ranked mirror when arweave.net raw also fails', async () => {
+        const manager = new ArweaveGatewayManager({ gateways: CUSTOM_GATEWAYS, timeout: 1000 });
+        mockFetch.mockImplementation(async (url: string, init?: { method?: string }) => {
+            if (init?.method === 'HEAD') return new Response(null, { status: 200 });
+            if (url.includes('arweave.net/' + VALID_TX_ID)) return new Response(WRAPPED_BODY, { status: 200 });
+            if (url.includes('/raw/' + VALID_TX_ID)) return new Response(null, { status: 502 });
+            // first ranked mirror serves clean
+            return new Response(CLEAN_BODY, { status: 200 });
+        });
+
+        const result = await manager.fetchArweaveVerified(ARWEAVE_URL, { validate: validateJson });
+
+        expect(result.ok).toBe(true);
+        expect(result.recoveredVia).toBe('mirror');
+        expect(result.url).toContain('primary.example.com');
+        expect(getFreshExtraData(VALID_TX_ID)).not.toBeNull();
+    });
+
+    it('reports recovery exhausted when every candidate fails', async () => {
+        const manager = new ArweaveGatewayManager({ gateways: CUSTOM_GATEWAYS, timeout: 1000 });
+        mockFetch.mockImplementation(async (url: string, init?: { method?: string }) => {
+            if (init?.method === 'HEAD') return new Response(null, { status: 200 });
+            if (url.includes('/raw/')) return new Response(null, { status: 502 });
+            return new Response(WRAPPED_BODY, { status: 200 });
+        });
+
+        const result = await manager.fetchArweaveVerified(ARWEAVE_URL, { validate: validateJson });
+
+        expect(result.ok).toBe(false);
+        expect(result.reason).toBe('recovery-exhausted');
+        expect(result.finding).not.toBeNull();
+        expect(result.finding!.recoveredVia).toBeNull();
+        expect(result.finding!.recoveredUrl).toBeNull();
+    });
+
+    it('fetches non-Arweave URLs plainly with no recovery chain', async () => {
+        const manager = new ArweaveGatewayManager({ gateways: CUSTOM_GATEWAYS, timeout: 1000 });
+        mockFetch.mockImplementation(async () => new Response(JSON.stringify({ wrong: true }), { status: 200 }));
+
+        const result = await manager.fetchArweaveVerified('https://example.com/meta.json', { validate: validateJson });
+
+        expect(result.ok).toBe(false);
+        expect(result.finding).toBeNull();
+        expect(mockFetch).toHaveBeenCalledTimes(1);
     });
 });

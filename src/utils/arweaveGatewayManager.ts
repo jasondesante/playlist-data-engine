@@ -6,10 +6,11 @@
  * gateways for each transaction ID.
  *
  * Design decisions:
- * - Parallel gateway checking (race all gateways + Wayfinder, first to respond wins)
+ * - Sequential step chain: original host → persisted → arweave.net → parallel
+ *   static fallbacks → Wayfinder
  * - localStorage persistence for active gateway across sessions
  * - 5 second timeout per gateway check
- * - 2 hour cache TTL
+ * - 24 hour cache TTL
  * - Active gateway is reused without HEAD checks; only real fetch failures trigger fallback
  *
  * @module utils/arweaveGatewayManager
@@ -24,6 +25,17 @@ import {
     parseArweaveUrl,
     constructGatewayUrl,
 } from './arweaveUtils.js';
+import {
+    isMultipartEnvelope,
+    extractEnvelopeContentType,
+    getFreshExtraData,
+    markExtraData,
+    clearExtraData,
+    getExtraDataCandidates,
+    type AoExtraDataFinding,
+    type ExtraDataCandidate,
+    type ExtraDataRecoveryVia,
+} from './arweaveExtraData.js';
 
 /**
  * Strip a leading `www.` from a hostname when the bare host is itself a known
@@ -58,7 +70,8 @@ export type GatewayEventKind =
     | 'gateway.chain.exhausted'
     | 'gateway.failure-retry'
     | 'gateway.prefetch'
-    | 'gateway.path-manifest-check';
+    | 'gateway.path-manifest-check'
+    | 'gateway.ao-extra-data';
 
 /**
  * Correlation + position metadata threaded from a resolution walk into
@@ -119,6 +132,40 @@ export interface ResolveUrlOptions {
 }
 
 /**
+ * Caller-side content check for fetchArweaveVerified. This is where "is the
+ * file actually usable" lives — JSON parse + field checks, an audio header
+ * probe, whatever the consumer knows. The corruption machinery only wakes up
+ * when this returns not-ok.
+ */
+export type VerifiedFetchValidation =
+    | { ok: true }
+    | { ok: false; reason: string; /** Short label for the finding's validatedAs (e.g. "json") */ label?: string };
+
+export interface FetchArweaveVerifiedOptions {
+    /** The consumer's content check — runs on every candidate's bytes */
+    validate: (bytes: Uint8Array) => VerifiedFetchValidation | Promise<VerifiedFetchValidation>;
+    /** Abort signal for the whole verified fetch, recovery chain included */
+    signal?: AbortSignal;
+    /** Per-fetch timeout in ms (default: the manager's configured timeout) */
+    timeoutMs?: number;
+}
+
+export interface VerifiedFetchResult {
+    /** Valid bytes were obtained (plain, fast-path, or recovered) */
+    ok: boolean;
+    /** The bytes that validated, when ok */
+    bytes: Uint8Array | null;
+    /** The URL the bytes (or final failure) came from */
+    url: string;
+    /** null when the plain URL worked first try (or nothing worked) */
+    recoveredVia: ExtraDataRecoveryVia;
+    /** Present only when the multipart envelope was confirmed on this fetch */
+    finding: AoExtraDataFinding | null;
+    /** Why it failed, when !ok */
+    reason: string | null;
+}
+
+/**
  * Configuration for the gateway cache entry
  */
 export interface GatewayCache {
@@ -152,7 +199,7 @@ export interface ArweaveGatewayManagerConfig {
     gateways?: GatewayConfig[];
     /** Timeout for each gateway check in milliseconds (default: 5000) */
     timeout?: number;
-    /** Cache TTL in milliseconds (default: 7200000 = 2 hours) */
+    /** Cache TTL in milliseconds (default: 86400000 = 24 hours) */
     cacheTTL?: number;
     /** Threshold in ms above which a fetch is considered "slow" (default: 8000) */
     slowResponseThreshold?: number;
@@ -398,6 +445,8 @@ export interface GatewayDiagnostics {
     healthSummary: { host: string; avgMs: number; successRate: number; checks: number }[];
     /** Findings from fail-only path-manifest verification (newest first) */
     pathManifestFindings?: PathManifestFinding[];
+    /** Findings from AO extra-data detections (newest first) */
+    extraDataFindings?: AoExtraDataFinding[];
 }
 
 /**
@@ -525,6 +574,10 @@ export class ArweaveGatewayManager {
     private pathManifestChecked: Set<string> = new Set();
     /** Cap on stored path-manifest findings (newest are kept) */
     private readonly MAX_PATH_MANIFEST_FINDINGS = 50;
+    /** Findings from AO extra-data detections, newest first */
+    private extraDataFindings: AoExtraDataFinding[] = [];
+    /** Cap on stored extra-data findings (newest are kept) */
+    private readonly MAX_EXTRA_DATA_FINDINGS = 50;
 
     /**
      * Correlation id for one resolution walk. Concurrent resolves dedupe per
@@ -907,6 +960,7 @@ export class ArweaveGatewayManager {
             consecutiveSlowResponses: this.consecutiveSlowResponses,
             healthSummary,
             pathManifestFindings: [...this.pathManifestFindings],
+            extraDataFindings: [...this.extraDataFindings],
         };
     }
 
@@ -1009,6 +1063,184 @@ export class ArweaveGatewayManager {
                     LogLevel.INFO, finding);
             }
         })();
+    }
+
+    /**
+     * Findings from AO extra-data detections, newest first. Populated only
+     * when fetchArweaveVerified confirmed a wrapped copy.
+     */
+    getExtraDataFindings(): AoExtraDataFinding[] {
+        return [...this.extraDataFindings];
+    }
+
+    /** Current gateway priority order — the recovery chain's mirror slot source. */
+    private rankedGatewayHosts(): string[] {
+        return this.gateways.map(g => g.host);
+    }
+
+    /** Fetch with the manager's timeout budget; network errors surface as rejects. */
+    private fetchWithTimeout(url: string, signal: AbortSignal | undefined, timeoutMs: number): Promise<Response> {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), timeoutMs);
+        if (signal) signal.addEventListener('abort', () => controller.abort(), { once: true });
+        return fetch(url, { signal: controller.signal }).finally(() => clearTimeout(timer));
+    }
+
+    /**
+     * Corruption-aware fetch for the arweave.net AO multipart-envelope bug.
+     *
+     * Grabs the file's actual bytes through the normal resolution chain and
+     * hands them to the caller's validator — the happy path is one resolve +
+     * one fetch, nothing else. Only when validation fails does the sniff run,
+     * on bytes already in hand. A confirmed wrap marks the sticky verdict
+     * (session memory — see arweaveExtraData), records a finding, emits one
+     * `gateway.ao-extra-data` event, and walks the /raw/-first recovery chain
+     * (max 2 hosts: the failed host's raw, then arweave.net plain + raw, or a
+     * mirror plain URL when the failed host was arweave.net). A fresh verdict
+     * skips diagnosis entirely and starts at raw; forgiveness is the TTL plus
+     * a clean plain-URL validation clearing the verdict on the spot.
+     *
+     * Not this method's bugs: 404/410 (missing) and 5xx/network (unhealthy)
+     * are plain failures handed back — no sniff, no recovery, no health
+     * reporting. Validation failures on non-wrapped bytes are genuine bad
+     * content; every candidate serves identical bytes, so the walk stops.
+     */
+    async fetchArweaveVerified(url: string, options: FetchArweaveVerifiedOptions): Promise<VerifiedFetchResult> {
+        const signal = options.signal;
+        const timeoutMs = options.timeoutMs ?? this.timeout;
+        const parsed = parseArweaveUrl(url);
+
+        // Walk entries extend candidates with a null via for the plain
+        // starting URL — succeeding there means nothing was recovered.
+        type FetchEntry = ExtraDataCandidate | { kind: 'plain'; host: string; url: string; via: null };
+        const queue: FetchEntry[] = [];
+        const enqueue = (candidate: FetchEntry): void => {
+            if (!queue.some(c => c.url === candidate.url)) queue.push(candidate);
+        };
+
+        // Sticky fast path: a fresh verdict means this tx already diagnosed
+        // wrapped — skip diagnosis and start at its raw, recovery chain behind it.
+        // Normal path: the resolved plain URL is the first entry, recovery
+        // candidates behind it.
+        const verdict = parsed ? getFreshExtraData(parsed.txId) : null;
+        let primaryUrl = url;
+        if (verdict) {
+            enqueue({ kind: 'raw', host: verdict.host, url: `https://${verdict.host}/raw/${parsed!.txId}`, via: 'raw-same-host' });
+        } else {
+            primaryUrl = await this.resolveUrl(url, { signal });
+            let primaryHost = 'arweave.net';
+            try {
+                const parsedPrimary = new URL(primaryUrl);
+                if (parsedPrimary.protocol === 'http:' || parsedPrimary.protocol === 'https:') {
+                    primaryHost = parsedPrimary.host.replace(/^www\./, '');
+                }
+            } catch {
+                // keep the canonical default
+            }
+            enqueue({ kind: 'plain', host: primaryHost, url: primaryUrl, via: null });
+        }
+        if (parsed) {
+            for (const candidate of getExtraDataCandidates(url, this.rankedGatewayHosts())) enqueue(candidate);
+        }
+
+        let finding: AoExtraDataFinding | null = null;
+        let lastFailure: string | null = null;
+        const finalize = (entry: FetchEntry | null): void => {
+            if (!finding) return;
+            if (entry) {
+                finding.recoveredVia = entry.via;
+                finding.recoveredUrl = entry.url;
+            }
+            this.extraDataFindings.unshift(finding);
+            if (this.extraDataFindings.length > this.MAX_EXTRA_DATA_FINDINGS) {
+                this.extraDataFindings.length = this.MAX_EXTRA_DATA_FINDINGS;
+            }
+            this.emitStatus('gateway.ao-extra-data', 'probe',
+                `[gateway] AO extra-data on ${finding.host}/${finding.txId}: ${finding.recoveredVia ? `recovered via ${finding.recoveredVia}` : 'recovery exhausted'}`,
+                {
+                    txId: finding.txId,
+                    gateway: finding.host,
+                    correlationId: finding.correlationId,
+                    reason: finding.recoveredVia ? 'extra-data' : 'extra-data-unresolved',
+                },
+                LogLevel.WARN, finding);
+        };
+
+        for (const entry of queue) {
+            let response: Response;
+            try {
+                response = await this.fetchWithTimeout(entry.url, signal, timeoutMs);
+            } catch {
+                lastFailure = 'fetch-error';
+                continue; // network/abort — availability, next candidate
+            }
+            if (!response.ok) {
+                lastFailure = `HTTP ${response.status}`; // missing/unhealthy are other bugs' domain
+                continue;
+            }
+
+            let bytes: Uint8Array;
+            try {
+                bytes = new Uint8Array(await response.arrayBuffer());
+            } catch {
+                lastFailure = 'body-read-error';
+                continue;
+            }
+
+            let outcome: VerifiedFetchValidation;
+            try {
+                outcome = await options.validate(bytes);
+            } catch (error) {
+                outcome = { ok: false, reason: error instanceof Error ? error.message : String(error) };
+            }
+
+            if (outcome.ok) {
+                // Forgiveness in its explicit form: a plain URL validated clean
+                // on the blamed host (or with no fresh verdict — the TTL-expired
+                // re-probe), so stop steering this tx to raw. A clean mirror
+                // says nothing about the blamed host's plain URL, so a fresh
+                // verdict survives a mirror success. Read the verdict fresh —
+                // this walk itself may have marked it mid-flight.
+                const currentVerdict = parsed ? getFreshExtraData(parsed.txId) : null;
+                if (entry.kind === 'plain' && parsed && (!currentVerdict || entry.host === currentVerdict.host)) {
+                    clearExtraData(parsed.txId);
+                }
+                finalize(entry);
+                return { ok: true, bytes, url: entry.url, recoveredVia: entry.via, finding, reason: null };
+            }
+
+            const sniff = isMultipartEnvelope(bytes);
+            if (!sniff) {
+                // Genuine bad content — no candidate can serve different bytes.
+                return { ok: false, bytes, url: entry.url, recoveredVia: null, finding: null, reason: outcome.reason };
+            }
+
+            // Confirmed wrap — record once, keep walking the recovery chain.
+            if (!finding && parsed) {
+                finding = {
+                    txId: parsed.txId,
+                    host: entry.host,
+                    url: entry.url,
+                    boundary: sniff.boundary,
+                    sniffedContentType: extractEnvelopeContentType(bytes),
+                    validatedAs: outcome.label ?? null,
+                    recoveredVia: null,
+                    recoveredUrl: null,
+                    detectedAt: Date.now(),
+                };
+                markExtraData(parsed.txId, entry.host);
+            }
+        }
+
+        finalize(null);
+        return {
+            ok: false,
+            bytes: null,
+            url: queue[0]?.url ?? url,
+            recoveredVia: null,
+            finding,
+            reason: finding ? 'recovery-exhausted' : (lastFailure ?? 'validation-failed'),
+        };
     }
 
     /**

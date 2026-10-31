@@ -98,6 +98,7 @@ A concise overview of all main exports from the library, organized by category.
 | `resolveSelectedMix`, `findMixByName`, `getPreferredMixByQuality`, `getUniqueMixes`, `resolveMixUrl`, `selectMix` | Alternate mixes: entry-pin resolution, name lookup, grouping, URL resolution, playback selection | [Track Extras](#track-extras) |
 | `getMixes`, `getMixTracks` | Flattened mixes and per-track mix data across a playlist | [Playlist Utilities](#playlist-utilities) |
 | `isIPFS`, `extractIPFSPath`, `resolveIPFSLink` | IPFS URL detection, extraction, and resolution | [GATEWAY_RESOLUTION.md — IPFS URL Utilities](features/GATEWAY_RESOLUTION.md#ipfs-url-utilities) |
+| `fetchArweaveVerified` | Corruption-aware fetch: validated bytes with AO extra-data detection and /raw/ recovery | [GATEWAY_RESOLUTION.md — AO extra-data verified fetch](features/GATEWAY_RESOLUTION.md#ao-extra-data-verified-fetch) |
 | `AudioAnalyzer` | Analyze audio frequency characteristics | [Core Modules](#core-modules) |
 | `MusicClassifier` | Deep ML classification (genre, mood, vibe) | [Core Modules](#core-modules) |
 | `PitchAnalyzer` | Full-track pitch detection with contour analysis | [Core Modules](#core-modules) |
@@ -1773,20 +1774,26 @@ The engine includes a built-in Arweave gateway manager (`arweaveGatewayManager`)
 | `arweaveGatewayManager` | Singleton instance for resolving Arweave URLs with gateway fallback |
 | `ArweaveGatewayManager` | Class: create custom instances with custom gateway lists |
 | `isArweaveUrl` | Utility: check if a URL is an Arweave transaction |
+| `fetchArweaveVerified` | Method on `ArweaveGatewayManager`: corruption-aware fetch with AO extra-data detection and /raw/ recovery |
+| `isMultipartEnvelope` | Utility: detect the AO multipart upload envelope in a response head |
+| `getExtraDataCandidates` | Utility: build the max-2-host /raw/-first recovery chain for a failed URL |
+| `markExtraData`, `getFreshExtraData`, `clearExtraData`, `clearAllExtraDataVerdicts` | Sticky verdict store (session memory): skip re-diagnosis for known-wrapped txs, with 24h TTL forgiveness |
 
-**Gateway resolution strategy:** Sequential fallback — arweave.net first (most reliable), then the persisted gateway from localStorage, then AR.IO Wayfinder (wider pool via `FastestPingRoutingStrategy` + `RandomRoutingStrategy` fallback), then remaining static gateways. Each gateway is verified with a real fetch before being used. Dead persisted gateways are cleared automatically.
+**Gateway resolution strategy:** Sequential fallback — the original URL's host first, then the persisted gateway from localStorage, then arweave.net, then the remaining static gateways raced in parallel, then AR.IO Wayfinder (wider pool via `FastestPingRoutingStrategy` + `RandomRoutingStrategy` fallback). Each gateway is verified with a real fetch before being used. Dead persisted gateways are cleared automatically.
 
 **Wayfinder configuration:** Uses `NetworkGatewaysProvider` (top 50 gateways by `weights.compositeWeight` — AR.IO's protocol-level composite of performance, tenure, stake, and observer behavior) as the primary candidate pool with `FastestPingRoutingStrategy` (3s timeout). Falls back to a wider pool of 100 gateways via `RandomRoutingStrategy`. Requires both `@ar.io/wayfinder-core` and `@ar.io/sdk`. See [GATEWAY_RESOLUTION.md](./features/GATEWAY_RESOLUTION.md#tuning-the-gateway-pool) for the full list of `sortBy` options and routing strategy alternatives.
 
 **Solana RPC dependency:** The ar.io SDK reads the gateway registry from Solana, so Wayfinder needs a Solana RPC URL. The default is `https://solana-rpc.publicnode.com` — public, CORS-enabled, no signup required, but rate-limited. For production use, override via the `solanaRpcUrl` config option with a dedicated RPC (Helius, QuickNode, Triton, Alchemy, etc.). **Do not use `https://api.mainnet-beta.solana.com`** — Solana Labs blocks browser-origin requests with HTTP 403, which breaks Wayfinder entirely.
 
-**Default gateways:** arweave.net → ar.io → ardrive.net → turbo-gateway.com
+**Default gateways:** arweave.net, then turbo-gateway.com + ardrive.net raced in parallel as fallbacks, then AR.IO Wayfinder.
 
 #### Key Public Methods
 
 | Method | Description |
 |--------|-------------|
 | `resolveUrl(url, signal?)` | Resolve an Arweave URL to a working gateway URL. Supports `AbortSignal` for cancellation. |
+| `fetchArweaveVerified(url, options)` | Corruption-aware fetch for arweave.net's AO multipart-envelope bug. Fetches real bytes, runs the caller's `validate`, and only on failure sniffs for the envelope — then recovers via `/raw/` (same host first, then arweave.net / a mirror, max 2 hosts), records an `AoExtraDataFinding`, and emits `gateway.ao-extra-data`. Sticky session verdicts make later fetches go straight to raw until the 24h TTL expires. See [GATEWAY_RESOLUTION.md — AO extra-data verified fetch](features/GATEWAY_RESOLUTION.md#ao-extra-data-verified-fetch). |
+| `getExtraDataFindings()` | AO extra-data detection records, newest first (bounded 50). Also on `getDiagnostics().extraDataFindings`. |
 | `reportGatewayFailure(url, options?)` | Report a failed fetch. Options: `{ signal?, reason?: 'load-error' \| 'user-cancel-slow' \| 'user-cancel-fast', excludeHost? }`. Fast user cancels preserve the active gateway. `excludeHost` skips a specific gateway during retry. |
 | `reportFetchSuccess(timingMs)` | Feed timing data back to the manager. Resets the slow-response counter on fast fetches; increments it on slow ones. Triggers proactive rotation after `maxSlowResponses` consecutive slow fetches. |
 | `reportFetchTiming(host, timingMs, success)` | Record real data-transfer timing for a gateway (separate from HEAD-based health checks). |
@@ -1797,7 +1804,7 @@ The engine includes a built-in Arweave gateway manager (`arweaveGatewayManager`)
 |--------|------|---------|-------------|
 | `gateways` | `GatewayConfig[]` | 4 defaults | Gateway list |
 | `timeout` | `number` | `5000` | Per-gateway HEAD check timeout (ms) |
-| `cacheTTL` | `number` | `7200000` | Per-txId cache TTL (ms, default 2 hours) |
+| `cacheTTL` | `number` | `86400000` | Per-txId cache TTL (ms, default 24 hours) |
 | `slowResponseThreshold` | `number` | `8000` | Threshold above which a fetch is "slow" (ms) |
 | `maxSlowResponses` | `number` | `3` | Consecutive slow responses before proactive gateway rotation |
 | `solanaRpcUrl` | `string` | `https://solana-rpc.publicnode.com` | Solana RPC URL for the ar.io SDK gateway registry. Override with a dedicated RPC (Helius, QuickNode, etc.) for production. |
@@ -1806,7 +1813,7 @@ The engine includes a built-in Arweave gateway manager (`arweaveGatewayManager`)
 | `wayfinderFallbackLimit` | `number` | `100` | Fallback (Random) Wayfinder pool size. |
 | `wayfinderStrategy` | `WayfinderStrategy` | `composite-ping-random` | Wayfinder routing strategy preset. See [Wayfinder Strategy Presets](./features/GATEWAY_RESOLUTION.md#wayfinder-strategy-presets). |
 
-**Persisted gateway:** The active gateway is saved to `localStorage` with a 30-minute TTL. Expired persisted gateways are ignored on the next session, forcing fresh discovery.
+**Persisted gateway:** The active gateway is saved to `localStorage` with a 2-hour TTL. Expired persisted gateways are ignored on the next session, forcing fresh discovery.
 
 **Health-aware filtering:** Gateways with >70% failure rate (and at least 3 checks) are skipped during resolution, unless all gateways would be filtered out.
 

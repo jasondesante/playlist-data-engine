@@ -42,7 +42,27 @@ export {
     type PathManifestFinding,
     type GatewayEventKind,
     type GatewayProbeMeta,
+    type FetchArweaveVerifiedOptions,
+    type VerifiedFetchResult,
+    type VerifiedFetchValidation,
 } from './utils/arweaveGatewayManager.js';
+
+// Arweave extra-data (AO multipart-envelope detection + raw recovery)
+export {
+    isMultipartEnvelope,
+    extractEnvelopeContentType,
+    getExtraDataCandidates,
+    markExtraData,
+    getFreshExtraData,
+    clearExtraData,
+    clearAllExtraDataVerdicts,
+    EXTRA_DATA_VERDICT_TTL_MS,
+    type MultipartSniff,
+    type ExtraDataRecoveryVia,
+    type ExtraDataRecoveryKind,
+    type AoExtraDataFinding,
+    type ExtraDataCandidate,
+} from './utils/arweaveExtraData.js';
 
 // Logger + status-event types (TF-free). Gateway consumers need these to
 // subscribe to the manager's status events — without this re-export the
