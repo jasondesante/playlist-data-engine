@@ -2713,6 +2713,29 @@ describe('AO extra-data verified fetch', () => {
         expect(getFreshExtraData(VALID_TX_ID)).not.toBeNull();
     });
 
+    it('runs a full-chain last resort past the ranked mirror when every early candidate fails', async () => {
+        const manager = new ArweaveGatewayManager({ gateways: CUSTOM_GATEWAYS, timeout: 1000 });
+        mockFetch.mockImplementation(async (url: string, init?: { method?: string }) => {
+            // primary and tertiary are down for BOTH probes — the fallback race
+            // must only be able to verify secondary
+            if (url.includes('primary.example.com') || url.includes('tertiary.example.com')) {
+                return new Response(null, { status: 502 });
+            }
+            if (init?.method === 'HEAD') return new Response(null, { status: 200 });
+            if (url.includes('arweave.net/' + VALID_TX_ID)) return new Response(WRAPPED_BODY, { status: 200 });
+            if (url.includes('/raw/' + VALID_TX_ID)) return new Response(null, { status: 502 });
+            // the full-chain resolve reaches secondary.example.com — clean
+            return new Response(CLEAN_BODY, { status: 200 });
+        });
+
+        const result = await manager.fetchArweaveVerified(ARWEAVE_URL, { validate: validateJson });
+
+        expect(result.ok).toBe(true);
+        expect(result.recoveredVia).toBe('mirror');
+        expect(result.url).toContain('secondary.example.com');
+        expect(getUrlsCalled().some(u => u.includes('secondary.example.com'))).toBe(true);
+    });
+
     it('reports recovery exhausted when every candidate fails', async () => {
         const manager = new ArweaveGatewayManager({ gateways: CUSTOM_GATEWAYS, timeout: 1000 });
         mockFetch.mockImplementation(async (url: string, init?: { method?: string }) => {

@@ -1166,7 +1166,36 @@ export class ArweaveGatewayManager {
                 LogLevel.WARN, finding);
         };
 
-        for (const entry of queue) {
+        // Index walk over a mutable list: when the candidates exhaust on a
+        // confirmed wrap, the full-chain last resort appends one more entry
+        // and the walk continues to it.
+        let walkIndex = 0;
+        let fullChainAttempted = false;
+        for (;;) {
+            if (walkIndex >= queue.length) {
+                if (!finding || fullChainAttempted) break;
+                // Every early candidate failed on a confirmed wrap.
+                // reportGatewayFailure is the full reset: it clears the active
+                // gateway, the per-tx cache, and the persisted gateway — any of
+                // which would otherwise hand back the broken host — then
+                // re-resolves Wayfinder → ranked fallbacks with that host
+                // excluded. Full gateway coverage for the rare² case where raw
+                // and the ranked mirror are both down.
+                fullChainAttempted = true;
+                const lastResortUrl = await this.reportGatewayFailure(url, { signal, reason: 'load-error', excludeHost: finding.host });
+                if (!queue.some(c => c.url === lastResortUrl)) {
+                    let host = 'arweave.net';
+                    try {
+                        const parsedLast = new URL(lastResortUrl);
+                        if (parsedLast.protocol === 'http:' || parsedLast.protocol === 'https:') {
+                            host = parsedLast.host.replace(/^www\./, '');
+                        }
+                    } catch { /* keep canonical default */ }
+                    queue.push({ kind: 'plain', host, url: lastResortUrl, via: 'mirror' });
+                }
+                if (walkIndex >= queue.length) break; // resolution gave nothing new
+            }
+            const entry = queue[walkIndex++];
             let response: Response;
             try {
                 response = await this.fetchWithTimeout(entry.url, signal, timeoutMs);
@@ -1211,8 +1240,14 @@ export class ArweaveGatewayManager {
 
             const sniff = isMultipartEnvelope(bytes);
             if (!sniff) {
-                // Genuine bad content — no candidate can serve different bytes.
-                return { ok: false, bytes, url: entry.url, recoveredVia: null, finding: null, reason: outcome.reason };
+                // Pre-detection: genuine bad content — no candidate can serve
+                // different bytes. Post-detection: this tx is already known
+                // wrapped, so candidate failures are transport anomalies (the
+                // raw endpoint itself can redirect to HTML) — keep walking.
+                if (!finding) {
+                    return { ok: false, bytes, url: entry.url, recoveredVia: null, finding: null, reason: outcome.reason };
+                }
+                continue;
             }
 
             // Confirmed wrap — record once, keep walking the recovery chain.
@@ -1229,6 +1264,9 @@ export class ArweaveGatewayManager {
                     detectedAt: Date.now(),
                 };
                 markExtraData(parsed.txId, entry.host);
+                // The gateway that served the wrap must not stay cached as the
+                // tx's working gateway — drop it so later resolves re-probe.
+                this.invalidateCacheForUrl(entry.url);
             }
         }
 
