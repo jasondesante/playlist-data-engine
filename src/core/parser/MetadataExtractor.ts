@@ -132,6 +132,25 @@ export class MetadataExtractor {
             }
         }
 
+        // Token Traxx-style Enigma wrapper: properties.artist holds either a
+        // plain string or { type, description: <value> } — the real value
+        // sits in .description. Probed after the flat keys (an explicit
+        // named field outranks a generic trait) and before the OpenSea
+        // attributes array for the same reason.
+        const props = data.properties;
+        if (props && typeof props === 'object' && !Array.isArray(props)) {
+            const propArtist = (props as Record<string, unknown>).artist;
+            if (typeof propArtist === 'string' && propArtist.trim()) {
+                return propArtist;
+            }
+            if (propArtist && typeof propArtist === 'object' && !Array.isArray(propArtist)) {
+                const d = (propArtist as Record<string, unknown>).description;
+                if (typeof d === 'string' && d.trim()) {
+                    return d;
+                }
+            }
+        }
+
         if (Array.isArray(data.attributes)) {
             const artistAttr = data.attributes.find(
                 (attr: { trait_type?: string; value?: unknown }) =>
